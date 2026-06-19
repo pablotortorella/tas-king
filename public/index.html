@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de tareas</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --col-bg: #ebecf0;
+    --card-bg: #ffffff;
+    --text: #172b4d;
+    --muted: #6b778c;
+    --accent: #0079bf;
+    --danger: #c0392b;
+    --border: #dfe1e6;
+    --shadow: 0 1px 2px rgba(9,30,66,.15);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    cursor: grab;
+    flex: 0 0 auto;
+  }
+  header.panning { cursor: grabbing; }
+  header .header-left { display: flex; align-items: center; gap: 8px; }
+  header .logo { font-size: 18px; }
+  header .board-select {
+    border: none; border-radius: 4px; padding: 6px 10px; font-size: 14px;
+    font-weight: 600; background: rgba(255,255,255,.9); color: var(--text); max-width: 240px;
+  }
+  header .header-left button {
+    background: rgba(255,255,255,.2); color: #fff; border: none; width: 30px; height: 30px;
+    border-radius: 4px; cursor: pointer; font-size: 15px; padding: 0;
+  }
+  header .header-left button:hover { background: rgba(255,255,255,.35); }
+  header .user { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,.9); margin-left: 8px; }
+  header .user a { color: #fff; text-decoration: underline; }
+  header .actions select {
+    border: none; border-radius: 4px; padding: 6px 8px; font-size: 13px;
+    background: rgba(255,255,255,.9); color: var(--text); max-width: 160px;
+  }
+  header .actions button {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-left: 8px;
+  }
+  header .actions button:hover { background: rgba(255,255,255,.35); }
+  header .actions { display: flex; align-items: center; }
+  header .actions input[type=search] {
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 200px;
+    background: rgba(255,255,255,.9);
+    color: var(--text);
+  }
+  header .actions input[type=search]:focus { outline: 2px solid rgba(255,255,255,.6); background: #fff; }
+
+  .board {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    overflow: auto;            /* scroll en ambos ejes; lo movemos arrastrando el fondo */
+    align-items: flex-start;
+    flex: 1;
+    min-height: 0;
+    cursor: grab;
+  }
+  .board.panning { cursor: grabbing; user-select: none; }
+  .column {
+    background: var(--col-bg);
+    border-radius: 8px;
+    width: 280px;
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+  }
+  .column-header {
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .column-header .count {
+    background: rgba(9,30,66,.08);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .cards {
+    padding: 0 8px 8px;
+    flex: 1;
+    min-height: 12px;
+  }
+  .cards.drag-over { background: rgba(0,121,191,.08); border-radius: 6px; }
+  .card {
+    background: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    position: relative;
+  }
+  .card:hover { background: #fafbfc; }
+  .card.dragging { opacity: .4; }
+  .card-title { font-weight: 500; word-break: break-word; }
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .badge {
+    font-size: 11px;
+    color: var(--muted);
+    background: rgba(9,30,66,.06);
+    border-radius: 4px;
+    padding: 1px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .badge.overdue { background: #ffebe6; color: var(--danger); }
+  .add-card {
+    margin: 4px 8px 8px;
+    padding: 6px 8px;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .add-card:hover { background: rgba(9,30,66,.06); color: var(--text); }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(9,30,66,.55);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 540px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(9,30,66,.3);
+  }
+  .modal h2 { margin: 0 0 14px; font-size: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
+  .field input[type=text], .field input[type=date], .field textarea, .field select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fafbfc;
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+  .comments { list-style: none; padding: 0; margin: 0 0 8px; }
+  .comment {
+    background: #f4f5f7;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    position: relative;
+  }
+  .comment time { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .comment .del { position: absolute; top: 6px; right: 8px; cursor: pointer; color: var(--muted); font-size: 12px; }
+  .comment-add { display: flex; gap: 6px; }
+  .comment-add input { flex: 1; }
+
+  .attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .attachment {
+    width: 90px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    background: #fafbfc;
+    font-size: 11px;
+  }
+  .attachment img { width: 100%; height: 64px; object-fit: cover; display: block; }
+  .attachment .file-icon { height: 64px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .attachment .name { padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .attachment .del { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,.6); color: #fff; border-radius: 50%; width: 18px; height: 18px; line-height: 18px; text-align: center; cursor: pointer; font-size: 12px; }
+  .attachment a { color: var(--accent); text-decoration: none; }
+
+  .btn {
+    border: none; border-radius: 5px; padding: 8px 14px; cursor: pointer;
+    font-size: 14px; font-weight: 500;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #026aa7; }
+  .btn-ghost { background: transparent; color: var(--muted); }
+  .btn-ghost:hover { background: rgba(9,30,66,.06); }
+  .btn-danger { background: transparent; color: var(--danger); }
+  .btn-danger:hover { background: #ffebe6; }
+  .btn-small { padding: 6px 10px; font-size: 13px; }
+  .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .modal-footer .right { display: flex; gap: 8px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Lista de archivadas */
+  .archive-empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+  .archive-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  .archive-row .info { min-width: 0; }
+  .archive-row .info .t { font-weight: 500; word-break: break-word; }
+  .archive-row .info .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .archive-row .ops { display: flex; gap: 6px; flex: 0 0 auto; }
+
+  /* Resumen de importación */
+  .import-file { font-size: 14px; margin: 0 0 12px; }
+  .import-sub { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin: 14px 0 4px; }
+  .import-stats { list-style: none; padding: 0; margin: 0; }
+  .import-stats li { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .import-stats li:last-child { border-bottom: none; }
+  .import-stats li b { font-variant-numeric: tabular-nums; }
+
+  /* Distintivo de responsable en la tarjeta */
+  .badge.assignee { background: #e3effc; color: #0c447c; }
+
+  /* Lista de miembros */
+  .member-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; font-size: 14px;
+  }
+  .member-row .role { font-size: 12px; color: var(--muted); }
+  .members-empty { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <span class="logo">📋</span>
+    <select id="boardSelect" class="board-select" title="Cambiar de tablero"></select>
+    <button id="newBoardBtn" title="Nuevo tablero">＋</button>
+    <button id="membersBtn" title="Miembros del tablero">👥</button>
+  </div>
+  <div class="actions">
+    <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
+    <select id="assigneeFilter" title="Filtrar por responsable"></select>
+    <button id="archiveBtn">🗄 Archivadas</button>
+    <button id="exportCsvBtn">Exportar CSV</button>
+    <button id="exportBtn">Copia JSON</button>
+    <button id="importBtn">Importar</button>
+    <input type="file" id="importFile" accept=".csv,.json,application/json,text/csv" hidden>
+    <span class="user"><span id="userEmail"></span><a href="/cdn-cgi/access/logout" title="Cerrar sesión">Salir</a></span>
+  </div>
+</header>
+
+<div class="board" id="board"></div>
+
+<!-- Modal de tarjeta -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Tarjeta</h2>
+    <div class="field">
+      <label>Título</label>
+      <input type="text" id="fTitle" placeholder="Título de la tarea">
+    </div>
+    <div class="field">
+      <label>Columna</label>
+      <select id="fColumn"></select>
+    </div>
+    <div class="field">
+      <label>Detalles</label>
+      <textarea id="fDetails" placeholder="Descripción, contexto, pasos..."></textarea>
+    </div>
+    <div class="field">
+      <label>Fecha límite</label>
+      <input type="date" id="fDue">
+    </div>
+    <div class="field">
+      <label>Responsable</label>
+      <select id="fAssignee"></select>
+    </div>
+    <div class="field">
+      <label>Adjuntos (fotos y archivos)</label>
+      <div class="attachments" id="fAttachments"></div>
+      <input type="file" id="fFile" multiple accept="*/*">
+      <div class="hint">Las imágenes se muestran como miniatura. Los archivos se guardan en el servidor.</div>
+    </div>
+    <div class="field">
+      <label>Comentarios</label>
+      <ul class="comments" id="fComments"></ul>
+      <div class="comment-add">
+        <input type="text" id="fCommentInput" placeholder="Escribir un comentario...">
+        <button class="btn btn-primary btn-small" id="addCommentBtn">Agregar</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div>
+        <button class="btn btn-ghost" id="archiveCardBtn">🗄 Archivar</button>
+        <button class="btn btn-danger" id="deleteCardBtn">Eliminar</button>
+      </div>
+      <div class="right">
+        <button class="btn btn-ghost" id="cancelBtn">Cancelar</button>
+        <button class="btn btn-primary" id="saveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Miembros del tablero -->
+<div class="overlay" id="membersOverlay">
+  <div class="modal">
+    <h2 id="membersTitle">👥 Miembros</h2>
+    <div id="membersList"></div>
+    <div class="field" id="inviteRow" style="margin-top:14px">
+      <label>Invitar por email</label>
+      <div class="comment-add">
+        <input type="email" id="inviteEmail" placeholder="persona@ejemplo.com">
+        <button class="btn btn-primary btn-small" id="inviteBtn">Invitar</button>
+      </div>
+      <div class="hint">La persona accede con su cuenta de Google la próxima vez que entre.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="deleteBoardBtn">Eliminar tablero</button>
+      <div class="right">
+        <button class="btn btn-ghost" id="membersCloseBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lista de tarjetas archivadas -->
+<div class="overlay" id="archiveOverlay">
+  <div class="modal">
+    <h2>🗄 Tarjetas archivadas</h2>
+    <div id="archiveList"></div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="right">
+        <button class="btn btn-ghost" id="archiveCloseBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vista previa de importación -->
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h2>📥 Vista previa de importación</h2>
+    <div id="importSummary"></div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="right">
+        <button class="btn btn-ghost" id="importCancelBtn">Cancelar</button>
+        <button class="btn btn-primary" id="importConfirmBtn">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const COLUMNS = [
+    { id: "por_conversar", name: "Por conversar" },
+    { id: "pendiente",     name: "Pendiente" },
+    { id: "en_progreso",   name: "En progreso" },
+    { id: "por_revisar",   name: "Por revisar" },
+    { id: "terminado",     name: "Terminado" },
+  ];
+
+  /** @type {{cards: Array}} */
+  let state = { cards: [] };
+  let me = null;               // usuario actual + sus tableros
+  let currentBoardId = null;   // tablero seleccionado
+  let members = [];            // miembros del tablero actual
+  let editingId = null;        // id de la tarjeta abierta, o null si es nueva
+  let draftAttachments = [];   // adjuntos en edición (existentes + nuevos pendientes)
+  let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
+  let searchQuery = "";        // texto del buscador (minúsculas)
+  let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
+
+  const shortName = email => (email || "").split("@")[0];
+  const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
+
+  // Capa de datos: API REST contra el backend (Worker + D1).
+  async function api(method, path, body) {
+    const res = await fetch(path, {
+      method,
+      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      let msg = res.statusText;
+      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+      throw new Error(msg);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  // Carga el usuario, sus tableros y el tablero actual.
+  async function loadBoard() {
+    try {
+      me = await api("GET", "/api/me");
+      document.getElementById("userEmail").textContent = me.email;
+      const saved = localStorage.getItem("tasKingBoardId");
+      if (!me.boards.some(b => b.id === currentBoardId)) currentBoardId = null;
+      if (!currentBoardId) {
+        currentBoardId = (saved && me.boards.some(b => b.id === saved)) ? saved
+          : (me.boards[0] && me.boards[0].id) || null;
+      }
+      renderBoardSelect();
+      await loadMembers();
+      await loadCards();
+    } catch (e) {
+      board.innerHTML = '<div style="padding:24px;color:#c0392b;font-size:14px">'
+        + "No se pudo cargar el tablero. Revisá tu conexión y volvé a intentar.<br><br>"
+        + escapeHtml(e.message) + "</div>";
+    }
+  }
+
+  // Trae las tarjetas del tablero actual y re-renderiza.
+  async function loadCards() {
+    if (!currentBoardId) { state = { cards: [] }; render(); return; }
+    localStorage.setItem("tasKingBoardId", currentBoardId);
+    state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
+    render();
+  }
+
+  async function loadMembers() {
+    if (!currentBoardId) { members = []; renderAssigneeFilter(); return; }
+    try { members = (await api("GET", "/api/boards/" + currentBoardId + "/members")).members; }
+    catch (e) { members = []; }
+    renderAssigneeFilter();
+  }
+
+  function renderBoardSelect() {
+    const sel = document.getElementById("boardSelect");
+    sel.innerHTML = "";
+    me.boards.forEach(b => {
+      const o = document.createElement("option");
+      o.value = b.id;
+      o.textContent = (b.isPersonal ? "👤 " : "👥 ") + b.name;
+      sel.appendChild(o);
+    });
+    sel.value = currentBoardId;
+  }
+
+  function renderAssigneeFilter() {
+    const sel = document.getElementById("assigneeFilter");
+    const prev = assigneeFilter;
+    sel.innerHTML = '<option value="">👤 Todos</option>';
+    members.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m.email; o.textContent = shortName(m.email);
+      sel.appendChild(o);
+    });
+    if (members.some(m => m.email === prev)) sel.value = prev;
+    else { assigneeFilter = ""; sel.value = ""; }
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function escapeHtml(s) {
+    return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("es", { day: "2-digit", month: "short" });
+  }
+
+  function isOverdue(card) {
+    if (!card.due || card.column === "terminado") return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return new Date(card.due + "T00:00:00") < today;
+  }
+
+  // ---------- Render del tablero ----------
+  const board = document.getElementById("board");
+
+  // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
+  function matchesSearch(card) {
+    if (!searchQuery) return true;
+    const haystack = [
+      card.title,
+      card.details,
+      ...(card.comments || []).map(c => c.text),
+    ].join(" ").toLowerCase();
+    return haystack.includes(searchQuery);
+  }
+
+  function matchesAssignee(card) {
+    return !assigneeFilter || card.assignee === assigneeFilter;
+  }
+
+  function render() {
+    board.innerHTML = "";
+    COLUMNS.forEach(col => {
+      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c));
+      const colEl = document.createElement("div");
+      colEl.className = "column";
+      colEl.innerHTML = `
+        <div class="column-header">
+          <span>${escapeHtml(col.name)}</span>
+          <span class="count">${cards.length}</span>
+        </div>
+        <div class="cards" data-col="${col.id}"></div>
+        <div class="add-card" data-col="${col.id}">+ Añadir tarjeta</div>
+      `;
+      const cardsEl = colEl.querySelector(".cards");
+      cards.forEach(card => cardsEl.appendChild(renderCard(card)));
+
+      // drag & drop: reubica la tarjeta arrastrada en vivo según la posición del cursor
+      cardsEl.addEventListener("dragover", e => {
+        e.preventDefault();
+        cardsEl.classList.add("drag-over");
+        const dragging = document.querySelector(".card.dragging");
+        if (!dragging) return;
+        const afterEl = getDragAfterElement(cardsEl, e.clientY);
+        if (afterEl == null) cardsEl.appendChild(dragging);
+        else cardsEl.insertBefore(dragging, afterEl);
+      });
+      cardsEl.addEventListener("dragleave", e => {
+        // solo quitar el resaltado si el cursor salió realmente del contenedor
+        if (!cardsEl.contains(e.relatedTarget)) cardsEl.classList.remove("drag-over");
+      });
+      cardsEl.addEventListener("drop", async e => {
+        e.preventDefault();
+        cardsEl.classList.remove("drag-over");
+        rebuildOrderFromDom();
+        render();                 // refleja el nuevo orden de inmediato
+        try { await persistOrder(); }
+        catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
+      });
+
+      colEl.querySelector(".add-card").addEventListener("click", () => openModal(null, col.id));
+      board.appendChild(colEl);
+    });
+  }
+
+  // Devuelve la tarjeta ante la cual hay que insertar (o null para agregar al final),
+  // según la posición vertical del cursor dentro de la columna.
+  function getDragAfterElement(container, y) {
+    const els = [...container.querySelectorAll(".card:not(.dragging)")];
+    let closest = { offset: -Infinity, element: null };
+    for (const child of els) {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) closest = { offset, element: child };
+    }
+    return closest.element;
+  }
+
+  // Reconstruye state.cards (columna + orden) a partir del orden actual del DOM.
+  function rebuildOrderFromDom() {
+    const newOrder = [];
+    board.querySelectorAll(".cards").forEach(container => {
+      const colId = container.dataset.col;
+      container.querySelectorAll(".card").forEach(el => {
+        const card = state.cards.find(c => c.id === el.dataset.id);
+        if (card) { card.column = colId; newOrder.push(card); }
+      });
+    });
+    // por seguridad, conservar cualquier tarjeta que no haya quedado en el DOM
+    state.cards.forEach(c => { if (!newOrder.includes(c)) newOrder.push(c); });
+    state.cards = newOrder;
+  }
+
+  // Envía al backend la columna y posición de cada tarjeta según el orden actual.
+  function persistOrder() {
+    const items = [];
+    COLUMNS.forEach(col => {
+      let pos = 0;
+      state.cards.filter(c => c.column === col.id).forEach(c => {
+        items.push({ id: c.id, column: col.id, position: ++pos });
+      });
+    });
+    return api("POST", "/api/boards/" + currentBoardId + "/reorder", items);
+  }
+
+  function renderCard(card) {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.draggable = true;
+    el.dataset.id = card.id;
+
+    const badges = [];
+    if (card.assignee) badges.push(`<span class="badge assignee">👤 ${escapeHtml(shortName(card.assignee))}</span>`);
+    if (card.due) badges.push(`<span class="badge ${isOverdue(card) ? "overdue" : ""}">📅 ${fmtDate(card.due)}</span>`);
+    if (card.comments && card.comments.length) badges.push(`<span class="badge">💬 ${card.comments.length}</span>`);
+    if (card.attachments && card.attachments.length) badges.push(`<span class="badge">📎 ${card.attachments.length}</span>`);
+    if (card.details) badges.push(`<span class="badge">≡</span>`);
+
+    el.innerHTML = `
+      <div class="card-title">${escapeHtml(card.title) || "(sin título)"}</div>
+      ${badges.length ? `<div class="card-meta">${badges.join("")}</div>` : ""}
+    `;
+    el.addEventListener("click", () => openModal(card.id));
+    el.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", card.id);
+      el.classList.add("dragging");
+    });
+    el.addEventListener("dragend", () => el.classList.remove("dragging"));
+    return el;
+  }
+
+  // ---------- Archivar / Eliminar / Restaurar ----------
+  async function archiveCard(id) {
+    try { await api("POST", "/api/cards/" + id + "/archive"); await loadCards(); renderArchiveList(); }
+    catch (e) { alert("No se pudo archivar: " + e.message); }
+  }
+
+  async function restoreCard(id) {
+    try { await api("POST", "/api/cards/" + id + "/restore"); await loadCards(); renderArchiveList(); }
+    catch (e) { alert("No se pudo restaurar: " + e.message); }
+  }
+
+  // Devuelve true si la tarjeta fue eliminada.
+  async function deleteCard(id) {
+    const card = state.cards.find(c => c.id === id);
+    if (!card) return false;
+    const name = card.title ? `“${card.title}”` : "esta tarjeta";
+    if (!confirm(`¿Eliminar ${name} de forma permanente?\n\nEsta acción no se puede deshacer.`)) return false;
+    try {
+      await api("DELETE", "/api/cards/" + id);
+      await loadCards();
+      renderArchiveList();
+      return true;
+    } catch (e) { alert("No se pudo eliminar: " + e.message); return false; }
+  }
+
+  // ---------- Overlay de archivadas ----------
+  const archiveOverlay = document.getElementById("archiveOverlay");
+  const archiveList = document.getElementById("archiveList");
+  const colName = id => (COLUMNS.find(c => c.id === id) || {}).name || id;
+
+  function renderArchiveList() {
+    const archived = state.cards
+      .filter(c => c.archived)
+      .sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0));
+    archiveList.innerHTML = "";
+    if (!archived.length) {
+      archiveList.innerHTML = '<div class="archive-empty">No hay tarjetas archivadas.</div>';
+      return;
+    }
+    archived.forEach(card => {
+      const row = document.createElement("div");
+      row.className = "archive-row";
+      const when = card.archivedAt ? new Date(card.archivedAt).toLocaleDateString("es") : "";
+      row.innerHTML = `
+        <div class="info">
+          <div class="t">${escapeHtml(card.title) || "(sin título)"}</div>
+          <div class="sub">${escapeHtml(colName(card.column))}${when ? " · archivada el " + when : ""}</div>
+        </div>
+        <div class="ops">
+          <button class="btn btn-ghost btn-small" data-act="restore">Restaurar</button>
+          <button class="btn btn-danger btn-small" data-act="delete">Eliminar</button>
+        </div>
+      `;
+      row.querySelector('[data-act="restore"]').addEventListener("click", () => restoreCard(card.id));
+      row.querySelector('[data-act="delete"]').addEventListener("click", () => deleteCard(card.id));
+      archiveList.appendChild(row);
+    });
+  }
+
+  document.getElementById("archiveBtn").addEventListener("click", () => {
+    renderArchiveList();
+    archiveOverlay.classList.add("open");
+  });
+  document.getElementById("archiveCloseBtn").addEventListener("click", () => archiveOverlay.classList.remove("open"));
+  archiveOverlay.addEventListener("click", e => { if (e.target === archiveOverlay) archiveOverlay.classList.remove("open"); });
+
+  // ---------- Modal ----------
+  const overlay = document.getElementById("overlay");
+  const fTitle = document.getElementById("fTitle");
+  const fColumn = document.getElementById("fColumn");
+  const fDetails = document.getElementById("fDetails");
+  const fDue = document.getElementById("fDue");
+  const fAssignee = document.getElementById("fAssignee");
+  const fAttachments = document.getElementById("fAttachments");
+  const fComments = document.getElementById("fComments");
+
+  // poblar el selector de columnas una vez
+  COLUMNS.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id; opt.textContent = c.name;
+    fColumn.appendChild(opt);
+  });
+
+  // pobla el selector de responsable con los miembros del tablero actual
+  function populateAssignee(selected) {
+    fAssignee.innerHTML = '<option value="">— Sin asignar —</option>';
+    members.forEach(m => {
+      const o = document.createElement("option");
+      o.value = m.email; o.textContent = shortName(m.email);
+      fAssignee.appendChild(o);
+    });
+    // si el responsable actual ya no es miembro, igual lo mostramos para no perderlo
+    if (selected && !members.some(m => m.email === selected)) {
+      const o = document.createElement("option");
+      o.value = selected; o.textContent = shortName(selected) + " (no miembro)";
+      fAssignee.appendChild(o);
+    }
+    fAssignee.value = selected || "";
+  }
+
+  function openModal(id, defaultCol) {
+    editingId = id;
+    const card = id ? state.cards.find(c => c.id === id) : null;
+    document.getElementById("modalTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
+    fTitle.value = card ? card.title : "";
+    fColumn.value = card ? card.column : (defaultCol || COLUMNS[0].id);
+    fDetails.value = card ? card.details : "";
+    fDue.value = card ? (card.due || "") : "";
+    populateAssignee(card ? card.assignee : "");
+    draftAttachments = card ? (card.attachments || []).map(a => ({ ...a })) : [];
+    removedAttachmentIds = [];
+    document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
+    document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
+    renderDraftAttachments();
+    renderDraftComments(card ? (card.comments || []) : []);
+    overlay.classList.add("open");
+    fTitle.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove("open");
+    editingId = null;
+    // liberar las URLs temporales de los adjuntos nuevos no guardados
+    draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
+    draftAttachments = [];
+    removedAttachmentIds = [];
+    pendingComments = null;
+    document.getElementById("fCommentInput").value = "";
+  }
+
+  // Comentarios se editan sobre una copia hasta guardar
+  let pendingComments = null;
+
+  function renderDraftComments(comments) {
+    pendingComments = comments.map(c => ({ ...c }));
+    drawComments();
+  }
+
+  function drawComments() {
+    fComments.innerHTML = "";
+    pendingComments.forEach((c, i) => {
+      const li = document.createElement("li");
+      li.className = "comment";
+      li.innerHTML = `
+        <span class="del" data-i="${i}" title="Eliminar">✕</span>
+        ${escapeHtml(c.text)}
+        <time>${new Date(c.ts).toLocaleString("es")}</time>
+      `;
+      li.querySelector(".del").addEventListener("click", () => {
+        pendingComments.splice(i, 1);
+        drawComments();
+      });
+      fComments.appendChild(li);
+    });
+  }
+
+  document.getElementById("addCommentBtn").addEventListener("click", addComment);
+  document.getElementById("fCommentInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); addComment(); }
+  });
+  function addComment() {
+    const input = document.getElementById("fCommentInput");
+    const text = input.value.trim();
+    if (!text) return;
+    pendingComments.push({ text, ts: Date.now() });
+    input.value = "";
+    drawComments();
+  }
+
+  // Adjuntos: los nuevos quedan pendientes como File y se suben al Guardar.
+  document.getElementById("fFile").addEventListener("change", e => {
+    Array.from(e.target.files).forEach(file => {
+      const isImage = file.type.startsWith("image/");
+      draftAttachments.push({
+        _new: true,
+        file,
+        originalName: file.name,
+        isImage,
+        _previewUrl: isImage ? URL.createObjectURL(file) : null,
+      });
+    });
+    e.target.value = "";
+    renderDraftAttachments();
+  });
+
+  function renderDraftAttachments() {
+    fAttachments.innerHTML = "";
+    draftAttachments.forEach((a, i) => {
+      const el = document.createElement("div");
+      el.className = "attachment";
+      const name = a.originalName || "archivo";
+      const src = a._new ? a._previewUrl : a.url;   // imágenes: preview local o url del servidor
+      const inner = a.isImage && src
+        ? `<img src="${src}" alt="${escapeHtml(name)}">`
+        : `<div class="file-icon">📄</div>`;
+      const linkOpen = a._new ? "" : `<a href="${a.url}" download="${escapeHtml(name)}" target="_blank">`;
+      const linkClose = a._new ? "" : `</a>`;
+      el.innerHTML = `
+        <span class="del" data-i="${i}">✕</span>
+        ${linkOpen}${inner}${linkClose}
+        <div class="name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+      `;
+      el.querySelector(".del").addEventListener("click", () => {
+        const removed = draftAttachments.splice(i, 1)[0];
+        if (removed._new && removed._previewUrl) URL.revokeObjectURL(removed._previewUrl);
+        else if (removed.id) removedAttachmentIds.push(removed.id);  // borrar en el servidor al guardar
+        renderDraftAttachments();
+      });
+      fAttachments.appendChild(el);
+    });
+  }
+
+  // Guardar / eliminar / cancelar
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.addEventListener("click", async () => {
+    const title = fTitle.value.trim();
+    if (!title) { fTitle.focus(); fTitle.style.borderColor = "var(--danger)"; return; }
+    fTitle.style.borderColor = "";
+
+    const payload = {
+      title,
+      column: fColumn.value,
+      details: fDetails.value.trim(),
+      due: fDue.value || "",
+      assignee: fAssignee.value || null,
+      comments: pendingComments || [],
+    };
+
+    saveBtn.disabled = true;
+    try {
+      // 1) crear o actualizar la tarjeta (campos + comentarios)
+      const card = editingId
+        ? await api("PUT", "/api/cards/" + editingId, payload)
+        : await api("POST", "/api/boards/" + currentBoardId + "/cards", payload);
+
+      // 2) borrar los adjuntos existentes que se quitaron
+      for (const aid of removedAttachmentIds) await api("DELETE", "/api/attachments/" + aid);
+
+      // 3) subir los adjuntos nuevos
+      const nuevos = draftAttachments.filter(a => a._new);
+      if (nuevos.length) {
+        const fd = new FormData();
+        nuevos.forEach(a => fd.append("files", a.file, a.originalName));
+        const res = await fetch("/api/cards/" + card.id + "/attachments", { method: "POST", body: fd });
+        if (!res.ok) {
+          let msg = res.statusText;
+          try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+          throw new Error(msg);
+        }
+      }
+
+      await loadCards();
+      closeModal();
+    } catch (e) {
+      alert("No se pudo guardar: " + e.message);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  document.getElementById("deleteCardBtn").addEventListener("click", async () => {
+    if (!editingId) return;
+    if (await deleteCard(editingId)) closeModal();   // pide confirmación adentro
+  });
+
+  document.getElementById("archiveCardBtn").addEventListener("click", async () => {
+    if (!editingId) return;
+    await archiveCard(editingId);
+    closeModal();
+  });
+
+  document.getElementById("cancelBtn").addEventListener("click", closeModal);
+  overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (overlay.classList.contains("open")) closeModal();
+    else if (importOverlay.classList.contains("open")) closeImportPreview();
+    else if (membersOverlay.classList.contains("open")) membersOverlay.classList.remove("open");
+    else if (archiveOverlay.classList.contains("open")) archiveOverlay.classList.remove("open");
+  });
+
+  // ---------- Exportar / Importar ----------
+  function downloadFile(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  const stamp = () => new Date().toISOString().slice(0, 10);
+
+  // -- CSV (formato estándar, estilo Notion: una fila por tarjeta) --
+  const CSV_HEADER = ["Name", "Status", "Details", "Due", "Comments", "Archived"];
+
+  function csvEscape(v) {
+    v = (v == null ? "" : String(v));
+    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  function toCSV() {
+    const rows = [CSV_HEADER];
+    state.cards.forEach(c => {
+      rows.push([
+        c.title || "",
+        colName(c.column),
+        c.details || "",
+        c.due || "",
+        (c.comments || []).map(x => x.text).join("\n"),
+        c.archived ? "Sí" : "",
+      ]);
+    });
+    // BOM para que Excel respete los acentos
+    return "﻿" + rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
+  }
+
+  // Parser CSV (RFC 4180: comillas, comas y saltos de línea dentro de campos)
+  function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // sacar BOM
+    const rows = [];
+    let row = [], field = "", inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += ch;
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        row.push(field); field = "";
+      } else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(field); rows.push(row); row = []; field = "";
+      } else field += ch;
+    }
+    if (field !== "" || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function fromCSV(text) {
+    const rows = parseCSV(text).filter(r => r.some(c => c.trim() !== ""));
+    if (rows.length < 2) throw new Error("El CSV no tiene filas de datos.");
+    const header = rows[0].map(h => h.trim().toLowerCase());
+    const col = (...names) => { for (const n of names) { const i = header.indexOf(n); if (i !== -1) return i; } return -1; };
+    const iTitle = col("name", "título", "titulo", "title", "nombre");
+    const iStatus = col("status", "estado", "columna", "column");
+    const iDetails = col("details", "detalles", "descripción", "descripcion");
+    const iDue = col("due", "fecha límite", "fecha limite", "due date", "fecha");
+    const iComments = col("comments", "comentarios");
+    const iArchived = col("archived", "archivada", "archivado");
+    if (iTitle === -1) throw new Error('Falta la columna "Name" (título).');
+
+    const statusToCol = {};
+    COLUMNS.forEach(c => { statusToCol[c.name.toLowerCase()] = c.id; });
+
+    const cards = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const get = idx => (idx === -1 ? "" : (r[idx] || "")).trim();
+      const statusText = get(iStatus).toLowerCase();
+      const due = get(iDue);
+      cards.push({
+        id: uid(),
+        title: get(iTitle),
+        column: statusToCol[statusText] || COLUMNS[0].id,
+        details: get(iDetails),
+        due: /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : "",
+        comments: get(iComments).split("\n").map(s => s.trim()).filter(Boolean).map(t => ({ text: t, ts: Date.now() })),
+        attachments: [],
+        archived: /^(s[ií]|true|x|1)$/i.test(get(iArchived)),
+        created: Date.now(),
+      });
+    }
+    return { cards };
+  }
+
+  document.getElementById("exportCsvBtn").addEventListener("click", () => {
+    downloadFile(toCSV(), "tablero-" + stamp() + ".csv", "text/csv;charset=utf-8");
+  });
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    downloadFile(JSON.stringify(state, null, 2), "tablero-" + stamp() + ".json", "application/json");
+  });
+
+  document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+  document.getElementById("importFile").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result);
+        const isJson = /\.json$/i.test(file.name) || /^\s*[{\[]/.test(text);
+        const data = isJson ? JSON.parse(text) : fromCSV(text);
+        if (!data || !Array.isArray(data.cards)) throw new Error("Formato no reconocido.");
+        openImportPreview(data.cards, file.name);
+      } catch (err) { alert("No se pudo importar: " + err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // ---------- Vista previa de importación (no destructiva: agrega al tablero) ----------
+  const importOverlay = document.getElementById("importOverlay");
+  let pendingImport = null;   // tarjetas parseadas a la espera de confirmación
+
+  function openImportPreview(cards, fileName) {
+    pendingImport = cards;
+    const total = cards.length;
+    const activas = cards.filter(c => !c.archived).length;
+    const archivadas = total - activas;
+    const conComentarios = cards.filter(c => (c.comments || []).length).length;
+
+    // conteo por columna (en el orden del tablero), solo de las no archivadas
+    const porColumna = COLUMNS.map(col => {
+      const n = cards.filter(c => !c.archived && (c.column || "por_conversar") === col.id).length;
+      return n ? `<li><span>${escapeHtml(col.name)}</span><b>${n}</b></li>` : "";
+    }).join("");
+
+    document.getElementById("importSummary").innerHTML = `
+      <p class="import-file">Archivo: <b>${escapeHtml(fileName)}</b></p>
+      <ul class="import-stats">
+        <li><span>Tarjetas a importar</span><b>${total}</b></li>
+        ${archivadas ? `<li><span>· activas</span><b>${activas}</b></li><li><span>· archivadas</span><b>${archivadas}</b></li>` : ""}
+        ${conComentarios ? `<li><span>· con comentarios</span><b>${conComentarios}</b></li>` : ""}
+      </ul>
+      ${porColumna ? `<p class="import-sub">Por columna:</p><ul class="import-stats">${porColumna}</ul>` : ""}
+      <p class="hint">Se <b>agregarán</b> al tablero actual (no se borra nada). Los adjuntos no se importan desde CSV/JSON.</p>
+    `;
+    importOverlay.classList.add("open");
+  }
+
+  function closeImportPreview() {
+    importOverlay.classList.remove("open");
+    pendingImport = null;
+  }
+
+  document.getElementById("importCancelBtn").addEventListener("click", closeImportPreview);
+  importOverlay.addEventListener("click", e => { if (e.target === importOverlay) closeImportPreview(); });
+  document.getElementById("importConfirmBtn").addEventListener("click", async () => {
+    if (!pendingImport) return;
+    const btn = document.getElementById("importConfirmBtn");
+    btn.disabled = true;
+    try {
+      state = await api("POST", "/api/boards/" + currentBoardId + "/import", { cards: pendingImport });
+      render();
+      closeImportPreview();
+    } catch (err) {
+      alert("No se pudo importar: " + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Buscador y filtro por responsable ----------
+  document.getElementById("searchInput").addEventListener("input", e => {
+    searchQuery = e.target.value.trim().toLowerCase();
+    render();
+  });
+  document.getElementById("assigneeFilter").addEventListener("change", e => {
+    assigneeFilter = e.target.value;
+    render();
+  });
+
+  // ---------- Selector de tablero y nuevo tablero ----------
+  document.getElementById("boardSelect").addEventListener("change", async e => {
+    currentBoardId = e.target.value;
+    assigneeFilter = "";
+    await loadMembers();
+    await loadCards();
+  });
+
+  document.getElementById("newBoardBtn").addEventListener("click", async () => {
+    const name = prompt("Nombre del nuevo tablero:");
+    if (!name || !name.trim()) return;
+    try {
+      const b = await api("POST", "/api/boards", { name: name.trim() });
+      currentBoardId = b.id;
+      await loadBoard();
+    } catch (e) { alert("No se pudo crear el tablero: " + e.message); }
+  });
+
+  // ---------- Modal de miembros ----------
+  const membersOverlay = document.getElementById("membersOverlay");
+
+  function renderMembers() {
+    const b = currentBoard();
+    const isOwner = b && b.role === "owner";
+    document.getElementById("membersTitle").textContent = "👥 Miembros · " + (b ? b.name : "");
+    // invitar y eliminar tablero solo para el dueño de un tablero no personal
+    document.getElementById("inviteRow").style.display = isOwner ? "" : "none";
+    const delBtn = document.getElementById("deleteBoardBtn");
+    delBtn.style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
+
+    const list = document.getElementById("membersList");
+    list.innerHTML = members.length ? "" : '<div class="members-empty">Sin miembros.</div>';
+    members.forEach(m => {
+      const row = document.createElement("div");
+      row.className = "member-row";
+      const canRemove = isOwner && m.role !== "owner";
+      row.innerHTML = `
+        <span>${escapeHtml(m.email)} <span class="role">· ${m.role === "owner" ? "dueño" : "miembro"}</span></span>
+        ${canRemove ? '<button class="btn btn-danger btn-small" data-rm="' + escapeHtml(m.email) + '">Quitar</button>' : ""}
+      `;
+      const rm = row.querySelector("[data-rm]");
+      if (rm) rm.addEventListener("click", async () => {
+        try {
+          await api("DELETE", "/api/boards/" + currentBoardId + "/members/" + encodeURIComponent(m.email));
+          await loadMembers(); renderMembers();
+        } catch (e) { alert("No se pudo quitar: " + e.message); }
+      });
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById("membersBtn").addEventListener("click", () => {
+    if (!currentBoardId) return;
+    renderMembers();
+    membersOverlay.classList.add("open");
+  });
+  document.getElementById("membersCloseBtn").addEventListener("click", () => membersOverlay.classList.remove("open"));
+  membersOverlay.addEventListener("click", e => { if (e.target === membersOverlay) membersOverlay.classList.remove("open"); });
+
+  document.getElementById("inviteBtn").addEventListener("click", invite);
+  document.getElementById("inviteEmail").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); invite(); } });
+  async function invite() {
+    const input = document.getElementById("inviteEmail");
+    const email = input.value.trim();
+    if (!email) return;
+    try {
+      await api("POST", "/api/boards/" + currentBoardId + "/members", { email });
+      input.value = "";
+      await loadBoard();          // actualiza memberCount en el selector
+      renderMembers();
+    } catch (e) { alert("No se pudo invitar: " + e.message); }
+  }
+
+  document.getElementById("deleteBoardBtn").addEventListener("click", async () => {
+    const b = currentBoard();
+    if (!b) return;
+    if (!confirm(`¿Eliminar el tablero “${b.name}” y todas sus tarjetas?\n\nEsta acción no se puede deshacer.`)) return;
+    try {
+      await api("DELETE", "/api/boards/" + currentBoardId);
+      membersOverlay.classList.remove("open");
+      currentBoardId = null;       // loadBoard elegirá el personal
+      await loadBoard();
+    } catch (e) { alert("No se pudo eliminar el tablero: " + e.message); }
+  });
+
+  // ENTER en el título guarda la tarjeta
+  fTitle.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("saveBtn").click(); }
+  });
+
+  // Ctrl+Enter (o Cmd+Enter) en los detalles guarda y cierra
+  fDetails.addEventListener("keydown", e => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.getElementById("saveBtn").click();
+    }
+  });
+
+  // ---------- Mover el tablero arrastrando el fondo o el header (mouse) ----------
+  // En celular el arrastre con el dedo ya mueve el tablero de forma nativa.
+  let panning = false, panX = 0, panY = 0, panL = 0, panT = 0;
+
+  // Es "agarrable" todo lo que no sea una tarjeta ni un control interactivo.
+  function isPannable(target) {
+    return !target.closest(".card, .add-card, button, input, textarea, select, a, label, .overlay");
+  }
+
+  function startPan(e) {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;  // solo botón principal del mouse
+    if (!isPannable(e.target)) return;
+    panning = true;
+    panX = e.clientX; panY = e.clientY;
+    panL = board.scrollLeft; panT = board.scrollTop;
+    board.classList.add("panning");
+    headerEl.classList.add("panning");
+    e.preventDefault();   // evita seleccionar texto al arrastrar
+  }
+
+  const headerEl = document.querySelector("header");
+  headerEl.addEventListener("pointerdown", startPan);
+  board.addEventListener("pointerdown", startPan);
+  window.addEventListener("pointermove", e => {
+    if (!panning) return;
+    board.scrollLeft = panL - (e.clientX - panX);
+    board.scrollTop = panT - (e.clientY - panY);
+  });
+  window.addEventListener("pointerup", () => {
+    panning = false;
+    board.classList.remove("panning");
+    headerEl.classList.remove("panning");
+  });
+
+  loadBoard();
+})();
+</script>
+</body>
+</html>

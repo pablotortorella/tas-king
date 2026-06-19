@@ -1,0 +1,18 @@
+{
+  "name": "tas-king",
+  "version": "0.3.0",
+  "description": "Tablero de tareas minimalista — Iteración 2.5 (Cloudflare Workers + D1 + R2)",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply tas-king --local",
+    "db:migrate:remote": "wrangler d1 migrations apply tas-king --remote"
+  },
+  "dependencies": {
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}
