@@ -11,8 +11,7 @@
     {
       "binding": "DB",
       "database_name": "tas-king",
-      // Pegar acá el id que devuelve `wrangler d1 create tas-king` antes de deploy
-      "database_id": "PLACEHOLDER_DB_ID",
+      "database_id": "b897fa43-9868-4df0-94de-d3fc1bcea025",
       "migrations_dir": "migrations"
     }
   ],
