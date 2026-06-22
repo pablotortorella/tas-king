@@ -293,7 +293,7 @@
     <button id="exportBtn">Copia JSON</button>
     <button id="importBtn">Importar</button>
     <input type="file" id="importFile" accept=".csv,.json,application/json,text/csv" hidden>
-    <span class="user"><span id="userEmail"></span><a href="/cdn-cgi/access/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><span id="userEmail"></span><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
 </header>
 
@@ -437,7 +437,9 @@
     if (!res.ok) {
       let msg = res.statusText;
       try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
-      throw new Error(msg);
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
     }
     return res.status === 204 ? null : res.json();
   }
@@ -457,6 +459,8 @@
       await loadMembers();
       await loadCards();
     } catch (e) {
+      // sin sesión válida → mandar al login con Google
+      if (e.status === 401) { window.location.href = "/auth/login"; return; }
       board.innerHTML = '<div style="padding:24px;color:#c0392b;font-size:14px">'
         + "No se pudo cargar el tablero. Revisá tu conexión y volvé a intentar.<br><br>"
         + escapeHtml(e.message) + "</div>";

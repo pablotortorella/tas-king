@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 
 const app = new Hono();
 
@@ -114,13 +115,140 @@ async function membership(db, boardId, email) {
   return db.prepare("SELECT role FROM board_members WHERE board_id = ? AND email = ?").bind(boardId, email).first();
 }
 
+// ---------- Login con Google (OAuth dentro del Worker) ----------
+// Cookies de sesión firmadas con HMAC-SHA256 (no se puede leer el header de Access
+// en workers.dev, así que la identidad la maneja el propio Worker).
+
+function b64urlFromBytes(buf) {
+  const arr = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let bin = "";
+  for (const b of arr) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlToBytes(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+const b64urlFromStr = s => b64urlFromBytes(new TextEncoder().encode(s));
+const strFromB64url = s => new TextDecoder().decode(b64urlToBytes(s));
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(secret || ""),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+async function signSession(payload, secret) {
+  const data = b64urlFromStr(JSON.stringify(payload));
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), new TextEncoder().encode(data));
+  return data + "." + b64urlFromBytes(sig);
+}
+async function verifySession(token, secret) {
+  if (!token || !token.includes(".")) return null;
+  const [data, sig] = token.split(".");
+  const ok = await crypto.subtle.verify("HMAC", await hmacKey(secret), b64urlToBytes(sig), new TextEncoder().encode(data));
+  if (!ok) return null;
+  try {
+    const obj = JSON.parse(strFromB64url(data));
+    if (obj.exp && Date.now() > obj.exp) return null;
+    return obj;
+  } catch (e) { return null; }
+}
+
+function deniedPage(msg) {
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acceso</title><style>
+    body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f5f7;color:#172b4d;
+    display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .box{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(9,30,66,.2);padding:28px 32px;max-width:420px;text-align:center}
+    a{display:inline-block;margin-top:16px;background:#0079bf;color:#fff;text-decoration:none;padding:8px 16px;border-radius:5px}
+    </style></head><body><div class="box"><h2>🔒 Acceso al tablero</h2><p>${msg}</p>
+    <a href="/auth/login">Entrar con Google</a></div></body></html>`;
+}
+
+const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "Lax", path: "/" };
+
+app.get("/auth/login", c => {
+  const origin = new URL(c.req.url).origin;
+  const state = crypto.randomUUID();
+  setCookie(c, "oauth_state", state, { ...COOKIE_OPTS, maxAge: 600 });
+  const params = new URLSearchParams({
+    client_id: c.env.GOOGLE_CLIENT_ID || "",
+    redirect_uri: origin + "/auth/callback",
+    response_type: "code",
+    scope: "openid email profile",
+    state,
+    access_type: "online",
+    prompt: "select_account",
+  });
+  return c.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + params.toString());
+});
+
+app.get("/auth/callback", async c => {
+  const url = new URL(c.req.url);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (!code || !state || state !== getCookie(c, "oauth_state")) {
+    return c.html(deniedPage("La sesión de login expiró o es inválida. Probá de nuevo."), 400);
+  }
+  deleteCookie(c, "oauth_state", { path: "/" });
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: c.env.GOOGLE_CLIENT_ID || "",
+      client_secret: c.env.GOOGLE_CLIENT_SECRET || "",
+      redirect_uri: url.origin + "/auth/callback",
+      grant_type: "authorization_code",
+    }).toString(),
+  });
+  if (!tokenRes.ok) return c.html(deniedPage("No se pudo completar el login con Google."), 502);
+  const tok = await tokenRes.json();
+
+  let claims;
+  try { claims = JSON.parse(strFromB64url(tok.id_token.split(".")[1])); }
+  catch (e) { return c.html(deniedPage("Respuesta de Google inesperada."), 502); }
+  const email = (claims.email || "").trim().toLowerCase();
+  if (!email || claims.email_verified === false) {
+    return c.html(deniedPage("Tu cuenta de Google no tiene un email verificado."), 403);
+  }
+
+  const allowed = (c.env.ALLOWED_EMAILS || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+  if (allowed.length && !allowed.includes(email)) {
+    return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app.`), 403);
+  }
+
+  const session = await signSession({ email, exp: Date.now() + 30 * 24 * 3600 * 1000 }, c.env.SESSION_SECRET);
+  setCookie(c, "session", session, { ...COOKIE_OPTS, maxAge: 30 * 24 * 3600 });
+  return c.redirect("/");
+});
+
+app.get("/auth/logout", c => {
+  deleteCookie(c, "session", { path: "/" });
+  return c.redirect("/");
+});
+
+// Resuelve el email del usuario: header de Access (futuro dominio propio) → cookie de
+// sesión (Google) → DEV_USER_EMAIL (solo local).
+async function resolveEmail(c) {
+  const fromAccess = c.req.header("Cf-Access-Authenticated-User-Email");
+  if (fromAccess) return fromAccess.trim().toLowerCase();
+  const token = getCookie(c, "session");
+  if (token) {
+    const sess = await verifySession(token, c.env.SESSION_SECRET);
+    if (sess && sess.email) return sess.email.trim().toLowerCase();
+  }
+  const dev = c.req.header("X-Dev-User") || c.env.DEV_USER_EMAIL;
+  return dev ? dev.trim().toLowerCase() : "";
+}
+
 // Middleware: resuelve el usuario en cada request /api/*.
 app.use("/api/*", async (c, next) => {
-  const email = (
-    c.req.header("Cf-Access-Authenticated-User-Email") ||  // producción (Cloudflare Access)
-    c.req.header("X-Dev-User") ||                            // desarrollo local (simular usuario)
-    c.env.DEV_USER_EMAIL || ""
-  ).trim().toLowerCase();
+  const email = await resolveEmail(c);
   if (!email) return c.json({ error: "No autenticado." }, 401);
   await ensureUser(c.env.DB, email);
   c.set("email", email);
