@@ -23,8 +23,23 @@ function attachmentToJSON(a) {
   };
 }
 
+// Mapea una fila de comentario (con campos de autor de un LEFT JOIN users) a JSON.
+function commentToJSON(r) {
+  return {
+    id: r.id,
+    text: r.text,
+    ts: r.created_at,
+    author: r.author_email ? {
+      email: r.author_email,
+      name: r.author_name || r.author_email.split("@")[0],
+      avatarEmoji: r.author_emoji || null,
+      avatarColor: r.author_color || null,
+    } : null,
+  };
+}
+
 function cardToJSON(c, commentsByCard, attsByCard) {
-  const comments = (commentsByCard.get(c.id) || []).map(r => ({ id: r.id, text: r.text, ts: r.created_at }));
+  const comments = (commentsByCard.get(c.id) || []).map(commentToJSON);
   const attachments = (attsByCard.get(c.id) || []).map(attachmentToJSON);
   return {
     id: c.id,
@@ -46,7 +61,12 @@ function cardToJSON(c, commentsByCard, attsByCard) {
 async function getBoard(db, boardId) {
   const [cards, comments, atts] = await Promise.all([
     db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId).all(),
-    db.prepare("SELECT cm.id, cm.card_id, cm.text, cm.created_at FROM comments cm JOIN cards c ON c.id = cm.card_id WHERE c.board_id = ? ORDER BY cm.created_at ASC").bind(boardId).all(),
+    db.prepare(`SELECT cm.id, cm.card_id, cm.text, cm.created_at, cm.author_email,
+        u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
+      FROM comments cm
+      JOIN cards c ON c.id = cm.card_id
+      LEFT JOIN users u ON u.email = cm.author_email
+      WHERE c.board_id = ? ORDER BY cm.created_at ASC`).bind(boardId).all(),
     db.prepare("SELECT a.* FROM attachments a JOIN cards c ON c.id = a.card_id WHERE c.board_id = ? ORDER BY a.created_at ASC").bind(boardId).all(),
   ]);
   const commentsByCard = new Map();
@@ -71,7 +91,10 @@ async function cardJSONById(db, id) {
   const c = await getCardRow(db, id);
   if (!c) return null;
   const [comments, atts] = await Promise.all([
-    db.prepare("SELECT id, text, created_at FROM comments WHERE card_id = ? ORDER BY created_at ASC").bind(id).all(),
+    db.prepare(`SELECT cm.id, cm.text, cm.created_at, cm.author_email,
+        u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
+      FROM comments cm LEFT JOIN users u ON u.email = cm.author_email
+      WHERE cm.card_id = ? ORDER BY cm.created_at ASC`).bind(id).all(),
     db.prepare("SELECT * FROM attachments WHERE card_id = ? ORDER BY created_at ASC").bind(id).all(),
   ]);
   return cardToJSON(c, new Map([[id, comments.results]]), new Map([[id, atts.results]]));
@@ -258,21 +281,41 @@ app.use("/api/*", async (c, next) => {
 // ---------- API: usuario actual y sus tableros ----------
 app.get("/api/me", async c => {
   const email = c.get("email");
-  const rows = await c.env.DB.prepare(`
-    SELECT b.id, b.name, b.is_personal, b.owner_email, bm.role,
-      (SELECT COUNT(*) FROM board_members x WHERE x.board_id = b.id) AS member_count
-    FROM boards b
-    JOIN board_members bm ON bm.board_id = b.id
-    WHERE bm.email = ?
-    ORDER BY b.is_personal DESC, b.created_at ASC
-  `).bind(email).all();
+  const [rows, user] = await Promise.all([
+    c.env.DB.prepare(`
+      SELECT b.id, b.name, b.is_personal, b.owner_email, bm.role,
+        (SELECT COUNT(*) FROM board_members x WHERE x.board_id = b.id) AS member_count
+      FROM boards b
+      JOIN board_members bm ON bm.board_id = b.id
+      WHERE bm.email = ?
+      ORDER BY b.is_personal DESC, b.created_at ASC
+    `).bind(email).all(),
+    c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color FROM users WHERE email = ?").bind(email).first(),
+  ]);
   return c.json({
     email,
+    profile: {
+      name: (user && user.name) || email.split("@")[0],
+      avatarEmoji: (user && user.avatar_emoji) || null,
+      avatarColor: (user && user.avatar_color) || null,
+    },
     boards: rows.results.map(r => ({
       id: r.id, name: r.name, isPersonal: !!r.is_personal,
       role: r.role, ownerEmail: r.owner_email, memberCount: r.member_count,
     })),
   });
+});
+
+// Actualizar el perfil del usuario actual.
+app.put("/api/me", async c => {
+  const email = c.get("email");
+  const b = await c.req.json().catch(() => ({}));
+  const name = (b.name != null ? String(b.name) : "").trim().slice(0, 60);
+  const emoji = (b.avatarEmoji != null ? String(b.avatarEmoji) : "").trim().slice(0, 8) || null;
+  const color = (b.avatarColor != null ? String(b.avatarColor) : "").trim().slice(0, 16) || null;
+  await c.env.DB.prepare("UPDATE users SET name = ?, avatar_emoji = ?, avatar_color = ? WHERE email = ?")
+    .bind(name || email.split("@")[0], emoji, color, email).run();
+  return c.json({ name: name || email.split("@")[0], avatarEmoji: emoji, avatarColor: color });
 });
 
 // ---------- API: boards ----------
@@ -331,10 +374,19 @@ app.get("/api/boards/:boardId/members", async c => {
   const email = c.get("email");
   const boardId = c.req.param("boardId");
   if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
-  const rows = await c.env.DB.prepare(
-    "SELECT email, role FROM board_members WHERE board_id = ? ORDER BY role DESC, email ASC"
-  ).bind(boardId).all();
-  return c.json({ members: rows.results });
+  const rows = await c.env.DB.prepare(`
+    SELECT bm.email, bm.role, u.name, u.avatar_emoji, u.avatar_color
+    FROM board_members bm LEFT JOIN users u ON u.email = bm.email
+    WHERE bm.board_id = ? ORDER BY bm.role DESC, bm.email ASC
+  `).bind(boardId).all();
+  return c.json({
+    members: rows.results.map(r => ({
+      email: r.email, role: r.role,
+      name: r.name || r.email.split("@")[0],
+      avatarEmoji: r.avatar_emoji || null,
+      avatarColor: r.avatar_color || null,
+    })),
+  });
 });
 
 app.post("/api/boards/:boardId/members", async c => {
@@ -385,7 +437,6 @@ app.post("/api/boards/:boardId/cards", async c => {
       `INSERT INTO cards (id, board_id, title, column_id, details, due, assignee_email, archived, position, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
     ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
-    ...replaceCommentsStmts(c.env.DB, id, b.comments),
   ]);
   return c.json(await cardJSONById(c.env.DB, id));
 });
@@ -420,9 +471,37 @@ app.put("/api/cards/:id", async c => {
       card.id
     ),
   ];
-  if (b.comments !== undefined) stmts.push(...replaceCommentsStmts(c.env.DB, card.id, b.comments));
   await c.env.DB.batch(stmts);
   return c.json(await cardJSONById(c.env.DB, card.id));
+});
+
+// ---------- API: comentarios (con autor, se publican al instante) ----------
+app.post("/api/cards/:id/comments", async c => {
+  const { card, error } = await cardWithAccess(c);
+  if (error) return error;
+  const b = await c.req.json().catch(() => ({}));
+  const text = (b.text || "").trim();
+  if (!text) return c.json({ error: "El comentario está vacío." }, 400);
+  const id = uid();
+  await c.env.DB.prepare("INSERT INTO comments (id, card_id, text, author_email, created_at) VALUES (?, ?, ?, ?, ?)")
+    .bind(id, card.id, text, c.get("email"), now()).run();
+  const row = await c.env.DB.prepare(`
+    SELECT cm.id, cm.text, cm.created_at, cm.author_email,
+      u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
+    FROM comments cm LEFT JOIN users u ON u.email = cm.author_email WHERE cm.id = ?
+  `).bind(id).first();
+  return c.json(commentToJSON(row));
+});
+
+app.delete("/api/comments/:id", async c => {
+  const cm = await c.env.DB.prepare("SELECT * FROM comments WHERE id = ?").bind(c.req.param("id")).first();
+  if (!cm) return c.json({ error: "No existe el comentario." }, 404);
+  const card = await getCardRow(c.env.DB, cm.card_id);
+  if (card && !(await membership(c.env.DB, card.board_id, c.get("email")))) {
+    return c.json({ error: "Sin acceso a este comentario." }, 403);
+  }
+  await c.env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(cm.id).run();
+  return c.json({ deleted: 1 });
 });
 
 app.delete("/api/cards/:id", async c => {

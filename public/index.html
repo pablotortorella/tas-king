@@ -266,7 +266,33 @@
   .import-stats li b { font-variant-numeric: tabular-nums; }
 
   /* Distintivo de responsable en la tarjeta */
-  .badge.assignee { background: #e3effc; color: #0c447c; }
+  .badge.assignee { background: #e3effc; color: #0c447c; gap: 4px; }
+
+  /* Avatares */
+  .avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #fff; font-weight: 600; line-height: 1;
+    flex: 0 0 auto; vertical-align: middle; overflow: hidden;
+  }
+  header .user .me { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(255,255,255,.15); border: none; color: #fff; padding: 3px 8px 3px 4px; border-radius: 14px; font-size: 13px; }
+  header .user .me:hover { background: rgba(255,255,255,.3); }
+
+  /* Autoría de comentarios */
+  .comment { padding-left: 10px; }
+  .comment .c-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .comment .c-author { font-weight: 600; font-size: 12px; }
+  .comment .c-text { word-break: break-word; }
+
+  /* Selector de emoji y color en el perfil */
+  .picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .picker .opt {
+    width: 34px; height: 34px; border-radius: 8px; border: 2px solid transparent;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px; background: #f4f5f7;
+  }
+  .picker .opt.sel { border-color: var(--accent); }
+  .picker .color-opt { width: 30px; height: 30px; border-radius: 50%; }
+  .profile-preview { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 
   /* Lista de miembros */
   .member-row {
@@ -293,7 +319,7 @@
     <button id="exportBtn">Copia JSON</button>
     <button id="importBtn">Importar</button>
     <input type="file" id="importFile" accept=".csv,.json,application/json,text/csv" hidden>
-    <span class="user"><span id="userEmail"></span><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
 </header>
 
@@ -350,10 +376,48 @@
   </div>
 </div>
 
+<!-- Mi perfil -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal">
+    <h2>👤 Mi perfil</h2>
+    <div class="profile-preview">
+      <span id="profilePreview"></span>
+      <span id="profileEmail" class="hint"></span>
+    </div>
+    <div class="field">
+      <label>Nombre para mostrar</label>
+      <input type="text" id="profileName" maxlength="60" placeholder="Tu nombre">
+    </div>
+    <div class="field">
+      <label>Emoji del avatar</label>
+      <div class="picker" id="emojiPicker"></div>
+      <input type="text" id="profileEmoji" maxlength="8" placeholder="o pegá cualquier emoji" style="margin-top:6px;width:auto">
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="picker" id="colorPicker"></div>
+    </div>
+    <div class="modal-footer">
+      <div></div>
+      <div class="right">
+        <button class="btn btn-ghost" id="profileCancelBtn">Cancelar</button>
+        <button class="btn btn-primary" id="profileSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Miembros del tablero -->
 <div class="overlay" id="membersOverlay">
   <div class="modal">
     <h2 id="membersTitle">👥 Miembros</h2>
+    <div class="field" id="renameRow" style="margin-bottom:14px">
+      <label>Nombre del tablero</label>
+      <div class="comment-add">
+        <input type="text" id="renameInput" placeholder="Nombre del tablero">
+        <button class="btn btn-primary btn-small" id="renameBtn">Renombrar</button>
+      </div>
+    </div>
     <div id="membersList"></div>
     <div class="field" id="inviteRow" style="margin-top:14px">
       <label>Invitar por email</label>
@@ -427,6 +491,39 @@
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
+  // Paleta fija para avatares por defecto (derivada del email).
+  const AVATAR_COLORS = ["#0079bf", "#519839", "#b04632", "#89609e", "#cd5a91", "#4bbf6b", "#00aecc", "#838c91", "#d29034"];
+  function defaultColor(email) {
+    let h = 0;
+    for (const ch of (email || "")) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
+  function avatarHtml(p, size) {
+    p = p || {};
+    const email = p.email || "";
+    const name = p.name || shortName(email) || "?";
+    const color = p.avatarColor || defaultColor(email || name);
+    const inner = p.avatarEmoji ? p.avatarEmoji : (name[0] || "?").toUpperCase();
+    const px = size || 22;
+    return `<span class="avatar" style="background:${color};width:${px}px;height:${px}px;font-size:${Math.round(px * 0.5)}px"
+      title="${escapeHtml(name)}">${escapeHtml(inner)}</span>`;
+  }
+  // Busca el perfil de un miembro del tablero actual por email.
+  const memberByEmail = email => members.find(m => m.email === email);
+
+  // Perfil del usuario actual (con email) para pasarlo a avatarHtml.
+  const meProfile = () => ({
+    email: me.email,
+    name: me.profile.name,
+    avatarEmoji: me.profile.avatarEmoji,
+    avatarColor: me.profile.avatarColor,
+  });
+  function renderMe() {
+    document.getElementById("profileBtn").innerHTML =
+      avatarHtml(meProfile(), 22) + "<span>" + escapeHtml(me.profile.name) + "</span>";
+  }
+
   // Capa de datos: API REST contra el backend (Worker + D1).
   async function api(method, path, body) {
     const res = await fetch(path, {
@@ -448,7 +545,7 @@
   async function loadBoard() {
     try {
       me = await api("GET", "/api/me");
-      document.getElementById("userEmail").textContent = me.email;
+      renderMe();
       const saved = localStorage.getItem("tasKingBoardId");
       if (!me.boards.some(b => b.id === currentBoardId)) currentBoardId = null;
       if (!currentBoardId) {
@@ -500,7 +597,7 @@
     sel.innerHTML = '<option value="">👤 Todos</option>';
     members.forEach(m => {
       const o = document.createElement("option");
-      o.value = m.email; o.textContent = shortName(m.email);
+      o.value = m.email; o.textContent = (m.avatarEmoji ? m.avatarEmoji + " " : "") + (m.name || shortName(m.email));
       sel.appendChild(o);
     });
     if (members.some(m => m.email === prev)) sel.value = prev;
@@ -637,7 +734,10 @@
     el.dataset.id = card.id;
 
     const badges = [];
-    if (card.assignee) badges.push(`<span class="badge assignee">👤 ${escapeHtml(shortName(card.assignee))}</span>`);
+    if (card.assignee) {
+      const p = memberByEmail(card.assignee) || { email: card.assignee };
+      badges.push(`<span class="badge assignee">${avatarHtml(p, 16)} ${escapeHtml(p.name || shortName(card.assignee))}</span>`);
+    }
     if (card.due) badges.push(`<span class="badge ${isOverdue(card) ? "overdue" : ""}">📅 ${fmtDate(card.due)}</span>`);
     if (card.comments && card.comments.length) badges.push(`<span class="badge">💬 ${card.comments.length}</span>`);
     if (card.attachments && card.attachments.length) badges.push(`<span class="badge">📎 ${card.attachments.length}</span>`);
@@ -741,10 +841,11 @@
 
   // pobla el selector de responsable con los miembros del tablero actual
   function populateAssignee(selected) {
+    const label = m => (m.avatarEmoji ? m.avatarEmoji + " " : "") + (m.name || shortName(m.email));
     fAssignee.innerHTML = '<option value="">— Sin asignar —</option>';
     members.forEach(m => {
       const o = document.createElement("option");
-      o.value = m.email; o.textContent = shortName(m.email);
+      o.value = m.email; o.textContent = label(m);
       fAssignee.appendChild(o);
     });
     // si el responsable actual ya no es miembro, igual lo mostramos para no perderlo
@@ -770,7 +871,7 @@
     document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
-    renderDraftComments(card ? (card.comments || []) : []);
+    renderComments();
     overlay.classList.add("open");
     fTitle.focus();
   }
@@ -782,32 +883,33 @@
     draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
     draftAttachments = [];
     removedAttachmentIds = [];
-    pendingComments = null;
     document.getElementById("fCommentInput").value = "";
   }
 
-  // Comentarios se editan sobre una copia hasta guardar
-  let pendingComments = null;
-
-  function renderDraftComments(comments) {
-    pendingComments = comments.map(c => ({ ...c }));
-    drawComments();
-  }
-
-  function drawComments() {
+  // Comentarios: se publican al instante con autor (lee de state por editingId).
+  function renderComments() {
     fComments.innerHTML = "";
-    pendingComments.forEach((c, i) => {
+    const input = document.getElementById("fCommentInput");
+    const addBtn = document.getElementById("addCommentBtn");
+    if (!editingId) {
+      input.disabled = true; addBtn.disabled = true;
+      input.placeholder = "Guardá la tarjeta para comentar";
+      return;
+    }
+    input.disabled = false; addBtn.disabled = false;
+    input.placeholder = "Escribir un comentario...";
+    const card = state.cards.find(c => c.id === editingId);
+    (card ? card.comments || [] : []).forEach(cm => {
+      const author = cm.author || { name: "—" };
       const li = document.createElement("li");
       li.className = "comment";
       li.innerHTML = `
-        <span class="del" data-i="${i}" title="Eliminar">✕</span>
-        ${escapeHtml(c.text)}
-        <time>${new Date(c.ts).toLocaleString("es")}</time>
+        <span class="del" title="Eliminar">✕</span>
+        <div class="c-head">${avatarHtml(author, 18)}<span class="c-author">${escapeHtml(author.name || "—")}</span>
+          <time>${new Date(cm.ts).toLocaleString("es")}</time></div>
+        <div class="c-text">${escapeHtml(cm.text)}</div>
       `;
-      li.querySelector(".del").addEventListener("click", () => {
-        pendingComments.splice(i, 1);
-        drawComments();
-      });
+      li.querySelector(".del").addEventListener("click", () => deleteComment(cm.id));
       fComments.appendChild(li);
     });
   }
@@ -816,13 +918,24 @@
   document.getElementById("fCommentInput").addEventListener("keydown", e => {
     if (e.key === "Enter") { e.preventDefault(); addComment(); }
   });
-  function addComment() {
+  async function addComment() {
+    if (!editingId) return;
     const input = document.getElementById("fCommentInput");
     const text = input.value.trim();
     if (!text) return;
-    pendingComments.push({ text, ts: Date.now() });
     input.value = "";
-    drawComments();
+    try {
+      await api("POST", "/api/cards/" + editingId + "/comments", { text });
+      await loadCards();        // actualiza el contador de la tarjeta
+      renderComments();
+    } catch (e) { alert("No se pudo comentar: " + e.message); }
+  }
+  async function deleteComment(id) {
+    try {
+      await api("DELETE", "/api/comments/" + id);
+      await loadCards();
+      renderComments();
+    } catch (e) { alert("No se pudo borrar el comentario: " + e.message); }
   }
 
   // Adjuntos: los nuevos quedan pendientes como File y se suben al Guardar.
@@ -881,7 +994,6 @@
       details: fDetails.value.trim(),
       due: fDue.value || "",
       assignee: fAssignee.value || null,
-      comments: pendingComments || [],
     };
 
     saveBtn.disabled = true;
@@ -932,6 +1044,7 @@
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     if (overlay.classList.contains("open")) closeModal();
+    else if (profileOverlay.classList.contains("open")) profileOverlay.classList.remove("open");
     else if (importOverlay.classList.contains("open")) closeImportPreview();
     else if (membersOverlay.classList.contains("open")) membersOverlay.classList.remove("open");
     else if (archiveOverlay.classList.contains("open")) archiveOverlay.classList.remove("open");
@@ -1146,8 +1259,11 @@
     const b = currentBoard();
     const isOwner = b && b.role === "owner";
     document.getElementById("membersTitle").textContent = "👥 Miembros · " + (b ? b.name : "");
-    // invitar y eliminar tablero solo para el dueño de un tablero no personal
+    // invitar, renombrar y eliminar tablero solo para el dueño
     document.getElementById("inviteRow").style.display = isOwner ? "" : "none";
+    // renombrar: solo el dueño, y no en el tablero personal
+    document.getElementById("renameRow").style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
+    document.getElementById("renameInput").value = b ? b.name : "";
     const delBtn = document.getElementById("deleteBoardBtn");
     delBtn.style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
 
@@ -1158,7 +1274,8 @@
       row.className = "member-row";
       const canRemove = isOwner && m.role !== "owner";
       row.innerHTML = `
-        <span>${escapeHtml(m.email)} <span class="role">· ${m.role === "owner" ? "dueño" : "miembro"}</span></span>
+        <span style="display:flex;align-items:center;gap:8px">${avatarHtml(m, 24)}
+          <span>${escapeHtml(m.name || shortName(m.email))} <span class="role">· ${escapeHtml(m.email)} · ${m.role === "owner" ? "dueño" : "miembro"}</span></span></span>
         ${canRemove ? '<button class="btn btn-danger btn-small" data-rm="' + escapeHtml(m.email) + '">Quitar</button>' : ""}
       `;
       const rm = row.querySelector("[data-rm]");
@@ -1194,6 +1311,18 @@
     } catch (e) { alert("No se pudo invitar: " + e.message); }
   }
 
+  document.getElementById("renameBtn").addEventListener("click", renameBoard);
+  document.getElementById("renameInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); renameBoard(); } });
+  async function renameBoard() {
+    const name = document.getElementById("renameInput").value.trim();
+    if (!name) return;
+    try {
+      await api("PATCH", "/api/boards/" + currentBoardId, { name });
+      await loadBoard();          // refresca el nombre en el selector
+      renderMembers();
+    } catch (e) { alert("No se pudo renombrar: " + e.message); }
+  }
+
   document.getElementById("deleteBoardBtn").addEventListener("click", async () => {
     const b = currentBoard();
     if (!b) return;
@@ -1204,6 +1333,72 @@
       currentBoardId = null;       // loadBoard elegirá el personal
       await loadBoard();
     } catch (e) { alert("No se pudo eliminar el tablero: " + e.message); }
+  });
+
+  // ---------- Modal de perfil ----------
+  const profileOverlay = document.getElementById("profileOverlay");
+  const EMOJI_SET = ["😀","😎","🦊","🐼","🐯","🦁","🐸","🦉","🚀","⭐","🔥","🌈","🎯","🧠","💡","🛠️","📌","🎨","🍀","☕"];
+  let profileColor = "";
+
+  function previewProfile() {
+    const emoji = document.getElementById("profileEmoji").value.trim();
+    document.getElementById("profilePreview").innerHTML = avatarHtml({
+      email: me.email,
+      name: document.getElementById("profileName").value || shortName(me.email),
+      avatarEmoji: emoji || null,
+      avatarColor: profileColor || null,
+    }, 40);
+    document.querySelectorAll("#colorPicker .opt").forEach(o => o.classList.toggle("sel", o.dataset.color === profileColor));
+    document.querySelectorAll("#emojiPicker .opt").forEach(o => o.classList.toggle("sel", o.textContent === emoji));
+  }
+
+  (function buildPickers() {
+    const ep = document.getElementById("emojiPicker");
+    EMOJI_SET.forEach(em => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "opt"; b.textContent = em;
+      b.addEventListener("click", () => { document.getElementById("profileEmoji").value = em; previewProfile(); });
+      ep.appendChild(b);
+    });
+    const cp = document.getElementById("colorPicker");
+    AVATAR_COLORS.forEach(col => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "opt color-opt"; b.style.background = col; b.dataset.color = col;
+      b.addEventListener("click", () => { profileColor = col; previewProfile(); });
+      cp.appendChild(b);
+    });
+  })();
+
+  function openProfile() {
+    document.getElementById("profileName").value = me.profile.name || "";
+    document.getElementById("profileEmoji").value = me.profile.avatarEmoji || "";
+    document.getElementById("profileEmail").textContent = me.email;
+    profileColor = me.profile.avatarColor || "";
+    previewProfile();
+    profileOverlay.classList.add("open");
+  }
+
+  document.getElementById("profileBtn").addEventListener("click", openProfile);
+  document.getElementById("profileName").addEventListener("input", previewProfile);
+  document.getElementById("profileEmoji").addEventListener("input", previewProfile);
+  document.getElementById("profileCancelBtn").addEventListener("click", () => profileOverlay.classList.remove("open"));
+  profileOverlay.addEventListener("click", e => { if (e.target === profileOverlay) profileOverlay.classList.remove("open"); });
+  document.getElementById("profileSaveBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("profileSaveBtn");
+    btn.disabled = true;
+    try {
+      const prof = await api("PUT", "/api/me", {
+        name: document.getElementById("profileName").value.trim(),
+        avatarEmoji: document.getElementById("profileEmoji").value.trim(),
+        avatarColor: profileColor,
+      });
+      me.profile = { name: prof.name, avatarEmoji: prof.avatarEmoji, avatarColor: prof.avatarColor };
+      renderMe();
+      await loadMembers();   // refresca avatares en filtro y miembros
+      render();              // refresca avatares en las tarjetas
+      profileOverlay.classList.remove("open");
+    } catch (e) { alert("No se pudo guardar el perfil: " + e.message); }
+    finally { btn.disabled = false; }
   });
 
   // ENTER en el título guarda la tarjeta
