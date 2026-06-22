@@ -308,8 +308,9 @@
   <div class="header-left">
     <span class="logo">📋</span>
     <select id="boardSelect" class="board-select" title="Cambiar de tablero"></select>
+    <button id="editBoardBtn" title="Renombrar este tablero">✏️</button>
+    <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
     <button id="newBoardBtn" title="Nuevo tablero">＋</button>
-    <button id="membersBtn" title="Miembros del tablero">👥</button>
   </div>
   <div class="actions">
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
@@ -589,6 +590,17 @@
       sel.appendChild(o);
     });
     sel.value = currentBoardId;
+    updateBoardControls();
+  }
+
+  // ¿El usuario puede administrar (renombrar/eliminar) el tablero actual?
+  const canManageBoard = () => {
+    const b = currentBoard();
+    return !!(b && b.role === "owner" && !b.isPersonal);
+  };
+  function updateBoardControls() {
+    // el lápiz de renombrar solo aparece en tableros compartidos propios
+    document.getElementById("editBoardBtn").style.display = canManageBoard() ? "" : "none";
   }
 
   function renderAssigneeFilter() {
@@ -1238,8 +1250,21 @@
   document.getElementById("boardSelect").addEventListener("change", async e => {
     currentBoardId = e.target.value;
     assigneeFilter = "";
+    updateBoardControls();
     await loadMembers();
     await loadCards();
+  });
+
+  // Renombrar rápido desde el header (lápiz)
+  document.getElementById("editBoardBtn").addEventListener("click", async () => {
+    const b = currentBoard();
+    if (!b) return;
+    const name = prompt("Nuevo nombre del tablero:", b.name);
+    if (!name || !name.trim() || name.trim() === b.name) return;
+    try {
+      await api("PATCH", "/api/boards/" + currentBoardId, { name: name.trim() });
+      await loadBoard();
+    } catch (e) { alert("No se pudo renombrar: " + e.message); }
   });
 
   document.getElementById("newBoardBtn").addEventListener("click", async () => {
@@ -1258,7 +1283,7 @@
   function renderMembers() {
     const b = currentBoard();
     const isOwner = b && b.role === "owner";
-    document.getElementById("membersTitle").textContent = "👥 Miembros · " + (b ? b.name : "");
+    document.getElementById("membersTitle").textContent = "⚙️ " + (b ? b.name : "") + " · miembros y configuración";
     // invitar, renombrar y eliminar tablero solo para el dueño
     document.getElementById("inviteRow").style.display = isOwner ? "" : "none";
     // renombrar: solo el dueño, y no en el tablero personal
