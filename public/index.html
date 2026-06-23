@@ -662,7 +662,31 @@
     if (!currentBoardId) { state = { cards: [] }; render(); return; }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
+    lastKnownVersion = state.version || 0;
     render();
+  }
+
+  // ---------- Polling de cambios en tiempo real ----------
+  let lastKnownVersion = 0;
+  let pollTimer = null;
+  const POLL_INTERVAL = 5000;
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(async () => {
+      if (!currentBoardId || document.hidden) return;
+      try {
+        const { version } = await api("GET", "/api/boards/" + currentBoardId + "/version");
+        if (version > lastKnownVersion) {
+          lastKnownVersion = version;
+          await loadCards();
+        }
+      } catch (e) { /* ignorar errores de red silenciosamente */ }
+    }, POLL_INTERVAL);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
 
   async function loadMembers() {
@@ -1364,6 +1388,7 @@
     updateBoardControls();
     await loadMembers();
     await loadCards();
+    startPolling();
   });
 
   // Renombrar rápido desde el header (lápiz)
@@ -1689,7 +1714,10 @@
   });
   adminNewEmail.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("adminAddBtn").click(); });
 
-  loadBoard();
+  loadBoard().then(() => startPolling());
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopPolling(); else startPolling();
+  });
 })();
 </script>
 </body>

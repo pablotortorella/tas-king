@@ -79,7 +79,8 @@ async function getBoard(db, boardId) {
     if (!attsByCard.has(r.card_id)) attsByCard.set(r.card_id, []);
     attsByCard.get(r.card_id).push(r);
   }
-  return { cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard)) };
+  const version = cards.results.reduce((max, c) => Math.max(max, c.updated_at || 0), 0);
+  return { version, cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard)) };
 }
 
 async function getCardRow(db, id) {
@@ -444,6 +445,16 @@ app.delete("/api/boards/:boardId/members/:email", async c => {
 });
 
 // ---------- API: cards (board-scoped) ----------
+app.get("/api/boards/:boardId/version", async c => {
+  const email = c.get("email");
+  const boardId = c.req.param("boardId");
+  if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
+  const row = await c.env.DB.prepare(
+    "SELECT MAX(updated_at) AS v FROM cards WHERE board_id = ?"
+  ).bind(boardId).first();
+  return c.json({ version: row ? (row.v || 0) : 0 });
+});
+
 app.get("/api/boards/:boardId/cards", async c => {
   const email = c.get("email");
   const boardId = c.req.param("boardId");
