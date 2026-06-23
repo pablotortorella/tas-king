@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tablero de tareas</title>
+<title>FUN TasKing!</title>
 <style>
   :root {
     --bg: #f4f5f7;
@@ -42,7 +42,9 @@
   }
   header.panning { cursor: grabbing; }
   header .header-left { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  header .logo { font-size: 18px; }
+  header .logo { font-size: 20px; }
+  header .brand { font-weight: 700; font-size: 16px; color: #fff; white-space: nowrap; letter-spacing: .2px; }
+  @media (max-width: 560px) { header .brand { display: none; } }
   header .board-select {
     border: none; border-radius: 4px; padding: 6px 10px; font-size: 14px;
     font-weight: 600; background: rgba(255,255,255,.9); color: var(--text); max-width: 240px;
@@ -347,7 +349,8 @@
 <body>
 <header>
   <div class="header-left">
-    <span class="logo">📋</span>
+    <span class="logo">👑</span>
+    <span class="brand">FUN TasKing!</span>
     <select id="boardSelect" class="board-select" title="Cambiar de tablero"></select>
     <button id="editBoardBtn" title="Renombrar este tablero">✏️</button>
     <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
