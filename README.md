@@ -38,7 +38,9 @@ La cobertura, los criterios para agregar casos y el checklist manual complementa
 personas están en [`TESTING.md`](TESTING.md).
 
 **Usuario simulado en local**: el usuario se define en `.dev.vars` (`DEV_USER_EMAIL`).
-Para probar varios usuarios, mandá el header `X-Dev-User: otra@persona.com` en tus requests.
+Para probar varios usuarios en `localhost` o `127.0.0.1`, mandá el header
+`X-Dev-User: otra@persona.com` en tus requests. El Worker ignora este header fuera de localhost;
+en producción la identidad solo se acepta desde la cookie de sesión firmada.
 
 Ejemplo de `.dev.vars`:
 

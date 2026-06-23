@@ -9,7 +9,7 @@ const headers = email => ({ "X-Dev-User": email });
 const jsonHeaders = email => ({ ...headers(email), "Content-Type": "application/json" });
 
 async function request(path, { email, method = "GET", body } = {}) {
-  return app.request(`http://test.local${path}`, {
+  return app.request(`http://localhost${path}`, {
     method,
     headers: body === undefined ? headers(email) : jsonHeaders(email),
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -34,9 +34,21 @@ describe("API del Worker con D1 y R2 emulados", () => {
   });
 
   it("exige identidad para la API", async () => {
-    const response = await app.request("http://test.local/api/me", {}, env);
+    const response = await app.request("http://localhost/api/me", {}, env);
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: "No autenticado." });
+  });
+
+  it("rechaza headers de identidad falsificados fuera de localhost", async () => {
+    const devHeader = await app.request("https://tas-king.example/api/me", {
+      headers: { "X-Dev-User": "attacker@example.com" },
+    }, env);
+    expect(devHeader.status).toBe(401);
+
+    const accessHeader = await app.request("https://tas-king.example/api/me", {
+      headers: { "Cf-Access-Authenticated-User-Email": "owner@example.com" },
+    }, env);
+    expect(accessHeader.status).toBe(401);
   });
 
   it("crea automáticamente el tablero personal y protege su eliminación", async () => {
@@ -118,20 +130,20 @@ describe("API del Worker con D1 y R2 emulados", () => {
   it("guarda y elimina adjuntos en R2", async () => {
     const form = new FormData();
     form.append("files", new File(["contenido"], "nota.txt", { type: "text/plain" }));
-    const uploaded = await app.request(`http://test.local/api/cards/${cardId}/attachments`, {
+    const uploaded = await app.request(`http://localhost/api/cards/${cardId}/attachments`, {
       method: "POST", headers: headers(member), body: form,
     }, env);
     expect(uploaded.status).toBe(200);
     const attachment = (await uploaded.json()).attachments[0];
     expect(attachment).toMatchObject({ originalName: "nota.txt", mime: "text/plain" });
 
-    const download = await app.request(`http://test.local${attachment.url}`, {}, env);
+    const download = await app.request(`http://localhost${attachment.url}`, {}, env);
     expect(download.status).toBe(200);
     await expect(download.text()).resolves.toBe("contenido");
 
     const removed = await request(`/api/attachments/${attachment.id}`, { email: owner, method: "DELETE" });
     expect(removed.status).toBe(200);
-    expect((await app.request(`http://test.local${attachment.url}`, {}, env)).status).toBe(404);
+    expect((await app.request(`http://localhost${attachment.url}`, {}, env)).status).toBe(404);
   });
 
   it("restringe administración y protege el rol propio", async () => {

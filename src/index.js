@@ -282,16 +282,21 @@ app.get("/auth/logout", c => {
   return c.redirect("/");
 });
 
-// Resuelve el email del usuario: header de Access (futuro dominio propio) → cookie de
-// sesión (Google) → DEV_USER_EMAIL (solo local).
+function isLocalRequest(url) {
+  const hostname = new URL(url).hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
+// Resuelve el email desde la cookie firmada de Google. La identidad simulada solo se
+// habilita en localhost; nunca confiar en headers de identidad enviados por el cliente
+// en producción. Si se adopta Cloudflare Access, validar primero su JWT assertion.
 async function resolveEmail(c) {
-  const fromAccess = c.req.header("Cf-Access-Authenticated-User-Email");
-  if (fromAccess) return fromAccess.trim().toLowerCase();
   const token = getCookie(c, "session");
   if (token) {
     const sess = await verifySession(token, c.env.SESSION_SECRET);
     if (sess && sess.email) return sess.email.trim().toLowerCase();
   }
+  if (!isLocalRequest(c.req.url)) return "";
   const dev = c.req.header("X-Dev-User") || c.env.DEV_USER_EMAIL;
   return dev ? dev.trim().toLowerCase() : "";
 }
@@ -478,6 +483,14 @@ app.post("/api/boards/:boardId/cards", async c => {
     ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
   ]);
   return c.json(await cardJSONById(c.env.DB, id));
+});
+
+// Devuelve una tarjeta por ID junto con el boardId, para deep-link desde el frontend.
+app.get("/api/cards/:id", async c => {
+  const { card, error } = await cardWithAccess(c);
+  if (error) return error;
+  const json = await cardJSONById(c.env.DB, card.id);
+  return c.json({ ...json, boardId: card.board_id });
 });
 
 // Helper: obtiene la card y verifica que el usuario sea miembro de su tablero.
@@ -732,6 +745,7 @@ export {
   cardToJSON,
   commentToJSON,
   extOf,
+  isLocalRequest,
   signSession,
   strFromB64url,
   verifySession,

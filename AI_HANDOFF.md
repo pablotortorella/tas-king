@@ -86,6 +86,11 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
 ## Último handoff (2026-06-23, Claude Sonnet 4.6)
+**Hotfix de autenticación (Codex)**: se cerró la suplantación por headers de identidad. El Worker
+ya no confía en `Cf-Access-Authenticated-User-Email` sin validar una assertion de Access y solo
+acepta `X-Dev-User` en `localhost`, `127.0.0.1` o `::1`. En producción, la identidad proviene
+exclusivamente de la cookie de sesión firmada. Se agregó un test de regresión para ambos headers.
+
 **Sesión de testing automatizado (Codex)**: se agregó Vitest con la integración oficial de
 Cloudflare Workers, tests de API contra D1/R2 emulados, Playwright para recorridos críticos,
 CI en GitHub Actions y `TESTING.md` con la estrategia manual complementaria. El deep-link sigue

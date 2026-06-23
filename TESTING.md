@@ -21,6 +21,7 @@ Las migraciones reales se aplican a una D1 aislada y R2 se emula localmente. La 
 - creación automática del tablero personal y prohibición de eliminarlo;
 - CRUD de tableros, miembros, tarjetas, comentarios y adjuntos;
 - aislamiento entre usuarios y permisos owner/member/admin;
+- rechazo de headers de identidad simulados fuera de localhost;
 - archivo, restauración, reordenamiento e importación aditiva;
 - operaciones reales sobre D1 y R2 emulados.
 
@@ -50,6 +51,7 @@ CSV aditiva, administración de acceso y comportamiento de atajos al escribir.
 ## Cuándo agregar tests
 
 - Todo bug corregido debe sumar un test que falle antes de la corrección.
+- Todo cambio de autenticación debe incluir casos negativos contra suplantación de identidad.
 - Toda regla de permisos o transformación de datos debe tener test unitario o de API.
 - Todo recorrido nuevo relevante para usuarios debe tener un caso Playwright.
 - Al implementar deep-link, agregar casos para URL válida, tarjeta inexistente, tarjeta archivada
