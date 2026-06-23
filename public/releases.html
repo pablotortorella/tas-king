@@ -31,6 +31,18 @@
   <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
 
   <div class="release">
+    <h2>v1.3 — Administración, sincronización en tiempo real y celebraciones <span class="tag">Release 4</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li><b>Panel de administración</b>: desde la UI, agregá/eliminá usuarios permitidos y promové otros admins sin tocar la consola. Configurable por Secret <code>ADMIN_EMAILS</code>.</li>
+      <li><b>Sincronización en tiempo real</b>: cada 5 segundos el cliente consulta si hay cambios en el tablero compartido. Si cambió, recarga automáticamente. La sincronización se pausa cuando la pestaña está en segundo plano.</li>
+      <li><b>Celebración al terminar tareas</b>: cuando una tarjeta llega a la columna <b>Terminado</b>, aparece confeti en toda la pantalla y la tarjeta titila con colores. Los demás usuarios en el tablero también ven la celebración vía sincronización.</li>
+      <li><b>OAuth de Google mejorado</b>: login completamente en el Worker, sin dependencia de Cloudflare Access.</li>
+      <li>Documentación en <code>AI_HANDOFF.md</code> y <code>CLAUDE.md</code> para la colaboración entre IAs y humanos.</li>
+    </ul>
+  </div>
+
+  <div class="release">
     <h2>v1.2 — Atajos, créditos y documentación <span class="tag">Release 3</span></h2>
     <div class="date">Junio de 2026</div>
     <ul>

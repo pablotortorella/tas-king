@@ -65,6 +65,7 @@ No hay tests automatizados. La verificación es manual (wrangler dev + browser).
 Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - [ ] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
 - [x] ⚡ Polling de cambios en tiempo real (cada 5s, pausa en segundo plano)
+- [x] 🎉 Celebración al terminar (confeti + tarjeta titilante)
 - [ ] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
 - [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
 - [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
@@ -83,10 +84,12 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
 ## Último handoff (2026-06-23, Claude Sonnet 4.6)
-- Panel de administración completo (tabla `allowed_emails` en D1, Secret `ADMIN_EMAILS`, UI con agregar/eliminar/promover admins)
-- Polling de cambios en tiempo real: endpoint `/api/boards/:id/version` + cliente consulta cada 5s y recarga si hay cambios
-- README actualizado con instrucciones de setup completas
-- Creados `CLAUDE.md` y `AI_HANDOFF.md`
+**Sesión 1**: Panel de administración completo (tabla `allowed_emails` en D1, Secret `ADMIN_EMAILS`, UI con agregar/eliminar/promover admins) + README actualizado + creados `CLAUDE.md` y `AI_HANDOFF.md`.
+
+**Sesión 2** (continuación): 
+- Polling de cambios en tiempo real: endpoint `/api/boards/:id/version` devuelve el MAX(updated_at) de tarjetas; cliente consulta cada 5s, recarga si hay cambios, pausa en segundo plano
+- Celebración al terminar una tarea: confeti animado en pantalla + tarjeta titilante con colores transiciones (naranja, rosa, verde, azul, amarillo); se dispara tanto al arrastrar localmente como vía polling para otros usuarios
+- Instrucción `CLAUDE.md`: solo actualizar handoff cuando Pablo lo pida explícitamente (no automático)
 
 ## Handoffs anteriores
 **Sesión 2026-06-23 (Claude Sonnet 4.6)**:
