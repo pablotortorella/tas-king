@@ -64,6 +64,7 @@ No hay tests automatizados. La verificación es manual (wrangler dev + browser).
 ## Pendientes
 Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - [ ] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
+- [x] ⚡ Polling de cambios en tiempo real (cada 5s, pausa en segundo plano)
 - [ ] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
 - [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
 - [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
@@ -81,7 +82,13 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff
+## Último handoff (2026-06-23, Claude Sonnet 4.6)
+- Panel de administración completo (tabla `allowed_emails` en D1, Secret `ADMIN_EMAILS`, UI con agregar/eliminar/promover admins)
+- Polling de cambios en tiempo real: endpoint `/api/boards/:id/version` + cliente consulta cada 5s y recarga si hay cambios
+- README actualizado con instrucciones de setup completas
+- Creados `CLAUDE.md` y `AI_HANDOFF.md`
+
+## Handoffs anteriores
 **Sesión 2026-06-23 (Claude Sonnet 4.6)**:
 - Se subió la carpeta `docs/` al repo (contexto compartido entre IAs y humanos)
 - Se habilitaron dos nuevos usuarios en producción: `florenciatortorella@gmail.com` y
