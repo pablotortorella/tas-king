@@ -59,7 +59,9 @@ npx wrangler secret put <NOMBRE>   # cargar un secret en producción
 npx wrangler d1 execute tas-king --remote --command "SELECT ..."  # consulta SQL en prod
 ```
 
-No hay tests automatizados. La verificación es manual (wrangler dev + browser).
+Hay tests unitarios y de API con Vitest ejecutándose en Workerd con D1/R2 emulados, más tests
+E2E con Playwright. `npm run test:all` ejecuta la suite completa. La estrategia y el checklist
+manual complementario para IAs y personas están en `TESTING.md`.
 
 ## Pendientes
 Ver `docs/backlog.txt` para la lista priorizada. En orden:
@@ -84,6 +86,11 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
 ## Último handoff (2026-06-23, Claude Sonnet 4.6)
+**Sesión de testing automatizado (Codex)**: se agregó Vitest con la integración oficial de
+Cloudflare Workers, tests de API contra D1/R2 emulados, Playwright para recorridos críticos,
+CI en GitHub Actions y `TESTING.md` con la estrategia manual complementaria. El deep-link sigue
+pendiente; sus casos E2E están definidos como requisito para cuando se implemente.
+
 **Sesión 1**: Panel de administración completo (tabla `allowed_emails` en D1, Secret `ADMIN_EMAILS`, UI con agregar/eliminar/promover admins) + README actualizado + creados `CLAUDE.md` y `AI_HANDOFF.md`.
 
 **Sesión 2** (continuación): 

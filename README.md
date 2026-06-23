@@ -8,6 +8,7 @@ en el Worker), tiene su tablero personal y puede crear tableros compartidos.
 ## Requisitos
 
 - Node.js 18+
+- Wrangler 4 (instalado como dependencia de desarrollo)
 - Cuenta de Cloudflare (para el deploy)
 - Proyecto OAuth de Google (para el login)
 
@@ -20,6 +21,21 @@ npm install
 npm run db:migrate:local     # aplica todas las migraciones en la D1 local
 npm run dev                  # → http://localhost:8787
 ```
+
+## Tests
+
+El proyecto tiene tests unitarios y de API con Vitest dentro del runtime de Cloudflare, usando
+D1/R2 emulados, y recorridos de navegador con Playwright:
+
+```bash
+npm test                     # unitarios + API
+npx playwright install chromium  # solo la primera vez
+npm run test:e2e             # navegador + wrangler dev
+npm run test:all             # suite completa
+```
+
+La cobertura, los criterios para agregar casos y el checklist manual complementario para IAs y
+personas están en [`TESTING.md`](TESTING.md).
 
 **Usuario simulado en local**: el usuario se define en `.dev.vars` (`DEV_USER_EMAIL`).
 Para probar varios usuarios, mandá el header `X-Dev-User: otra@persona.com` en tus requests.
@@ -105,6 +121,9 @@ wrangler.jsonc        # config de Workers, D1 y R2
 src/index.js          # Worker (Hono): API + OAuth + servido de /uploads
 migrations/           # esquema D1
 public/index.html     # frontend
+test/                 # tests unitarios y de API (Vitest + Workers)
+e2e/                  # recorridos críticos de navegador (Playwright)
+TESTING.md             # estrategia automatizada y manual
 ```
 
 ## Funcionalidades

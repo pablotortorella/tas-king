@@ -722,3 +722,17 @@ app.post("/api/admin/set-admin", async c => {
 });
 
 export default app;
+
+// Exportaciones puras para tests unitarios. El Worker sigue usando el export default.
+export {
+  attachmentToJSON,
+  b64urlFromBytes,
+  b64urlFromStr,
+  b64urlToBytes,
+  cardToJSON,
+  commentToJSON,
+  extOf,
+  signSession,
+  strFromB64url,
+  verifySession,
+};
