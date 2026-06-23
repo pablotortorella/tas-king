@@ -32,19 +32,32 @@
     color: #fff;
     padding: 10px 16px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px 12px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
     box-shadow: var(--shadow);
     cursor: grab;
     flex: 0 0 auto;
   }
   header.panning { cursor: grabbing; }
-  header .header-left { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  /* Fila superior: tablero (izquierda) + usuario (derecha) */
+  header .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px 12px; flex-wrap: wrap;
+  }
+  header .header-left { display: flex; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; }
   header .logo { font-size: 20px; }
   header .brand { font-weight: 700; font-size: 16px; color: #fff; white-space: nowrap; letter-spacing: .2px; }
-  @media (max-width: 560px) { header .brand { display: none; } }
+  @media (max-width: 560px) {
+    header .brand { display: none; }
+    header .board-select { max-width: 140px; }
+  }
+  /* en celulares muy chicos: solo el avatar (sin nombre) y selector más angosto,
+     para que tablero + usuario entren en una sola línea arriba */
+  @media (max-width: 420px) {
+    header .user .me span { display: none; }
+    header .board-select { max-width: 104px; }
+    header { padding: 10px 12px; }
+  }
   header .board-select {
     border: none; border-radius: 4px; padding: 6px 10px; font-size: 14px;
     font-weight: 600; background: rgba(255,255,255,.9); color: var(--text); max-width: 240px;
@@ -72,8 +85,7 @@
   header .actions button:hover { background: rgba(255,255,255,.35); }
   header .actions button.urgent-on { background: #fff; box-shadow: 0 0 0 2px #ffd700 inset; }
   header .actions {
-    display: flex; align-items: center; gap: 8px;
-    flex: 1 1 auto; justify-content: flex-end; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   }
   header .actions input[type=search] {
     border: none;
@@ -348,13 +360,16 @@
 </head>
 <body>
 <header>
-  <div class="header-left">
-    <span class="logo">👑</span>
-    <span class="brand">FUN TasKing!</span>
-    <select id="boardSelect" class="board-select" title="Cambiar de tablero"></select>
-    <button id="editBoardBtn" title="Renombrar este tablero">✏️</button>
-    <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
-    <button id="newBoardBtn" title="Nuevo tablero">＋</button>
+  <div class="header-top">
+    <div class="header-left">
+      <span class="logo">👑</span>
+      <span class="brand">FUN TasKing!</span>
+      <select id="boardSelect" class="board-select" title="Cambiar de tablero"></select>
+      <button id="editBoardBtn" title="Renombrar este tablero">✏️</button>
+      <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
+      <button id="newBoardBtn" title="Nuevo tablero">＋</button>
+    </div>
+    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
@@ -370,7 +385,6 @@
       </div>
     </div>
     <input type="file" id="importFile" accept=".csv,.json,application/json,text/csv" hidden>
-    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
 </header>
 
