@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novedades · Tablero de tareas</title>
+<style>
+  :root { --bg:#f4f5f7; --text:#172b4d; --muted:#6b778c; --accent:#0079bf; --border:#dfe1e6; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; }
+  header { background:var(--accent); color:#fff; padding:14px 20px; }
+  header a { color:#fff; text-decoration:none; font-size:14px; }
+  main { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
+  h1 { font-size:24px; margin:0 0 24px; }
+  a { color:var(--accent); }
+  .release { background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:16px; }
+  .release h2 { font-size:18px; margin:0 0 2px; }
+  .release .date { color:var(--muted); font-size:13px; margin-bottom:10px; }
+  .release ul { margin:0; padding-left:20px; }
+  .release li { font-size:15px; margin-bottom:3px; }
+  .tag { display:inline-block; background:#e3effc; color:#0c447c; border-radius:10px; padding:1px 8px; font-size:12px; font-weight:600; margin-left:6px; vertical-align:middle; }
+</style>
+</head>
+<body>
+<header><a href="/">← Volver al tablero</a></header>
+<main>
+  <h1>📣 Novedades</h1>
+
+  <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
+
+  <div class="release">
+    <h2>v1.2 — Atajos, créditos y documentación <span class="tag">Release 3</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li>Atajos de teclado: <b>F</b> filtra tus tareas asignadas, <b>N</b> crea una tarjeta en la columna bajo el mouse.</li>
+      <li>Pie de página con los atajos, créditos de autoría, licencia y enlace al repositorio.</li>
+      <li>Páginas de <b>Términos y responsabilidad</b> y de <b>Novedades</b>.</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v1.1 — Personalización e identidad <span class="tag">Release 2</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li>Perfil de usuario con <b>avatar</b> (emoji + color) y nombre para mostrar, editable desde el encabezado.</li>
+      <li>Avatares en el encabezado, en los responsables de las tarjetas y en la lista de miembros.</li>
+      <li><b>Comentarios con autor y fecha</b>, que ahora se publican al instante.</li>
+      <li><b>Renombrar</b> y <b>eliminar</b> tableros desde la interfaz (✏️ y ⚙️).</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v1.0 — Lanzamiento <span class="tag">Release 1</span></h2>
+    <div class="date">22 de junio de 2026</div>
+    <ul>
+      <li>Primera versión pública, con <b>inicio de sesión con Google</b>.</li>
+      <li><b>Multiusuario</b>: tablero personal de cada quien y tableros compartidos (invitar por email, roles dueño/miembro).</li>
+      <li>Tarjetas con título, detalles, fecha límite, comentarios, adjuntos y responsable.</li>
+      <li>5 columnas, arrastrar y soltar con orden exacto, mover el tablero arrastrando el fondo.</li>
+      <li>Archivar / restaurar / eliminar, buscador y filtro por responsable.</li>
+      <li>Exportar a CSV (estilo Notion) y copia JSON; importar (agrega, con vista previa).</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

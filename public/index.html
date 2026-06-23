@@ -90,6 +90,20 @@
     cursor: grab;
   }
   .board.panning { cursor: grabbing; user-select: none; }
+  .app-footer {
+    flex: 0 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 6px 16px; font-size: 12px; color: var(--muted);
+    background: #fff; border-top: 1px solid var(--border);
+  }
+  .app-footer a { color: var(--accent); text-decoration: none; }
+  .app-footer a:hover { text-decoration: underline; }
+  .app-footer .dot { color: var(--border); }
+  .app-footer .credit { margin-left: auto; }
+  .app-footer kbd {
+    background: var(--col-bg); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 4px; padding: 0 5px; font-family: inherit; font-size: 11px; font-weight: 600; color: var(--text);
+  }
   .column {
     background: var(--col-bg);
     border-radius: 8px;
@@ -325,6 +339,16 @@
 </header>
 
 <div class="board" id="board"></div>
+
+<footer class="app-footer">
+  <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>N</kbd> nueva tarjeta</span>
+  <span class="dot">·</span>
+  <a href="/releases" target="_blank" rel="noopener">Novedades</a>
+  <a href="/terminos" target="_blank" rel="noopener">Términos</a>
+  <a href="https://github.com/pablotortorella/tas-king" target="_blank" rel="noopener">GitHub</a>
+  <span class="dot">·</span>
+  <span class="credit">Por Pablo Tortorella, en equipo con Claude · <a href="/terminos" target="_blank" rel="noopener">GNU GPL v3</a></span>
+</footer>
 
 <!-- Modal de tarjeta -->
 <div class="overlay" id="overlay">
@@ -1471,6 +1495,38 @@
     panning = false;
     board.classList.remove("panning");
     headerEl.classList.remove("panning");
+  });
+
+  // ---------- Atajos de teclado (F = mis tareas, N = nueva tarjeta) ----------
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener("mousemove", e => { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
+
+  // F: alterna el filtro entre "mis tareas" (asignadas a mí) y "todos".
+  function toggleMyTasks() {
+    if (!me) return;
+    assigneeFilter = (assigneeFilter === me.email) ? "" : me.email;
+    const sel = document.getElementById("assigneeFilter");
+    sel.value = [...sel.options].some(o => o.value === assigneeFilter) ? assigneeFilter : "";
+    if (sel.value !== assigneeFilter) assigneeFilter = sel.value;  // por si no soy opción del filtro
+    render();
+  }
+
+  // N: crea una tarjeta en la columna bajo el mouse (o la primera si está afuera).
+  function newCardUnderMouse() {
+    const el = document.elementFromPoint(mouseX, mouseY);
+    const col = el && el.closest ? el.closest(".column") : null;
+    const cardsEl = col && col.querySelector(".cards");
+    openModal(null, cardsEl ? cardsEl.dataset.col : COLUMNS[0].id);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;             // no pisar atajos del navegador
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (document.querySelector(".overlay.open")) return;        // no disparar con un modal abierto
+    const k = e.key.toLowerCase();
+    if (k === "f") { e.preventDefault(); toggleMyTasks(); }
+    else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
   });
 
   loadBoard();
