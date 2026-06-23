@@ -1,0 +1,63 @@
+0. 🔗 Deep-link a tarjeta
+1. 📜 Historial (en la tarjeta + panel lateral "Actividad")
+2. 🏷️ Etiquetas + filtro, con atajos numéricos → y página de AYUDA (F1) que documente todos los atajos/filtros/export-import
+3. ✅ Checklists/subtareas
+4. 🔐 Proteger adjuntos
+5. 🛡️ Validar JWT de Google
+6. 🌙 Modo oscuro/claro
+7. 🖼️ Mejores adjuntos
+8. 💾 Respaldo automático
+
+
+---
+El de arriba es la priorización de este backlog extendido:
+
+Mi backlog para que priorices
+Te lo agrupo por tema, con un estimativo de esfuerzo: 🟢 chico · 🟡 medio · 🔴 grande.
+
+A) 🤝 Colaboración
+🔔 Notificaciones cuando te asignan una tarjeta o algo vence — 🟡/🔴
+⚡ Tiempo real: ver cambios de otros sin recargar — 🔴 (necesita WebSockets/Durable Objects)
+📜 Historial de actividad: quién hizo qué y cuándo — 🟡
+🔀 Mover tarjetas entre tableros — 🟡
+
+B) 🗂️ Organización de tareas
+🏷️ Etiquetas de colores + filtrar por etiqueta — 🟡
+✅ Checklists / subtareas dentro de una tarjeta — 🟡
+🔧 Columnas personalizables (agregar/renombrar/reordenar por tablero) — 🟡/🔴
+📆 Vista calendario / ordenar por fecha — 🟡
+🗑️ Papelera (soft-delete): recuperar tarjetas borradas — 🟢/🟡
+
+C) 🔒 Seguridad y robustez
+🔐 Proteger los adjuntos (/uploads hoy son URLs públicas con clave aleatoria) — 🟢/🟡
+🛡️ Validar el token de Google con rigor (hardening del login) — 🟢
+💾 Respaldo automático programado del tablero — 🟡
+
+D) ✨ UX y plataforma
+🌙 Modo oscuro — 🟢
+📱 PWA instalable + mejoras mobile — 🟡
+👁️ Rol "solo lectura" en tableros compartidos — 🟢/🟡
+🔗 Link directo a una tarjeta (deep-link) — 🟢
+🖼️ Mejores adjuntos: pegar imágenes, vista previa, reordenar — 🟡
+
+---
+Lo que ya existe (para no rehacer):
+
+Borrar tablero ✅ ya está (botón "Eliminar tablero" en el modal de Miembros, solo para el dueño).
+Renombrar tablero: el backend ya lo soporta (hay un endpoint PATCH), pero no está expuesto en la UI — así que esto es sumar el botón/campo, poco trabajo.
+Propuesta de Iteración 4 — "Personalización e identidad"
+
+👤 Perfil de usuario: nombre para mostrar + avatar = emoji + color de fondo (en vez del email crudo). Se guarda en la tabla users (ya tiene name; agrego avatar_emoji y avatar_color).
+🎨 Avatares en todos lados: header, distintivo de responsable en la tarjeta, lista de miembros.
+✏️ Renombrar tablero desde la UI (borrar ya existe).
+Mi aporte (encaja perfecto con esto):
+
+💬 Autoría en comentarios: hoy los comentarios no guardan quién los escribió — un agujero real en multiusuario. Sumar autor + avatar + fecha a cada comentario. Muy valioso ahora que entran varias personas.
+
+
+Otras para que estén en el radar:
+
+🔔 Notificaciones (ej. cuando te asignan una tarjeta)
+⚡ Tiempo real (ver cambios de otros sin recargar) — necesita WebSockets/Durable Objects
+📜 Historial de actividad (quién hizo qué y cuándo)
+🔀 Mover tarjetas entre tableros (opcional): útil pero un poco más de laburo.
