@@ -59,6 +59,40 @@ test("administra la lista de acceso desde la UI", async ({ page }) => {
   await expect(page.locator("#adminUserList")).toContainText(allowedEmail);
 });
 
+test("deep-link abre la tarjeta correcta y limpia la URL al cerrar", async ({ page }) => {
+  const deepTitle = `E2E deep-link ${runId}`;
+
+  await page.locator('.add-card[data-col="pendiente"]').click();
+  await page.locator("#fTitle").fill(deepTitle);
+  await page.locator("#saveBtn").click();
+
+  const card = page.locator(".card", { hasText: deepTitle });
+  await expect(card).toBeVisible();
+  await card.click();
+  await expect(page.locator("#overlay")).toHaveClass(/open/);
+  const url = new URL(page.url());
+  const cardId = url.searchParams.get("card");
+  expect(cardId).toBeTruthy();
+
+  await page.locator("#cancelBtn").click();
+  await expect(page).toHaveURL("/");
+
+  await page.goto(`/?card=${cardId}`);
+  await expect(page.locator("#overlay")).toHaveClass(/open/);
+  await expect(page.locator("#fTitle")).toHaveValue(deepTitle);
+
+  await page.locator("#cancelBtn").click();
+
+  await page.goto("/?card=id-inexistente");
+  await expect(page.locator("#overlay")).not.toHaveClass(/open/);
+  await expect(page).toHaveURL("/");
+
+  await page.locator(".card", { hasText: deepTitle }).click();
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator("#deleteCardBtn").click();
+  await expect(page.locator(".card", { hasText: deepTitle })).toHaveCount(0);
+});
+
 test("los atajos no se disparan mientras se escribe", async ({ page }) => {
   await page.locator("#searchInput").fill("n");
   await expect(page.locator("#overlay")).not.toHaveClass(/open/);

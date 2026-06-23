@@ -1027,12 +1027,14 @@
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
     renderComments();
+    if (id) history.replaceState(null, "", "?card=" + id);
     overlay.classList.add("open");
     fTitle.focus();
   }
 
   function closeModal() {
     overlay.classList.remove("open");
+    history.replaceState(null, "", location.pathname);
     editingId = null;
     // liberar las URLs temporales de los adjuntos nuevos no guardados
     draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
@@ -1795,7 +1797,26 @@
   });
   adminNewEmail.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("adminAddBtn").click(); });
 
-  loadBoard().then(() => startPolling());
+  async function checkDeepLink() {
+    const cardId = new URLSearchParams(location.search).get("card");
+    if (!cardId) return;
+    if (state.cards.find(c => c.id === cardId)) { openModal(cardId); return; }
+    try {
+      const data = await api("GET", "/api/cards/" + cardId);
+      if (data.boardId !== currentBoardId) {
+        currentBoardId = data.boardId;
+        document.getElementById("boardSelect").value = currentBoardId;
+        updateBoardControls();
+        await loadMembers();
+        await loadCards();
+      }
+      openModal(cardId);
+    } catch (e) {
+      history.replaceState(null, "", location.pathname);
+    }
+  }
+
+  loadBoard().then(() => { startPolling(); checkDeepLink(); });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopPolling(); else startPolling();
   });

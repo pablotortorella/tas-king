@@ -127,6 +127,28 @@ describe("API del Worker con D1 y R2 emulados", () => {
     expect(after.cards).toContainEqual(expect.objectContaining({ title: "Importada", column: "por_revisar" }));
   });
 
+  it("GET /api/cards/:id devuelve la tarjeta con boardId y respeta permisos", async () => {
+    const ok = await request(`/api/cards/${cardId}`, { email: owner });
+    expect(ok.status).toBe(200);
+    const data = await ok.json();
+    expect(data).toMatchObject({ id: cardId, boardId: sharedId });
+
+    const memberOk = await request(`/api/cards/${cardId}`, { email: member });
+    expect(memberOk.status).toBe(200);
+
+    const denied = await request(`/api/cards/${cardId}`, { email: outsider });
+    expect(denied.status).toBe(403);
+
+    const missing = await request("/api/cards/id-que-no-existe", { email: owner });
+    expect(missing.status).toBe(404);
+
+    await request(`/api/cards/${cardId}/archive`, { email: owner, method: "POST" });
+    const archived = await request(`/api/cards/${cardId}`, { email: owner });
+    expect(archived.status).toBe(200);
+    await expect(archived.json()).resolves.toMatchObject({ archived: true, boardId: sharedId });
+    await request(`/api/cards/${cardId}/restore`, { email: owner, method: "POST" });
+  });
+
   it("guarda y elimina adjuntos en R2", async () => {
     const form = new FormData();
     form.append("files", new File(["contenido"], "nota.txt", { type: "text/plain" }));
