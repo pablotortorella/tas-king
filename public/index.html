@@ -187,6 +187,18 @@
   }
   .card:hover { background: #fafbfc; }
   .card.dragging { opacity: .4; }
+  @keyframes celebrate {
+    0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+    15%  { background: #fffde7; box-shadow: 0 0 12px 4px #ffd700; }
+    30%  { background: #f3e5f5; box-shadow: 0 0 12px 4px #ce93d8; }
+    45%  { background: #e8f5e9; box-shadow: 0 0 12px 4px #66bb6a; }
+    60%  { background: #e3f2fd; box-shadow: 0 0 12px 4px #42a5f5; }
+    75%  { background: #fff3e0; box-shadow: 0 0 12px 4px #ffa726; }
+    90%  { background: #fce4ec; box-shadow: 0 0 12px 4px #f48fb1; }
+    100% { background: var(--card-bg); box-shadow: var(--shadow); }
+  }
+  .card.celebrating { animation: celebrate 1.6s ease-in-out; }
+  #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
   .card-title { font-weight: 500; word-break: break-word; }
   .card-meta {
     display: flex;
@@ -359,6 +371,7 @@
 </style>
 </head>
 <body>
+<canvas id="confetti-canvas"></canvas>
 <header>
   <div class="header-top">
     <div class="header-left">
@@ -679,7 +692,10 @@
         const { version } = await api("GET", "/api/boards/" + currentBoardId + "/version");
         if (version > lastKnownVersion) {
           lastKnownVersion = version;
+          const prevTerminados = new Set(state.cards.filter(c => c.column === "terminado").map(c => c.id));
           await loadCards();
+          state.cards.filter(c => c.column === "terminado" && !prevTerminados.has(c.id))
+            .forEach(c => celebrateCard(c.id));
         }
       } catch (e) { /* ignorar errores de red silenciosamente */ }
     }, POLL_INTERVAL);
@@ -811,8 +827,12 @@
       cardsEl.addEventListener("drop", async e => {
         e.preventDefault();
         cardsEl.classList.remove("drag-over");
+        const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
         rebuildOrderFromDom();
         render();                 // refleja el nuevo orden de inmediato
+        // celebrar tarjetas que acaban de llegar a Terminado
+        state.cards.filter(c => c.column === "terminado" && prevCols[c.id] !== "terminado")
+          .forEach(c => celebrateCard(c.id));
         try { await persistOrder(); }
         catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
       });
@@ -1380,6 +1400,67 @@
   document.addEventListener("click", e => {
     if (e.target.id !== "moreBtn" && !menuPanel.contains(e.target)) menuPanel.classList.remove("open");
   });
+
+  // ---------- Celebración: confeti + tarjeta titilante ----------
+  (function () {
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+    const COLORS = ["#ffd700","#ff6b6b","#4ecdc4","#45b7d1","#96ceb4","#ff9ff3","#54a0ff","#5f27cd","#00d2d3","#ff9f43"];
+    let particles = [], rafId = null;
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function launch() {
+      particles = Array.from({ length: 160 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -10 - Math.random() * 40,
+        r: 5 + Math.random() * 6,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * 6,
+        vy: 3 + Math.random() * 5,
+        gravity: 0.18 + Math.random() * 0.1,
+        life: 1,
+        decay: 0.012 + Math.random() * 0.008,
+        shape: Math.random() > 0.5 ? "rect" : "circle",
+      }));
+      if (rafId) cancelAnimationFrame(rafId);
+      step();
+    }
+
+    function step() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.life > 0);
+      for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        if (p.shape === "rect") ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+        else { ctx.beginPath(); ctx.arc(0, 0, p.r / 2, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+        p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+        p.angle += p.spin; p.life -= p.decay;
+      }
+      if (particles.length) rafId = requestAnimationFrame(step);
+    }
+
+    window.launchConfetti = launch;
+  })();
+
+  function celebrateCard(cardId) {
+    window.launchConfetti();
+    const el = document.querySelector(`.card[data-id="${cardId}"]`);
+    if (!el) return;
+    el.classList.remove("celebrating");
+    void el.offsetWidth; // reflow para reiniciar la animación
+    el.classList.add("celebrating");
+    el.addEventListener("animationend", () => el.classList.remove("celebrating"), { once: true });
+  }
 
   // ---------- Selector de tablero y nuevo tablero ----------
   document.getElementById("boardSelect").addEventListener("change", async e => {
