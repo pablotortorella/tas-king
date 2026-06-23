@@ -193,6 +193,28 @@ function deniedPage(msg) {
 
 const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "Lax", path: "/" };
 
+// Verifica si un email puede acceder: primero D1, luego fallback al Secret legacy.
+async function isEmailAllowed(db, email, legacySecret) {
+  const row = await db.prepare("SELECT 1 FROM allowed_emails WHERE email = ?").bind(email).first();
+  if (row) return true;
+  // Fallback: si la tabla está vacía, usar el Secret para no romper deploys existentes
+  const count = await db.prepare("SELECT COUNT(*) AS n FROM allowed_emails").first();
+  if (count && count.n === 0 && legacySecret) {
+    const list = legacySecret.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+    return list.includes(email);
+  }
+  return false;
+}
+
+// Marca como admin a un email si está en el Secret ADMIN_EMAILS.
+async function seedAdminIfNeeded(db, email, adminEmailsSecret) {
+  if (!adminEmailsSecret) return;
+  const admins = adminEmailsSecret.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+  if (admins.includes(email)) {
+    await db.prepare("UPDATE users SET is_admin = 1 WHERE email = ? AND is_admin = 0").bind(email).run();
+  }
+}
+
 app.get("/auth/login", c => {
   const origin = new URL(c.req.url).origin;
   const state = crypto.randomUUID();
@@ -240,10 +262,14 @@ app.get("/auth/callback", async c => {
     return c.html(deniedPage("Tu cuenta de Google no tiene un email verificado."), 403);
   }
 
-  const allowed = (c.env.ALLOWED_EMAILS || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
-  if (allowed.length && !allowed.includes(email)) {
+  // Verificar si el email está en la allowlist de D1 o en el Secret legacy ALLOWED_EMAILS
+  const isAllowed = await isEmailAllowed(c.env.DB, email, c.env.ALLOWED_EMAILS);
+  if (!isAllowed) {
     return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app.`), 403);
   }
+
+  // Asegurar que exista en D1 y aplicar is_admin si corresponde según ADMIN_EMAILS
+  await seedAdminIfNeeded(c.env.DB, email, c.env.ADMIN_EMAILS);
 
   const session = await signSession({ email, exp: Date.now() + 30 * 24 * 3600 * 1000 }, c.env.SESSION_SECRET);
   setCookie(c, "session", session, { ...COOKIE_OPTS, maxAge: 30 * 24 * 3600 });
@@ -274,6 +300,7 @@ app.use("/api/*", async (c, next) => {
   const email = await resolveEmail(c);
   if (!email) return c.json({ error: "No autenticado." }, 401);
   await ensureUser(c.env.DB, email);
+  await seedAdminIfNeeded(c.env.DB, email, c.env.ADMIN_EMAILS);
   c.set("email", email);
   await next();
 });
@@ -290,10 +317,11 @@ app.get("/api/me", async c => {
       WHERE bm.email = ?
       ORDER BY b.is_personal DESC, b.created_at ASC
     `).bind(email).all(),
-    c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color FROM users WHERE email = ?").bind(email).first(),
+    c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color, is_admin FROM users WHERE email = ?").bind(email).first(),
   ]);
   return c.json({
     email,
+    isAdmin: !!(user && user.is_admin),
     profile: {
       name: (user && user.name) || email.split("@")[0],
       avatarEmoji: (user && user.avatar_emoji) || null,
@@ -630,6 +658,56 @@ app.post("/api/boards/:boardId/import", async c => {
   }
   if (stmts.length) await c.env.DB.batch(stmts);
   return c.json(await getBoard(c.env.DB, boardId));
+});
+
+// ---------- API: Admin ----------
+
+async function requireAdmin(c, next) {
+  const email = c.get("email");
+  const user = await c.env.DB.prepare("SELECT is_admin FROM users WHERE email = ?").bind(email).first();
+  if (!user || !user.is_admin) return c.json({ error: "Acceso denegado." }, 403);
+  await next();
+}
+
+app.use("/api/admin/*", requireAdmin);
+
+// Listar emails permitidos y admins
+app.get("/api/admin/users", async c => {
+  const [allowed, admins] = await Promise.all([
+    c.env.DB.prepare("SELECT email, added_by, added_at FROM allowed_emails ORDER BY added_at ASC").all(),
+    c.env.DB.prepare("SELECT email, name FROM users WHERE is_admin = 1 ORDER BY email ASC").all(),
+  ]);
+  return c.json({ allowed: allowed.results, admins: admins.results });
+});
+
+// Agregar email permitido
+app.post("/api/admin/allowed", async c => {
+  const { email } = await c.req.json();
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) return c.json({ error: "Email inválido." }, 400);
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO allowed_emails (email, added_by, added_at) VALUES (?, ?, datetime('now'))"
+  ).bind(normalized, c.get("email")).run();
+  return c.json({ ok: true });
+});
+
+// Eliminar email permitido
+app.delete("/api/admin/allowed/:email", async c => {
+  const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+  // No permitir que el admin se elimine a sí mismo
+  if (target === c.get("email")) return c.json({ error: "No podés eliminarte a vos mismo." }, 400);
+  await c.env.DB.prepare("DELETE FROM allowed_emails WHERE email = ?").bind(target).run();
+  return c.json({ ok: true });
+});
+
+// Promover/degradar admin
+app.post("/api/admin/set-admin", async c => {
+  const { email, isAdmin } = await c.req.json();
+  const normalized = (email || "").trim().toLowerCase();
+  if (!normalized) return c.json({ error: "Email inválido." }, 400);
+  if (normalized === c.get("email")) return c.json({ error: "No podés cambiar tu propio rol." }, 400);
+  await c.env.DB.prepare("UPDATE users SET is_admin = ? WHERE email = ?").bind(isAdmin ? 1 : 0, normalized).run();
+  return c.json({ ok: true });
 });
 
 export default app;

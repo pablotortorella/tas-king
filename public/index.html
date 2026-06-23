@@ -369,7 +369,7 @@
       <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
       <button id="newBoardBtn" title="Nuevo tablero">＋</button>
     </div>
-    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px">⚙ Admin</button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
@@ -540,6 +540,22 @@
   </div>
 </div>
 
+<div class="overlay" id="adminOverlay">
+  <div class="modal" style="max-width:560px;width:100%">
+    <h2>⚙ Administración</h2>
+    <h3 style="margin:16px 0 8px;font-size:14px">Usuarios permitidos</h3>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:5px;font-size:14px">
+      <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
+    </div>
+    <div id="adminUserList" style="max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
+    <div class="modal-footer" style="margin-top:16px">
+      <div></div>
+      <button class="btn btn-ghost" id="adminCloseBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -598,6 +614,7 @@
   function renderMe() {
     document.getElementById("profileBtn").innerHTML =
       avatarHtml(meProfile(), 22) + "<span>" + escapeHtml(me.profile.name) + "</span>";
+    document.getElementById("adminBtn").style.display = me.isAdmin ? "inline-block" : "none";
   }
 
   // Capa de datos: API REST contra el backend (Worker + D1).
@@ -1607,6 +1624,70 @@
     else if (k === "u") { e.preventDefault(); toggleUrgent(); }
     else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
   });
+
+  // ---------- Panel de administración ----------
+  const adminOverlay = document.getElementById("adminOverlay");
+  const adminUserList = document.getElementById("adminUserList");
+  const adminNewEmail = document.getElementById("adminNewEmail");
+
+  async function openAdmin() {
+    adminOverlay.classList.add("open");
+    await renderAdminList();
+  }
+
+  async function renderAdminList() {
+    adminUserList.innerHTML = '<div style="padding:12px;color:#888;font-size:13px">Cargando…</div>';
+    try {
+      const data = await api("GET", "/api/admin/users");
+      const adminEmails = new Set(data.admins.map(a => a.email));
+      if (!data.allowed.length) {
+        adminUserList.innerHTML = '<div style="padding:12px;color:#888;font-size:13px">No hay usuarios permitidos aún.</div>';
+        return;
+      }
+      adminUserList.innerHTML = data.allowed.map(u => {
+        const isAdm = adminEmails.has(u.email);
+        const isSelf = u.email === me.email;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f0f0f0">
+          <span style="flex:1;font-size:13px">${escapeHtml(u.email)}${isAdm ? ' <span title="Admin" style="font-size:11px;background:#ffe082;border-radius:3px;padding:1px 5px">Admin</span>' : ''}</span>
+          ${!isSelf ? `<label title="Admin" style="font-size:12px;color:#555;cursor:pointer"><input type="checkbox" data-email="${escapeHtml(u.email)}" data-action="admin" ${isAdm ? "checked" : ""}> Admin</label>` : ""}
+          ${!isSelf ? `<button data-email="${escapeHtml(u.email)}" data-action="remove" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px" title="Eliminar">✕</button>` : ""}
+        </div>`;
+      }).join("");
+
+      adminUserList.querySelectorAll("[data-action='remove']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm(`¿Eliminar acceso a ${btn.dataset.email}?`)) return;
+          await api("DELETE", "/api/admin/allowed/" + encodeURIComponent(btn.dataset.email));
+          await renderAdminList();
+        });
+      });
+      adminUserList.querySelectorAll("[data-action='admin']").forEach(chk => {
+        chk.addEventListener("change", async () => {
+          await api("POST", "/api/admin/set-admin", { email: chk.dataset.email, isAdmin: chk.checked });
+          await renderAdminList();
+        });
+      });
+    } catch (e) {
+      adminUserList.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:13px">Error al cargar usuarios.</div>';
+    }
+  }
+
+  document.getElementById("adminBtn").addEventListener("click", openAdmin);
+  document.getElementById("adminCloseBtn").addEventListener("click", () => adminOverlay.classList.remove("open"));
+  adminOverlay.addEventListener("click", e => { if (e.target === adminOverlay) adminOverlay.classList.remove("open"); });
+
+  document.getElementById("adminAddBtn").addEventListener("click", async () => {
+    const email = adminNewEmail.value.trim().toLowerCase();
+    if (!email) return;
+    try {
+      await api("POST", "/api/admin/allowed", { email });
+      adminNewEmail.value = "";
+      await renderAdminList();
+    } catch (e) {
+      alert(e.message || "Error al agregar usuario.");
+    }
+  });
+  adminNewEmail.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("adminAddBtn").click(); });
 
   loadBoard();
 })();
