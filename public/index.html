@@ -67,6 +67,7 @@
     margin-left: 8px;
   }
   header .actions button:hover { background: rgba(255,255,255,.35); }
+  header .actions button.urgent-on { background: #fff; box-shadow: 0 0 0 2px #ffd700 inset; }
   header .actions { display: flex; align-items: center; }
   header .actions input[type=search] {
     border: none;
@@ -329,6 +330,7 @@
   <div class="actions">
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
+    <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
     <button id="archiveBtn">🗄 Archivadas</button>
     <button id="exportCsvBtn">Exportar CSV</button>
     <button id="exportBtn">Copia JSON</button>
@@ -341,7 +343,7 @@
 <div class="board" id="board"></div>
 
 <footer class="app-footer">
-  <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>N</kbd> nueva tarjeta</span>
+  <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta</span>
   <span class="dot">·</span>
   <a href="/releases" target="_blank" rel="noopener">Novedades</a>
   <a href="/terminos" target="_blank" rel="noopener">Términos</a>
@@ -512,6 +514,7 @@
   let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
   let searchQuery = "";        // texto del buscador (minúsculas)
   let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
+  let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
@@ -660,6 +663,13 @@
     return new Date(card.due + "T00:00:00") < today;
   }
 
+  // Urgente: vence hoy o mañana (o ya venció), y no está en "Terminado".
+  function isUrgent(card) {
+    if (!card.due || card.column === "terminado") return false;
+    const tomorrow = new Date(); tomorrow.setHours(0, 0, 0, 0); tomorrow.setDate(tomorrow.getDate() + 1);
+    return new Date(card.due + "T00:00:00") <= tomorrow;
+  }
+
   // ---------- Render del tablero ----------
   const board = document.getElementById("board");
 
@@ -681,7 +691,7 @@
   function render() {
     board.innerHTML = "";
     COLUMNS.forEach(col => {
-      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c));
+      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && (!urgentFilter || isUrgent(c)));
       const colEl = document.createElement("div");
       colEl.className = "column";
       colEl.innerHTML = `
@@ -1497,7 +1507,7 @@
     headerEl.classList.remove("panning");
   });
 
-  // ---------- Atajos de teclado (F = mis tareas, N = nueva tarjeta) ----------
+  // ---------- Atajos de teclado (F = mis tareas, U = urgentes, N = nueva tarjeta) ----------
   let mouseX = 0, mouseY = 0;
   document.addEventListener("mousemove", e => { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
 
@@ -1510,6 +1520,14 @@
     if (sel.value !== assigneeFilter) assigneeFilter = sel.value;  // por si no soy opción del filtro
     render();
   }
+
+  // U: alterna el filtro de urgentes (vencen hoy/mañana).
+  function toggleUrgent() {
+    urgentFilter = !urgentFilter;
+    document.getElementById("urgentBtn").classList.toggle("urgent-on", urgentFilter);
+    render();
+  }
+  document.getElementById("urgentBtn").addEventListener("click", toggleUrgent);
 
   // N: crea una tarjeta en la columna bajo el mouse (o la primera si está afuera).
   function newCardUnderMouse() {
@@ -1526,6 +1544,7 @@
     if (document.querySelector(".overlay.open")) return;        // no disparar con un modal abierto
     const k = e.key.toLowerCase();
     if (k === "f") { e.preventDefault(); toggleMyTasks(); }
+    else if (k === "u") { e.preventDefault(); toggleUrgent(); }
     else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
   });
 
