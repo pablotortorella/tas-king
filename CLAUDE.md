@@ -88,6 +88,31 @@ Antes de hacer cualquier cosa, leer completo este archivo.
   npm run test:all            # Suite completa antes de push
   ```
 
+### Estándar: Estructura modular del backend
+
+**OBLIGATORIO**: El backend (`src/`) debe estar modularizado, NO en un único archivo monolítico.
+
+```
+src/
+├── index.js              (solo setup + middleware + rutas)
+├── constants.js          (constantes globales)
+├── middleware/           (CORS, logging, rate limiting, auth)
+├── routes/               (auth, users, boards, cards, uploads, admin)
+└── db/                   (queries, helpers)
+```
+
+**Regla**: Cada archivo ~100-150 líneas. Si crece más, extrae funciones a un nuevo archivo.
+
+**Cuándo crear archivo nuevo**:
+- **Nuevo endpoint** → crear `routes/recurso.js` o agregar a existente del mismo recurso
+- **Nueva función helper** → agregar a `db/helpers.js` o `db/queries.js`
+- **Nuevo middleware** → crear `middleware/nombre.js`
+- **Nueva constante** → agregar a `constants.js`
+
+**Beneficios**: código legible, fácil de mantener, mejor testing, onboarding claro.
+
+Ver `docs/WORKFLOW.md` sección "Estructura modular del backend" para detalles.
+
 ### Workflow típico
 
 ```bash
