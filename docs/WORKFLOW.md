@@ -70,6 +70,37 @@ npm run dev                 # Ver cambios en tiempo real → localhost:8787
 npm run test:watch          # Tests se re-ejecutan al guardar
 ```
 
+### Estructura modular del backend
+
+El código backend (`src/`) está organizado por responsabilidad (~100-150 líneas cada archivo, manejable):
+
+```
+src/
+├── index.js              (solo app setup + middleware + rutas)
+├── constants.js          (RATE_LIMITS, ALLOWED_MIME_TYPES, etc.)
+├── middleware/
+│   ├── cors.js          (CORS + security headers)
+│   ├── logging.js       (structured logging, getClientIP)
+│   ├── rateLimit.js     (rate limiting helpers)
+│   └── auth.js          (JWT, sesiones, requireAdmin)
+├── routes/
+│   ├── auth.js          (/auth/login, /auth/callback, /auth/logout)
+│   ├── users.js         (GET/PUT /api/me)
+│   ├── boards.js        (/api/boards/*, /api/boards/:id/members, /activity)
+│   ├── cards.js         (/api/cards/*, /api/boards/:id/cards, reorder, history)
+│   ├── uploads.js       (GET /uploads/:key, POST attachments)
+│   └── admin.js         (/api/admin/*)
+└── db/
+    ├── queries.js       (cardToJSON, getBoard, cardWithAccess, etc.)
+    └── helpers.js       (ensureUser, membership, logEvent, etc.)
+```
+
+**Dónde editar**:
+- **Nuevo endpoint**: crear en `routes/` (o agregar a archivo existente si es del mismo recurso)
+- **Función de DB**: agregar en `db/queries.js` o `db/helpers.js`
+- **Constante**: agregar en `constants.js`
+- **Lógica de permisos**: editar middleware en `middleware/auth.js` o en la ruta
+
 ### Commits frecuentes
 
 ```bash

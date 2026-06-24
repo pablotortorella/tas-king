@@ -1,0 +1,138 @@
+// ---------- Database Queries ----------
+
+import { membership } from "./helpers.js";
+
+const uid = () => crypto.randomUUID();
+
+export function extOf(name) {
+  const i = (name || "").lastIndexOf(".");
+  return i > 0 ? name.slice(i) : "";
+}
+
+export function attachmentToJSON(a) {
+  return {
+    id: a.id,
+    originalName: a.original_name,
+    mime: a.mime,
+    size: a.size,
+    isImage: (a.mime || "").startsWith("image/"),
+    url: "/uploads/" + a.stored_name,
+  };
+}
+
+export function commentToJSON(r) {
+  return {
+    id: r.id,
+    text: r.text,
+    ts: r.created_at,
+    author: r.author_email ? {
+      email: r.author_email,
+      name: r.author_name || r.author_email.split("@")[0],
+      avatarEmoji: r.author_emoji || null,
+      avatarColor: r.author_color || null,
+    } : null,
+  };
+}
+
+export function cardToJSON(c, commentsByCard, attsByCard) {
+  const comments = (commentsByCard.get(c.id) || []).map(commentToJSON);
+  const attachments = (attsByCard.get(c.id) || []).map(attachmentToJSON);
+  return {
+    id: c.id,
+    title: c.title,
+    column: c.column_id,
+    details: c.details,
+    due: c.due,
+    archived: !!c.archived,
+    archivedAt: c.archived_at || undefined,
+    position: c.position,
+    assignee: c.assignee_email || null,
+    created: c.created_at,
+    comments,
+    attachments,
+  };
+}
+
+export async function getBoard(db, boardId) {
+  const [cards, comments, atts] = await Promise.all([
+    db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId).all(),
+    db.prepare(`SELECT cm.id, cm.card_id, cm.text, cm.created_at, cm.author_email,
+        u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
+      FROM comments cm
+      JOIN cards c ON c.id = cm.card_id
+      LEFT JOIN users u ON u.email = cm.author_email
+      WHERE c.board_id = ? ORDER BY cm.created_at ASC`).bind(boardId).all(),
+    db.prepare("SELECT a.* FROM attachments a JOIN cards c ON c.id = a.card_id WHERE c.board_id = ? ORDER BY a.created_at ASC").bind(boardId).all(),
+  ]);
+  const commentsByCard = new Map();
+  for (const r of comments.results) {
+    if (!commentsByCard.has(r.card_id)) commentsByCard.set(r.card_id, []);
+    commentsByCard.get(r.card_id).push(r);
+  }
+  const attsByCard = new Map();
+  for (const r of atts.results) {
+    if (!attsByCard.has(r.card_id)) attsByCard.set(r.card_id, []);
+    attsByCard.get(r.card_id).push(r);
+  }
+  const version = cards.results.reduce((max, c) => Math.max(max, c.updated_at || 0), 0);
+  return { version, cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard)) };
+}
+
+export async function getCardRow(db, id) {
+  return db.prepare("SELECT * FROM cards WHERE id = ?").bind(id).first();
+}
+
+export async function cardJSONById(db, id) {
+  const c = await getCardRow(db, id);
+  if (!c) return null;
+  const [comments, atts] = await Promise.all([
+    db.prepare(`SELECT cm.id, cm.text, cm.created_at, cm.author_email,
+        u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
+      FROM comments cm LEFT JOIN users u ON u.email = cm.author_email
+      WHERE cm.card_id = ? ORDER BY cm.created_at ASC`).bind(id).all(),
+    db.prepare("SELECT * FROM attachments WHERE card_id = ? ORDER BY created_at ASC").bind(id).all(),
+  ]);
+  return cardToJSON(c, new Map([[id, comments.results]]), new Map([[id, atts.results]]));
+}
+
+export async function nextPosition(db, boardId, columnId) {
+  const row = await db.prepare("SELECT MAX(position) AS m FROM cards WHERE board_id = ? AND column_id = ?")
+    .bind(boardId, columnId).first();
+  return (row && row.m != null ? row.m : 0) + 1;
+}
+
+export async function cardWithAccess(c) {
+  const card = await getCardRow(c.env.DB, c.req.param("id"));
+  if (!card) return { error: c.json({ error: "No existe la tarjeta." }, 404) };
+  if (!(await membership(c.env.DB, card.board_id, c.get("email")))) {
+    return { error: c.json({ error: "Sin acceso a esta tarjeta." }, 403) };
+  }
+  return { card };
+}
+
+export function replaceCommentsStmts(db, cardId, comments) {
+  const stmts = [db.prepare("DELETE FROM comments WHERE card_id = ?").bind(cardId)];
+  const ins = db.prepare("INSERT INTO comments (id, card_id, text, created_at) VALUES (?, ?, ?, ?)");
+  (comments || []).forEach(cm => {
+    const text = (cm && cm.text ? String(cm.text) : "").trim();
+    if (text) stmts.push(ins.bind(uid(), cardId, text, cm.ts || Date.now()));
+  });
+  return stmts;
+}
+
+export function auditRowToJSON(r) {
+  return {
+    id: r.id,
+    cardId: r.card_id || null,
+    cardTitle: r.card_title || null,
+    action: r.action,
+    email: r.email,
+    ts: r.ts,
+    details: JSON.parse(r.details || "{}"),
+    author: {
+      name: r.author_name || r.email.split("@")[0],
+      avatarEmoji: r.avatar_emoji || null,
+      avatarColor: r.avatar_color || null,
+    },
+  };
+}
