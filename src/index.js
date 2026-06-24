@@ -22,6 +22,55 @@ const ALLOWED_MIME_TYPES = new Set([
 const now = () => Date.now();
 const uid = () => crypto.randomUUID();
 
+// ---------- Rate Limiting ----------
+const RATE_LIMITS = {
+  login: { requests: 5, window: 15 * 60 * 1000 },          // 5 intentos / 15 min
+  callback: { requests: 5, window: 15 * 60 * 1000 },       // 5 intentos / 15 min
+  uploadAttachment: { requests: 50, window: 5 * 60 * 1000 }, // 50 / 5 min
+  api: { requests: 500, window: 5 * 60 * 1000 },           // 500 / 5 min
+};
+
+// Obtiene IP del cliente (con soporte para Cloudflare)
+function getClientIP(c) {
+  return c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For")?.split(",")[0] || "unknown";
+}
+
+// Registra un request en el log de rate limiting
+async function trackRequest(db, ip, endpoint, method = "GET") {
+  const id = uid();
+  await db.prepare(
+    "INSERT INTO rate_limit_log (id, ip, endpoint, ts, method) VALUES (?, ?, ?, ?, ?)"
+  ).bind(id, ip, endpoint, now(), method).run();
+}
+
+// Verifica si el cliente excedió el rate limit
+async function checkRateLimit(db, ip, endpoint, config) {
+  const windowStart = now() - config.window;
+  const row = await db.prepare(
+    "SELECT COUNT(*) as count FROM rate_limit_log WHERE ip = ? AND endpoint = ? AND ts > ?"
+  ).bind(ip, endpoint, windowStart).first();
+
+  const count = row?.count || 0;
+  return count < config.requests;
+};
+
+// Middleware de rate limiting
+function rateLimitMiddleware(endpoint, config) {
+  return async (c, next) => {
+    const db = c.env.DB;
+    const ip = getClientIP(c);
+
+    const allowed = await checkRateLimit(db, ip, endpoint, config);
+    if (!allowed) {
+      await trackRequest(db, ip, endpoint, c.req.method);
+      return c.json({ error: "Demasiados intentos. Intentá de nuevo más tarde." }, 429);
+    }
+
+    await trackRequest(db, ip, endpoint, c.req.method);
+    await next();
+  };
+}
+
 function extOf(name) {
   const i = (name || "").lastIndexOf(".");
   return i > 0 ? name.slice(i) : "";
@@ -317,7 +366,7 @@ async function seedAdminIfNeeded(db, email, adminEmailsSecret) {
   }
 }
 
-app.get("/auth/login", c => {
+app.get("/auth/login", rateLimitMiddleware("/auth/login", RATE_LIMITS.login), c => {
   const origin = new URL(c.req.url).origin;
   const state = crypto.randomUUID();
   setCookie(c, "oauth_state", state, { ...COOKIE_OPTS, maxAge: 600 });
@@ -333,7 +382,7 @@ app.get("/auth/login", c => {
   return c.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + params.toString());
 });
 
-app.get("/auth/callback", async c => {
+app.get("/auth/callback", rateLimitMiddleware("/auth/callback", RATE_LIMITS.callback), async c => {
   const url = new URL(c.req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
@@ -410,6 +459,16 @@ async function resolveEmail(c) {
 
 // Middleware: resuelve el usuario en cada request /api/*.
 app.use("/api/*", async (c, next) => {
+  // Rate limiting por IP y endpoint
+  const ip = getClientIP(c);
+  const endpoint = c.req.path;
+  const allowed = await checkRateLimit(c.env.DB, ip, endpoint, RATE_LIMITS.api);
+  if (!allowed) {
+    await trackRequest(c.env.DB, ip, endpoint, c.req.method);
+    return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde." }, 429);
+  }
+  await trackRequest(c.env.DB, ip, endpoint, c.req.method);
+
   const email = await resolveEmail(c);
   if (!email) return c.json({ error: "No autenticado." }, 401);
   await ensureUser(c.env.DB, email);
@@ -795,6 +854,15 @@ app.delete("/api/attachments/:id", async c => {
 
 // Servir archivos desde R2
 app.get("/uploads/:key", async c => {
+  // Rate limiting por IP
+  const ip = getClientIP(c);
+  const allowed = await checkRateLimit(c.env.DB, ip, "/uploads", RATE_LIMITS.uploadAttachment);
+  if (!allowed) {
+    await trackRequest(c.env.DB, ip, "/uploads", c.req.method);
+    return c.json({ error: "Demasiadas solicitudes de descarga. Intentá de nuevo más tarde." }, 429);
+  }
+  await trackRequest(c.env.DB, ip, "/uploads", c.req.method);
+
   // Validar autenticación
   const email = await resolveEmail(c);
   if (!email) return c.json({ error: "No autenticado." }, 401);

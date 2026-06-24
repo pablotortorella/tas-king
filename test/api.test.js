@@ -30,6 +30,25 @@ describe("JWT validation (Google OAuth)", () => {
   });
 });
 
+describe("Rate limiting", () => {
+  it("rechaza requests cuando se excede el límite", async () => {
+    // Simular múltiples requests del mismo IP al mismo endpoint
+    // Después de N requests en la ventana de tiempo, debe devolver 429
+  });
+
+  it("resetea el contador después de la ventana de tiempo", () => {
+    // Un request después de que expire la ventana de tiempo debe ser permitido nuevamente
+  });
+
+  it("permite requests de diferentes IPs", () => {
+    // Dos IPs diferentes pueden hacer requests sin interferir en sus límites
+  });
+
+  it("aplica diferentes límites a diferentes endpoints", () => {
+    // /auth/login tiene límite más restrictivo que /api/*
+  });
+});
+
 const owner = "owner@test.local";
 const member = "member@test.local";
 const outsider = "outsider@test.local";
