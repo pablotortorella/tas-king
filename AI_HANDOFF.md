@@ -135,7 +135,34 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-23, Claude Sonnet 4.6)
+## Último handoff (2026-06-23, Sesión Final — Claude Sonnet 4.6)
+
+**ESTA SESIÓN — Fundaciones profesionales** ✅
+- Creado `docs/WORKFLOW.md`: proceso completo (157 líneas)
+  - Checklist al iniciar sesión, cómo hacer branch, loop code-test-commit, checklist pre-merge, deploy, rollback
+  - Troubleshooting y referencia rápida
+- Creado `docs/ADRs.md`: 10 decisiones arquitectónicas (350 líneas)
+  - ADR-001 a ADR-010: OAuth, D1, Workers, multiusuario, import, personal board, no E2E para visuales, secrets, audit log
+  - Cada uno: Problema → Decisión → Consecuencias → Alternativas → Cuándo cambiar
+- Actualizado `CLAUDE.md`: instrucciones claras por sesión (200 líneas)
+  - Checklist obligatorio: revisar docs → tests → status
+  - Reglas (tests first, commits claros, nunca hacer ...)
+  - Workflow típico y referencia rápida
+- Creado `docs/API.md`: referencia de endpoints (400 líneas)
+  - Todos los `/api/*` documentados: parámetros, respuestas, errores, ejemplos curl
+- Creado `.env.example`: plantilla para setup local
+- Agregado `npm run verify-ready`: checklist automático pre-push
+- Actualizado `AI_HANDOFF.md` con nuevas prioridades
+
+**Anteriormente en sesiones previas**:
+- ✅ v1.4: Historial de actividad (#1) — tabla audit_log, eventos registrados, panel en modal + admin
+- ✅ v1.3: Panel admin + Polling real-time + Celebración (confeti + animación)
+- ✅ v1.2: Atajos, footer, responsive header
+- ✅ v1.1: Perfiles, avatares, comentarios con autor
+
+---
+
+## Último handoff anterior (2026-06-23 — antes de fundaciones)
 
 **Sesión: Historial de actividad (#1 del backlog)**
 

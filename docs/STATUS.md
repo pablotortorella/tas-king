@@ -1,7 +1,19 @@
 # Estado de Implementación — FUN TasKing! v1.4
 
-**Última actualización**: 2026-06-23 (sesión: Historial de actividad)  
-**Próxima feature**: #2 Etiquetas + filtro
+**Última actualización**: 2026-06-23 (sesión final: Fundaciones profesionales)  
+**Estado**: ✅ Documentación de workflow COMPLETA | ⏭️ Próximo: Feature #2 Etiquetas + filtro
+
+## 🎯 Cambio importante esta sesión
+
+Se establecieron **fundaciones profesionales** ANTES de continuar con features:
+- `docs/WORKFLOW.md` — proceso desarrollo, testing, merge, deploy
+- `docs/ADRs.md` — decisiones arquitectónicas (OAuth, D1, etc.)
+- `CLAUDE.md` actualizado — instrucciones claras por sesión
+- `docs/API.md` — referencia de endpoints
+- `.env.example` — setup local
+- `npm run verify-ready` — verificación automática
+
+Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevención de duplicación.
 
 ---
 
