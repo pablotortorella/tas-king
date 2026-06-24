@@ -48,6 +48,43 @@ app.use(async (c, next) => {
   await next();
 });
 
+// Middleware: registra todos los requests con contexto
+app.use(async (c, next) => {
+  const startTime = Date.now();
+  const ip = getClientIP(c);
+  const method = c.req.method;
+  const path = c.req.path;
+
+  await next();
+
+  const latency = Date.now() - startTime;
+  const status = c.res.status;
+
+  // No loguear requests a /assets (demasiado ruido)
+  if (path.startsWith("/assets")) return;
+
+  const context = {
+    ip,
+    method,
+    path,
+    status,
+    latency,
+  };
+
+  // Agregar usuario si está disponible
+  const email = c.get("email");
+  if (email) context.user = email;
+
+  // Loguear como info si OK, warn si 4xx, error si 5xx
+  if (status >= 500) {
+    logger.error(`${method} ${path}`, context);
+  } else if (status >= 400) {
+    logger.warn(`${method} ${path}`, context);
+  } else {
+    logger.info(`${method} ${path}`, context);
+  }
+});
+
 // ---------- Límites de adjuntos ----------
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const MAX_ATTACHMENTS_PER_CARD = 10;
@@ -66,6 +103,32 @@ const ALLOWED_MIME_TYPES = new Set([
 // ---------- Helpers básicos ----------
 const now = () => Date.now();
 const uid = () => crypto.randomUUID();
+
+// ---------- Structured Logging ----------
+class Logger {
+  constructor(level = "info") {
+    this.levels = { debug: 0, info: 1, warn: 2, error: 3 };
+    this.level = this.levels[level] || 1;
+  }
+
+  log(level, message, context = {}) {
+    if (this.levels[level] < this.level) return;
+    const entry = {
+      ts: new Date().toISOString(),
+      level,
+      message,
+      ...context
+    };
+    console.log(JSON.stringify(entry));
+  }
+
+  debug(message, context) { this.log("debug", message, context); }
+  info(message, context) { this.log("info", message, context); }
+  warn(message, context) { this.log("warn", message, context); }
+  error(message, context) { this.log("error", message, context); }
+}
+
+const logger = new Logger("info");
 
 // ---------- Rate Limiting ----------
 const RATE_LIMITS = {
@@ -428,10 +491,12 @@ app.get("/auth/login", rateLimitMiddleware("/auth/login", RATE_LIMITS.login), c 
 });
 
 app.get("/auth/callback", rateLimitMiddleware("/auth/callback", RATE_LIMITS.callback), async c => {
+  const ip = getClientIP(c);
   const url = new URL(c.req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   if (!code || !state || state !== getCookie(c, "oauth_state")) {
+    logger.warn("Login: invalid OAuth state", { ip });
     return c.html(deniedPage("La sesión de login expiró o es inválida. Probá de nuevo."), 400);
   }
   deleteCookie(c, "oauth_state", { path: "/" });
@@ -447,7 +512,10 @@ app.get("/auth/callback", rateLimitMiddleware("/auth/callback", RATE_LIMITS.call
       grant_type: "authorization_code",
     }).toString(),
   });
-  if (!tokenRes.ok) return c.html(deniedPage("No se pudo completar el login con Google."), 502);
+  if (!tokenRes.ok) {
+    logger.error("Login: Google token exchange failed", { ip, status: tokenRes.status });
+    return c.html(deniedPage("No se pudo completar el login con Google."), 502);
+  }
   const tok = await tokenRes.json();
 
   let claims;
@@ -455,18 +523,20 @@ app.get("/auth/callback", rateLimitMiddleware("/auth/callback", RATE_LIMITS.call
     // Validar la firma del JWT y todos los claims estándar
     claims = await verifyGoogleJWT(tok.id_token, c.env.GOOGLE_CLIENT_ID);
   } catch (e) {
-    console.error("JWT verification failed:", e);
+    logger.warn("Login: JWT verification failed", { ip, error: e.message });
     return c.html(deniedPage(`Falló la validación de seguridad: ${e.message}`), 403);
   }
 
   const email = (claims.email || "").trim().toLowerCase();
   if (!email) {
+    logger.warn("Login: no email in claims", { ip });
     return c.html(deniedPage("Tu cuenta de Google no tiene un email."), 403);
   }
 
   // Verificar si el email está en la allowlist de D1 o en el Secret legacy ALLOWED_EMAILS
   const isAllowed = await isEmailAllowed(c.env.DB, email, c.env.ALLOWED_EMAILS);
   if (!isAllowed) {
+    logger.warn("Login: email not in allowlist", { ip, email });
     return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app.`), 403);
   }
 
@@ -475,6 +545,7 @@ app.get("/auth/callback", rateLimitMiddleware("/auth/callback", RATE_LIMITS.call
 
   const session = await signSession({ email, exp: Date.now() + 30 * 24 * 3600 * 1000 }, c.env.SESSION_SECRET);
   setCookie(c, "session", session, { ...COOKIE_OPTS, maxAge: 30 * 24 * 3600 });
+  logger.info("Login successful", { ip, email });
   return c.redirect("/");
 });
 
