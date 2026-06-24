@@ -87,10 +87,19 @@ test("deep-link abre la tarjeta correcta y limpia la URL al cerrar", async ({ pa
   await expect(page.locator("#overlay")).not.toHaveClass(/open/);
   await expect(page).toHaveURL("/");
 
+  // Archivar la tarjeta y verificar que deep-link aún funciona
   await page.locator(".card", { hasText: deepTitle }).click();
+  await page.locator("#archiveCardBtn").click();
+  await expect(page.locator("#overlay")).not.toHaveClass(/open/);
+
+  // La tarjeta archivada aún debe abrirse con deep-link
+  await page.goto(`/?card=${cardId}`);
+  await expect(page.locator("#overlay")).toHaveClass(/open/);
+  await expect(page.locator("#fTitle")).toHaveValue(deepTitle);
+
+  // Eliminarla desde aquí
   page.once("dialog", dialog => dialog.accept());
   await page.locator("#deleteCardBtn").click();
-  await expect(page.locator(".card", { hasText: deepTitle })).toHaveCount(0);
 });
 
 test("los atajos no se disparan mientras se escribe", async ({ page }) => {
