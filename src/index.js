@@ -183,21 +183,32 @@ function getClientIP(c) {
 
 // Registra un request en el log de rate limiting
 async function trackRequest(db, ip, endpoint, method = "GET") {
-  const id = uid();
-  await db.prepare(
-    "INSERT INTO rate_limit_log (id, ip, endpoint, ts, method) VALUES (?, ?, ?, ?, ?)"
-  ).bind(id, ip, endpoint, now(), method).run();
+  try {
+    const id = uid();
+    await db.prepare(
+      "INSERT INTO rate_limit_log (id, ip, endpoint, ts, method) VALUES (?, ?, ?, ?, ?)"
+    ).bind(id, ip, endpoint, now(), method).run();
+  } catch (e) {
+    // Si la tabla no existe, ignorar silenciosamente (será creada en migration)
+    // console.warn("Track request failed:", e.message);
+  }
 }
 
 // Verifica si el cliente excedió el rate limit
 async function checkRateLimit(db, ip, endpoint, config) {
-  const windowStart = now() - config.window;
-  const row = await db.prepare(
-    "SELECT COUNT(*) as count FROM rate_limit_log WHERE ip = ? AND endpoint = ? AND ts > ?"
-  ).bind(ip, endpoint, windowStart).first();
+  try {
+    const windowStart = now() - config.window;
+    const row = await db.prepare(
+      "SELECT COUNT(*) as count FROM rate_limit_log WHERE ip = ? AND endpoint = ? AND ts > ?"
+    ).bind(ip, endpoint, windowStart).first();
 
-  const count = row?.count || 0;
-  return count < config.requests;
+    const count = row?.count || 0;
+    return count < config.requests;
+  } catch (e) {
+    // Si la tabla no existe o hay error, permitir el request (rate limiting deshabilitado)
+    console.warn("Rate limit check failed:", e.message);
+    return true;
+  }
 };
 
 // Middleware de rate limiting
