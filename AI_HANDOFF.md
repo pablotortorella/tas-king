@@ -11,16 +11,16 @@ la consola. La lista de emails pasó de un Secret de Cloudflare (`ALLOWED_EMAILS
 
 ## 🎯 Objetivo inmediato
 
-**✅ COMPLETADO ESTA SESIÓN**: Documentación profesional de workflow
-- `docs/WORKFLOW.md` — proceso completo: desarrollo, testing, merge, deploy
-- `docs/ADRs.md` — decisiones arquitectónicas registradas (10 ADRs)
-- `CLAUDE.md` actualizado — instrucciones para cada sesión
-- `docs/API.md` — referencia de todos los endpoints
-- `.env.example` — plantilla para setup local
-- `npm run verify-ready` — checklist automático antes de push
+**✅ COMPLETADO ESTA SESIÓN**: Protección de adjuntos (#4) — 2-layer validation (auth + membresía + límites)
+- GET `/uploads/:key` requiere autenticación (401) + membresía del tablero (403)
+- POST `/api/cards/:id/attachments` valida: MIME type whitelist (12 tipos), tamaño máximo 20 MB, máximo 10 archivos por tarjeta
+- 3 tests nuevos + 1 archivo de spec
+- Deployado a producción: v1.5
 
-**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro
+**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro (MEDIA priority)
 Tabla `labels` y `card_labels`, UI para crear/editar/filtrar, atajos 0-9, página AYUDA (F1).
+
+O: Feature #5 Validar JWT de Google (MEDIA priority, seguridad).
 
 Ver `docs/STATUS.md` para saber qué está hecho, qué falta testing, qué no existe.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
@@ -109,7 +109,7 @@ Para saber si un feature existe, está completo, o qué le falta:
 | #1 📜 Historial | Implementado, tests manuales ✅ | `audit_log` en D1, `logEvent()` en 8 eventos, panel en modal de tarjeta, pestaña Actividad en Admin con filtros. |
 | #2 🏷️ Etiquetas | No existe | Requiere: tabla `labels`, `card_labels` join, UI de creación/edición, filtro, página de AYUDA. |
 | #3 ✅ Checklists | No existe | Requiere: tabla `checklist_items`, UI en modal de tarjeta. |
-| #4 🔐 Adjuntos | Parcialmente | Las URLs de `/uploads` hoy son públicas (solo UUID). Requiere validación de sesión/membresía. |
+| #4 🔐 Adjuntos | **Implementado ✅** | Validación de sesión/membresía en GET `/uploads`, límites de tamaño (20 MB), cantidad (10), MIME type (whitelist). |
 | #5 🛡️ JWT Google | Implementado, sin test | El token de Google no se valida con rigor (solo se confía en que OAuth lo validó). Mejora de seguridad. |
 | #6 🌙 Modo oscuro | No existe | CSS variables ya están listos. Requiere: toggle en header, localStorage, media query fallback. |
 
@@ -121,7 +121,7 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - [x] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
 - [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
 - [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
-- [ ] #4 🔐 Proteger adjuntos (hoy `/uploads` son URLs públicas con UUID)
+- [x] #4 🔐 Proteger adjuntos (validación de sesión/membresía, límites de tamaño/cantidad/MIME)
 - [ ] #5 🛡️ Validar JWT de Google con rigor (hardening del login)
 - [ ] #6 🌙 Modo oscuro/claro
 - [ ] #7 🖼️ Mejores adjuntos (pegar imágenes, vista previa, reordenar)
@@ -135,24 +135,19 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-23, Sesión Final — Claude Sonnet 4.6)
+## Último handoff (2026-06-24, Sesión de seguridad — Claude Haiku 4.5)
 
-**ESTA SESIÓN — Fundaciones profesionales** ✅
-- Creado `docs/WORKFLOW.md`: proceso completo (157 líneas)
-  - Checklist al iniciar sesión, cómo hacer branch, loop code-test-commit, checklist pre-merge, deploy, rollback
-  - Troubleshooting y referencia rápida
-- Creado `docs/ADRs.md`: 10 decisiones arquitectónicas (350 líneas)
-  - ADR-001 a ADR-010: OAuth, D1, Workers, multiusuario, import, personal board, no E2E para visuales, secrets, audit log
-  - Cada uno: Problema → Decisión → Consecuencias → Alternativas → Cuándo cambiar
-- Actualizado `CLAUDE.md`: instrucciones claras por sesión (200 líneas)
-  - Checklist obligatorio: revisar docs → tests → status
-  - Reglas (tests first, commits claros, nunca hacer ...)
-  - Workflow típico y referencia rápida
-- Creado `docs/API.md`: referencia de endpoints (400 líneas)
-  - Todos los `/api/*` documentados: parámetros, respuestas, errores, ejemplos curl
-- Creado `.env.example`: plantilla para setup local
-- Agregado `npm run verify-ready`: checklist automático pre-push
-- Actualizado `AI_HANDOFF.md` con nuevas prioridades
+**ESTA SESIÓN — Protección de adjuntos (#4 Opción A)** ✅
+- Implementada seguridad en adjuntos (2-layer validation):
+  - **GET `/uploads/:key`** ahora requiere autenticación (401 sin sesión) + membresía del tablero (403 sin acceso)
+  - **POST `/api/cards/:id/attachments`** valida:
+    - MIME type whitelist (12 tipos): imágenes (JPEG, PNG, WebP, GIF), PDFs, documentos de texto, Office (Word, Excel)
+    - Tamaño máximo: 20 MB por archivo (413 Payload Too Large si excede)
+    - Cantidad máxima: 10 archivos por tarjeta (400 Bad Request si llega al límite)
+  - Cambio de cache: GET `/uploads/:key` ahora devuelve `private` en vez de `public`
+- Tests nuevos: 3 casos de seguridad (acceso no-miembro → 403, tamaño > 20MB → 413, MIME no permitido → 400)
+- Archivo de spec creado: `test/attachments.spec.js` (documentación de comportamiento esperado, no-mock foundation)
+- Todo deployado a producción: v1.5 (`cb311e02`)
 
 **Anteriormente en sesiones previas**:
 - ✅ v1.4: Historial de actividad (#1) — tabla audit_log, eventos registrados, panel en modal + admin
