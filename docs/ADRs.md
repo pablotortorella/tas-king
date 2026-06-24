@@ -371,3 +371,56 @@ Cuando tomes una decisión arquitectónica **importante** (no cambios menores):
 - Bug fixes (documentar en commits/PRs)
 - Refactoring local (no afecta arquitectura)
 - Cambios UI menores
+
+---
+
+## ADR-011: Validación de JWT de Google con RSA
+
+**Estado**: ✅ Aceptado (Implementado en v1.5)  
+**Decidido**: Iteración actual  
+**Último review**: 2026-06-24  
+
+**Problema**
+En `/auth/callback`, se decodificaban los claims del `id_token` de Google pero **sin validar la firma**. Un atacante podría interceptar y modificar los claims (ej. cambiar `email` a otro usuario) sin ser detectado. El token podría también estar expirado.
+
+**Decisión**
+Implementar validación completa del JWT:
+1. **Obtener public keys de Google**: descargar del endpoint `https://www.googleapis.com/oauth2/v1/certs` y cachear por 24h
+2. **Verificar firma RSA**: usar `crypto.subtle.verify()` con clave pública y algoritmo RSASSA-PKCS1-v1_5
+3. **Validar claims**:
+   - `exp`: token no expirado
+   - `iss`: issuer es `https://accounts.google.com`
+   - `aud`: audience es nuestro `GOOGLE_CLIENT_ID`
+   - `email_verified`: email fue verificado por Google
+
+**Implementación** (`src/index.js`):
+- `verifyGoogleJWT(idToken, expectedAudience)`: función que valida firma y claims
+- `getGooglePublicKeys()`: descarga y cachea keys con TTL
+- `pemToCryptoKey(pem)`: convierte certificado PEM a CryptoKey
+- `base64urlToBytes(str)`: decodifica base64url (usado en JWT)
+- En `/auth/callback`: usar `verifyGoogleJWT()` antes de aceptar email
+
+**Consecuencias**
+- ✅ **Ventajas**:
+  - Token modificado será detectado (tampering protection)
+  - Token expirado será rechazado
+  - Token de otra app (aud incorrecto) será rechazado
+  - Email no verificado será rechazado
+  - Cumple OWASP: validación de identidad fuerte
+  
+- ❌ **Desventajas**:
+  - Una request extra a Google al cachear keys (cada 24h)
+  - Costo computacional de verificación RSA (bajo en Workers con crypto.subtle)
+  - Si Google tiene outage en googleapis.com/oauth2/v1/certs, no hay keys en cache
+
+**Alternativas consideradas**
+1. **No validar firma** (estado anterior): fácil pero inseguro
+2. **Validar solo con HTTP call a Google**: lento (llamada extra por login)
+3. **Hardcodear keys públicas**: frágil (cambios de Google = código roto)
+
+**Cuándo cambiar**
+- Si Google depreca el endpoint de keys, usar otro endpoint
+- Si en el futuro hay rate limiting de keys, aumentar TTL de cache
+- Si hay problemas de performance, cachear más agresivamente (pero verificar keys con menos frecuencia)
+
+---

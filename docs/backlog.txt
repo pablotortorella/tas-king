@@ -6,7 +6,7 @@
 5. 🔐 Proteger adjuntos
 6. 🛡️ Validar JWT de Google (🛡️ Validar el token de Google con rigor (hardening del login) — 🟢)
 7. 🌙 Modo oscuro/claro
-8. 🖼️ Mejoras adjuntos (pegar imágenes, vista previa, reordenar) y colocar límites de formatos, tamaño y cantidad.
+8. 🖼️ Mejoras adjuntos (pegar imágenes, drag & drop, reordenar)
 9. 💾 Respaldo automático (backup)
 
 
@@ -59,3 +59,29 @@ Otras para que estén en el radar:
 ⚡ Tiempo real (ver cambios de otros sin recargar) — necesita WebSockets/Durable Objects
 📜 Historial de actividad (quién hizo qué y cuándo)
 🔀 Mover tarjetas entre tableros (opcional): útil pero un poco más de laburo.
+
+---
+
+## Detalles de #8 (Mejoras adjuntos) — BAJA PRIORIDAD
+
+**Drag & drop de archivos en modal**:
+- Listener en `dragover` / `drop` en la sección `.attachments`
+- Agrega archivos a `draftAttachments` como los del file input
+- Visual feedback: cambiar background de la zona (className `.dragover`)
+
+**Pegar imágenes del clipboard**:
+- Listener global en `paste` event dentro del modal
+- Acceder a `e.clipboardData.items`
+- Si hay imágenes: crear blobs y agregarlas a `draftAttachments`
+- Permitir pegar múltiples imágenes (ej. screenshot y foto)
+
+**Reordenar adjuntos (drag to reorder)**:
+- Requiere nueva columna `position` en tabla `attachments`
+- Implementar drag handlers en cada `.attachment` (drag source)
+- Drop target: cualquier otro attachment
+- Al soltar: reordenar `draftAttachments` localmente
+- Al guardar: enviar nuevo orden al servidor (endpoint PUT `/api/attachments/reorder`)
+- Backend: actualizar posiciones de todos los attachments de la tarjeta
+
+**Esfuerzo**: 🟡 medio (3-4 horas si se toma tranquilo)
+**Impacto**: bajo-medio (mejora UX pero no es funcionalidad crítica)

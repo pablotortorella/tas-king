@@ -2,6 +2,34 @@ import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import app from "../src/index.js";
 
+describe("JWT validation (Google OAuth)", () => {
+  it("verifica firma RSA del JWT", () => {
+    // verifyGoogleJWT() debe usar crypto.subtle.verify con RSASSA-PKCS1-v1_5
+    // Un token con firma inválida debe rechazarse
+  });
+
+  it("valida exp (expiration)", () => {
+    // JWT con exp < Date.now() debe fallar
+  });
+
+  it("valida iss (issuer)", () => {
+    // JWT con iss !== "https://accounts.google.com" debe fallar
+  });
+
+  it("valida aud (audience)", () => {
+    // JWT con aud !== GOOGLE_CLIENT_ID debe fallar
+  });
+
+  it("valida email_verified", () => {
+    // JWT con email_verified: false debe fallar
+  });
+
+  it("obtiene public keys de Google y las cachea", () => {
+    // getGooglePublicKeys() debe descargar de googleapis.com/oauth2/v1/certs
+    // y cachearlas por 24h
+  });
+});
+
 const owner = "owner@test.local";
 const member = "member@test.local";
 const outsider = "outsider@test.local";

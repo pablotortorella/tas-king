@@ -215,6 +215,86 @@ function deniedPage(msg) {
 
 const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "Lax", path: "/" };
 
+// Cache de public keys de Google (actualizar cada 24h)
+let googleKeysCache = { keys: [], exp: 0 };
+
+// Obtiene las public keys de Google
+async function getGooglePublicKeys() {
+  const now = Date.now();
+  if (googleKeysCache.exp > now) return googleKeysCache.keys;
+
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v1/certs", {
+      headers: { "Accept": "application/json" }
+    });
+    if (!res.ok) throw new Error("Failed to fetch Google keys");
+    const data = await res.json();
+    googleKeysCache = {
+      keys: Object.entries(data).map(([kid, x5c]) => ({ kid, x5c })),
+      exp: now + 24 * 3600 * 1000
+    };
+    return googleKeysCache.keys;
+  } catch (e) {
+    console.error("Error fetching Google keys:", e);
+    return [];
+  }
+}
+
+// Convierte un certificado PEM a CryptoKey para verificar firmas
+async function pemToCryptoKey(pem) {
+  const binaryString = atob(pem.replace(/-----BEGIN CERTIFICATE-----|\n|-----END CERTIFICATE-----/g, ""));
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return crypto.subtle.importKey(
+    "spki",
+    bytes.buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+}
+
+// Verifica la firma de un JWT usando las public keys de Google
+async function verifyGoogleJWT(idToken, expectedAudience) {
+  const parts = idToken.split(".");
+  if (parts.length !== 3) throw new Error("Invalid JWT format");
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const header = JSON.parse(strFromB64url(headerB64));
+  const payload = JSON.parse(strFromB64url(payloadB64));
+  const signature = base64urlToBytes(signatureB64);
+
+  // Validar claims estándar
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp && payload.exp < now) throw new Error("Token expired");
+  if (payload.iss !== "https://accounts.google.com") throw new Error("Invalid issuer");
+  if (payload.aud !== expectedAudience) throw new Error("Invalid audience");
+  if (!payload.email_verified) throw new Error("Email not verified");
+
+  // Buscar la key correcta por kid
+  const keys = await getGooglePublicKeys();
+  const keyEntry = keys.find(k => k.kid === header.kid);
+  if (!keyEntry) throw new Error("Key not found");
+
+  // Verificar la firma
+  const cryptoKey = await pemToCryptoKey(keyEntry.x5c);
+  const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+  const isValid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", cryptoKey, signature, data);
+  if (!isValid) throw new Error("Invalid signature");
+
+  return payload;
+}
+
+// Convierte base64url a bytes (para la firma)
+function base64urlToBytes(str) {
+  const padding = "==".slice(0, (4 - (str.length % 4)) % 4);
+  const base64 = (str + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return bytes;
+}
+
 // Verifica si un email puede acceder: primero D1, luego fallback al Secret legacy.
 async function isEmailAllowed(db, email, legacySecret) {
   const row = await db.prepare("SELECT 1 FROM allowed_emails WHERE email = ?").bind(email).first();
@@ -277,11 +357,17 @@ app.get("/auth/callback", async c => {
   const tok = await tokenRes.json();
 
   let claims;
-  try { claims = JSON.parse(strFromB64url(tok.id_token.split(".")[1])); }
-  catch (e) { return c.html(deniedPage("Respuesta de Google inesperada."), 502); }
+  try {
+    // Validar la firma del JWT y todos los claims estándar
+    claims = await verifyGoogleJWT(tok.id_token, c.env.GOOGLE_CLIENT_ID);
+  } catch (e) {
+    console.error("JWT verification failed:", e);
+    return c.html(deniedPage(`Falló la validación de seguridad: ${e.message}`), 403);
+  }
+
   const email = (claims.email || "").trim().toLowerCase();
-  if (!email || claims.email_verified === false) {
-    return c.html(deniedPage("Tu cuenta de Google no tiene un email verificado."), 403);
+  if (!email) {
+    return c.html(deniedPage("Tu cuenta de Google no tiene un email."), 403);
   }
 
   // Verificar si el email está en la allowlist de D1 o en el Secret legacy ALLOWED_EMAILS
