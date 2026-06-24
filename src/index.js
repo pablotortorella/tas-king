@@ -146,6 +146,28 @@ class Logger {
 
 const logger = new Logger("info");
 
+// Error handler: captura todas las excepciones no manejadas
+app.onError((err, c) => {
+  const ip = getClientIP(c);
+  const path = c.req.path;
+  const message = err.message || "Error desconocido";
+  const stack = err.stack || "";
+
+  logger.error(`Exception in ${c.req.method} ${path}`, {
+    ip,
+    message,
+    stack: stack.split("\n")[0], // Solo primera línea del stack
+  });
+
+  console.error(`[ERROR] ${c.req.method} ${path}:`, err);
+
+  return c.json({
+    error: `Server error: ${message}`,
+    path,
+    method: c.req.method,
+  }, 500);
+});
+
 // ---------- Rate Limiting ----------
 const RATE_LIMITS = {
   login: { requests: 5, window: 15 * 60 * 1000 },          // 5 intentos / 15 min
