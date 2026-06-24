@@ -11,18 +11,19 @@ la consola. La lista de emails pasó de un Secret de Cloudflare (`ALLOWED_EMAILS
 
 ## 🎯 Objetivo inmediato
 
-**✅ COMPLETADO ESTA SESIÓN**: Protección de adjuntos (#4) — 2-layer validation (auth + membresía + límites)
-- GET `/uploads/:key` requiere autenticación (401) + membresía del tablero (403)
-- POST `/api/cards/:id/attachments` valida: MIME type whitelist (12 tipos), tamaño máximo 20 MB, máximo 10 archivos por tarjeta
-- 3 tests nuevos + 1 archivo de spec
-- Deployado a producción: v1.5
+**✅ COMPLETADO ESTA SESIÓN**: Dos features de seguridad
+- #4 Protección de adjuntos: 2-layer validation (auth + membresía + límites)
+- #5 Validar JWT de Google: firma RSA + claims estándar
 
-**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro (MEDIA priority)
+**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro (MEDIA priority, organización)
 Tabla `labels` y `card_labels`, UI para crear/editar/filtrar, atajos 0-9, página AYUDA (F1).
 
-O: Feature #5 Validar JWT de Google (MEDIA priority, seguridad).
+Alternativas:
+- #3 Checklists / subtareas (MEDIA priority, organización)
+- #6 Modo oscuro/claro (BAJA priority, UX)
+- #8 Mejoras adjuntos (BAJA priority, UX — drag & drop, paste, reorder)
 
-Ver `docs/STATUS.md` para saber qué está hecho, qué falta testing, qué no existe.
+Ver `docs/STATUS.md` para saber qué está hecho.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
 
 ## Stack
@@ -110,7 +111,8 @@ Para saber si un feature existe, está completo, o qué le falta:
 | #2 🏷️ Etiquetas | No existe | Requiere: tabla `labels`, `card_labels` join, UI de creación/edición, filtro, página de AYUDA. |
 | #3 ✅ Checklists | No existe | Requiere: tabla `checklist_items`, UI en modal de tarjeta. |
 | #4 🔐 Adjuntos | **Implementado ✅** | Validación de sesión/membresía en GET `/uploads`, límites de tamaño (20 MB), cantidad (10), MIME type (whitelist). |
-| #5 🛡️ JWT Google | Implementado, sin test | El token de Google no se valida con rigor (solo se confía en que OAuth lo validó). Mejora de seguridad. |
+| #5 🛡️ JWT Google | **Implementado ✅** | Validación de firma RSA + claims (exp, iss, aud, email_verified). Detecta tampering y tokens modificados. |
+| #8 🖼️ Adjuntos mejorados | No existe (BAJA priority) | Drag & drop, paste images, reorder adjuntos. |
 | #6 🌙 Modo oscuro | No existe | CSS variables ya están listos. Requiere: toggle en header, localStorage, media query fallback. |
 
 ## Pendientes
@@ -122,10 +124,10 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
 - [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
 - [x] #4 🔐 Proteger adjuntos (validación de sesión/membresía, límites de tamaño/cantidad/MIME)
-- [ ] #5 🛡️ Validar JWT de Google con rigor (hardening del login)
+- [x] #5 🛡️ Validar JWT de Google con rigor (hardening del login — firma RSA + claims)
 - [ ] #6 🌙 Modo oscuro/claro
-- [ ] #7 🖼️ Mejores adjuntos (pegar imágenes, vista previa, reordenar)
-- [ ] #8 💾 Respaldo automático programado del tablero
+- [ ] #8 🖼️ Mejores adjuntos (drag & drop, paste images, reorder) — BAJA PRIORIDAD
+- [ ] #9 💾 Respaldo automático programado del tablero
 
 ## No hacer
 - No usar Cloudflare Access (no funciona en `*.workers.dev` sin dominio propio)
@@ -137,17 +139,27 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 
 ## Último handoff (2026-06-24, Sesión de seguridad — Claude Haiku 4.5)
 
-**ESTA SESIÓN — Protección de adjuntos (#4 Opción A)** ✅
-- Implementada seguridad en adjuntos (2-layer validation):
-  - **GET `/uploads/:key`** ahora requiere autenticación (401 sin sesión) + membresía del tablero (403 sin acceso)
-  - **POST `/api/cards/:id/attachments`** valida:
-    - MIME type whitelist (12 tipos): imágenes (JPEG, PNG, WebP, GIF), PDFs, documentos de texto, Office (Word, Excel)
-    - Tamaño máximo: 20 MB por archivo (413 Payload Too Large si excede)
-    - Cantidad máxima: 10 archivos por tarjeta (400 Bad Request si llega al límite)
-  - Cambio de cache: GET `/uploads/:key` ahora devuelve `private` en vez de `public`
-- Tests nuevos: 3 casos de seguridad (acceso no-miembro → 403, tamaño > 20MB → 413, MIME no permitido → 400)
-- Archivo de spec creado: `test/attachments.spec.js` (documentación de comportamiento esperado, no-mock foundation)
-- Todo deployado a producción: v1.5 (`cb311e02`)
+**ESTA SESIÓN — Dos features de seguridad completados**
+
+### ✅ #4 Protección de adjuntos (Opción A) — 2-layer validation
+- **GET `/uploads/:key`** requiere autenticación (401) + membresía del tablero (403)
+- **POST `/api/cards/:id/attachments`** valida MIME types, tamaño (20 MB), cantidad (10)
+- Tests: 3 casos de seguridad
+- v1.5 deployado
+
+### ✅ #5 Validar JWT de Google — Hardening de OAuth
+- **verifyGoogleJWT()**: valida firma RSA con `crypto.subtle.verify()`
+- **getGooglePublicKeys()**: cachea keys de Google por 24h
+- **Claims validados**: exp, iss, aud, email_verified
+- Token inválido → 403 con error específico
+- Tests: 6 casos de validación (firma, exp, iss, aud, email_verified, caching)
+- **ADR-011** registrado: decisión de arquitectura con problema/solución/alternativas
+- v1.6 deployado (`e7e42ae8`)
+
+**Actualizado**:
+- docs/STATUS.md: #4 y #5 marcados 100% completo
+- docs/backlog.txt: #8 "Mejoras adjuntos" expandido (BAJA prioridad, detalles técnicos)
+- docs/ADRs.md: ADR-011 nuevo sobre JWT validation
 
 **Anteriormente en sesiones previas**:
 - ✅ v1.4: Historial de actividad (#1) — tabla audit_log, eventos registrados, panel en modal + admin
