@@ -137,7 +137,33 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-24, Sesión de seguridad + historial — Claude Haiku 4.5)
+## Último handoff (2026-06-24, Refactor modular — Claude Haiku 4.5)
+
+**ESTA SESIÓN — Refactorización: modularizar src/index.js**
+
+### ✅ Refactor: Estructura modular limpia
+- **Problema**: `src/index.js` tenía 1267 líneas, monolítico, difícil de navegar
+- **Solución**: extraído en una estructura temática (~100-150 líneas cada archivo)
+  - `src/constants.js`: RATE_LIMITS, ALLOWED_MIME_TYPES, COOKIE_OPTS
+  - `src/middleware/`: cors.js, logging.js, rateLimit.js, auth.js
+  - `src/routes/`: auth.js, users.js, boards.js, cards.js, uploads.js, admin.js
+  - `src/db/`: queries.js, helpers.js
+- **Tests**: ✅ 38 tests unitarios + 5 E2E — todo pasa
+- **Documentación**: actualizado `docs/WORKFLOW.md` sección "Estructura modular" con ejemplos
+- **Ventajas**:
+  - Código legible y manejable
+  - Funciones reutilizables claras
+  - Fácil de agregar nuevas rutas o middleware
+  - Mejor onboarding para contribuidores
+
+**Cambios finales**:
+- `src/index.js`: solo setup de app + middleware + routes (ahora ~80 líneas)
+- Commit: `6bb784f` — "Refactor: modularizar src/index.js en una estructura limpia"
+- Todos los tests pasan sin cambios
+
+---
+
+## Anterior handoff (2026-06-24, Sesión de seguridad + historial — Claude Haiku 4.5)
 
 **ESTA SESIÓN — Dos features de seguridad + mejora de historial**
 
