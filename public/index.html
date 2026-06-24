@@ -1553,6 +1553,8 @@
     try {
       await api("POST", `/api/cards/${editingId}/labels/${labelId}`);
       await loadCards();
+      const card = state.cards.find(c => c.id === editingId);
+      console.log("assignLabel: tarjeta después de loadCards", { editingId, card, labels: card?.labels });
       renderLabels();
     } catch (e) { alert("No se pudo asignar: " + e.message); }
   }

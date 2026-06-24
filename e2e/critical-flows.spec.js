@@ -130,15 +130,20 @@ test("crea etiqueta y verifica que aparece en la tarjeta", async ({ page }) => {
   await page.locator("#newLabelName").fill("TestBug");
   await page.locator("#createLabelBtn").click();
 
-  // Esperar a que se guarde la tarjeta y recargue
-  await page.waitForTimeout(500);
+  // Esperar a que se guarde la etiqueta y se asigne a la tarjeta
+  await page.waitForTimeout(1000);
 
   // Verificar que la etiqueta aparece en el modal
-  await expect(page.locator(".label-in-card")).toBeTruthy();
+  const labelInCard = page.locator(".label-in-card");
+  await expect(labelInCard).toBeVisible({ timeout: 5000 });
 
   // Cerrar modal
   await page.locator("#cancelBtn").click();
 
+  // Esperar a que el modal se cierre completamente
+  await page.waitForTimeout(300);
+
   // Verificar que la etiqueta aparece en la tarjeta del Kanban
-  await expect(page.locator(".card", { hasText: labelCardTitle }).locator(".label-chip")).toBeVisible();
+  const labelChip = page.locator(".card", { hasText: labelCardTitle }).locator(".label-chip");
+  await expect(labelChip).toBeVisible({ timeout: 5000 });
 });

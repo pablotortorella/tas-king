@@ -124,7 +124,10 @@ git push origin feature/...
 - ❌ `git push --force` a main
 - ❌ Hardcodear secrets, emails, URLs
 - ❌ Cambiar DB sin migración versionada
-- ❌ Ignorar tests que fallan
+- ❌ **Ignorar tests que fallan — REGLA CRÍTICA**
+- ❌ **Deployar con tests fallando** (local, staging, producción)
+  - Siempre: `npm run test:all` pasa 100% ANTES de cualquier deploy
+  - Si hay test fallando: arreglarlo primero, luego mergear, luego deploy
 
 ---
 
