@@ -11,6 +11,7 @@ import { logger, getClientIP } from "../middleware/logging.js";
 import { isEmailAllowed, seedAdminIfNeeded, ensureUser } from "../db/helpers.js";
 
 const now = () => Date.now();
+const uid = () => crypto.randomUUID();
 
 function deniedPage(msg) {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
@@ -162,7 +163,13 @@ export function setupAuthRoutes(app) {
     const isAllowed = await isEmailAllowed(c.env.DB, email, c.env.ALLOWED_EMAILS);
     if (!isAllowed) {
       logger.warn("Login: email not in allowlist", { ip, email });
-      return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app.`), 403);
+      // Registrar como solicitud pendiente para que el admin pueda aprobarla
+      try {
+        await c.env.DB.prepare(
+          "INSERT OR IGNORE INTO pending_access (id, email, name, requested_at, seen) VALUES (?, ?, ?, ?, 0)"
+        ).bind(uid(), email, claims.name || email.split("@")[0], now()).run();
+      } catch (_) { /* tabla puede no existir en entornos viejos */ }
+      return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app. Tu solicitud fue registrada.`), 403);
     }
 
     await seedAdminIfNeeded(c.env.DB, email, c.env.ADMIN_EMAILS);

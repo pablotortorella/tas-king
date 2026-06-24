@@ -14,9 +14,19 @@ export function setupUserRoutes(app) {
       `).bind(email).all(),
       c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color, is_admin FROM users WHERE email = ?").bind(email).first(),
     ]);
+
+    let pendingCount = 0;
+    if (user?.is_admin) {
+      try {
+        const p = await c.env.DB.prepare("SELECT COUNT(*) as n FROM pending_access WHERE seen = 0").first();
+        pendingCount = p?.n || 0;
+      } catch (_) { /* tabla puede no existir en entornos viejos */ }
+    }
+
     return c.json({
       email,
       isAdmin: !!(user && user.is_admin),
+      pendingCount,
       profile: {
         name: (user && user.name) || email.split("@")[0],
         avatarEmoji: (user && user.avatar_emoji) || null,

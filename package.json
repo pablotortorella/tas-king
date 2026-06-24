@@ -5,9 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "npm run verify-ready && wrangler deploy --env production",
+    "deploy": "npm run verify-ready && wrangler deploy && npm run db:migrate:remote",
     "deploy:staging": "npm run verify-ready && wrangler deploy --env staging && npm run db:migrate:staging",
-    "deploy:production": "npm run verify-ready && wrangler deploy --env production",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
 
-describe("Validación de colores para etiquetas", () => {
-  const VALID_COLORS = [
-    "#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677",
-    "#AA3377", "#BBBBBB", "#002D9C", "#FF832B", "#009D9A",
-    "#8A3FFC", "#EE538B", "#A2191F", "#737008", "#4D8400",
-    "#0F62FE", "#BA4E00", "#D02670", "#697077", "#007448",
-  ];
+// Paleta Material Design — debe coincidir con VALID_COLORS en src/routes/labels.js
+// y LABEL_COLORS en public/index.html
+const VALID_COLORS = [
+  "#F44336", "#2196F3", "#4CAF50", "#FFC107", "#FF9800",
+  "#9C27B0", "#00BCD4", "#009688", "#E91E63", "#3F51B5",
+];
 
-  it("tiene exactamente 20 colores válidos", () => {
-    expect(VALID_COLORS).toHaveLength(20);
+describe("Validación de colores para etiquetas", () => {
+  it("tiene exactamente 10 colores válidos", () => {
+    expect(VALID_COLORS).toHaveLength(10);
   });
 
   it("todos los colores son hexadecimales válidos", () => {
@@ -26,7 +26,7 @@ describe("Validación de colores para etiquetas", () => {
     });
   });
 
-  it("acepta cualquiera de los 20 colores válidos", () => {
+  it("acepta cualquiera de los 10 colores válidos", () => {
     VALID_COLORS.forEach(color => {
       expect(VALID_COLORS.includes(color)).toBe(true);
     });
@@ -38,7 +38,7 @@ describe("Estructura de etiquetas", () => {
     const label = {
       id: "l1",
       name: "Bug",
-      color: "#EE6677",
+      color: "#F44336",
       position: 0,
     };
     expect(label).toMatchObject({ id: expect.any(String), name: expect.any(String), color: expect.any(String), position: expect.any(Number) });

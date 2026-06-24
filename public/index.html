@@ -494,7 +494,7 @@
       <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
       <button id="newBoardBtn" title="Nuevo tablero">＋</button>
     </div>
-    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px">⚙ Admin</button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
@@ -677,6 +677,7 @@
       <button class="tab-btn active" id="adminTabUsuarios">Usuarios</button>
       <button class="tab-btn" id="adminTabActividad">Actividad del tablero</button>
       <button class="tab-btn" id="adminTabStats">📊 Estadísticas</button>
+      <button class="tab-btn" id="adminTabSolicitudes">🔔 Solicitudes</button>
     </div>
 
     <!-- Tab: Usuarios -->
@@ -763,6 +764,12 @@
       </div>
 
       <div style="font-size:12px;color:#999;margin-top:12px" id="statsTimestamp"></div>
+    </div>
+
+    <!-- Tab: Solicitudes de acceso -->
+    <div id="adminPanelSolicitudes" style="display:none">
+      <p style="font-size:13px;color:#6b778c;margin-bottom:12px">Usuarios que intentaron entrar pero no tienen acceso. Podés aprobarlos o rechazarlos.</p>
+      <div id="adminPendingList" style="max-height:320px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
     </div>
 
     <div class="modal-footer" style="margin-top:16px">
@@ -873,7 +880,15 @@
   function renderMe() {
     document.getElementById("profileBtn").innerHTML =
       avatarHtml(meProfile(), 22) + "<span>" + escapeHtml(me.profile.name) + "</span>";
-    document.getElementById("adminBtn").style.display = me.isAdmin ? "inline-block" : "none";
+    const adminBtn = document.getElementById("adminBtn");
+    const adminBadge = document.getElementById("adminBadge");
+    adminBtn.style.display = me.isAdmin ? "inline-block" : "none";
+    if (me.isAdmin && me.pendingCount > 0) {
+      adminBadge.style.display = "block";
+      adminBadge.textContent = me.pendingCount;
+    } else {
+      adminBadge.style.display = "none";
+    }
   }
 
   // Capa de datos: API REST contra el backend (Worker + D1).
@@ -909,7 +924,7 @@
       await loadCards();
     } catch (e) {
       // sin sesión válida → mandar al login con Google
-      if (e.status === 401) { window.location.href = "/auth/login"; return; }
+      if (e.status === 401) { window.location.href = "/landing.html"; return; }
       const errorDetails = `Status: ${e.status || "?"}, Message: ${e.message || "desconocido"}`;
       board.innerHTML = '<div style="padding:24px;color:#c0392b;font-size:14px">'
         + "❌ No se pudo cargar el tablero. Revisá tu conexión y volvé a intentar.<br><br>"
@@ -2248,18 +2263,22 @@
 
   // Tabs
   function switchAdminTab(tab) {
-    document.getElementById("adminPanelUsuarios").style.display  = tab === "usuarios"  ? "" : "none";
-    document.getElementById("adminPanelActividad").style.display = tab === "actividad" ? "" : "none";
-    document.getElementById("adminPanelStats").style.display     = tab === "stats"     ? "" : "none";
-    document.getElementById("adminTabUsuarios").classList.toggle("active",  tab === "usuarios");
-    document.getElementById("adminTabActividad").classList.toggle("active", tab === "actividad");
-    document.getElementById("adminTabStats").classList.toggle("active",     tab === "stats");
-    if (tab === "actividad") renderActivity();
-    if (tab === "stats") renderStats();
+    document.getElementById("adminPanelUsuarios").style.display    = tab === "usuarios"    ? "" : "none";
+    document.getElementById("adminPanelActividad").style.display   = tab === "actividad"   ? "" : "none";
+    document.getElementById("adminPanelStats").style.display       = tab === "stats"       ? "" : "none";
+    document.getElementById("adminPanelSolicitudes").style.display = tab === "solicitudes" ? "" : "none";
+    document.getElementById("adminTabUsuarios").classList.toggle("active",    tab === "usuarios");
+    document.getElementById("adminTabActividad").classList.toggle("active",   tab === "actividad");
+    document.getElementById("adminTabStats").classList.toggle("active",       tab === "stats");
+    document.getElementById("adminTabSolicitudes").classList.toggle("active", tab === "solicitudes");
+    if (tab === "actividad")   renderActivity();
+    if (tab === "stats")       renderStats();
+    if (tab === "solicitudes") renderPending();
   }
-  document.getElementById("adminTabUsuarios").addEventListener("click",  () => switchAdminTab("usuarios"));
-  document.getElementById("adminTabActividad").addEventListener("click", () => switchAdminTab("actividad"));
-  document.getElementById("adminTabStats").addEventListener("click",     () => switchAdminTab("stats"));
+  document.getElementById("adminTabUsuarios").addEventListener("click",    () => switchAdminTab("usuarios"));
+  document.getElementById("adminTabActividad").addEventListener("click",   () => switchAdminTab("actividad"));
+  document.getElementById("adminTabStats").addEventListener("click",       () => switchAdminTab("stats"));
+  document.getElementById("adminTabSolicitudes").addEventListener("click", () => switchAdminTab("solicitudes"));
 
   async function renderStats() {
     try {
@@ -2419,6 +2438,47 @@
       });
     } catch (e) {
       adminUserList.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:13px">Error al cargar usuarios.</div>';
+    }
+  }
+
+  async function renderPending() {
+    api("POST", "/api/admin/pending/seen").catch(() => {});
+    document.getElementById("adminBadge").style.display = "none";
+    const list = document.getElementById("adminPendingList");
+    list.innerHTML = '<div style="padding:12px;color:#888;font-size:13px">Cargando…</div>';
+    try {
+      const data = await api("GET", "/api/admin/pending");
+      if (!data.pending.length) {
+        list.innerHTML = '<div style="padding:16px;color:#888;font-size:13px;text-align:center">No hay solicitudes pendientes. 🎉</div>';
+        return;
+      }
+      list.innerHTML = data.pending.map(u => `
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #f0f0f0">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">${escapeHtml(u.name || u.email)}</div>
+            <div style="font-size:11px;color:#888">${escapeHtml(u.email)}</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px">${new Date(u.requested_at).toLocaleString("es")}</div>
+          </div>
+          <button data-email="${escapeHtml(u.email)}" data-action="approve" class="btn btn-primary btn-small">Aprobar</button>
+          <button data-email="${escapeHtml(u.email)}" data-action="deny" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:18px;padding:2px 6px" title="Rechazar">✕</button>
+        </div>
+      `).join("");
+      list.querySelectorAll("[data-action='approve']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await api("POST", `/api/admin/pending/${encodeURIComponent(btn.dataset.email)}/approve`);
+          await renderPending();
+          await renderAdminList();
+        });
+      });
+      list.querySelectorAll("[data-action='deny']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm(`¿Rechazar solicitud de ${btn.dataset.email}?`)) return;
+          await api("DELETE", `/api/admin/pending/${encodeURIComponent(btn.dataset.email)}`);
+          await renderPending();
+        });
+      });
+    } catch (e) {
+      list.innerHTML = '<div style="padding:12px;color:#c0392b;font-size:13px">Error al cargar solicitudes.</div>';
     }
   }
 

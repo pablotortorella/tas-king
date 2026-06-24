@@ -40,6 +40,38 @@ export function setupAdminRoutes(app) {
     return c.json({ ok: true });
   });
 
+  // Listar solicitudes de acceso pendientes
+  app.get("/api/admin/pending", async c => {
+    const rows = await c.env.DB.prepare(
+      "SELECT id, email, name, requested_at, seen FROM pending_access ORDER BY requested_at DESC"
+    ).all();
+    return c.json({ pending: rows.results });
+  });
+
+  // Aprobar solicitud: agregar a allowed_emails y eliminar de pending
+  app.post("/api/admin/pending/:email/approve", async c => {
+    const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+    await c.env.DB.batch([
+      c.env.DB.prepare("INSERT OR IGNORE INTO allowed_emails (email, added_by, added_at) VALUES (?, ?, datetime('now'))")
+        .bind(target, c.get("email")),
+      c.env.DB.prepare("DELETE FROM pending_access WHERE email = ?").bind(target),
+    ]);
+    return c.json({ ok: true });
+  });
+
+  // Rechazar/descartar solicitud
+  app.delete("/api/admin/pending/:email", async c => {
+    const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+    await c.env.DB.prepare("DELETE FROM pending_access WHERE email = ?").bind(target).run();
+    return c.json({ ok: true });
+  });
+
+  // Marcar todas las solicitudes como vistas (baja el badge)
+  app.post("/api/admin/pending/seen", async c => {
+    await c.env.DB.prepare("UPDATE pending_access SET seen = 1 WHERE seen = 0").run();
+    return c.json({ ok: true });
+  });
+
   // Estadísticas de la plataforma (super admin)
   app.get("/api/admin/stats", async c => {
     const email = c.get("email");

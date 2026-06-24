@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUN TasKing! — Gestión visual de tareas</title>
+<style>
+  :root {
+    --accent: #0079bf;
+    --accent-dark: #005a8e;
+    --bg: #f4f5f7;
+    --text: #172b4d;
+    --muted: #6b778c;
+    --card-bg: #fff;
+    --border: #dfe1e6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%);
+    color: white;
+    padding: 72px 24px 88px;
+    text-align: center;
+  }
+  .hero-logo { font-size: 52px; margin-bottom: 20px; display: block; }
+  .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800; margin-bottom: 18px; line-height: 1.2; }
+  .hero p { font-size: 1.1rem; opacity: .88; max-width: 540px; margin: 0 auto 44px; line-height: 1.6; }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--accent);
+    font-weight: 700; font-size: 1rem;
+    padding: 14px 32px; border-radius: 8px; text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.3); }
+
+  /* MINI BOARD MOCKUP */
+  .mockup-section {
+    background: linear-gradient(180deg, #e8edf3 0%, #f4f5f7 100%);
+    padding: 64px 24px;
+    text-align: center;
+  }
+  .mockup-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 36px; color: var(--text); }
+  .mini-board {
+    display: flex; gap: 12px; overflow-x: auto;
+    max-width: 900px; margin: 0 auto; padding-bottom: 8px;
+    justify-content: center;
+  }
+  .mini-col {
+    background: #ebecf0; border-radius: 10px; padding: 12px;
+    min-width: 160px; flex: 0 0 160px;
+  }
+  .mini-col-title {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px;
+  }
+  .mini-card {
+    background: #fff; border-radius: 6px; padding: 10px 12px;
+    margin-bottom: 8px; font-size: 11.5px;
+    box-shadow: 0 1px 3px rgba(9,30,66,.12); text-align: left; line-height: 1.4;
+  }
+  .mini-chip {
+    display: inline-block; border-radius: 3px; padding: 1px 6px;
+    font-size: 9px; font-weight: 700; color: white; margin-bottom: 4px;
+    letter-spacing: .3px; text-transform: uppercase;
+  }
+  .mini-card small { color: var(--muted); font-size: 10px; }
+
+  /* FEATURES */
+  .features {
+    padding: 72px 24px;
+    max-width: 960px; margin: 0 auto;
+  }
+  .features h2 { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 48px; }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+  }
+  .feature-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px 24px;
+    box-shadow: 0 1px 4px rgba(9,30,66,.07);
+    transition: box-shadow .15s, transform .15s;
+  }
+  .feature-card:hover { box-shadow: 0 4px 16px rgba(9,30,66,.12); transform: translateY(-2px); }
+  .feature-icon { font-size: 30px; margin-bottom: 14px; display: block; }
+  .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .feature-card p { font-size: .9rem; color: var(--muted); line-height: 1.6; }
+
+  /* OPEN SOURCE BADGE */
+  .oss-section {
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .oss-section p { color: var(--muted); font-size: .95rem; max-width: 480px; margin: 12px auto 0; line-height: 1.6; }
+
+  /* CTA BOTTOM */
+  .cta-bottom {
+    padding: 72px 24px; text-align: center;
+    background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%);
+    color: white;
+  }
+  .cta-bottom h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 14px; }
+  .cta-bottom p { opacity: .85; margin-bottom: 36px; font-size: 1rem; }
+  .cta-bottom a {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--accent);
+    font-weight: 700; font-size: 1rem;
+    padding: 14px 32px; border-radius: 8px; text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  }
+  .cta-bottom a:hover { opacity: .95; }
+
+  /* FOOTER */
+  footer {
+    padding: 24px; text-align: center;
+    font-size: .82rem; color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-logo">👑</span>
+  <h1>Organizá tu equipo,<br>sin complicaciones</h1>
+  <p>FUN TasKing! es un tablero Kanban visual, multiusuario y de código abierto. Coordiná proyectos, seguí el avance y mantené a tu equipo sincronizado — todo desde el navegador.</p>
+  <a class="hero-cta" href="/auth/login">🚀 Entrar con Google</a>
+</section>
+
+<!-- MINI BOARD MOCKUP -->
+<section class="mockup-section">
+  <h2>Tu flujo de trabajo, de un vistazo</h2>
+  <div class="mini-board">
+    <div class="mini-col">
+      <div class="mini-col-title">Pendiente</div>
+      <div class="mini-card">
+        <span class="mini-chip" style="background:#F44336">Bug</span><br>
+        Fix login en mobile
+      </div>
+      <div class="mini-card">Rediseñar hero de la app</div>
+      <div class="mini-card">
+        <span class="mini-chip" style="background:#2196F3">Feature</span><br>
+        Notificaciones push
+      </div>
+    </div>
+    <div class="mini-col">
+      <div class="mini-col-title">En progreso</div>
+      <div class="mini-card">
+        <span class="mini-chip" style="background:#4CAF50">Docs</span><br>
+        Actualizar README
+      </div>
+      <div class="mini-card">Refactor módulo auth</div>
+    </div>
+    <div class="mini-col">
+      <div class="mini-col-title">Revisión</div>
+      <div class="mini-card">
+        <span class="mini-chip" style="background:#9C27B0">UX</span><br>
+        Dark mode toggle
+      </div>
+    </div>
+    <div class="mini-col">
+      <div class="mini-col-title">Bloqueado</div>
+      <div class="mini-card">
+        Integración Slack<br>
+        <small>Esperando API key del cliente</small>
+      </div>
+    </div>
+    <div class="mini-col">
+      <div class="mini-col-title">✅ Terminado</div>
+      <div class="mini-card">Landing page</div>
+      <div class="mini-card">Sistema de etiquetas</div>
+      <div class="mini-card">OAuth con Google</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <h2>Todo lo que necesitás, nada más</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🗂️</span>
+      <h3>Kanban visual</h3>
+      <p>5 columnas configurables: Pendiente, En progreso, Revisión, Bloqueado y Terminado. Mové tarjetas con un clic.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">👥</span>
+      <h3>Multi-usuario</h3>
+      <p>Tableros compartidos con tu equipo. Acceso controlado por email: vos decidís quién puede ver y editar.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏷️</span>
+      <h3>Etiquetas y filtros</h3>
+      <p>Etiquetá tarjetas por tipo, prioridad o área. Filtrá para ver solo lo que importa en este momento.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📎</span>
+      <h3>Adjuntos</h3>
+      <p>Subí imágenes y archivos directo en las tarjetas. Almacenado de forma segura en Cloudflare R2.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔍</span>
+      <h3>Búsqueda instantánea</h3>
+      <p>Encontrá cualquier tarjeta en segundos. Filtro por texto, etiqueta y columna. Atajos de teclado incluidos.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <h3>Acceso con Google</h3>
+      <p>Login seguro con OAuth de Google. Sin contraseñas que recordar, sin formularios de registro. Solo tu cuenta Google.</p>
+    </div>
+  </div>
+</section>
+
+<!-- OSS BANNER -->
+<section class="oss-section">
+  <span style="font-size:28px">🛠️</span>
+  <p>FUN TasKing! es <strong>código abierto</strong>. Podés hostearlo vos mismo en Cloudflare Workers gratis, ver cómo está hecho y contribuir mejoras.</p>
+</section>
+
+<!-- CTA BOTTOM -->
+<section class="cta-bottom">
+  <h2>¿Listo para empezar?</h2>
+  <p>Pedí acceso al administrador de tu equipo y en minutos estás dentro.</p>
+  <a href="/auth/login">🚀 Entrar con Google</a>
+</section>
+
+<footer>
+  FUN TasKing! &mdash; Open Source &nbsp;·&nbsp; <a href="/terminos.html">Términos</a>
+</footer>
+
+</body>
+</html>
