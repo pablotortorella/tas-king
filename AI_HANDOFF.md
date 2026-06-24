@@ -63,6 +63,22 @@ Hay tests unitarios y de API con Vitest ejecutándose en Workerd con D1/R2 emula
 E2E con Playwright. `npm run test:all` ejecuta la suite completa. La estrategia y el checklist
 manual complementario para IAs y personas están en `TESTING.md`.
 
+## Estado de features del backlog
+
+Para saber si un feature existe, está completo, o qué le falta:
+
+| Item | Estado | Notas |
+|---|---|---|
+| #0 🔗 Deep-link | Implementado, tests E2E ✅ | Acciones: `checkDeepLink()` en el frontend, GET `/api/cards/:id` en backend. Los 4 casos de test están cubiertos (válida, inexistente, archivada, sin acceso manual). |
+| ⚡ Polling tiempo real | Implementado, tests manual ✅ | Endpoint `/api/boards/:id/version` + cliente cada 5s. No tiene tests E2E, pero se verifica manualmente. |
+| 🎉 Celebración | Implementado, tests manual ✅ | Confeti + animación de tarjeta. Funciona para arrastres locales y vía polling. Sin test E2E (difícil de verificar en Playwright). |
+| #1 📜 Historial | No existe | Requiere: tabla `audit_log` en D1, UI en modal de tarjeta y panel lateral, permisos de admin. |
+| #2 🏷️ Etiquetas | No existe | Requiere: tabla `labels`, `card_labels` join, UI de creación/edición, filtro, página de AYUDA. |
+| #3 ✅ Checklists | No existe | Requiere: tabla `checklist_items`, UI en modal de tarjeta. |
+| #4 🔐 Adjuntos | Parcialmente | Las URLs de `/uploads` hoy son públicas (solo UUID). Requiere validación de sesión/membresía. |
+| #5 🛡️ JWT Google | Implementado, sin test | El token de Google no se valida con rigor (solo se confía en que OAuth lo validó). Mejora de seguridad. |
+| #6 🌙 Modo oscuro | No existe | CSS variables ya están listos. Requiere: toggle en header, localStorage, media query fallback. |
+
 ## Pendientes
 Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - [ ] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
