@@ -1090,7 +1090,8 @@
     const d = details || {};
     const colName = id => (COLUMNS.find(c => c.id === id) || { name: id }).name;
     switch (action) {
-      case "card_created":   return "Creó la tarjeta";
+      case "card_created":
+        return d.column ? `Creó la tarjeta en "${colName(d.column)}"` : "Creó la tarjeta";
       case "card_deleted":   return "Eliminó la tarjeta";
       case "card_archived":  return "Archivó la tarjeta";
       case "card_restored":  return "Restauró la tarjeta";

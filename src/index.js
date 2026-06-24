@@ -589,7 +589,7 @@ app.post("/api/boards/:boardId/cards", async c => {
        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
     ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
   ]);
-  await logEvent(c.env.DB, boardId, id, "card_created", email, { title: String(b.title).trim() });
+  await logEvent(c.env.DB, boardId, id, "card_created", email, { column: b.column });
   return c.json(await cardJSONById(c.env.DB, id));
 });
 
@@ -854,7 +854,33 @@ app.get("/api/cards/:id/history", async c => {
      FROM audit_log al LEFT JOIN users u ON u.email = al.email
      WHERE al.card_id = ? ORDER BY al.ts DESC LIMIT 100`
   ).bind(card.id).all();
-  return c.json({ history: rows.results.map(auditRowToJSON) });
+  let history = rows.results.map(auditRowToJSON);
+
+  // Si no hay historial, crear un evento sintético de creación
+  if (!history.length) {
+    const board = await c.env.DB.prepare("SELECT owner_email FROM boards WHERE id = ?").bind(card.board_id).first();
+    const owner = board && await c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color FROM users WHERE email = ?").bind(board.owner_email).first();
+
+    // Columna donde fue creada
+    const colName = (COLUMNS.find(col => col.id === card.column_id) || {}).id || card.column_id;
+
+    history = [{
+      id: "synthetic_" + card.id,
+      card_id: card.id,
+      action: "card_created",
+      email: board?.owner_email || "desconocido",
+      author: {
+        email: board?.owner_email || "desconocido",
+        name: (owner?.name || board?.owner_email?.split("@")[0]) || "Sistema",
+        avatarEmoji: owner?.avatar_emoji || null,
+        avatarColor: owner?.avatar_color || null
+      },
+      ts: card.created_at,
+      details: { column: colName }
+    }];
+  }
+
+  return c.json({ history });
 });
 
 // Actividad del tablero (todos los miembros pueden ver; filtros de usuario/fecha para todos)
