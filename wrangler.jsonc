@@ -7,6 +7,44 @@
     "directory": "./public",
     "binding": "ASSETS"
   },
+  // Entorno: DESARROLLO LOCAL (wrangler dev)
+  "env": {
+    // Producción (ACTUAL)
+    "production": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "tas-king",
+          "database_id": "b897fa43-9868-4df0-94de-d3fc1bcea025",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "tas-king-uploads"
+        }
+      ]
+    },
+    // Staging (NUEVO — Cloudflare staging)
+    "staging": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "tas-king-staging",
+          "database_id": "PASTE_STAGING_DATABASE_ID_HERE",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BUCKET",
+          "bucket_name": "tas-king-uploads-staging"
+        }
+      ]
+    }
+  },
+  // Local (default, wrangler dev) — sin cambios
   "d1_databases": [
     {
       "binding": "DB",

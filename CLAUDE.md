@@ -54,7 +54,15 @@ Si escribís código, escribís tests.
 npm run dev                 # Ver cambios en tiempo real
 npm run test:watch          # Tests re-ejecutan al guardar
 npm run test:all            # Suite completa antes de push
+npm run deploy:staging      # Probar en staging (URL real) antes de prod
 ```
+
+### Flujo de despliegue (Opción C: Hybrid)
+1. **Local** (`npm run dev`): desarrollo + tests unitarios + E2E
+2. **Staging** (`npm run deploy:staging`): revisar en URL real, datos separados de producción
+3. **Producción** (`npm run deploy`): solo después de revisar staging
+
+Esto evita romper producción. Ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para guía detallada.
 
 ---
 
@@ -102,6 +110,7 @@ git push origin feature/...
 | **Qué features existen** | docs/STATUS.md | Estado actual de cada feature |
 | **Por qué se decidió así** | docs/ADRs.md | Decisiones arquitectónicas |
 | **Flujo de trabajo** | docs/WORKFLOW.md | Detalles de proceso |
+| **Deployar a staging/prod** | docs/DEPLOYMENT.md | ✨ NUEVO — Local → Staging → Production |
 | **Última sesión** | AI_HANDOFF.md | Qué se hizo, qué viene |
 | **Setup local** | README.md | OAuth, secretos, primer admin |
 

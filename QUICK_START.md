@@ -77,8 +77,11 @@ Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
 npm run dev                   # Servidor local (http://localhost:8787)
 npm run test:watch           # Tests en tiempo real (re-ejecuta al guardar)
 npm run test:all             # Suite completa (unitarios + E2E)
-npm run deploy               # Deploy a producción
+npm run deploy:staging       # Deploy a staging (revisar antes de prod)
+npm run deploy               # Deploy a producción (después de revisar staging)
 ```
+
+**Flujo recomendado**: Local (dev + tests) → Staging (URL real) → Producción
 
 ---
 
