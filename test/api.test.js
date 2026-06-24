@@ -49,6 +49,43 @@ describe("Rate limiting", () => {
   });
 });
 
+describe("CORS + Security Headers", () => {
+  it("devuelve headers CORS correctos para origen permitido", async () => {
+    // Request con origin permitido debe devolver Access-Control-Allow-Origin
+    const res = await app.request("http://localhost/api/me", {
+      headers: { "X-Dev-User": "test@test.com", "origin": "http://localhost:8787" },
+    }, env);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:8787");
+  });
+
+  it("rechaza CORS para origen no permitido", async () => {
+    // Request con origin no permitido NO debe devolver Access-Control-Allow-Origin
+    const res = await app.request("http://localhost/api/me", {
+      headers: { "X-Dev-User": "test@test.com", "origin": "https://evil.com" },
+    }, env);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+  it("devuelve security headers en todas las respuestas", async () => {
+    const res = await app.request("http://localhost/api/me", {
+      headers: { "X-Dev-User": "test@test.com" },
+    }, env);
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("X-Frame-Options")).toBe("DENY");
+    expect(res.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+  });
+
+  it("responde 204 a OPTIONS (preflight)", async () => {
+    const res = await app.request("http://localhost/api/me", {
+      method: "OPTIONS",
+      headers: { "origin": "http://localhost:8787" },
+    }, env);
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+  });
+});
+
 const owner = "owner@test.local";
 const member = "member@test.local";
 const outsider = "outsider@test.local";

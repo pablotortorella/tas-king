@@ -3,6 +3,51 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 
 const app = new Hono();
 
+// ---------- CORS + Security Headers ----------
+app.use(async (c, next) => {
+  const origin = c.req.header("origin") || "";
+  const allowedOrigins = [
+    "https://tas-king.pablotortorella.workers.dev",
+    "http://localhost:8787",
+    "http://127.0.0.1:8787",
+  ];
+
+  // CORS: solo dominios permitidos
+  if (allowedOrigins.includes(origin)) {
+    c.header("Access-Control-Allow-Origin", origin);
+    c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    c.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Dev-User");
+    c.header("Access-Control-Max-Age", "86400");
+    c.header("Access-Control-Allow-Credentials", "true");
+  }
+
+  // Preflight (OPTIONS) requests
+  if (c.req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: c.res.headers });
+  }
+
+  // Security Headers
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("X-XSS-Protection", "1; mode=block");
+  c.header("Referrer-Policy", "no-referrer");
+  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+  // Content Security Policy: permite inline scripts (necesario para public/index.html),
+  // pero solo recursos de origen propio
+  c.header(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com"
+  );
+
+  // HSTS: fuerza HTTPS (pero solo en producción, no en localhost)
+  if (!c.req.url.includes("localhost") && !c.req.url.includes("127.0.0.1")) {
+    c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
+
+  await next();
+});
+
 // ---------- Límites de adjuntos ----------
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const MAX_ATTACHMENTS_PER_CARD = 10;
