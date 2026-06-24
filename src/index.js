@@ -1230,14 +1230,22 @@ app.get("/api/admin/stats", async c => {
   const user = await c.env.DB.prepare("SELECT is_admin FROM users WHERE email = ?").bind(email).first();
   if (!user?.is_admin) return c.json({ error: "Solo admins pueden ver estadísticas." }, 403);
 
-  const [users, boards, cards] = await Promise.all([
+  const [users, boards, cards, inactive] = await Promise.all([
     c.env.DB.prepare("SELECT COUNT(*) as count FROM users").first(),
     c.env.DB.prepare("SELECT COUNT(*) as count FROM boards").first(),
     c.env.DB.prepare("SELECT COUNT(*) as count FROM cards WHERE archived = 0").first(),
+    c.env.DB.prepare(
+      `SELECT u.email, u.name FROM users u
+       LEFT JOIN allowed_emails ae ON u.email = ae.email
+       WHERE ae.email IS NULL
+       ORDER BY u.email ASC`
+    ).all(),
   ]);
 
   return c.json({
     users: users?.count || 0,
+    activeUsers: (users?.count || 0) - (inactive?.results?.length || 0),
+    inactiveUsers: inactive?.results?.map(r => ({ email: r.email, name: r.name })) || [],
     boards: boards?.count || 0,
     cards: cards?.count || 0,
     timestamp: new Date().toISOString(),

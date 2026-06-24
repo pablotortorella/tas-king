@@ -631,10 +631,20 @@
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
           <div style="font-size:28px;font-weight:bold;color:#0079bf" id="statUsers">-</div>
-          <div style="font-size:12px;color:#666;margin-top:4px">Usuarios</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Usuarios totales</div>
         </div>
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
-          <div style="font-size:28px;font-weight:bold;color:#27ae60" id="statBoards">-</div>
+          <div style="font-size:28px;font-weight:bold;color:#27ae60" id="statActiveUsers">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Activos</div>
+        </div>
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#e67e22" id="statInactiveUsers">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Inactivos</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#9b59b6" id="statBoards">-</div>
           <div style="font-size:12px;color:#666;margin-top:4px">Tableros</div>
         </div>
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
@@ -642,7 +652,13 @@
           <div style="font-size:12px;color:#666;margin-top:4px">Tarjetas activas</div>
         </div>
       </div>
-      <div style="font-size:12px;color:#999" id="statsTimestamp"></div>
+
+      <div id="inactiveUsersSection" style="display:none;margin-bottom:12px;border-top:1px solid #e0e0e0;padding-top:12px">
+        <div style="font-size:12px;font-weight:bold;color:#e67e22;margin-bottom:8px">⚠️ Usuarios inactivos (sin acceso):</div>
+        <div id="inactiveUsersList" style="font-size:11px;color:#666;max-height:120px;overflow-y:auto"></div>
+      </div>
+
+      <div style="font-size:12px;color:#999;margin-top:12px" id="statsTimestamp"></div>
     </div>
 
     <div class="modal-footer" style="margin-top:16px">
@@ -1909,11 +1925,30 @@
     try {
       const stats = await api("GET", "/api/admin/stats");
       document.getElementById("statUsers").textContent = stats.users || 0;
+      document.getElementById("statActiveUsers").textContent = stats.activeUsers || 0;
+      document.getElementById("statInactiveUsers").textContent = stats.inactiveUsers?.length || 0;
       document.getElementById("statBoards").textContent = stats.boards || 0;
       document.getElementById("statCards").textContent = stats.cards || 0;
       document.getElementById("statsTimestamp").textContent = "Actualizado: " + new Date(stats.timestamp).toLocaleString("es");
+
+      // Mostrar lista de usuarios inactivos si hay
+      const section = document.getElementById("inactiveUsersSection");
+      const list = document.getElementById("inactiveUsersList");
+      if (stats.inactiveUsers?.length > 0) {
+        section.style.display = "";
+        list.innerHTML = stats.inactiveUsers.map(u =>
+          `<div style="padding:4px 0;display:flex;justify-content:space-between">
+             <span>${escapeHtml(u.email)}</span>
+             <span style="color:#999;font-size:10px">${u.name ? escapeHtml(u.name) : '—'}</span>
+           </div>`
+        ).join("");
+      } else {
+        section.style.display = "none";
+      }
     } catch (e) {
       document.getElementById("statUsers").textContent = "Error";
+      document.getElementById("statActiveUsers").textContent = "Error";
+      document.getElementById("statInactiveUsers").textContent = "Error";
       document.getElementById("statBoards").textContent = "Error";
       document.getElementById("statCards").textContent = "Error";
     }
