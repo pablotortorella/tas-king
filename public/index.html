@@ -602,6 +602,7 @@
     <div class="admin-tabs">
       <button class="tab-btn active" id="adminTabUsuarios">Usuarios</button>
       <button class="tab-btn" id="adminTabActividad">Actividad del tablero</button>
+      <button class="tab-btn" id="adminTabStats">📊 Estadísticas</button>
     </div>
 
     <!-- Tab: Usuarios -->
@@ -623,6 +624,25 @@
         <button class="btn btn-ghost btn-small" id="activityResetBtn">Limpiar</button>
       </div>
       <div class="activity-list" id="adminActivityList"></div>
+    </div>
+
+    <!-- Tab: Estadísticas -->
+    <div id="adminPanelStats" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#0079bf" id="statUsers">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Usuarios</div>
+        </div>
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#27ae60" id="statBoards">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Tableros</div>
+        </div>
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#e74c3c" id="statCards">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Tarjetas activas</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#999" id="statsTimestamp"></div>
     </div>
 
     <div class="modal-footer" style="margin-top:16px">
@@ -1874,12 +1894,30 @@
   function switchAdminTab(tab) {
     document.getElementById("adminPanelUsuarios").style.display  = tab === "usuarios"  ? "" : "none";
     document.getElementById("adminPanelActividad").style.display = tab === "actividad" ? "" : "none";
+    document.getElementById("adminPanelStats").style.display     = tab === "stats"     ? "" : "none";
     document.getElementById("adminTabUsuarios").classList.toggle("active",  tab === "usuarios");
     document.getElementById("adminTabActividad").classList.toggle("active", tab === "actividad");
+    document.getElementById("adminTabStats").classList.toggle("active",     tab === "stats");
     if (tab === "actividad") renderActivity();
+    if (tab === "stats") renderStats();
   }
   document.getElementById("adminTabUsuarios").addEventListener("click",  () => switchAdminTab("usuarios"));
   document.getElementById("adminTabActividad").addEventListener("click", () => switchAdminTab("actividad"));
+  document.getElementById("adminTabStats").addEventListener("click",     () => switchAdminTab("stats"));
+
+  async function renderStats() {
+    try {
+      const stats = await api("GET", "/api/admin/stats");
+      document.getElementById("statUsers").textContent = stats.users || 0;
+      document.getElementById("statBoards").textContent = stats.boards || 0;
+      document.getElementById("statCards").textContent = stats.cards || 0;
+      document.getElementById("statsTimestamp").textContent = "Actualizado: " + new Date(stats.timestamp).toLocaleString("es");
+    } catch (e) {
+      document.getElementById("statUsers").textContent = "Error";
+      document.getElementById("statBoards").textContent = "Error";
+      document.getElementById("statCards").textContent = "Error";
+    }
+  }
 
   async function renderActivity() {
     if (!currentBoardId) return;

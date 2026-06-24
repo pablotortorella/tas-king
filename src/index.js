@@ -1224,6 +1224,26 @@ app.post("/api/admin/set-admin", async c => {
   return c.json({ ok: true });
 });
 
+// ---------- Super Admin: Estadísticas de la plataforma ----------
+app.get("/api/admin/stats", async c => {
+  const email = c.get("email");
+  const user = await c.env.DB.prepare("SELECT is_admin FROM users WHERE email = ?").bind(email).first();
+  if (!user?.is_admin) return c.json({ error: "Solo admins pueden ver estadísticas." }, 403);
+
+  const [users, boards, cards] = await Promise.all([
+    c.env.DB.prepare("SELECT COUNT(*) as count FROM users").first(),
+    c.env.DB.prepare("SELECT COUNT(*) as count FROM boards").first(),
+    c.env.DB.prepare("SELECT COUNT(*) as count FROM cards WHERE archived = 0").first(),
+  ]);
+
+  return c.json({
+    users: users?.count || 0,
+    boards: boards?.count || 0,
+    cards: cards?.count || 0,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 export default app;
 
 // Exportaciones puras para tests unitarios. El Worker sigue usando el export default.
