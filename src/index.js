@@ -55,13 +55,21 @@ app.use(async (c, next) => {
   const method = c.req.method;
   const path = c.req.path;
 
-  await next();
+  // No loguear requests a /assets (demasiado ruido)
+  if (path.startsWith("/assets")) {
+    await next();
+    return;
+  }
+
+  try {
+    await next();
+  } catch (e) {
+    logger.error(`${method} ${path} - exception`, { ip, method, path, error: e.message });
+    throw e;
+  }
 
   const latency = Date.now() - startTime;
-  const status = c.res.status;
-
-  // No loguear requests a /assets (demasiado ruido)
-  if (path.startsWith("/assets")) return;
+  const status = c.res?.status || 200;
 
   const context = {
     ip,
