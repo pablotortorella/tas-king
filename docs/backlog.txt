@@ -1,12 +1,13 @@
 0. 🔗 Deep-link a tarjeta
-1. 📜 Historial (en la tarjeta + panel lateral "Actividad")
-2. 🏷️ Etiquetas + filtro, con atajos numéricos → y página de AYUDA (F1) que documente todos los atajos/filtros/export-import
-3. ✅ Checklists/subtareas
-4. 🔐 Proteger adjuntos
-5. 🛡️ Validar JWT de Google
-6. 🌙 Modo oscuro/claro
-7. 🖼️ Mejores adjuntos
-8. 💾 Respaldo automático
+1. 📜 Historial (en cada tarjeta + panel lateral "Actividad"). Con fecha, hora y usuario. Que quede en la base de datos. Desde el perfil administrador, que se pueda filtrar por rangos de fechas y por usuarios los logs.
+2. ✏️ Columnas personalizables: El usuario debe poder crear, eliminar y editar columnas.
+3. 🏷️ Poder colocar etiquetas a las tareas (una o más. Y que se puedan configurar con un nombre y un color a cada etiqueta, máximo 10 etiquetas en cada tablero) + filtro, con atajos numéricos 0 al 9 → y página de AYUDA (F1) que documente todos los atajos/filtros/export-import
+4. ✅ Checklists/subtareas
+5. 🔐 Proteger adjuntos
+6. 🛡️ Validar JWT de Google (🛡️ Validar el token de Google con rigor (hardening del login) — 🟢)
+7. 🌙 Modo oscuro/claro
+8. 🖼️ Mejoras adjuntos (pegar imágenes, vista previa, reordenar) y colocar límites de formatos, tamaño y cantidad.
+9. 💾 Respaldo automático (backup)
 
 
 ---
@@ -50,10 +51,7 @@ Propuesta de Iteración 4 — "Personalización e identidad"
 👤 Perfil de usuario: nombre para mostrar + avatar = emoji + color de fondo (en vez del email crudo). Se guarda en la tabla users (ya tiene name; agrego avatar_emoji y avatar_color).
 🎨 Avatares en todos lados: header, distintivo de responsable en la tarjeta, lista de miembros.
 ✏️ Renombrar tablero desde la UI (borrar ya existe).
-Mi aporte (encaja perfecto con esto):
-
 💬 Autoría en comentarios: hoy los comentarios no guardan quién los escribió — un agujero real en multiusuario. Sumar autor + avatar + fecha a cada comentario. Muy valioso ahora que entran varias personas.
-
 
 Otras para que estén en el radar:
 
