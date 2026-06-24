@@ -1,18 +1,26 @@
 # Instrucciones para Claude
 
 ## Al inicio de cada sesión
-Leer `AI_HANDOFF.md` antes de cualquier acción. Ese archivo tiene el estado actual del
-proyecto, el objetivo inmediato, decisiones tomadas y lo que no hay que hacer.
 
-**Antes de proponer o implementar un feature del backlog**: revisar `AI_HANDOFF.md → Estado de features`
-para saber si ya existe (pero le faltan tests), o si no existe. No asumir nada del código sin
-leerlo. Si el handoff dice "implementado pero sin tests E2E", ve directo a agregar tests.
-Si dice "no existe", confirma leyendo el código antes de empezar.
+**1. Actualizar repositorio**: `git pull origin main` (por si hubo cambios externos)
 
-Leer `TESTING.md` antes de modificar comportamiento. Todo bug corregido debe sumar un test de
-regresión y toda funcionalidad nueva debe evaluarse en la capa adecuada (unitaria, API o E2E).
-Antes de dar una tarea por terminada, ejecutar los tests afectados; antes de deploy, ejecutar
-`npm run test:all` y completar el checklist manual correspondiente.
+**2. Leer documentación**:
+   - `docs/STATUS.md`: qué está implementado, qué falta, estado de tests de cada feature
+   - `AI_HANDOFF.md`: objetivo inmediato, decisiones, lo que no hay que hacer
+   - `TESTING.md`: estrategia de testing (antes de modificar código)
+
+**3. Correr tests**:
+   ```bash
+   npm run test:all
+   ```
+   Si fallan, investigar y reportar qué cambió. No continuar hasta que pasen.
+
+**4. Confirmar feature del backlog**:
+   Antes de proponer o implementar, revisar `docs/STATUS.md`:
+   - Si dice "❌ No implementado" → confirma leyendo el código antes de empezar
+   - Si dice "✅ Implementado, X% tests" → revisa qué tests faltan y agrega
+
+No asumir nada del código sin leerlo. El handoff + STATUS.md son la fuente de verdad.
 
 ## Al finalizar cada sesión
 Actualizar los siguientes archivos si hubo cambios relevantes:

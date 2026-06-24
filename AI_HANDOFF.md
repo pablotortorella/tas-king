@@ -10,8 +10,8 @@ la consola. La lista de emails pasó de un Secret de Cloudflare (`ALLOWED_EMAILS
 `allowed_emails` en D1, con fallback al Secret para compatibilidad.
 
 ## Objetivo inmediato
-El próximo ítem del backlog priorizado es el **#0: Deep-link a una tarjeta** — abrir la app
-directamente en una tarjeta puntual vía URL (ej: `/?card=<id>`). Es un cambio chico (🟢).
+El próximo ítem del backlog es el **#2: Etiquetas + filtro** — tabla `labels` y `card_labels`,
+UI para crear/editar etiquetas por tablero, agregar a tarjetas, filtrar, y página AYUDA (F1).
 
 El backlog completo está en `docs/backlog.txt`. Las ideas y contexto ampliado en `docs/ideas.txt`.
 
@@ -45,8 +45,32 @@ El backlog completo está en `docs/backlog.txt`. Las ideas y contexto ampliado e
 - `migrations/`: esquema D1 incremental (0001 init → 0004 admin)
 - `wrangler.jsonc`: configuración de Workers, D1 y R2
 - `.dev.vars`: variables locales (no commiteado — ver README para el formato)
+- `docs/STATUS.md`: **[IMPORTANTE]** estado de cada feature (qué está hecho, qué falta, tests)
 - `docs/backlog.txt`: backlog priorizado
 - `docs/ideas.txt`: ideas extendidas y contexto de decisiones de producto
+
+## Al finalizar cada sesión
+
+**1. Actualizar `docs/STATUS.md`**: (SIEMPRE, incluso si "no pasó nada")
+   - Agregar la feature completada en la sección correspondiente (✅ o ❌)
+   - Incluir: qué hace, dónde está implementado, qué tests tiene
+   - Actualizar fecha "Última actualización" y "Próxima feature"
+   - Si algo quedó a mitad, marcarlo con ⚠️ y notas de qué falta
+
+**2. Actualizar otros archivos si corresponde**:
+   - **`AI_HANDOFF.md`**: sección "Último handoff" con resumen de lo que se hizo
+   - **`README.md`**: si se agregaron funcionalidades, secrets, comandos o cambió el stack
+   - **`TESTING.md`**: si cambió la estrategia o se agregaron nuevos requisitos de testing
+
+**3. Correr tests antes de commit**:
+   ```bash
+   npm run test:all
+   ```
+
+**4. Commit y push**:
+   - Incluir `docs/STATUS.md` en el commit (la razón principal)
+   - Mensaje: describe qué feature se completó o qué cambió
+   - Ejemplo: `Agregar tests E2E para deep-link: URL válida, inexistente, archivada`
 
 ## Comandos útiles
 ```bash
@@ -72,7 +96,7 @@ Para saber si un feature existe, está completo, o qué le falta:
 | #0 🔗 Deep-link | Implementado, tests E2E ✅ | Acciones: `checkDeepLink()` en el frontend, GET `/api/cards/:id` en backend. Los 4 casos de test están cubiertos (válida, inexistente, archivada, sin acceso manual). |
 | ⚡ Polling tiempo real | Implementado, tests manual ✅ | Endpoint `/api/boards/:id/version` + cliente cada 5s. No tiene tests E2E, pero se verifica manualmente. |
 | 🎉 Celebración | Implementado, tests manual ✅ | Confeti + animación de tarjeta. Funciona para arrastres locales y vía polling. Sin test E2E (difícil de verificar en Playwright). |
-| #1 📜 Historial | No existe | Requiere: tabla `audit_log` en D1, UI en modal de tarjeta y panel lateral, permisos de admin. |
+| #1 📜 Historial | Implementado, tests manuales ✅ | `audit_log` en D1, `logEvent()` en 8 eventos, panel en modal de tarjeta, pestaña Actividad en Admin con filtros. |
 | #2 🏷️ Etiquetas | No existe | Requiere: tabla `labels`, `card_labels` join, UI de creación/edición, filtro, página de AYUDA. |
 | #3 ✅ Checklists | No existe | Requiere: tabla `checklist_items`, UI en modal de tarjeta. |
 | #4 🔐 Adjuntos | Parcialmente | Las URLs de `/uploads` hoy son públicas (solo UUID). Requiere validación de sesión/membresía. |
@@ -81,10 +105,10 @@ Para saber si un feature existe, está completo, o qué le falta:
 
 ## Pendientes
 Ver `docs/backlog.txt` para la lista priorizada. En orden:
-- [ ] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
+- [x] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
 - [x] ⚡ Polling de cambios en tiempo real (cada 5s, pausa en segundo plano)
 - [x] 🎉 Celebración al terminar (confeti + tarjeta titilante)
-- [ ] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
+- [x] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
 - [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
 - [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
 - [ ] #4 🔐 Proteger adjuntos (hoy `/uploads` son URLs públicas con UUID)
