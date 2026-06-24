@@ -91,14 +91,27 @@ src/
 
 ---
 
-## ✅ Antes de push
+## ✅ Antes de push/deploy
 
 ```bash
-npm run test:all           # Suite completa pasa
+npm run test:all           # Suite completa pasa (✅ obligatorio)
 git diff                   # Revisar cambios
 git log --oneline main..HEAD  # Revisar commits
 git push origin feature/...
 ```
+
+## 🚀 Despliegue a producción (FLUJO OBLIGATORIO)
+
+**REGLA**: Nunca deployar a producción sin confirmación explícita del usuario.
+
+```
+1. Tests pasan 100% ✅ (local)
+2. Probar en staging ✅
+3. Usuario aprueba: "OK, mergea y deployá"
+4. Claude hace: npm run deploy
+```
+
+**Cambios multi-capa** (frontend + backend): Leer [docs/CAMBIOS-MULTICAPA.md](docs/CAMBIOS-MULTICAPA.md)
 
 ---
 
