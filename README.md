@@ -106,15 +106,42 @@ El primer paso para poder operar la app desde la UI es definir al menos un admin
 echo "tu@email.com" | npx wrangler secret put ADMIN_EMAILS
 ```
 
-La próxima vez que ese usuario inicie sesión, verá el botón **⚙ Admin** en el header
-y podrá agregar o eliminar usuarios permitidos y promover otros admins, sin necesidad
-de volver a la consola.
+La próxima vez que ese usuario inicie sesión, verá el botón **⚙ Admin** en el header.
 
-Para configurar la lista inicial de usuarios permitidos podés usar `ALLOWED_EMAILS`
-(separados por coma) o agregarlos directamente desde el panel de administración.
+### Roles de administración
 
-> **Nota para proyectos fork**: cada quien que despliega su propia instancia define
-> sus propios admins vía `ADMIN_EMAILS`. No hay emails hardcodeados en el código.
+**Admin** (gestor de usuarios):
+- Agregar/eliminar usuarios de la plataforma
+- Promover/degradar otros admins
+- Gestionar lista de acceso (`allowed_emails`)
+- Acceso vía pestaña "Usuarios" en el panel admin
+
+**Super Admin** (estadísticas de la plataforma):
+- Panel de estadísticas: usuarios totales, tableros, tarjetas activas
+- Información de uso y recursos (v1.0 minimalista, se expande iterativamente)
+- **Es un admin que además puede ver estadísticas**
+- Acceso vía pestaña "📊 Estadísticas" en el panel admin
+
+Para ser Super Admin, simplemente ser admin. Todos los admins ven el panel de estadísticas.
+
+### Configurar usuarios permitidos
+
+Para configurar la lista inicial de usuarios con acceso podés usar `ALLOWED_EMAILS`
+(separados por coma) o agregarlos directamente desde el panel de administración:
+
+```bash
+# Opción 1: Setup inicial (producción)
+echo "usuario1@email.com,usuario2@email.com" | npx wrangler secret put ALLOWED_EMAILS
+
+# Opción 2: Agregar desde el panel (dinámico, recomendado)
+# Panel ⚙ Admin → pestaña "Usuarios" → campo de entrada
+```
+
+> **Nota para proyectos fork**: 
+> - Define tu email en `ADMIN_EMAILS` (solo vos eres super admin inicialmente)
+> - Define usuarios iniciales en `ALLOWED_EMAILS` o agrégalos luego desde el panel
+> - Cada instancia fork tiene sus propios admins y usuarios (no hardcodeados)
+> - El panel admin permite gestionar todo sin volver a la consola
 
 ## Estructura
 
@@ -138,7 +165,9 @@ TESTING.md             # estrategia automatizada y manual
 - 5 columnas; drag & drop con orden exacto; mover el tablero arrastrando el fondo;
   archivar/restaurar/eliminar; buscador; export CSV y Copia JSON; importar (agrega).
 - **Atajos de teclado**: `F` mis tareas · `U` urgentes · `N` nueva tarjeta.
-- **Panel de administración**: agregar/eliminar usuarios y promover admins desde la UI.
+- **Panel de administración**:
+  - Gestionar usuarios: agregar/eliminar y promover admins desde la UI
+  - **Super Admin Dashboard**: estadísticas de la plataforma (usuarios, tableros, tarjetas, uso)
 
 ## Modelo de datos
 
