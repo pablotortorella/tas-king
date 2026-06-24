@@ -1096,22 +1096,18 @@ app.get("/api/cards/:id/history", async c => {
     const board = await c.env.DB.prepare("SELECT owner_email FROM boards WHERE id = ?").bind(card.board_id).first();
     const owner = board && await c.env.DB.prepare("SELECT name, avatar_emoji, avatar_color FROM users WHERE email = ?").bind(board.owner_email).first();
 
-    // Columna donde fue creada
-    const colName = (COLUMNS.find(col => col.id === card.column_id) || {}).id || card.column_id;
-
     history = [{
       id: "synthetic_" + card.id,
-      card_id: card.id,
+      cardId: card.id,
       action: "card_created",
       email: board?.owner_email || "desconocido",
+      ts: card.created_at,
+      details: { column: card.column_id },
       author: {
-        email: board?.owner_email || "desconocido",
         name: (owner?.name || board?.owner_email?.split("@")[0]) || "Sistema",
         avatarEmoji: owner?.avatar_emoji || null,
         avatarColor: owner?.avatar_color || null
       },
-      ts: card.created_at,
-      details: { column: colName }
     }];
   }
 
