@@ -137,9 +137,9 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-24, Sesión de seguridad — Claude Haiku 4.5)
+## Último handoff (2026-06-24, Sesión de seguridad + historial — Claude Haiku 4.5)
 
-**ESTA SESIÓN — Dos features de seguridad completados**
+**ESTA SESIÓN — Dos features de seguridad + mejora de historial**
 
 ### ✅ #4 Protección de adjuntos (Opción A) — 2-layer validation
 - **GET `/uploads/:key`** requiere autenticación (401) + membresía del tablero (403)
@@ -156,8 +156,15 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - **ADR-011** registrado: decisión de arquitectura con problema/solución/alternativas
 - v1.6 deployado (`e7e42ae8`)
 
+### ✅ #1 Historial — Mostrar creación como primer evento
+- GET `/api/cards/:id/history` sintetiza evento de creación si no hay historial
+- Frontend muestra: "Creó la tarjeta en [columna]" con fecha original
+- Compatibilidad: tarjetas antiguas usan `card.created_at` como timestamp
+- Reemplaza "Sin historial aún." — siempre hay al menos un evento
+- v1.7 deployado (`3b81ba74`)
+
 **Actualizado**:
-- docs/STATUS.md: #4 y #5 marcados 100% completo
+- docs/STATUS.md: #1 y #4 y #5 marcados 100% completo
 - docs/backlog.txt: #8 "Mejoras adjuntos" expandido (BAJA prioridad, detalles técnicos)
 - docs/ADRs.md: ADR-011 nuevo sobre JWT validation
 
