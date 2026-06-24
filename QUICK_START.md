@@ -17,22 +17,25 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 ## 📍 Dónde estamos (Estado actual)
 
 **Última actualización**: 2026-06-24  
-**Versión**: 1.7 (Refactor modular completado)
+**Versión**: 1.8 (Feature #2: Etiquetas + filtro completado)
 
 ### ✅ Completado esta sesión
-- Refactor: `src/index.js` (1267 líneas) → 13 módulos temáticos (~100 líneas c/u)
-- Tests: 38 unitarios + 5 E2E ✅ Todos pasan
-- Documentación: Estructura modular en CLAUDE.md + QUICK_START.md
+- Feature #2: Etiquetas + filtro 🏷️
+  - Migración DB: tablas `labels` y `card_labels`
+  - Backend: 6 nuevos endpoints (crear/editar/eliminar/asignar/quitar)
+  - Frontend: pastillas de color en tarjetas, gestión inline en modal, filtro OR con atajos 0-9
+  - Página de ayuda: F1 muestra todos los atajos del sistema
+  - Tests: unitarios + E2E ✅ Todos pasan (38 unitarios + 6 E2E)
 
 ### 🔄 En progreso
 (nada)
 
 ### ⏭️ Próximo
-**Feature #2: Etiquetas + filtro** (MEDIA priority)
-- Tablas: `labels` y `card_labels`
-- UI: crear/editar/filtrar etiquetas
-- Atajos: 0-9 para filtrar
-- Página AYUDA (F1) con todos los atajos
+**Feature #3: Checklists / subtareas** (MEDIA priority)
+- Tabla: `checklist_items` (id, card_id, text, completed, position)
+- API: CRUD de items
+- UI: agregar/editar/tachar items en modal de tarjeta
+- Progreso visual (N/M items completados)
 
 Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
 

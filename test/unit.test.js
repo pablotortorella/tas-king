@@ -38,15 +38,17 @@ describe("helpers puros", () => {
     expect(commentToJSON({ id: "cm2", text: "Viejo", created_at: 11, author_email: null }).author).toBeNull();
   });
 
-  it("arma una tarjeta y conserva sus relaciones", () => {
+  it("arma una tarjeta y conserva sus relaciones (comentarios, adjuntos, etiquetas)", () => {
     const comments = new Map([["c1", [{ id: "cm", text: "Hola", created_at: 2, author_email: null }]]]);
     const attachments = new Map([["c1", [{ id: "a", original_name: "x.pdf", mime: "application/pdf", size: 3, stored_name: "x" }]]]);
+    const labels = new Map([["c1", [{ id: "l1", name: "Bug", color: "#EE6677" }]]]);
     const card = cardToJSON({
       id: "c1", title: "Tarea", column_id: "pendiente", details: "Detalle", due: "2026-06-30",
       archived: 0, archived_at: null, position: 1, assignee_email: null, created_at: 1,
-    }, comments, attachments);
+    }, comments, attachments, labels);
     expect(card).toMatchObject({ id: "c1", column: "pendiente", archived: false, comments: [{ id: "cm" }] });
     expect(card.attachments[0]).toMatchObject({ id: "a", isImage: false });
+    expect(card.labels[0]).toMatchObject({ id: "l1", name: "Bug", color: "#EE6677" });
   });
 });
 

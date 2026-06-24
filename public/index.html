@@ -217,6 +217,79 @@
     gap: 3px;
   }
   .badge.overdue { background: #ffebe6; color: var(--danger); }
+
+  /* Etiquetas en tarjetas */
+  .card-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .label-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .label-chip:hover { opacity: 0.8; }
+
+  /* Panel de gestión de etiquetas (inline en modal) */
+  .labels-section { margin: 14px 0; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .labels-section h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .labels-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .label-in-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #fff;
+    background: #ddd;
+  }
+  .label-in-card .remove { cursor: pointer; margin-left: 4px; opacity: 0.8; }
+  .label-in-card .remove:hover { opacity: 1; }
+  .add-label-btn { padding: 4px 8px; font-size: 12px; background: var(--col-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+  .add-label-btn:hover { background: var(--border); }
+
+  /* Panel desplegable de crear/asignar etiqueta */
+  .label-picker { margin-top: 8px; padding: 10px; background: var(--col-bg); border-radius: 6px; }
+  .label-picker input { width: 100%; margin-bottom: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+  .label-colors { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 8px; }
+  .color-opt { width: 100%; aspect-ratio: 1; border-radius: 4px; border: 2px solid transparent; cursor: pointer; transition: transform 0.2s; }
+  .color-opt:hover { transform: scale(1.1); }
+  .color-opt.selected { border-color: #000; }
+  .label-picker button { padding: 6px 10px; font-size: 12px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+  .label-picker button:hover { opacity: 0.9; }
+  .existing-labels { margin-top: 10px; }
+  .existing-label { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: #fff; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; margin-bottom: 4px; }
+  .existing-label .actions { display: flex; gap: 8px; }
+  .existing-label .del { cursor: pointer; color: var(--danger); }
+
+  /* Filtro de etiquetas en el header */
+  .label-filters { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .label-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.3);
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .label-filter-chip:hover { background: rgba(255,255,255,.5); }
+  .label-filter-chip.active { background: rgba(255,255,255,.8); color: var(--accent); font-weight: 600; }
+  .label-filter-chip .remove { opacity: 0.7; margin-left: 2px; }
+
   .add-card {
     margin: 4px 8px 8px;
     padding: 6px 8px;
@@ -476,6 +549,7 @@
       <label>Responsable</label>
       <select id="fAssignee"></select>
     </div>
+    <div class="labels-section" id="fLabelsSection"></div>
     <div class="field">
       <label>Adjuntos (fotos y archivos)</label>
       <div class="attachments" id="fAttachments"></div>
@@ -668,6 +742,47 @@
   </div>
 </div>
 
+<!-- Modal de Ayuda (F1) -->
+<div class="overlay" id="helpModal">
+  <div class="modal">
+    <h2>⌨️ Atajos de teclado</h2>
+    <div style="font-size:13px;line-height:1.8;color:var(--text)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">F</kbd>
+        <span>Mis tareas (filtro por responsable)</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">U</kbd>
+        <span>Tareas urgentes (vencen hoy/mañana)</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">N</kbd>
+        <span>Nueva tarjeta bajo el cursor</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">0</kbd>
+        <span>Quitar filtro de etiqueta</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">1-9</kbd>
+        <span>Filtrar por etiqueta 1-9 del tablero</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">Esc</kbd>
+        <span>Cerrar modal / Cerrar esta ayuda</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">F1</kbd>
+        <span>Mostrar esta ayuda</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px">
+      <div></div>
+      <button class="btn btn-primary" id="helpCloseBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -691,6 +806,8 @@
   let searchQuery = "";        // texto del buscador (minúsculas)
   let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
   let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
+  let activeLabelFilters = new Set(); // ids de etiquetas para filtro OR
+  let boardLabels = [];        // etiquetas del tablero actual
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
@@ -774,10 +891,12 @@
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
-    if (!currentBoardId) { state = { cards: [] }; render(); return; }
+    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; render(); return; }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
     lastKnownVersion = state.version || 0;
+    try { boardLabels = await api("GET", "/api/boards/" + currentBoardId + "/labels"); }
+    catch (e) { boardLabels = []; }
     render();
   }
 
@@ -895,10 +1014,15 @@
     return !assigneeFilter || card.assignee === assigneeFilter;
   }
 
+  function matchesLabels(card) {
+    if (activeLabelFilters.size === 0) return true;
+    return (card.labels || []).some(l => activeLabelFilters.has(l.id));
+  }
+
   function render() {
     board.innerHTML = "";
     COLUMNS.forEach(col => {
-      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && (!urgentFilter || isUrgent(c)));
+      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!urgentFilter || isUrgent(c)));
       const colEl = document.createElement("div");
       colEl.className = "column";
       colEl.innerHTML = `
@@ -1000,9 +1124,14 @@
     if (card.attachments && card.attachments.length) badges.push(`<span class="badge">📎 ${card.attachments.length}</span>`);
     if (card.details) badges.push(`<span class="badge">≡</span>`);
 
+    const labels = (card.labels || []).map(l =>
+      `<span class="label-chip" style="background:${l.color}" data-label-id="${l.id}" title="${escapeHtml(l.name)}">${escapeHtml(l.name)}</span>`
+    ).join("");
+
     el.innerHTML = `
       <div class="card-title">${escapeHtml(card.title) || "(sin título)"}</div>
       ${badges.length ? `<div class="card-meta">${badges.join("")}</div>` : ""}
+      ${labels ? `<div class="card-labels">${labels}</div>` : ""}
     `;
     el.addEventListener("click", () => openModal(card.id));
     el.addEventListener("dragstart", e => {
@@ -1088,6 +1217,7 @@
   const fAssignee = document.getElementById("fAssignee");
   const fAttachments = document.getElementById("fAttachments");
   const fComments = document.getElementById("fComments");
+  const fLabelsSection = document.getElementById("fLabelsSection");
 
   // poblar el selector de columnas una vez
   COLUMNS.forEach(c => {
@@ -1192,6 +1322,7 @@
     document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
+    renderLabels();
     renderComments();
     renderHistory();
     if (id) history.replaceState(null, "", "?card=" + id);
@@ -1261,6 +1392,149 @@
       await loadCards();
       renderComments();
     } catch (e) { alert("No se pudo borrar el comentario: " + e.message); }
+  }
+
+  // Etiquetas: gestión de etiquetas asignadas a la tarjeta
+  const LABEL_COLORS = [
+    "#4477AA", "#66CCEE", "#228833", "#CCBB44", "#EE6677",
+    "#AA3377", "#BBBBBB", "#002D9C", "#FF832B", "#009D9A",
+    "#8A3FFC", "#EE538B", "#A2191F", "#737008", "#4D8400",
+    "#0F62FE", "#BA4E00", "#D02670", "#697077", "#007448",
+  ];
+
+  function renderLabels() {
+    fLabelsSection.innerHTML = "";
+    if (!editingId) return;
+    const card = state.cards.find(c => c.id === editingId);
+    const cardLabels = card ? (card.labels || []) : [];
+
+    const section = document.createElement("div");
+    section.className = "labels-section";
+    section.innerHTML = `<h3>🏷️ Etiquetas</h3>`;
+
+    if (cardLabels.length > 0) {
+      const listDiv = document.createElement("div");
+      listDiv.className = "labels-list";
+      cardLabels.forEach(label => {
+        const chip = document.createElement("div");
+        chip.className = "label-in-card";
+        chip.style.backgroundColor = label.color;
+        chip.innerHTML = `${escapeHtml(label.name)}<span class="remove">✕</span>`;
+        chip.querySelector(".remove").addEventListener("click", () => removeLabel(label.id));
+        listDiv.appendChild(chip);
+      });
+      section.appendChild(listDiv);
+    }
+
+    const btn = document.createElement("button");
+    btn.className = "add-label-btn";
+    btn.textContent = cardLabels.length ? "+ Agregar etiqueta" : "+ Asignar etiqueta";
+    btn.addEventListener("click", () => toggleLabelPicker());
+    section.appendChild(btn);
+
+    fLabelsSection.appendChild(section);
+  }
+
+  let labelPickerVisible = false;
+  function toggleLabelPicker() {
+    labelPickerVisible = !labelPickerVisible;
+    const existing = fLabelsSection.querySelector(".label-picker");
+    if (existing) { existing.remove(); labelPickerVisible = false; return; }
+
+    const card = state.cards.find(c => c.id === editingId);
+    const cardLabels = card ? (card.labels || []) : [];
+    const assignedIds = new Set(cardLabels.map(l => l.id));
+
+    const picker = document.createElement("div");
+    picker.className = "label-picker";
+
+    // Lista de etiquetas existentes
+    const existingDiv = document.createElement("div");
+    existingDiv.className = "existing-labels";
+    existingDiv.innerHTML = '<h4 style="margin:0 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Etiquetas del tablero:</h4>';
+
+    boardLabels.forEach(label => {
+      const row = document.createElement("div");
+      row.className = "existing-label";
+      row.style.backgroundColor = assignedIds.has(label.id) ? label.color + "22" : "";
+      row.innerHTML = `
+        <span style="color:${label.color};font-weight:600">${escapeHtml(label.name)}</span>
+        <div class="actions">
+          ${assignedIds.has(label.id)
+            ? `<span class="del" data-label-id="${label.id}">Quitar</span>`
+            : `<span style="cursor:pointer;color:var(--accent)" data-label-id="${label.id}">Agregar</span>`
+          }
+          <span class="del" data-edit="${label.id}" style="color:var(--muted);margin-left:auto">✏️</span>
+        </div>
+      `;
+      const addBtn = row.querySelector(`[data-label-id="${label.id}"]`);
+      if (assignedIds.has(label.id)) {
+        addBtn.addEventListener("click", () => removeLabel(label.id));
+      } else {
+        addBtn.addEventListener("click", () => assignLabel(label.id));
+      }
+      existingDiv.appendChild(row);
+    });
+
+    picker.appendChild(existingDiv);
+
+    // Crear etiqueta nueva
+    const createDiv = document.createElement("div");
+    createDiv.innerHTML = `
+      <h4 style="margin:10px 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Crear etiqueta:</h4>
+      <input type="text" id="newLabelName" placeholder="Nombre..." maxlength="30" style="width:100%;margin-bottom:6px">
+      <div class="label-colors" id="colorGrid"></div>
+      <button id="createLabelBtn" style="width:100%;padding:6px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">Crear</button>
+    `;
+    picker.appendChild(createDiv);
+
+    const colorGrid = picker.querySelector("#colorGrid");
+    let selectedColor = LABEL_COLORS[0];
+    LABEL_COLORS.forEach(color => {
+      const opt = document.createElement("div");
+      opt.className = "color-opt" + (color === selectedColor ? " selected" : "");
+      opt.style.backgroundColor = color;
+      opt.addEventListener("click", () => {
+        picker.querySelectorAll(".color-opt").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        selectedColor = color;
+      });
+      colorGrid.appendChild(opt);
+    });
+
+    picker.querySelector("#createLabelBtn").addEventListener("click", () => createLabel(selectedColor));
+    picker.querySelector("#newLabelName").addEventListener("keydown", e => {
+      if (e.key === "Enter") createLabel(selectedColor);
+    });
+
+    fLabelsSection.appendChild(picker);
+  }
+
+  async function assignLabel(labelId) {
+    try {
+      await api("POST", `/api/cards/${editingId}/labels/${labelId}`);
+      await loadCards();
+      renderLabels();
+    } catch (e) { alert("No se pudo asignar: " + e.message); }
+  }
+
+  async function removeLabel(labelId) {
+    try {
+      await api("DELETE", `/api/cards/${editingId}/labels/${labelId}`);
+      await loadCards();
+      renderLabels();
+    } catch (e) { alert("No se pudo quitar: " + e.message); }
+  }
+
+  async function createLabel(color) {
+    if (!editingId || !currentBoardId) return;
+    const name = document.getElementById("newLabelName")?.value.trim();
+    if (!name) return alert("Falta nombre de etiqueta");
+    try {
+      const label = await api("POST", `/api/boards/${currentBoardId}/labels`, { name, color });
+      await assignLabel(label.id);
+      labelPickerVisible = false;
+    } catch (e) { alert("No se pudo crear: " + e.message); }
   }
 
   // Adjuntos: los nuevos quedan pendientes como File y se suben al Guardar.
@@ -1891,14 +2165,41 @@
   }
 
   document.addEventListener("keydown", e => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;             // no pisar atajos del navegador
+    const k = e.key.toLowerCase();
+
+    // F1: ayuda (siempre disponible)
+    if (k === "f1") { e.preventDefault(); toggleHelpModal(); return; }
+
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-    if (document.querySelector(".overlay.open")) return;        // no disparar con un modal abierto
-    const k = e.key.toLowerCase();
+    const helpOpen = document.querySelector("#helpModal.open");
+    if (helpOpen) return;
+
+    // Esc: cerrar ayuda
+    if (k === "escape" && helpOpen) { e.preventDefault(); toggleHelpModal(); return; }
+
+    // Si hay modal de tarjeta abierto, solo permitir esc para cerrarlo
+    if (document.querySelector(".overlay.open")) return;
+
     if (k === "f") { e.preventDefault(); toggleMyTasks(); }
     else if (k === "u") { e.preventDefault(); toggleUrgent(); }
     else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
+    else if (k === "0") { e.preventDefault(); activeLabelFilters.clear(); render(); }
+    else if (k >= "1" && k <= "9") {
+      const idx = parseInt(k) - 1;
+      const label = boardLabels[idx];
+      if (label) {
+        e.preventDefault();
+        if (activeLabelFilters.has(label.id)) {
+          activeLabelFilters.delete(label.id);
+        } else {
+          activeLabelFilters.clear();
+          activeLabelFilters.add(label.id);
+        }
+        render();
+      }
+    }
   });
 
   // ---------- Panel de administración ----------
@@ -2051,6 +2352,13 @@
 
   document.getElementById("adminBtn").addEventListener("click", openAdmin);
   document.getElementById("adminCloseBtn").addEventListener("click", () => adminOverlay.classList.remove("open"));
+
+  // Modal de ayuda (F1)
+  const helpModal = document.getElementById("helpModal");
+  function toggleHelpModal() {
+    helpModal.classList.toggle("open");
+  }
+  document.getElementById("helpCloseBtn").addEventListener("click", () => toggleHelpModal());
   adminOverlay.addEventListener("click", e => { if (e.target === adminOverlay) adminOverlay.classList.remove("open"); });
 
   document.getElementById("adminAddBtn").addEventListener("click", async () => {

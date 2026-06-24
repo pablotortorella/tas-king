@@ -111,3 +111,34 @@ test("los atajos no se disparan mientras se escribe", async ({ page }) => {
   await expect(page.locator("#overlay")).toHaveClass(/open/);
   await expect(page.locator("#modalTitle")).toHaveText("Nueva tarjeta");
 });
+
+test("crea etiqueta y verifica que aparece en la tarjeta", async ({ page }) => {
+  const labelCardTitle = `E2E etiqueta ${runId}`;
+
+  // Crear una tarjeta
+  await page.locator('.add-card[data-col="pendiente"]').click();
+  await page.locator("#fTitle").fill(labelCardTitle);
+  await page.locator("#saveBtn").click();
+
+  // Abrir la tarjeta
+  const card = page.locator(".card", { hasText: labelCardTitle });
+  await card.click();
+  await expect(page.locator("#overlay")).toHaveClass(/open/);
+
+  // Crear etiqueta nueva desde el picker
+  await page.locator(".add-label-btn").click();
+  await page.locator("#newLabelName").fill("TestBug");
+  await page.locator("#createLabelBtn").click();
+
+  // Esperar a que se guarde la tarjeta y recargue
+  await page.waitForTimeout(500);
+
+  // Verificar que la etiqueta aparece en el modal
+  await expect(page.locator(".label-in-card")).toBeTruthy();
+
+  // Cerrar modal
+  await page.locator("#cancelBtn").click();
+
+  // Verificar que la etiqueta aparece en la tarjeta del Kanban
+  await expect(page.locator(".card", { hasText: labelCardTitle }).locator(".label-chip")).toBeVisible();
+});

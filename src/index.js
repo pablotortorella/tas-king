@@ -8,6 +8,7 @@ import { setupBoardRoutes } from "./routes/boards.js";
 import { setupCardRoutes } from "./routes/cards.js";
 import { setupUploadRoutes } from "./routes/uploads.js";
 import { setupAdminRoutes } from "./routes/admin.js";
+import { setupLabelRoutes } from "./routes/labels.js";
 
 const app = new Hono();
 
@@ -51,6 +52,9 @@ setupBoardRoutes(app);
 
 // Rutas de tarjetas
 setupCardRoutes(app);
+
+// Rutas de etiquetas
+setupLabelRoutes(app);
 
 // Rutas de uploads (servir archivos)
 setupUploadRoutes(app);

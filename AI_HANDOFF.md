@@ -4,22 +4,24 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-La iteración más reciente (esta sesión) agregó un **panel de administración** accesible desde
-la UI: el admin puede agregar/eliminar usuarios permitidos y promover otros admins sin tocar
-la consola. La lista de emails pasó de un Secret de Cloudflare (`ALLOWED_EMAILS`) a una tabla
-`allowed_emails` en D1, con fallback al Secret para compatibilidad.
+**Última actualización (esta sesión)**: Feature #2 Etiquetas + filtro completada.
+- **Migración**: tablas `labels` (20 colores max/tablero) y `card_labels`
+- **Backend**: 6 nuevos endpoints (CRUD de etiquetas + asignar/quitar de tarjetas)
+- **Frontend**: pastillas de color en Kanban, gestión inline en modal, filtro OR con atajos 0-9, página AYUDA (F1)
+- **Tests**: 38 unitarios + 6 E2E (incluyendo nuevo test de etiquetas)
 
 ## 🎯 Objetivo inmediato
 
-**✅ COMPLETADO ESTA SESIÓN**: Dos features de seguridad
-- #4 Protección de adjuntos: 2-layer validation (auth + membresía + límites)
-- #5 Validar JWT de Google: firma RSA + claims estándar
+**✅ COMPLETADO ESTA SESIÓN**: Feature #2 Etiquetas + filtro (organización)
+- Migración 0007_labels.sql
+- Backend routes/labels.js con validación de paleta de 20 colores
+- Frontend: renderCard con pastillas, gestión inline, filtro OR (atajos 0-9), F1 ayuda
+- Tests: unitarios + E2E ✅ Todos pasan
 
-**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro (MEDIA priority, organización)
-Tabla `labels` y `card_labels`, UI para crear/editar/filtrar, atajos 0-9, página AYUDA (F1).
+**⏭️ PRÓXIMO**: Feature #3 Checklists / subtareas (MEDIA priority, organización)
+Tabla `checklist_items`, UI para agregar/editar/tachar items, progreso visual.
 
 Alternativas:
-- #3 Checklists / subtareas (MEDIA priority, organización)
 - #6 Modo oscuro/claro (BAJA priority, UX)
 - #8 Mejoras adjuntos (BAJA priority, UX — drag & drop, paste, reorder)
 

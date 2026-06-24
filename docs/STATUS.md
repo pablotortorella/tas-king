@@ -301,22 +301,43 @@ Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevenci�
 
 ---
 
-## Features NO Implementados
+### ✅ #2 Etiquetas + filtro 🏷️
 
-### ❌ #2 Etiquetas + filtro 🏷️
+**Qué hace**: Etiquetas por tablero (máx 20), asignables a tarjetas, filtrable con atajos 0-9 (lógica OR), con página de ayuda F1.
 
-**Qué se necesita**:
-- Tabla `labels` (id, board_id, name, color)
-- Tabla `card_labels` (card_id, label_id)
-- UI: crear/editar/eliminar etiquetas por tablero
-- UI: agregar etiquetas a tarjetas (modal)
-- UI: filtro por etiqueta (selector o click en etiqueta)
-- Atajos: números 0-9 para filtrar por etiqueta
-- Página de AYUDA (F1) con todos los atajos
+**Implementación**:
+- **Base de datos**: Tablas `labels` (id, board_id, name, color, position) y `card_labels` (card_id, label_id)
+  - Índices por board_id y card_id para queries eficientes
+  - CASCADE delete para mantener integridad referencial
+- **Backend**: Nuevas rutas en `src/routes/labels.js`
+  - GET `/api/boards/:id/labels` — lista etiquetas del tablero (ordenadas por position)
+  - POST `/api/boards/:id/labels` — crear etiqueta (valida color en paleta de 20)
+  - PUT `/api/boards/:id/labels/:labelId` — editar nombre/color
+  - DELETE `/api/boards/:id/labels/:labelId` — eliminar (cascade a card_labels)
+  - POST `/api/cards/:id/labels/:labelId` — asignar etiqueta a tarjeta
+  - DELETE `/api/cards/:id/labels/:labelId` — quitar etiqueta de tarjeta
+- **Queries**: `cardToJSON()` y `getBoard()` incluyen array de etiquetas en cada tarjeta
+- **Frontend**:
+  - **Pastillas de color**: etiquetas aparecen en tarjeta del Kanban con color de fondo
+  - **Sección modal**: gestión inline de etiquetas en modal de tarjeta
+    - Mostrar etiquetas asignadas con botón ✕ para quitar
+    - Botón "Agregar etiqueta" que expande panel con:
+      - Lista de etiquetas del tablero (click para asignar/quitar)
+      - Formulario para crear nueva etiqueta (nombre + color)
+  - **Filtro OR**: atajo **1-9** filtra por etiqueta N, **0** limpia filtro
+  - **Página de ayuda**: F1 muestra todos los atajos del sistema
+    - Modal con descripción de F, U, N, 0, 1-9, Esc, F1
+- **Paleta de colores**: 20 colores fijos compatibles con daltónicos (Paul Tol + IBM a11y)
 
-**Prioridad**: MEDIA
+**Tests**:
+- ✅ Unitarios (labels.spec.js): validación de colores, estructura de datos
+- ✅ E2E (critical-flows.spec.js): crear etiqueta, asignar a tarjeta, verificar en Kanban
+
+**Estado**: **100% completo** — listo para producción.
 
 ---
+
+## Features NO Implementados
 
 ### ❌ #3 Checklists / subtareas ✅
 
