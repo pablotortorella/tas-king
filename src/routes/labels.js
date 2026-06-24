@@ -57,8 +57,8 @@ export function setupLabelRoutes(app) {
       .bind(boardId)
       .first();
 
-    if (count.cnt >= 20) {
-      return c.json({ error: "Máximo 20 etiquetas por tablero." }, 400);
+    if (count.cnt >= 10) {
+      return c.json({ error: "Máximo 10 etiquetas por tablero." }, 400);
     }
 
     const maxPos = await c.env.DB
