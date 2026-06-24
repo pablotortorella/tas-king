@@ -727,6 +727,36 @@
         </div>
       </div>
 
+      <!-- Archivos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;margin-top:16px;padding-top:16px;border-top:1px solid #e0e0e0">
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#3498db" id="statFileCount">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Archivos</div>
+        </div>
+        <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:#16a085" id="statFileSize">-</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">Tamaño total</div>
+        </div>
+      </div>
+
+      <!-- Gráfico de uso de cuentas -->
+      <div style="margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:6px">
+        <div style="font-size:12px;font-weight:bold;margin-bottom:8px">Actividad de cuentas</div>
+        <div style="display:flex;gap:8px;align-items:center;height:40px">
+          <div id="userActivityBar" style="flex:1;display:flex;height:24px;background:#eee;border-radius:4px;overflow:hidden"></div>
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:6px;display:flex;gap:12px">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:2px;margin-right:4px"></span>Activos</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;border-radius:2px;margin-right:4px"></span>Inactivos</span>
+        </div>
+      </div>
+
+      <!-- Top 10 usuarios activos -->
+      <div style="margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:6px">
+        <div style="font-size:12px;font-weight:bold;margin-bottom:8px">🔥 Top 10 más activos (tableros + tarjetas + comentarios)</div>
+        <div id="topUsersList" style="font-size:11px;color:#666;max-height:200px;overflow-y:auto"></div>
+      </div>
+
       <div id="inactiveUsersSection" style="display:none;margin-bottom:12px;border-top:1px solid #e0e0e0;padding-top:12px">
         <div style="font-size:12px;font-weight:bold;color:#e67e22;margin-bottom:8px">⚠️ Usuarios inactivos (sin acceso):</div>
         <div id="inactiveUsersList" style="font-size:11px;color:#666;max-height:120px;overflow-y:auto"></div>
@@ -2239,7 +2269,38 @@
       document.getElementById("statInactiveUsers").textContent = stats.inactiveUsers?.length || 0;
       document.getElementById("statBoards").textContent = stats.boards || 0;
       document.getElementById("statCards").textContent = stats.cards || 0;
-      document.getElementById("statsTimestamp").textContent = "Actualizado: " + new Date(stats.timestamp).toLocaleString("es");
+
+      // Archivos
+      const fileCount = stats.files?.count || 0;
+      const totalSize = stats.files?.totalSize || 0;
+      const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
+      document.getElementById("statFileCount").textContent = fileCount;
+      document.getElementById("statFileSize").textContent = sizeInMB + " MB";
+
+      // Gráfico de actividad de cuentas
+      const active = stats.activeUsers || 0;
+      const inactive = stats.inactiveUsers?.length || 0;
+      const total = active + inactive || 1;
+      const activePercent = (active / total) * 100;
+      const inactivePercent = (inactive / total) * 100;
+      document.getElementById("userActivityBar").innerHTML = `
+        <div style="width:${activePercent}%;background:#27ae60;transition:all 0.3s"></div>
+        <div style="width:${inactivePercent}%;background:#e67e22;transition:all 0.3s"></div>
+      `;
+
+      // Top 10 usuarios
+      const topList = document.getElementById("topUsersList");
+      if (stats.topUsers?.length > 0) {
+        topList.innerHTML = stats.topUsers.map(u =>
+          `<div style="padding:8px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center">
+             <div>
+               <div style="font-weight:600;color:#333">${escapeHtml(u.name || u.email)}</div>
+               <div style="font-size:10px;color:#999">${u.boards} tableros • ${u.cards} tarjetas • ${u.comments} comentarios</div>
+             </div>
+             <div style="font-weight:bold;color:#0079bf">${u.activity}</div>
+           </div>`
+        ).join("");
+      }
 
       // Mostrar lista de usuarios inactivos si hay
       const section = document.getElementById("inactiveUsersSection");
@@ -2255,6 +2316,8 @@
       } else {
         section.style.display = "none";
       }
+
+      document.getElementById("statsTimestamp").textContent = "Actualizado: " + new Date(stats.timestamp).toLocaleString("es");
     } catch (e) {
       document.getElementById("statUsers").textContent = "Error";
       document.getElementById("statActiveUsers").textContent = "Error";

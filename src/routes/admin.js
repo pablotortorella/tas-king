@@ -46,7 +46,7 @@ export function setupAdminRoutes(app) {
     const user = await c.env.DB.prepare("SELECT is_admin FROM users WHERE email = ?").bind(email).first();
     if (!user?.is_admin) return c.json({ error: "Solo admins pueden ver estadísticas." }, 403);
 
-    const [users, boards, cards, inactive] = await Promise.all([
+    const [users, boards, cards, inactive, attachments, userActivity] = await Promise.all([
       c.env.DB.prepare("SELECT COUNT(*) as count FROM users").first(),
       c.env.DB.prepare("SELECT COUNT(*) as count FROM boards").first(),
       c.env.DB.prepare("SELECT COUNT(*) as count FROM cards WHERE archived = 0").first(),
@@ -56,14 +56,47 @@ export function setupAdminRoutes(app) {
          WHERE ae.email IS NULL
          ORDER BY u.email ASC`
       ).all(),
+      c.env.DB.prepare(
+        `SELECT COUNT(*) as fileCount, SUM(size) as totalSize FROM attachments`
+      ).first(),
+      c.env.DB.prepare(
+        `SELECT
+          u.email,
+          u.name,
+          COUNT(DISTINCT b.id) as boardCount,
+          COUNT(DISTINCT c.id) as cardCount,
+          COUNT(DISTINCT cm.id) as commentCount
+        FROM users u
+        LEFT JOIN boards b ON u.email = b.owner_email
+        LEFT JOIN cards c ON c.board_id = b.id
+        LEFT JOIN comments cm ON cm.card_id = c.id
+        GROUP BY u.email
+        ORDER BY (COUNT(DISTINCT b.id) + COUNT(DISTINCT c.id) + COUNT(DISTINCT cm.id)) DESC
+        LIMIT 10`
+      ).all(),
     ]);
 
+    const totalUsers = users?.count || 0;
+    const inactiveCount = inactive?.results?.length || 0;
+
     return c.json({
-      users: users?.count || 0,
-      activeUsers: (users?.count || 0) - (inactive?.results?.length || 0),
+      users: totalUsers,
+      activeUsers: totalUsers - inactiveCount,
       inactiveUsers: inactive?.results?.map(r => ({ email: r.email, name: r.name })) || [],
       boards: boards?.count || 0,
       cards: cards?.count || 0,
+      files: {
+        count: attachments?.fileCount || 0,
+        totalSize: attachments?.totalSize || 0,
+      },
+      topUsers: (userActivity?.results || []).map(r => ({
+        email: r.email,
+        name: r.name,
+        boards: r.boardCount,
+        cards: r.cardCount,
+        comments: r.commentCount,
+        activity: r.boardCount + r.cardCount + r.commentCount,
+      })),
       timestamp: new Date().toISOString(),
     });
   });
