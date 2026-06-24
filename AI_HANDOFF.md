@@ -9,11 +9,21 @@ la UI: el admin puede agregar/eliminar usuarios permitidos y promover otros admi
 la consola. La lista de emails pasó de un Secret de Cloudflare (`ALLOWED_EMAILS`) a una tabla
 `allowed_emails` en D1, con fallback al Secret para compatibilidad.
 
-## Objetivo inmediato
-El próximo ítem del backlog es el **#2: Etiquetas + filtro** — tabla `labels` y `card_labels`,
-UI para crear/editar etiquetas por tablero, agregar a tarjetas, filtrar, y página AYUDA (F1).
+## 🎯 Objetivo inmediato
 
-El backlog completo está en `docs/backlog.txt`. Las ideas y contexto ampliado en `docs/ideas.txt`.
+**✅ COMPLETADO ESTA SESIÓN**: Documentación profesional de workflow
+- `docs/WORKFLOW.md` — proceso completo: desarrollo, testing, merge, deploy
+- `docs/ADRs.md` — decisiones arquitectónicas registradas (10 ADRs)
+- `CLAUDE.md` actualizado — instrucciones para cada sesión
+- `docs/API.md` — referencia de todos los endpoints
+- `.env.example` — plantilla para setup local
+- `npm run verify-ready` — checklist automático antes de push
+
+**⏭️ PRÓXIMO**: Feature #2 Etiquetas + filtro
+Tabla `labels` y `card_labels`, UI para crear/editar/filtrar, atajos 0-9, página AYUDA (F1).
+
+Ver `docs/STATUS.md` para saber qué está hecho, qué falta testing, qué no existe.
+Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
 
 ## Stack
 - **Runtime**: Cloudflare Workers
@@ -126,22 +136,30 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
 ## Último handoff (2026-06-23, Claude Sonnet 4.6)
-**Hotfix de autenticación (Codex)**: se cerró la suplantación por headers de identidad. El Worker
-ya no confía en `Cf-Access-Authenticated-User-Email` sin validar una assertion de Access y solo
-acepta `X-Dev-User` en `localhost`, `127.0.0.1` o `::1`. En producción, la identidad proviene
-exclusivamente de la cookie de sesión firmada. Se agregó un test de regresión para ambos headers.
 
-**Sesión de testing automatizado (Codex)**: se agregó Vitest con la integración oficial de
-Cloudflare Workers, tests de API contra D1/R2 emulados, Playwright para recorridos críticos,
-CI en GitHub Actions y `TESTING.md` con la estrategia manual complementaria. El deep-link sigue
-pendiente; sus casos E2E están definidos como requisito para cuando se implemente.
+**Sesión: Historial de actividad (#1 del backlog)**
 
-**Sesión 1**: Panel de administración completo (tabla `allowed_emails` en D1, Secret `ADMIN_EMAILS`, UI con agregar/eliminar/promover admins) + README actualizado + creados `CLAUDE.md` y `AI_HANDOFF.md`.
+Implementado el historial completo, de punta a punta:
 
-**Sesión 2** (continuación): 
-- Polling de cambios en tiempo real: endpoint `/api/boards/:id/version` devuelve el MAX(updated_at) de tarjetas; cliente consulta cada 5s, recarga si hay cambios, pausa en segundo plano
-- Celebración al terminar una tarea: confeti animado en pantalla + tarjeta titilante con colores transiciones (naranja, rosa, verde, azul, amarillo); se dispara tanto al arrastrar localmente como vía polling para otros usuarios
-- Instrucción `CLAUDE.md`: solo actualizar handoff cuando Pablo lo pida explícitamente (no automático)
+- **Migración** `migrations/0005_audit_log.sql`: tabla `audit_log` con índices por `board_id` y `card_id`. Aplicada en local y en producción.
+- **Backend** `src/index.js`:
+  - Helper `logEvent(db, boardId, cardId, action, email, details)` reutilizable
+  - 8 eventos registrados: `card_created`, `card_edited`, `card_moved`, `card_deleted`, `card_archived`, `card_restored`, `comment_added`, `attachment_added`
+  - `card_edited` guarda diff exacto por campo (title, column, details, due, assignee)
+  - `card_moved` se emite cuando solo cambia la columna (drag & drop o UI)
+  - GET `/api/cards/:id/history` — historial de tarjeta (últimos 100 eventos)
+  - GET `/api/boards/:boardId/activity` — actividad del tablero (hasta 500, con `?user=`, `?from=`, `?to=`)
+- **Frontend** `public/index.html`:
+  - Sección "📜 Historial" en modal de tarjeta: avatar + nombre + acción en español + tiempo relativo
+  - Se oculta para tarjetas nuevas, carga al abrir existentes
+  - `actionLabel(action, details)` convierte cada evento a texto descriptivo en español
+  - `relativeTime(ts)` formatea: "ahora / hace N min / hace Nh / fecha"
+  - Nueva pestaña "Actividad del tablero" en panel Admin (junto a "Usuarios")
+  - Filtros: por miembro del tablero + rango de fechas + botón Limpiar
+- **Tests**: 22/22 pasando (17 unitarios + 5 E2E). Tests E2E del historial pendientes (no automatizados aún).
+- **Deploy**: migración y código deployados en producción (`c240a917`).
+
+**Próximo**: #2 Etiquetas + filtro (tablas `labels` y `card_labels`, UI en modal, filtro en header, página AYUDA F1).
 
 ## Handoffs anteriores
 **Sesión 2026-06-23 (Claude Sonnet 4.6)**:

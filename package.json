@@ -13,7 +13,8 @@
     "test:all": "npm test && npm run test:e2e",
     "dev:e2e": "wrangler d1 migrations apply tas-king --local --persist-to .wrangler/e2e-state && wrangler dev --port 8787 --persist-to .wrangler/e2e-state --var DEV_USER_EMAIL:e2e-admin@test.local --var ADMIN_EMAILS:e2e-admin@test.local",
     "db:migrate:local": "wrangler d1 migrations apply tas-king --local",
-    "db:migrate:remote": "wrangler d1 migrations apply tas-king --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply tas-king --remote",
+    "verify-ready": "npm run test:all && echo '✅ Tests passed' && (git status --porcelain | grep -E '^\\.dev\\.vars' && echo '❌ .dev.vars debe estar en .gitignore' && exit 1 || true) && (git diff --cached --name-only | grep -E '(dev\\.vars|secret)' && echo '❌ No commitear secrets' && exit 1 || true) && echo '✅ Listo para push'"
   },
   "dependencies": {
     "hono": "^4.6.14"
