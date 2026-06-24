@@ -368,6 +368,45 @@
   }
   .member-row .role { font-size: 12px; color: var(--muted); }
   .members-empty { color: var(--muted); font-size: 14px; }
+
+  /* Historial de actividad en el modal de tarjeta */
+  .history-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
+  .history-entry { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+  .history-entry:last-child { border-bottom: none; }
+  .history-body { flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; }
+  .history-who { font-weight: 600; color: #172b4d; }
+  .history-action { color: #42526e; }
+  .history-time { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .history-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+
+  /* Tabs en el panel de administración */
+  .admin-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .tab-btn {
+    background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--muted); padding: 6px 14px 8px; margin-bottom: -2px;
+    border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0;
+  }
+  .tab-btn:hover { background: #f4f5f7; color: #172b4d; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Panel de actividad del tablero (dentro de admin) */
+  .activity-filters { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  .activity-filters select, .activity-filters input[type=date] {
+    border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px;
+    font-size: 13px; background: #fafbfc; font-family: inherit;
+  }
+  .activity-list { max-height: 320px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; }
+  .activity-entry {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 9px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+  }
+  .activity-entry:last-child { border-bottom: none; }
+  .activity-body { flex: 1; min-width: 0; }
+  .activity-who { font-weight: 600; color: #172b4d; }
+  .activity-action { color: #42526e; }
+  .activity-card { font-size: 12px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; padding-top: 2px; }
+  .activity-empty { padding: 14px 12px; font-size: 13px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -450,6 +489,10 @@
         <input type="text" id="fCommentInput" placeholder="Escribir un comentario...">
         <button class="btn btn-primary btn-small" id="addCommentBtn">Agregar</button>
       </div>
+    </div>
+    <div class="field" id="historyField" style="display:none">
+      <label>📜 Historial</label>
+      <ul class="history-list" id="fHistory"></ul>
     </div>
     <div class="modal-footer">
       <div>
@@ -554,14 +597,34 @@
 </div>
 
 <div class="overlay" id="adminOverlay">
-  <div class="modal" style="max-width:560px;width:100%">
+  <div class="modal" style="max-width:580px;width:100%">
     <h2>⚙ Administración</h2>
-    <h3 style="margin:16px 0 8px;font-size:14px">Usuarios permitidos</h3>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:5px;font-size:14px">
-      <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
+    <div class="admin-tabs">
+      <button class="tab-btn active" id="adminTabUsuarios">Usuarios</button>
+      <button class="tab-btn" id="adminTabActividad">Actividad del tablero</button>
     </div>
-    <div id="adminUserList" style="max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
+
+    <!-- Tab: Usuarios -->
+    <div id="adminPanelUsuarios">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:5px;font-size:14px">
+        <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
+      </div>
+      <div id="adminUserList" style="max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
+    </div>
+
+    <!-- Tab: Actividad -->
+    <div id="adminPanelActividad" style="display:none">
+      <div class="activity-filters">
+        <select id="activityUserFilter" title="Filtrar por usuario"></select>
+        <input type="date" id="activityFrom" title="Desde">
+        <input type="date" id="activityTo" title="Hasta">
+        <button class="btn btn-primary btn-small" id="activityFilterBtn">Filtrar</button>
+        <button class="btn btn-ghost btn-small" id="activityResetBtn">Limpiar</button>
+      </div>
+      <div class="activity-list" id="adminActivityList"></div>
+    </div>
+
     <div class="modal-footer" style="margin-top:16px">
       <div></div>
       <button class="btn btn-ghost" id="adminCloseBtn">Cerrar</button>
@@ -1012,6 +1075,69 @@
     fAssignee.value = selected || "";
   }
 
+  function relativeTime(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return "ahora";
+    if (m < 60) return `hace ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `hace ${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `hace ${d}d`;
+    return new Date(ts).toLocaleDateString("es");
+  }
+
+  function actionLabel(action, details) {
+    const d = details || {};
+    const colName = id => (COLUMNS.find(c => c.id === id) || { name: id }).name;
+    switch (action) {
+      case "card_created":   return "Creó la tarjeta";
+      case "card_deleted":   return "Eliminó la tarjeta";
+      case "card_archived":  return "Archivó la tarjeta";
+      case "card_restored":  return "Restauró la tarjeta";
+      case "comment_added":  return "Comentó";
+      case "attachment_added":
+        return d.files && d.files.length ? `Adjuntó: ${d.files.join(", ")}` : "Subió un adjunto";
+      case "card_moved":
+        return d.column ? `Movió a "${colName(d.column.to)}"` : "Movió la tarjeta";
+      case "card_edited": {
+        const parts = [];
+        if (d.title)    parts.push("cambió el título");
+        if (d.column)   parts.push(`movió a "${colName(d.column.to)}"`);
+        if (d.details)  parts.push("editó la descripción");
+        if (d.due)      parts.push(d.due.to ? `fecha: ${d.due.to}` : "quitó la fecha");
+        if (d.assignee) parts.push(d.assignee.to ? `asignó a ${shortName(d.assignee.to)}` : "quitó el responsable");
+        return parts.length ? `Editó: ${parts.join(", ")}` : "Editó la tarjeta";
+      }
+      default: return action;
+    }
+  }
+
+  async function renderHistory() {
+    const field = document.getElementById("historyField");
+    const list = document.getElementById("fHistory");
+    if (!editingId) { field.style.display = "none"; return; }
+    field.style.display = "";
+    list.innerHTML = '<li class="history-empty">Cargando…</li>';
+    try {
+      const { history } = await api("GET", "/api/cards/" + editingId + "/history");
+      if (!history.length) {
+        list.innerHTML = '<li class="history-empty">Sin historial aún.</li>';
+        return;
+      }
+      list.innerHTML = history.map(e => `
+        <li class="history-entry">
+          ${avatarHtml(e.author, 18)}
+          <div class="history-body">
+            <span class="history-who">${escapeHtml(e.author.name)} </span>
+            <span class="history-action">${escapeHtml(actionLabel(e.action, e.details))}</span>
+            <time class="history-time" title="${new Date(e.ts).toLocaleString("es")}">${relativeTime(e.ts)}</time>
+          </div>
+        </li>`).join("");
+    } catch (_) {
+      list.innerHTML = '<li class="history-empty">No se pudo cargar el historial.</li>';
+    }
+  }
+
   function openModal(id, defaultCol) {
     editingId = id;
     const card = id ? state.cards.find(c => c.id === id) : null;
@@ -1027,6 +1153,7 @@
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
     renderComments();
+    renderHistory();
     if (id) history.replaceState(null, "", "?card=" + id);
     overlay.classList.add("open");
     fTitle.focus();
@@ -1041,6 +1168,7 @@
     draftAttachments = [];
     removedAttachmentIds = [];
     document.getElementById("fCommentInput").value = "";
+    document.getElementById("historyField").style.display = "none";
   }
 
   // Comentarios: se publican al instante con autor (lee de state por editingId).
@@ -1738,7 +1866,71 @@
   const adminUserList = document.getElementById("adminUserList");
   const adminNewEmail = document.getElementById("adminNewEmail");
 
+  // Tabs
+  function switchAdminTab(tab) {
+    document.getElementById("adminPanelUsuarios").style.display  = tab === "usuarios"  ? "" : "none";
+    document.getElementById("adminPanelActividad").style.display = tab === "actividad" ? "" : "none";
+    document.getElementById("adminTabUsuarios").classList.toggle("active",  tab === "usuarios");
+    document.getElementById("adminTabActividad").classList.toggle("active", tab === "actividad");
+    if (tab === "actividad") renderActivity();
+  }
+  document.getElementById("adminTabUsuarios").addEventListener("click",  () => switchAdminTab("usuarios"));
+  document.getElementById("adminTabActividad").addEventListener("click", () => switchAdminTab("actividad"));
+
+  async function renderActivity() {
+    if (!currentBoardId) return;
+    const actList = document.getElementById("adminActivityList");
+    const userFilter = document.getElementById("activityUserFilter").value;
+    const from = document.getElementById("activityFrom").value;
+    const to   = document.getElementById("activityTo").value;
+
+    // Poblar selector de usuarios con miembros del tablero (solo la primera vez)
+    const sel = document.getElementById("activityUserFilter");
+    if (sel.options.length <= 1) {
+      sel.innerHTML = '<option value="">Todos los usuarios</option>'
+        + members.map(m => `<option value="${escapeHtml(m.email)}">${escapeHtml(m.name || m.email)}</option>`).join("");
+    }
+
+    actList.innerHTML = '<div class="activity-empty">Cargando…</div>';
+    try {
+      const params = new URLSearchParams({ limit: "200" });
+      if (userFilter) params.set("user", userFilter);
+      if (from) params.set("from", String(new Date(from).getTime()));
+      if (to)   params.set("to",   String(new Date(to + "T23:59:59").getTime()));
+      const data = await api("GET", "/api/boards/" + currentBoardId + "/activity?" + params);
+      if (!data.activity.length) {
+        actList.innerHTML = '<div class="activity-empty">Sin actividad en este período.</div>';
+        return;
+      }
+      actList.innerHTML = data.activity.map(e => {
+        const cardInfo = (e.cardTitle || (e.details && e.details.title))
+          ? `<div class="activity-card">📋 ${escapeHtml(e.cardTitle || e.details.title)}</div>` : "";
+        return `<div class="activity-entry">
+          ${avatarHtml(e.author, 20)}
+          <div class="activity-body">
+            <span class="activity-who">${escapeHtml(e.author.name)} </span>
+            <span class="activity-action">${escapeHtml(actionLabel(e.action, e.details))}</span>
+            ${cardInfo}
+          </div>
+          <time class="activity-time" title="${new Date(e.ts).toLocaleString("es")}">${relativeTime(e.ts)}</time>
+        </div>`;
+      }).join("");
+    } catch (_) {
+      actList.innerHTML = '<div class="activity-empty" style="color:var(--danger)">Error al cargar la actividad.</div>';
+    }
+  }
+
+  document.getElementById("activityFilterBtn").addEventListener("click", renderActivity);
+  document.getElementById("activityResetBtn").addEventListener("click", () => {
+    document.getElementById("activityUserFilter").value = "";
+    document.getElementById("activityFrom").value = "";
+    document.getElementById("activityTo").value = "";
+    document.getElementById("activityUserFilter").innerHTML = '<option value="">Todos los usuarios</option>';
+    renderActivity();
+  });
+
   async function openAdmin() {
+    switchAdminTab("usuarios");
     adminOverlay.classList.add("open");
     await renderAdminList();
   }
