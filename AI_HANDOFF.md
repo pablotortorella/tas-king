@@ -4,11 +4,11 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Última actualización (esta sesión)**: Feature #2 Etiquetas + filtro completada.
-- **Migración**: tablas `labels` (20 colores max/tablero) y `card_labels`
-- **Backend**: 6 nuevos endpoints (CRUD de etiquetas + asignar/quitar de tarjetas)
-- **Frontend**: pastillas de color en Kanban, gestión inline en modal, filtro OR con atajos 0-9, página AYUDA (F1)
-- **Tests**: 38 unitarios + 6 E2E (incluyendo nuevo test de etiquetas)
+**Última actualización (esta sesión)**: Dashboard admin mejorado + backlog actualizado.
+- **Feature completada**: Etiquetas + filtro (#2) — 10 colores Material Design, máx 10 por tablero, botón ✕ para borrar
+- **Nuevas estadísticas admin**: uso/actividad con gráfico visual, archivos (cantidad + tamaño MB), Top 10 usuarios activos
+- **Backlog**: Agregado #7 Lead time y tasa de completitud (por usuario, en criollo)
+- **Tests**: 38 unitarios + 6 E2E ✅ Todos pasan
 
 ## 🎯 Objetivo inmediato
 

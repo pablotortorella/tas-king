@@ -415,6 +415,26 @@ Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevenci�
 
 ---
 
+### ❌ #7 Lead time y tasa de completitud (por usuario) 📊
+
+**Qué hace**: Mostrar a cada usuario (en sus tableros) dos métricas en "criollo":
+- **Tiempo promedio para completar**: cuánto tarda en promedio desde que crea una tarjeta hasta que la termina
+- **Porcentaje completado**: qué % de tarjetas creadas ya terminó
+
+**Implementación necesaria**:
+- **Backend**: 
+  - Calcular tiempo promedio (tarjetas completadas: MAX(ts terminado) - MAX(ts creado))
+  - Contar tarjetas por usuario: creadas vs completadas
+  - Endpoints: `GET /api/me/metrics` o agregar a `/api/me`
+- **Frontend**: 
+  - Panel "📊 Tu desempeño" en el tablero personal (arriba del Kanban)
+  - Mostrar: "Terminás tus tarjetas en X días en promedio" + "Has completado Y% de lo que empezás"
+  - Gráfico simple de línea o barras
+
+**Prioridad**: MEDIA (ayuda a usuarios a entender su productividad)
+
+---
+
 ## Resumen de Cobertura de Tests
 
 | Capa | Cobertura | Notas |
