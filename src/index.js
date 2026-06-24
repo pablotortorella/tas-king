@@ -54,6 +54,8 @@ app.use(async (c, next) => {
 });
 
 // Middleware: registra todos los requests con contexto
+// TEMPORALMENTE DESHABILITADO: estaba interfiriendo con asset serving
+/*
 app.use(async (c, next) => {
   const startTime = Date.now();
   const ip = getClientIP(c);
@@ -97,6 +99,7 @@ app.use(async (c, next) => {
     logger.info(`${method} ${path}`, context);
   }
 });
+*/
 
 // ---------- Límites de adjuntos ----------
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB

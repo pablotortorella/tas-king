@@ -727,9 +727,12 @@
     } catch (e) {
       // sin sesión válida → mandar al login con Google
       if (e.status === 401) { window.location.href = "/auth/login"; return; }
+      const errorDetails = `Status: ${e.status || "?"}, Message: ${e.message || "desconocido"}`;
       board.innerHTML = '<div style="padding:24px;color:#c0392b;font-size:14px">'
-        + "No se pudo cargar el tablero. Revisá tu conexión y volvé a intentar.<br><br>"
-        + escapeHtml(e.message) + "</div>";
+        + "❌ No se pudo cargar el tablero. Revisá tu conexión y volvé a intentar.<br><br>"
+        + "<strong>Detalles del error:</strong><br>"
+        + escapeHtml(errorDetails) + "</div>";
+      console.error("loadBoard error:", e);
     }
   }
 
