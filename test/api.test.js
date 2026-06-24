@@ -159,13 +159,63 @@ describe("API del Worker con D1 y R2 emulados", () => {
     const attachment = (await uploaded.json()).attachments[0];
     expect(attachment).toMatchObject({ originalName: "nota.txt", mime: "text/plain" });
 
-    const download = await app.request(`http://localhost${attachment.url}`, {}, env);
+    const download = await app.request(`http://localhost${attachment.url}`, {
+      headers: headers(member),
+    }, env);
     expect(download.status).toBe(200);
     await expect(download.text()).resolves.toBe("contenido");
 
     const removed = await request(`/api/attachments/${attachment.id}`, { email: owner, method: "DELETE" });
     expect(removed.status).toBe(200);
-    expect((await app.request(`http://localhost${attachment.url}`, {}, env)).status).toBe(404);
+    expect((await app.request(`http://localhost${attachment.url}`, {
+      headers: headers(member),
+    }, env)).status).toBe(404);
+  });
+
+  it("protege adjuntos: no-miembro no puede descargar", async () => {
+    const form = new FormData();
+    form.append("files", new File(["secreto"], "privado.txt", { type: "text/plain" }));
+    const uploaded = await app.request(`http://localhost/api/cards/${cardId}/attachments`, {
+      method: "POST", headers: headers(owner), body: form,
+    }, env);
+    expect(uploaded.status).toBe(200);
+    const attachment = (await uploaded.json()).attachments[0];
+
+    // El dueño puede descargar
+    const ownerDownload = await app.request(`http://localhost${attachment.url}`, {
+      headers: headers(owner),
+    }, env);
+    expect(ownerDownload.status).toBe(200);
+
+    // Un outsider NO puede descargar (403)
+    const outsiderDownload = await app.request(`http://localhost${attachment.url}`, {
+      headers: headers(outsider),
+    }, env);
+    expect(outsiderDownload.status).toBe(403);
+  });
+
+  it("rechaza archivos demasiado grandes", async () => {
+    const largeFile = new File([new ArrayBuffer(21 * 1024 * 1024)], "huge.jpg", {
+      type: "image/jpeg",
+    });
+    const form = new FormData();
+    form.append("files", largeFile);
+    const res = await app.request(`http://localhost/api/cards/${cardId}/attachments`, {
+      method: "POST", headers: headers(owner), body: form,
+    }, env);
+    expect(res.status).toBe(413);
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining("demasiado grande") });
+  });
+
+  it("rechaza tipos de archivo no permitidos", async () => {
+    const exeFile = new File(["MZ"], "virus.exe", { type: "application/x-msdownload" });
+    const form = new FormData();
+    form.append("files", exeFile);
+    const res = await app.request(`http://localhost/api/cards/${cardId}/attachments`, {
+      method: "POST", headers: headers(owner), body: form,
+    }, env);
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringContaining("no permitido") });
   });
 
   it("restringe administración y protege el rol propio", async () => {

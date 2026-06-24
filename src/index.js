@@ -3,6 +3,21 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 
 const app = new Hono();
 
+// ---------- Límites de adjuntos ----------
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_ATTACHMENTS_PER_CARD = 10;
+const ALLOWED_MIME_TYPES = new Set([
+  // Imágenes
+  "image/jpeg", "image/png", "image/webp", "image/gif",
+  // Documentos
+  "application/pdf", "text/plain", "text/csv",
+  // Office
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+
 // ---------- Helpers básicos ----------
 const now = () => Date.now();
 const uid = () => crypto.randomUUID();
@@ -627,27 +642,50 @@ app.post("/api/boards/:boardId/reorder", async c => {
 });
 
 // ---------- API: attachments ----------
-const MAX_SIZE = 25 * 1024 * 1024;
-
 app.post("/api/cards/:id/attachments", async c => {
   const { card, error } = await cardWithAccess(c);
   if (error) return error;
+
+  // Contar adjuntos existentes
+  const existing = await c.env.DB.prepare(
+    "SELECT COUNT(*) as n FROM attachments WHERE card_id = ?"
+  ).bind(card.id).first();
+
   const form = await c.req.formData();
   const files = form.getAll("files").filter(f => typeof f === "object" && f.arrayBuffer);
+
+  // Validar cantidad total
+  if (existing.n + files.length > MAX_ATTACHMENTS_PER_CARD) {
+    return c.json({
+      error: `Máximo ${MAX_ATTACHMENTS_PER_CARD} archivos por tarjeta. Ya hay ${existing.n}.`
+    }, 400);
+  }
+
   const created = [];
   for (const file of files) {
-    if (file.size > MAX_SIZE) return c.json({ error: "Archivo demasiado grande (máx. 25 MB)." }, 413);
+    // Validar tamaño
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: "Archivo demasiado grande (máx. 20 MB)." }, 413);
+    }
+
+    // Validar MIME type
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return c.json({
+        error: `Tipo de archivo no permitido: ${file.type || "desconocido"}`
+      }, 400);
+    }
+
     const key = uid() + extOf(file.name);
     await c.env.BUCKET.put(key, await file.arrayBuffer(), {
-      httpMetadata: { contentType: file.type || "application/octet-stream" },
+      httpMetadata: { contentType: file.type },
     });
     const id = uid();
     await c.env.DB.prepare(
       `INSERT INTO attachments (id, card_id, stored_name, original_name, mime, size, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).bind(id, card.id, key, file.name, file.type || "", file.size, now()).run();
+    ).bind(id, card.id, key, file.name, file.type, file.size, now()).run();
     created.push(attachmentToJSON({
-      id, original_name: file.name, mime: file.type || "", size: file.size, stored_name: key,
+      id, original_name: file.name, mime: file.type, size: file.size, stored_name: key,
     }));
   }
   if (created.length > 0) {
@@ -671,12 +709,33 @@ app.delete("/api/attachments/:id", async c => {
 
 // Servir archivos desde R2
 app.get("/uploads/:key", async c => {
-  const obj = await c.env.BUCKET.get(c.req.param("key"));
+  // Validar autenticación
+  const email = await resolveEmail(c);
+  if (!email) return c.json({ error: "No autenticado." }, 401);
+
+  const key = c.req.param("key");
+
+  // Buscar adjunto y validar acceso
+  const att = await c.env.DB.prepare(
+    `SELECT a.*, c.board_id FROM attachments a
+     JOIN cards c ON a.card_id = c.id
+     WHERE a.stored_name = ?`
+  ).bind(key).first();
+
+  if (!att) return c.notFound();
+
+  // Validar membresía del tablero
+  const isMember = await membership(c.env.DB, att.board_id, email);
+  if (!isMember) return c.json({ error: "Sin acceso a este archivo." }, 403);
+
+  // Servir archivo
+  const obj = await c.env.BUCKET.get(key);
   if (!obj) return c.notFound();
+
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
   headers.set("etag", obj.httpEtag);
-  headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("cache-control", "private, max-age=31536000");
   return new Response(obj.body, { headers });
 });
 

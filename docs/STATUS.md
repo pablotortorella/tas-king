@@ -328,14 +328,27 @@ Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevenci�
 
 ---
 
-### ❌ #4 Proteger adjuntos 🔐
+### ✅ #4 Proteger adjuntos 🔐
 
-**Qué se necesita**:
-- Cambiar almacenamiento de adjuntos: UUID público → ID + validar sesión
-- En GET `/uploads/:id`, verificar que usuario es miembro del tablero de la tarjeta
-- Posible: usar pre-signed URLs de R2 (expiran)
+**Qué hace**: Valida acceso a adjuntos y aplica límites de tamaño/cantidad/tipo.
 
-**Prioridad**: ALTA (seguridad)
+**Implementación**:
+- **GET `/uploads/:key`**: Requiere sesión + membresía del tablero (401 sin auth, 403 sin acceso)
+- **POST `/api/cards/:id/attachments**: 
+  - Validación de MIME type: whitelist de 12 tipos (imágenes, PDFs, Office)
+  - Límite de tamaño: 20 MB por archivo
+  - Límite de cantidad: máximo 10 archivos por tarjeta
+- **Errores**: 
+  - 401 Unauthorized si no tiene sesión
+  - 403 Forbidden si no es miembro del tablero
+  - 413 Payload Too Large si archivo > 20 MB
+  - 400 Bad Request si MIME type no permitido o tarjeta tiene 10+ archivos
+
+**Tests**: 
+- ✅ Unitarios (3 nuevos): validación de acceso, tamaño, MIME type
+- ✅ Integración: usuario no-miembro → 403, archivo grande → 413, tipo no permitido → 400
+
+**Estado**: **100% completo** — implementado y testeado
 
 ---
 
