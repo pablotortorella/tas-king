@@ -54,16 +54,14 @@ app.use(async (c, next) => {
 });
 
 // Middleware: registra todos los requests con contexto
-// TEMPORALMENTE DESHABILITADO: estaba interfiriendo con asset serving
-/*
 app.use(async (c, next) => {
   const startTime = Date.now();
   const ip = getClientIP(c);
   const method = c.req.method;
   const path = c.req.path;
 
-  // No loguear requests a /assets (demasiado ruido)
-  if (path.startsWith("/assets")) {
+  // No loguear requests a /assets o / (demasiado ruido, y / interfiere con asset serving)
+  if (path.startsWith("/assets") || path === "/") {
     await next();
     return;
   }
@@ -75,31 +73,35 @@ app.use(async (c, next) => {
     throw e;
   }
 
-  const latency = Date.now() - startTime;
-  const status = c.res?.status || 200;
+  try {
+    const latency = Date.now() - startTime;
+    const status = c.res?.status || 200;
 
-  const context = {
-    ip,
-    method,
-    path,
-    status,
-    latency,
-  };
+    const context = {
+      ip,
+      method,
+      path,
+      status,
+      latency,
+    };
 
-  // Agregar usuario si está disponible
-  const email = c.get("email");
-  if (email) context.user = email;
+    // Agregar usuario si está disponible
+    const email = c.get("email");
+    if (email) context.user = email;
 
-  // Loguear como info si OK, warn si 4xx, error si 5xx
-  if (status >= 500) {
-    logger.error(`${method} ${path}`, context);
-  } else if (status >= 400) {
-    logger.warn(`${method} ${path}`, context);
-  } else {
-    logger.info(`${method} ${path}`, context);
+    // Loguear como info si OK, warn si 4xx, error si 5xx
+    if (status >= 500) {
+      logger.error(`${method} ${path}`, context);
+    } else if (status >= 400) {
+      logger.warn(`${method} ${path}`, context);
+    } else {
+      logger.info(`${method} ${path}`, context);
+    }
+  } catch (logErr) {
+    // Si el logging falla, no romper el request
+    console.warn("Logging failed:", logErr.message);
   }
 });
-*/
 
 // ---------- Límites de adjuntos ----------
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
