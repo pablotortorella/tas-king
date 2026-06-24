@@ -1462,7 +1462,7 @@
             ? `<span class="del" data-label-id="${label.id}">Quitar</span>`
             : `<span style="cursor:pointer;color:var(--accent)" data-label-id="${label.id}">Agregar</span>`
           }
-          <span class="del" data-edit="${label.id}" style="color:var(--muted);margin-left:auto">✏️</span>
+          <span style="cursor:pointer;color:var(--danger);margin-left:auto" data-delete="${label.id}" title="Borrar etiqueta">✕</span>
         </div>
       `;
       const addBtn = row.querySelector(`[data-label-id="${label.id}"]`);
@@ -1471,6 +1471,17 @@
       } else {
         addBtn.addEventListener("click", () => assignLabel(label.id));
       }
+      const delBtn = row.querySelector(`[data-delete="${label.id}"]`);
+      delBtn.addEventListener("click", async () => {
+        if (confirm("¿Eliminar esta etiqueta?")) {
+          try {
+            await api("DELETE", `/api/boards/${currentBoardId}/labels/${label.id}`);
+            await loadCards();
+            labelPickerVisible = false;
+            renderLabels();
+          } catch (e) { alert("Error: " + e.message); }
+        }
+      });
       existingDiv.appendChild(row);
     });
 
