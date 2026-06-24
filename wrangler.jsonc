@@ -32,7 +32,7 @@
         {
           "binding": "DB",
           "database_name": "tas-king-staging",
-          "database_id": "PASTE_STAGING_DATABASE_ID_HERE",
+          "database_id": "0d17a6ed-1ad9-4aaf-b734-ffcacf43e389",
           "migrations_dir": "migrations"
         }
       ],
