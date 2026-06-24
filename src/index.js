@@ -107,6 +107,12 @@ async function nextPosition(db, boardId, columnId) {
   return (row && row.m != null ? row.m : 0) + 1;
 }
 
+async function logEvent(db, boardId, cardId, action, email, details = {}) {
+  await db.prepare(
+    "INSERT INTO audit_log (id, board_id, card_id, action, email, ts, details) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(uid(), boardId, cardId || null, action, email, now(), JSON.stringify(details)).run();
+}
+
 function replaceCommentsStmts(db, cardId, comments) {
   const stmts = [db.prepare("DELETE FROM comments WHERE card_id = ?").bind(cardId)];
   const ins = db.prepare("INSERT INTO comments (id, card_id, text, created_at) VALUES (?, ?, ?, ?)");
@@ -482,6 +488,7 @@ app.post("/api/boards/:boardId/cards", async c => {
        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
     ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
   ]);
+  await logEvent(c.env.DB, boardId, id, "card_created", email, { title: String(b.title).trim() });
   return c.json(await cardJSONById(c.env.DB, id));
 });
 
@@ -524,6 +531,20 @@ app.put("/api/cards/:id", async c => {
     ),
   ];
   await c.env.DB.batch(stmts);
+
+  const changes = {};
+  if (b.title != null && String(b.title).trim() !== card.title) changes.title = { from: card.title, to: String(b.title).trim() };
+  if (column !== card.column_id) changes.column = { from: card.column_id, to: column };
+  if (b.details != null && b.details !== card.details) changes.details = true;
+  if (b.due != null && b.due !== card.due) changes.due = { from: card.due || null, to: b.due || null };
+  if (b.assignee !== undefined && (b.assignee || null) !== card.assignee_email) {
+    changes.assignee = { from: card.assignee_email || null, to: b.assignee || null };
+  }
+  if (Object.keys(changes).length > 0) {
+    const action = changes.column && Object.keys(changes).length === 1 ? "card_moved" : "card_edited";
+    await logEvent(c.env.DB, card.board_id, card.id, action, c.get("email"), changes);
+  }
+
   return c.json(await cardJSONById(c.env.DB, card.id));
 });
 
@@ -537,6 +558,7 @@ app.post("/api/cards/:id/comments", async c => {
   const id = uid();
   await c.env.DB.prepare("INSERT INTO comments (id, card_id, text, author_email, created_at) VALUES (?, ?, ?, ?, ?)")
     .bind(id, card.id, text, c.get("email"), now()).run();
+  await logEvent(c.env.DB, card.board_id, card.id, "comment_added", c.get("email"), {});
   const row = await c.env.DB.prepare(`
     SELECT cm.id, cm.text, cm.created_at, cm.author_email,
       u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
@@ -560,6 +582,7 @@ app.delete("/api/cards/:id", async c => {
   const { card, error } = await cardWithAccess(c);
   if (error) return error;
   const files = await c.env.DB.prepare("SELECT stored_name FROM attachments WHERE card_id = ?").bind(card.id).all();
+  await logEvent(c.env.DB, card.board_id, card.id, "card_deleted", c.get("email"), { title: card.title });
   await c.env.DB.batch([
     c.env.DB.prepare("DELETE FROM comments WHERE card_id = ?").bind(card.id),
     c.env.DB.prepare("DELETE FROM attachments WHERE card_id = ?").bind(card.id),
@@ -574,6 +597,7 @@ app.post("/api/cards/:id/archive", async c => {
   if (error) return error;
   await c.env.DB.prepare("UPDATE cards SET archived = 1, archived_at = ?, updated_at = ? WHERE id = ?")
     .bind(now(), now(), card.id).run();
+  await logEvent(c.env.DB, card.board_id, card.id, "card_archived", c.get("email"), {});
   return c.json(await cardJSONById(c.env.DB, card.id));
 });
 
@@ -582,6 +606,7 @@ app.post("/api/cards/:id/restore", async c => {
   if (error) return error;
   await c.env.DB.prepare("UPDATE cards SET archived = 0, archived_at = NULL, updated_at = ? WHERE id = ?")
     .bind(now(), card.id).run();
+  await logEvent(c.env.DB, card.board_id, card.id, "card_restored", c.get("email"), {});
   return c.json(await cardJSONById(c.env.DB, card.id));
 });
 
@@ -625,6 +650,10 @@ app.post("/api/cards/:id/attachments", async c => {
       id, original_name: file.name, mime: file.type || "", size: file.size, stored_name: key,
     }));
   }
+  if (created.length > 0) {
+    await logEvent(c.env.DB, card.board_id, card.id, "attachment_added", c.get("email"),
+      { files: created.map(f => f.originalName) });
+  }
   return c.json({ attachments: created });
 });
 
@@ -649,6 +678,61 @@ app.get("/uploads/:key", async c => {
   headers.set("etag", obj.httpEtag);
   headers.set("cache-control", "public, max-age=31536000, immutable");
   return new Response(obj.body, { headers });
+});
+
+// ---------- API: historial de actividad ----------
+
+function auditRowToJSON(r) {
+  return {
+    id: r.id,
+    cardId: r.card_id || null,
+    cardTitle: r.card_title || null,
+    action: r.action,
+    email: r.email,
+    ts: r.ts,
+    details: JSON.parse(r.details || "{}"),
+    author: {
+      name: r.author_name || r.email.split("@")[0],
+      avatarEmoji: r.avatar_emoji || null,
+      avatarColor: r.avatar_color || null,
+    },
+  };
+}
+
+// Historial de una tarjeta (visible para todos los miembros del tablero)
+app.get("/api/cards/:id/history", async c => {
+  const { card, error } = await cardWithAccess(c);
+  if (error) return error;
+  const rows = await c.env.DB.prepare(
+    `SELECT al.id, al.card_id, al.action, al.email, al.ts, al.details,
+       NULL AS card_title, u.name AS author_name, u.avatar_emoji, u.avatar_color
+     FROM audit_log al LEFT JOIN users u ON u.email = al.email
+     WHERE al.card_id = ? ORDER BY al.ts DESC LIMIT 100`
+  ).bind(card.id).all();
+  return c.json({ history: rows.results.map(auditRowToJSON) });
+});
+
+// Actividad del tablero (todos los miembros pueden ver; filtros de usuario/fecha para todos)
+app.get("/api/boards/:boardId/activity", async c => {
+  const email = c.get("email");
+  const boardId = c.req.param("boardId");
+  if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
+  const q = c.req.query();
+  const conditions = ["al.board_id = ?"];
+  const binds = [boardId];
+  if (q.user)  { conditions.push("al.email = ?");  binds.push(q.user); }
+  if (q.from)  { conditions.push("al.ts >= ?");    binds.push(Number(q.from)); }
+  if (q.to)    { conditions.push("al.ts <= ?");    binds.push(Number(q.to)); }
+  const lim = Math.min(parseInt(q.limit) || 100, 500);
+  const rows = await c.env.DB.prepare(
+    `SELECT al.id, al.card_id, al.action, al.email, al.ts, al.details,
+       c.title AS card_title, u.name AS author_name, u.avatar_emoji, u.avatar_color
+     FROM audit_log al
+     LEFT JOIN cards c ON c.id = al.card_id
+     LEFT JOIN users u ON u.email = al.email
+     WHERE ${conditions.join(" AND ")} ORDER BY al.ts DESC LIMIT ${lim}`
+  ).bind(...binds).all();
+  return c.json({ activity: rows.results.map(auditRowToJSON) });
 });
 
 // ---------- API: import (agrega al tablero actual, NO borra) ----------
