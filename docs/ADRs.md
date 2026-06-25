@@ -374,6 +374,70 @@ Cuando tomes una decisión arquitectónica **importante** (no cambios menores):
 
 ---
 
+## ADR-012: Internacionalización (i18n) — estrategia y criterio de migración
+
+**Estado**: ✅ Aceptado (landing page) / 🗂️ Backlog (app completa)
+**Decidido**: 2026-06-25
+**Último review**: 2026-06-25
+
+**Problema**
+La landing page tiene visibilidad pública internacional. La app también podría necesitar i18n si los equipos son multilingüe o si el producto se distribuye a otras regiones.
+
+**Decisión: landing page — traducciones inline en un único archivo**
+
+Todas las traducciones (ES / EN / PT / DE) viven en un objeto `T` dentro del `<script>` de `public/landing.html`. Una función `applyLang(lang)` recorre los elementos `[data-i18n]` y actualiza su `innerHTML`.
+
+Detección de idioma:
+1. `localStorage.getItem('tasking-lang')` si el usuario ya eligió antes
+2. `navigator.language` del browser como detección automática
+3. Fallback a español
+
+**Por qué inline y no archivos separados (para esta etapa)**
+- La landing tiene ~35 strings × 4 idiomas = payload trivial (~3 KB)
+- Sin requests adicionales al servidor → carga más rápida
+- Sin dependencias externas ni build step
+- Para páginas de marketing pequeñas, esta práctica es aceptada en la industria (incluso i18next lo permite)
+
+**Cuándo NO es suficiente (criterios de migración)**
+Migrar a archivos JSON separados + librería cuando se cumpla cualquiera de estos:
+- Hay que internacionalizar la **app completa** (`index.html`, mensajes de backend, emails)
+- Se superan **~100 strings por idioma** en la landing
+- Se suma un **quinto idioma o más**
+- Se quiere integrar con herramientas de traducción colaborativa (Crowdin, Lokalise, Weblate) — estas requieren archivos JSON
+
+**Recomendación para la migración futura (app completa)**
+
+Estructura de archivos:
+```
+public/
+  locales/
+    es.json
+    en.json
+    pt.json
+    de.json
+```
+
+Carga dinámica al detectar idioma:
+```javascript
+const lang = detectLang();
+const T = await fetch(`/locales/${lang}.json`).then(r => r.json());
+```
+
+Librería recomendada: **i18next** (estándar de facto, sin framework, ~13 KB gzip). Soporta plurales, interpolación, fechas y fallback a idioma base.
+
+Para el backend (mensajes de error en `auth.js`, emails): leer el header `Accept-Language` y seleccionar strings desde un objeto de configuración similar.
+
+**Consecuencias actuales**
+- ✅ Zero dependencias, zero build, zero latencia extra en la landing
+- ✅ Fácil de leer y mantener para equipos pequeños
+- ⚠️ Las traducciones están mezcladas con el código (no ideal para traductores externos)
+- ⚠️ Si crece mucho, el archivo HTML se hace difícil de mantener
+
+**Cuándo cambiar**
+Ver criterios de migración arriba. El cambio no es urgente: la landing actual es estable y el costo de migrar es bajo cuando llegue el momento porque el patrón `data-i18n` + `applyLang()` se mantiene igual — solo cambia de dónde vienen los strings.
+
+---
+
 ## ADR-011: Validación de JWT de Google con RSA
 
 **Estado**: ✅ Aceptado (Implementado en v1.5)  

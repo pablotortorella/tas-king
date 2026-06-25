@@ -108,6 +108,7 @@
   <button class="lang-btn" data-lang="en">EN</button>
   <button class="lang-btn" data-lang="pt">PT</button>
   <button class="lang-btn" data-lang="de">DE</button>
+  <button class="lang-btn" data-lang="zh">中文</button>
 </div>
 
 <!-- HERO -->
@@ -229,7 +230,7 @@ const T = {
     'hero.p':            '<strong>FUN TasKing!</strong> es un tablero Kanban visual, multiusuario y de código abierto. Coordiná proyectos, seguí el avance y mantené a tu equipo sincronizado — todo desde el navegador.',
     'hero.cta':          '🚀 Entrar con Google',
     'mockup.h2':         'Así trabajan los equipos que usan <strong>FUN TasKing!</strong>',
-    'mockup.hint':       '✋ Arrastrá las tarjetas entre columnas — ¡y festejá cuando algo llega a Terminado! 🎉',
+    'mockup.hint':       '✋ ¡Arrastrá las tarjetas entre columnas — y festejá cuando algo llega a Terminado! 🎉',
     'col.pendiente':     'Pendiente',
     'col.progreso':      'En progreso',
     'col.revision':      'Revisión',
@@ -346,6 +347,47 @@ const T = {
     'cta.btn':           '🚀 Entrar com Google',
     'footer.terms':      'Termos',
   },
+  zh: {
+    'page.title':        'FUN TasKing! — 可视化任务管理',
+    'hero.h1':           '让团队高效协作，<br>简单无负担',
+    'hero.p':            '<strong>FUN TasKing!</strong> 是一款可视化看板工具，支持多用户、开源免费。协调项目进度，追踪任务状态，让团队始终保持同步 — 一切尽在浏览器中。',
+    'hero.cta':          '🚀 使用 Google 登录',
+    'mockup.h2':         '团队如何使用 <strong>FUN TasKing!</strong>',
+    'mockup.hint':       '✋ 在列之间拖动卡片 — 完成时尽情庆祝！🎉',
+    'col.pendiente':     '待办',
+    'col.progreso':      '进行中',
+    'col.revision':      '审核',
+    'col.bloqueado':     '已阻塞',
+    'col.terminado':     '✅ 已完成',
+    'card.bug':          '<span class="mini-chip" style="background:#F44336">Bug</span><br>修复移动端登录',
+    'card.redesign':     '重新设计应用首页',
+    'card.feature':      '<span class="mini-chip" style="background:#2196F3">Feature</span><br>推送通知',
+    'card.docs':         '<span class="mini-chip" style="background:#4CAF50">Docs</span><br>更新 README',
+    'card.refactor':     '重构认证模块',
+    'card.ux':           '<span class="mini-chip" style="background:#9C27B0">UX</span><br>深色模式切换',
+    'card.slack':        'Slack 集成<br><small>等待客户 API 密钥</small>',
+    'card.landing':      '落地页',
+    'card.labels':       '标签系统',
+    'card.oauth':        'Google OAuth',
+    'features.h2':       '你需要的一切，<br>都在 <strong>FUN TasKing!</strong> 中',
+    'feat.kanban.title': '可视化看板',
+    'feat.kanban.desc':  '包含待办、进行中、审核、已阻塞和已完成列。一键移动卡片。',
+    'feat.multi.title':  '多用户协作',
+    'feat.multi.desc':   '与团队共享看板。基于邮箱的访问控制：由你决定谁可以查看和编辑。',
+    'feat.labels.title': '标签与筛选',
+    'feat.labels.desc':  '按类型、优先级或领域为卡片添加标签。筛选出当下最重要的内容。',
+    'feat.attach.title': '附件',
+    'feat.attach.desc':  '直接在卡片中上传图片和文件，安全存储于 Cloudflare R2。',
+    'feat.search.title': '即时搜索',
+    'feat.search.desc':  '秒级找到任意卡片。支持按文本、标签和列筛选，内置键盘快捷键。',
+    'feat.auth.title':   'Google 登录',
+    'feat.auth.desc':    '使用 Google OAuth 安全登录。无需记住密码，无需注册表单，只需你的 Google 账号。',
+    'oss.p':             '<strong>FUN TasKing!</strong> 是<strong>开源</strong>项目。你可以免费在 Cloudflare Workers 上自托管，查看源码并贡献改进。',
+    'cta.h2':            '准备好开始使用 <strong>FUN TasKing!</strong> 了吗？',
+    'cta.p':             '向团队管理员申请访问权限，几分钟内即可加入。',
+    'cta.btn':           '🚀 使用 Google 登录',
+    'footer.terms':      '使用条款',
+  },
   de: {
     'page.title':        'FUN TasKing! — Visuelle Aufgabenverwaltung',
     'hero.h1':           'Organisiere dein Team,<br>ganz ohne Komplikationen',
@@ -394,6 +436,7 @@ function detectLang() {
   const saved = localStorage.getItem('tasking-lang');
   if (saved && T[saved]) return saved;
   const nav = (navigator.language || 'es').toLowerCase();
+  if (nav.startsWith('zh')) return 'zh';
   if (nav.startsWith('de')) return 'de';
   if (nav.startsWith('pt')) return 'pt';
   if (nav.startsWith('en')) return 'en';
