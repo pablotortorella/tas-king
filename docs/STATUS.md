@@ -1,19 +1,16 @@
-# Estado de Implementación — FUN TasKing! v1.4
+# Estado de Implementación — FUN TasKing! v1.7
 
-**Última actualización**: 2026-06-23 (sesión final: Fundaciones profesionales)  
-**Estado**: ✅ Documentación de workflow COMPLETA | ⏭️ Próximo: Feature #2 Etiquetas + filtro
+**Última actualización**: 2026-06-25  
+**Estado**: ✅ Tests E2E completos (16 pruebas) | ⏭️ Próximo: #6 Modo oscuro o #7 Lead time
 
-## 🎯 Cambio importante esta sesión
+## 🎯 Cambios recientes (sesión 2026-06-25)
 
-Se establecieron **fundaciones profesionales** ANTES de continuar con features:
-- `docs/WORKFLOW.md` — proceso desarrollo, testing, merge, deploy
-- `docs/ADRs.md` — decisiones arquitectónicas (OAuth, D1, etc.)
-- `CLAUDE.md` actualizado — instrucciones claras por sesión
-- `docs/API.md` — referencia de endpoints
-- `.env.example` — setup local
-- `npm run verify-ready` — verificación automática
-
-Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevención de duplicación.
+- **Checklists (#3) completo**: CRUD + modo borrador + badge en tablero
+- **Menú IO**: exportar/importar en dropdown ⇅ Datos
+- **Fix historial drag & drop**: ahora registra `card_moved` correctamente
+- **Fix reorder bug**: D1 "too many SQL variables" con tableros grandes — SELECT sin IN spread + batch chunked
+- **Tests E2E**: infraestructura seed + 3 suites nuevas (checklists, adjuntos, historial)
+- **16 E2E + 48 unit tests pasan al 100%**
 
 ---
 
@@ -339,15 +336,27 @@ Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevenci�
 
 ## Features NO Implementados
 
-### ❌ #3 Checklists / subtareas ✅
+### ✅ #3 Checklists / subtareas ✅
 
-**Qué se necesita**:
-- Tabla `checklist_items` (id, card_id, text, completed, position)
-- API: CRUD de items
-- UI: agregar/editar/tachar items en modal de tarjeta
-- Progreso visual (N/M items completados)
+**Qué hace**: Listas de ítems dentro de las tarjetas, con progreso visual y badge en el tablero.
 
-**Prioridad**: MEDIA
+**Implementación**:
+- **Base de datos**: Tablas `checklists` (id, card_id, name, position) y `checklist_items` (id, checklist_id, text, checked, position) — migración `0009_checklists.sql`
+- **Backend**: `src/routes/checklists.js`
+  - POST/DELETE `/api/cards/:id/checklists`
+  - PUT `/api/checklists/:id` (renombrar)
+  - POST/PUT/DELETE `/api/checklists/:id/items`
+- **Frontend**: `renderChecklists()` con modo dual:
+  - Modo borrador (`editingId` null): en memoria (`draftChecklists`), se persiste al guardar
+  - Modo API: operaciones en tiempo real para tarjetas existentes
+  - Badge en tablero: `☑ N/M`, verde cuando todo está completo (`badge-done`)
+  - Barra de progreso por checklist
+
+**Tests**:
+- ✅ 10 unitarios (progress, reorder, structure)
+- ✅ 4 E2E (e2e/checklists.spec.js): crear, renombrar, borrador, badge verde
+
+**Estado**: **100% completo**
 
 ---
 
@@ -439,9 +448,11 @@ Esto mejora: onboarding, calidad de código, auditoría de decisiones, prevenci�
 
 | Capa | Cobertura | Notas |
 |---|---|---|
-| **Unitarios (Vitest)** | 17 tests ✅ | CRUD, autenticación, permisos, serialización. Corre en Workerd + D1 emulado. |
-| **E2E (Playwright)** | 5 tests ✅ | Crear/editar/mover/eliminar tarjeta, import CSV, admin, deep-link, atajos. |
-| **Manual** | Completo ✅ | Celebración, polling, login real, responsive, adjuntos. |
+| **Unitarios (Vitest)** | 48 tests ✅ | CRUD, auth, permisos, checklists, serialización. Corre en Workerd + D1 emulado. |
+| **E2E (Playwright)** | 16 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas. |
+| **Manual** | Completo ✅ | Celebración, polling, login real, responsive. |
+
+**Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/critical-flows.spec.js`, `e2e/history.spec.js`.
 
 **Ejecutar**:
 ```bash
@@ -454,11 +465,12 @@ npm run test:e2e:ui    # Playwright visual
 
 ## Notas Técnicas
 
-- **D1 Migraciones**: 0001_init → 0005_audit_log. Cada sesión que agregue tablas suma una nueva.
-- **Frontend**: Un único `public/index.html` sin build. ~1900 líneas de código.
-- **Backend**: `src/index.js` con Hono. ~700 líneas.
-- **Base de datos**: SQLite en D1, emulado localmente.
+- **D1 Migraciones**: 0001_init → 0009_checklists. Cada sesión que agregue tablas suma una nueva.
+- **Frontend**: Un único `public/index.html` sin build. ~2800 líneas de código.
+- **Backend modular**: `src/index.js` (~80 líneas setup) + `src/routes/` + `src/middleware/` + `src/db/`.
+- **Base de datos**: SQLite en D1, emulado localmente con Wrangler + Miniflare.
 - **Archivos**: R2 bucket `tas-king-uploads`.
+- **Tests E2E**: usa `--persist-to .wrangler/e2e-state` (DB aislada de dev).
 
 ---
 

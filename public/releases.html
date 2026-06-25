@@ -31,6 +31,51 @@
   <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
 
   <div class="release">
+    <h2>v1.7 — Checklists, mejoras UX y calidad interna <span class="tag">Release 8</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li><b>Checklists en tarjetas</b>: creá listas de ítems dentro de cualquier tarjeta. Cada ítem se puede tachar, renombrar y reordenar. El progreso aparece como badge en el tablero (ej. ☑ 2/5).</li>
+      <li><b>Modo borrador</b>: al crear una tarjeta nueva podés armar checklists antes de guardar; se persisten al guardar.</li>
+      <li><b>Menú ⇅ Datos</b>: las opciones de exportar CSV, copiar JSON e importar se agrupan en un dropdown único. En desktop muestra ícono + etiqueta, en móvil solo el ícono.</li>
+      <li><b>Historial completo de movimientos</b>: mover tarjetas con drag &amp; drop ahora también queda registrado en el historial de actividad.</li>
+      <li><b>Tests E2E ampliados</b>: 16 pruebas automatizadas en Playwright, con seed de datos aislado para cada corrida.</li>
+      <li>Fix: drag &amp; drop dejaba de funcionar cuando el tablero tenía muchos cards (bug de límite de variables en D1).</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v1.6 — Etiquetas, filtro y dashboard admin <span class="tag">Release 7</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li><b>Etiquetas de colores</b>: creá etiquetas por tablero y asignálas a tarjetas. Aparecen como pastillas de color en el Kanban.</li>
+      <li><b>Filtro por etiqueta</b>: usá los atajos <b>1–9</b> para filtrar por etiqueta (lógica OR); <b>0</b> limpia el filtro.</li>
+      <li>Paleta de 10 colores Material Design, elegidos para accesibilidad en daltonismo. Máximo 10 etiquetas por tablero.</li>
+      <li><b>Dashboard admin mejorado</b>: estadísticas de uso, actividad reciente y espacio de almacenamiento.</li>
+      <li>Botón ✕ para quitar una etiqueta de la tarjeta directamente desde el modal.</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v1.5 — Seguridad: adjuntos y autenticación <span class="tag">Release 6</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li><b>Adjuntos protegidos</b>: acceder a un archivo adjunto requiere sesión activa y membresía en el tablero. Antes eran de acceso público.</li>
+      <li>Límites aplicados: máx 20 MB por archivo, 10 archivos por tarjeta, tipos permitidos (imágenes, PDF, documentos Office).</li>
+      <li><b>Validación JWT de Google</b>: el token de login ahora se verifica con firma RSA y todos los claims estándar (exp, iss, aud, email_verified). Rechaza tokens adulterados.</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v1.4 — Historial de actividad <span class="tag">Release 5</span></h2>
+    <div class="date">Junio de 2026</div>
+    <ul>
+      <li><b>Historial por tarjeta</b>: cada tarjeta muestra quién hizo qué y cuándo — crear, editar, mover, archivar, comentar y adjuntar.</li>
+      <li>La creación siempre aparece como primer evento, incluso en tarjetas antiguas.</li>
+      <li><b>Panel de actividad del tablero</b> en Admin: filtrable por usuario y rango de fechas.</li>
+    </ul>
+  </div>
+
+  <div class="release">
     <h2>v1.3 — Administración, sincronización en tiempo real y celebraciones <span class="tag">Release 4</span></h2>
     <div class="date">Junio de 2026</div>
     <ul>

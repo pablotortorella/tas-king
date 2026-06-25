@@ -4,28 +4,22 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Última actualización (esta sesión)**: Dashboard admin mejorado + backlog actualizado.
-- **Feature completada**: Etiquetas + filtro (#2) — 10 colores Material Design, máx 10 por tablero, botón ✕ para borrar
-- **Nuevas estadísticas admin**: uso/actividad con gráfico visual, archivos (cantidad + tamaño MB), Top 10 usuarios activos
-- **Backlog**: Agregado #7 Lead time y tasa de completitud (por usuario, en criollo)
-- **Tests**: 38 unitarios + 6 E2E ✅ Todos pasan
+**Versión actual**: v1.7 — **Tests**: 48 unitarios + 16 E2E ✅ Todos pasan
 
-## 🎯 Objetivo inmediato
+**Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
+Checklists (#3), Protección adjuntos (#4), JWT Google (#5), i18n landing, Panel admin, IO menu.
 
-**✅ COMPLETADO ESTA SESIÓN**: Feature #2 Etiquetas + filtro (organización)
-- Migración 0007_labels.sql
-- Backend routes/labels.js con validación de paleta de 20 colores
-- Frontend: renderCard con pastillas, gestión inline, filtro OR (atajos 0-9), F1 ayuda
-- Tests: unitarios + E2E ✅ Todos pasan
+**Próximo**: #6 Modo oscuro, #7 Lead time/completitud, o mejoras de seguridad (CSP, rate limiting).
 
-**⏭️ PRÓXIMO**: Feature #3 Checklists / subtareas (MEDIA priority, organización)
-Tabla `checklist_items`, UI para agregar/editar/tachar items, progreso visual.
+## 🎯 Objetivo siguiente sesión
 
-Alternativas:
-- #6 Modo oscuro/claro (BAJA priority, UX)
-- #8 Mejoras adjuntos (BAJA priority, UX — drag & drop, paste, reorder)
+Opciones priorizadas por Pablo (ver `memory/roadmap.md` para lista completa):
 
-Ver `docs/STATUS.md` para saber qué está hecho.
+1. **Seguridad** (alta): CSP headers, verificar adjuntos protegidos, rate limiting granular
+2. **UX** (alta): Tab/Enter en toda la interfaz de tarjetas, onboarding nuevos usuarios
+3. **Features** (media): #6 Modo oscuro, #7 Lead time/tasa completitud, búsqueda avanzada
+
+Ver `docs/STATUS.md` para estado detallado de cada feature.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
 
 ## Stack
@@ -53,14 +47,17 @@ Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR →
   para los datos previos al multiusuario — esto es específico de esta instancia.
 
 ## Archivos importantes
-- `src/index.js`: Worker completo — API REST (Hono), OAuth Google, middlewares de auth y admin
-- `public/index.html`: frontend completo — UI Kanban, modales, drag & drop, atajos de teclado
-- `migrations/`: esquema D1 incremental (0001 init → 0004 admin)
+- `src/index.js`: setup del Worker (~80 líneas) — importa routes y middlewares
+- `src/routes/`: auth, boards, cards, checklists, labels, uploads, admin, users
+- `public/index.html`: frontend completo — UI Kanban, modales, drag & drop, atajos (~2800 líneas)
+- `migrations/`: esquema D1 incremental (0001 init → 0009 checklists)
 - `wrangler.jsonc`: configuración de Workers, D1 y R2
 - `.dev.vars`: variables locales (no commiteado — ver README para el formato)
 - `docs/STATUS.md`: **[IMPORTANTE]** estado de cada feature (qué está hecho, qué falta, tests)
-- `docs/backlog.txt`: backlog priorizado
-- `docs/ideas.txt`: ideas extendidas y contexto de decisiones de producto
+- `memory/roadmap.md`: backlog priorizado con razones
+- `memory/SESSION.md`: contexto de la última sesión
+- `e2e/`: suites Playwright (attachments, checklists, critical-flows, history)
+- `test/fixtures/seed.sql`: estado inicial de la DB para E2E
 
 ## Al finalizar cada sesión
 
@@ -102,34 +99,36 @@ manual complementario para IAs y personas están en `TESTING.md`.
 
 ## Estado de features del backlog
 
-Para saber si un feature existe, está completo, o qué le falta:
-
 | Item | Estado | Notas |
 |---|---|---|
-| #0 🔗 Deep-link | Implementado, tests E2E ✅ | Acciones: `checkDeepLink()` en el frontend, GET `/api/cards/:id` en backend. Los 4 casos de test están cubiertos (válida, inexistente, archivada, sin acceso manual). |
-| ⚡ Polling tiempo real | Implementado, tests manual ✅ | Endpoint `/api/boards/:id/version` + cliente cada 5s. No tiene tests E2E, pero se verifica manualmente. |
-| 🎉 Celebración | Implementado, tests manual ✅ | Confeti + animación de tarjeta. Funciona para arrastres locales y vía polling. Sin test E2E (difícil de verificar en Playwright). |
-| #1 📜 Historial | Implementado, tests manuales ✅ | `audit_log` en D1, `logEvent()` en 8 eventos, panel en modal de tarjeta, pestaña Actividad en Admin con filtros. |
-| #2 🏷️ Etiquetas | No existe | Requiere: tabla `labels`, `card_labels` join, UI de creación/edición, filtro, página de AYUDA. |
-| #3 ✅ Checklists | No existe | Requiere: tabla `checklist_items`, UI en modal de tarjeta. |
-| #4 🔐 Adjuntos | **Implementado ✅** | Validación de sesión/membresía en GET `/uploads`, límites de tamaño (20 MB), cantidad (10), MIME type (whitelist). |
-| #5 🛡️ JWT Google | **Implementado ✅** | Validación de firma RSA + claims (exp, iss, aud, email_verified). Detecta tampering y tokens modificados. |
-| #8 🖼️ Adjuntos mejorados | No existe (BAJA priority) | Drag & drop, paste images, reorder adjuntos. |
-| #6 🌙 Modo oscuro | No existe | CSS variables ya están listos. Requiere: toggle en header, localStorage, media query fallback. |
+| #0 🔗 Deep-link | ✅ Tests E2E | `checkDeepLink()` + GET `/api/cards/:id`. 4 casos cubiertos. |
+| ⚡ Polling real-time | ✅ Manual | `/api/boards/:id/version` + cliente cada 5s. |
+| 🎉 Celebración | ✅ Manual | Confeti + animación. Sin test E2E (difícil). |
+| #1 📜 Historial | ✅ Tests E2E | `audit_log`, 8 eventos, panel modal + admin. Drag & drop registrado. |
+| #2 🏷️ Etiquetas | ✅ Tests E2E | `labels`+`card_labels`, filtro 1-9, paleta 10 colores. |
+| #3 ✅ Checklists | ✅ Tests E2E | `checklists`+`checklist_items`, modo borrador, badge ☑ N/M. |
+| #4 🔐 Adjuntos | ✅ Tests E2E | 2-layer validation: sesión + membresía + MIME + tamaño + cantidad. |
+| #5 🛡️ JWT Google | ✅ Unitarios | Firma RSA + claims. Detecta tampering. |
+| ⇅ Menú IO | ✅ | Dropdown Datos: exportar CSV / copiar JSON / importar. |
+| 🌐 i18n landing | ✅ | ES/EN/PT/ZH inline en landing.html. |
+| #6 🌙 Modo oscuro | ❌ | CSS variables listas. Falta toggle + localStorage. |
+| #7 📊 Lead time | ❌ | Métricas personales de productividad. |
+| CSP headers | ❌ Seguridad | Content-Security-Policy pendiente. |
 
 ## Pendientes
-Ver `docs/backlog.txt` para la lista priorizada. En orden:
-- [x] #0 🔗 Deep-link a una tarjeta (abrir app en tarjeta puntual vía URL)
-- [x] ⚡ Polling de cambios en tiempo real (cada 5s, pausa en segundo plano)
-- [x] 🎉 Celebración al terminar (confeti + tarjeta titilante)
-- [x] #1 📜 Historial de actividad (dentro de la tarjeta + panel lateral por tablero)
-- [ ] #2 🏷️ Etiquetas de colores + filtro + página de AYUDA (F1) con todos los atajos
-- [ ] #3 ✅ Checklists / subtareas dentro de una tarjeta
-- [x] #4 🔐 Proteger adjuntos (validación de sesión/membresía, límites de tamaño/cantidad/MIME)
-- [x] #5 🛡️ Validar JWT de Google con rigor (hardening del login — firma RSA + claims)
+- [x] #0 🔗 Deep-link a una tarjeta
+- [x] ⚡ Polling de cambios en tiempo real
+- [x] 🎉 Celebración al terminar
+- [x] #1 📜 Historial de actividad
+- [x] #2 🏷️ Etiquetas de colores + filtro
+- [x] #3 ✅ Checklists / subtareas
+- [x] #4 🔐 Proteger adjuntos
+- [x] #5 🛡️ Validar JWT de Google
+- [ ] Seguridad: CSP headers, rate limiting granular
+- [ ] UX: Tab/Enter en toda la interfaz, onboarding nuevos usuarios
 - [ ] #6 🌙 Modo oscuro/claro
-- [ ] #8 🖼️ Mejores adjuntos (drag & drop, paste images, reorder) — BAJA PRIORIDAD
-- [ ] #9 💾 Respaldo automático programado del tablero
+- [ ] #7 📊 Lead time y tasa de completitud
+- [ ] Búsqueda avanzada (full-text en título + detalles)
 
 ## No hacer
 - No usar Cloudflare Access (no funciona en `*.workers.dev` sin dominio propio)
@@ -139,7 +138,43 @@ Ver `docs/backlog.txt` para la lista priorizada. En orden:
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-24, Refactor modular + optimización doc — Claude Haiku 4.5)
+## Último handoff (2026-06-25, Tests E2E completos + fix reorder bug — Claude Sonnet 4.6)
+
+### ✅ Infraestructura de tests E2E con seed data
+- `test/fixtures/seed.sql`: limpia toda la DB y re-inserta estado conocido (usuario admin E2E, tablero, etiqueta, tarjeta base)
+- `test/global-setup.mjs`: corre seed antes de cada suite vía `wrangler d1 execute`
+- `playwright.config.mjs`: registra globalSetup
+
+### ✅ 3 nuevas suites E2E
+- `e2e/checklists.spec.js`: 4 tests (crear, renombrar, borrador, badge verde)
+- `e2e/attachments.spec.js`: 2 tests (badge 📎, persistencia al reabrir)
+- `e2e/history.spec.js`: 4 tests (creación, modal, drag & drop, edición)
+
+### ✅ Fix: reorder con muchos cards (bug D1 en producción y local)
+- Endpoint `POST /api/boards/:boardId/reorder` usaba `IN (?, ?, ...)` con spread de todos los IDs
+- Con tableros grandes → "too many SQL variables" en D1 local (offset 245)
+- Fix: `WHERE board_id = ?` (sin IN) + batch UPDATE chunked a 40 cards por batch
+
+### ✅ Fix: simulación drag & drop en Playwright
+- `page.dragTo()` / `page.dragAndDrop()` no disparan bien los HTML5 drag events del frontend
+- Solución: `page.evaluate()` que agrega `.dragging`, mueve nodo DOM y dispara `drop`
+- `waitForResponse(/reorder)` garantiza que `card_moved` esté logeado antes de abrir el historial
+
+### ✅ Fix selectors de adjuntos en tests
+- Clase real: `.attachment` (no `.draft-attachment`)
+- Badge correcto: `📎` (no `≡` que es para card.details)
+
+### Deploy
+- Todo en main ✅ — commit `9cbfc2f`
+- **Pendiente de deploy a staging/producción** (sin cambios de usuario visible, tests internos)
+
+### Estado tests
+- 48 unitarios (Vitest) ✅
+- 16 E2E (Playwright) ✅
+
+---
+
+## Anterior handoff (2026-06-24, Refactor modular + optimización doc — Claude Haiku 4.5)
 
 **ESTA SESIÓN — Refactoring completo + optimización de documentación (MERGED A MAIN)**
 
