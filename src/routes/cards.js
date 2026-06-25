@@ -130,11 +130,28 @@ export function setupCardRoutes(app) {
     if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
     const body = await c.req.json().catch(() => []);
     const items = Array.isArray(body) ? body : (body && body.items) || [];
+    if (!items.length) return c.json({ updated: 0 });
+
+    // Detectar cambios de columna para auditoría
+    const ids = items.map(it => it.id);
+    const placeholders = ids.map(() => "?").join(",");
+    const current = await c.env.DB.prepare(
+      `SELECT id, column_id FROM cards WHERE id IN (${placeholders}) AND board_id = ?`
+    ).bind(...ids, boardId).all();
+    const colMap = new Map(current.results.map(r => [r.id, r.column_id]));
+
     const upd = c.env.DB.prepare("UPDATE cards SET column_id = ?, position = ?, updated_at = ? WHERE id = ? AND board_id = ?");
-    if (items.length) {
-      await c.env.DB.batch(items.map((it, i) =>
-        upd.bind(it.column, it.position != null ? it.position : i, now(), it.id, boardId)));
+    await c.env.DB.batch(items.map((it, i) =>
+      upd.bind(it.column, it.position != null ? it.position : i, now(), it.id, boardId)));
+
+    // Loguear sólo las tarjetas que cambiaron de columna
+    for (const it of items) {
+      const prev = colMap.get(it.id);
+      if (prev && prev !== it.column) {
+        await logEvent(c.env.DB, boardId, it.id, "card_moved", email, { column: { from: prev, to: it.column } });
+      }
     }
+
     return c.json({ updated: items.length });
   });
 

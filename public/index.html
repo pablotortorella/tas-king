@@ -100,26 +100,6 @@
   }
   header .actions input[type=search]:focus { outline: 2px solid rgba(255,255,255,.6); background: #fff; }
 
-  /* Menú "⋯" (acciones secundarias): inline en desktop, desplegable en mobile */
-  header .menu-wrap { position: relative; display: inline-flex; }
-  header #moreBtn { display: none; }
-  header .menu-panel { display: flex; align-items: center; gap: 8px; }
-
-  @media (max-width: 780px) {
-    header #moreBtn { display: inline-flex; }
-    header .menu-panel {
-      display: none; position: absolute; top: calc(100% + 8px); right: 0;
-      flex-direction: column; align-items: stretch; gap: 2px; z-index: 150;
-      background: #fff; border: 1px solid var(--border); border-radius: 8px;
-      box-shadow: 0 6px 20px rgba(9,30,66,.25); padding: 6px; min-width: 170px;
-    }
-    header .menu-panel.open { display: flex; }
-    header .menu-panel button {
-      color: var(--text); background: transparent; text-align: left; width: 100%; padding: 8px 10px;
-    }
-    header .menu-panel button:hover { background: var(--col-bg); }
-  }
-
   /* Menú IO (importar/exportar): siempre dropdown, ícono+etiqueta en desktop, ícono en mobile */
   header .io-wrap { position: relative; display: inline-flex; }
   header #ioBtn {
@@ -561,12 +541,7 @@
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
     <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
-    <div class="menu-wrap">
-      <button id="moreBtn" title="Más acciones" aria-label="Más acciones">⋯</button>
-      <div class="menu-panel" id="menuPanel">
-        <button id="archiveBtn">🗄 Archivadas</button>
-      </div>
-    </div>
+    <button id="archiveBtn">🗄 Archivadas</button>
     <div class="io-wrap" id="ioWrap">
       <button id="ioBtn" title="Importar / Exportar" aria-expanded="false">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="flex-shrink:0">
@@ -2250,17 +2225,6 @@
   document.getElementById("assigneeFilter").addEventListener("change", e => {
     assigneeFilter = e.target.value;
     render();
-  });
-
-  // ---------- Menú "⋯" de acciones secundarias (mobile) ----------
-  const menuPanel = document.getElementById("menuPanel");
-  document.getElementById("moreBtn").addEventListener("click", e => {
-    e.stopPropagation();
-    menuPanel.classList.toggle("open");
-  });
-  menuPanel.addEventListener("click", () => menuPanel.classList.remove("open"));
-  document.addEventListener("click", e => {
-    if (e.target.id !== "moreBtn" && !menuPanel.contains(e.target)) menuPanel.classList.remove("open");
   });
 
   // ---------- Menú IO (importar/exportar) ----------
