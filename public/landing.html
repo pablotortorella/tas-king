@@ -7,7 +7,6 @@
 <style>
   :root {
     --accent: #0079bf;
-    --accent-dark: #005a8e;
     --bg: #f4f5f7;
     --text: #172b4d;
     --muted: #6b778c;
@@ -15,192 +14,149 @@
     --border: #dfe1e6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
 
   /* HERO */
-  .hero {
-    background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%);
-    color: white;
-    padding: 72px 24px 88px;
-    text-align: center;
-  }
+  .hero { background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%); color: white; padding: 72px 24px 88px; text-align: center; }
   .hero-logo { font-size: 52px; margin-bottom: 12px; display: block; }
   .hero-brand { font-size: 1.1rem; font-weight: 800; letter-spacing: .5px; opacity: .9; margin-bottom: 20px; }
   .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800; margin-bottom: 18px; line-height: 1.2; }
   .hero p { font-size: 1.1rem; opacity: .88; max-width: 540px; margin: 0 auto 44px; line-height: 1.6; }
   .hero-cta {
     display: inline-flex; align-items: center; gap: 8px;
-    background: #fff; color: var(--accent);
-    font-weight: 700; font-size: 1rem;
+    background: #fff; color: var(--accent); font-weight: 700; font-size: 1rem;
     padding: 14px 32px; border-radius: 8px; text-decoration: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,.25);
-    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25); transition: transform .15s, box-shadow .15s;
   }
   .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.3); }
 
+  /* LANGUAGE SWITCHER */
+  .lang-switcher {
+    position: fixed; top: 12px; right: 16px; z-index: 200;
+    display: flex; gap: 2px;
+    background: rgba(0,0,0,.38); backdrop-filter: blur(6px);
+    border-radius: 20px; padding: 4px 8px;
+  }
+  .lang-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,.65);
+    padding: 3px 7px; border-radius: 12px; letter-spacing: .3px;
+    transition: background .15s, color .15s;
+  }
+  .lang-btn.active { background: rgba(255,255,255,.25); color: #fff; }
+  .lang-btn:hover:not(.active) { color: #fff; }
+
   /* MINI BOARD MOCKUP */
-  .mockup-section {
-    background: linear-gradient(180deg, #e8edf3 0%, #f4f5f7 100%);
-    padding: 64px 24px;
-    text-align: center;
-  }
-  .mockup-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 36px; color: var(--text); }
-  .mini-board {
-    display: flex; gap: 12px; overflow-x: auto;
-    max-width: 900px; margin: 0 auto; padding-bottom: 8px;
-    justify-content: center;
-  }
-  .mini-col {
-    background: #ebecf0; border-radius: 10px; padding: 12px;
-    min-width: 160px; flex: 0 0 160px;
-  }
-  .mini-col-title {
-    font-size: 11px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px;
-  }
-  .mini-card {
-    background: #fff; border-radius: 6px; padding: 10px 12px;
-    margin-bottom: 8px; font-size: 11.5px;
-    box-shadow: 0 1px 3px rgba(9,30,66,.12); text-align: left; line-height: 1.4;
-  }
-  .mini-chip {
-    display: inline-block; border-radius: 3px; padding: 1px 6px;
-    font-size: 9px; font-weight: 700; color: white; margin-bottom: 4px;
-    letter-spacing: .3px; text-transform: uppercase;
-  }
-  .mini-card small { color: var(--muted); font-size: 10px; }
+  .mockup-section { background: linear-gradient(180deg, #e8edf3 0%, #f4f5f7 100%); padding: 64px 24px; text-align: center; }
+  .mockup-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+  .mockup-hint { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+  .mini-board { display: flex; gap: 12px; overflow-x: auto; max-width: 900px; margin: 0 auto; padding-bottom: 8px; justify-content: center; }
+  .mini-col { background: #ebecf0; border-radius: 10px; padding: 12px; min-width: 160px; flex: 0 0 160px; transition: background .15s; }
+  .mini-col.drag-over { background: #c8e6f5; outline: 2px dashed #0079bf; outline-offset: -3px; }
+  .mini-col-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
   .mini-cards-area { overflow: hidden; max-height: 190px; }
-  .mini-card { cursor: grab; user-select: none; transition: opacity .15s, box-shadow .15s; }
+  .mini-card { background: #fff; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 11.5px; box-shadow: 0 1px 3px rgba(9,30,66,.12); text-align: left; line-height: 1.4; cursor: grab; user-select: none; transition: opacity .15s; }
   .mini-card:active { cursor: grabbing; }
   .mini-card.dragging { opacity: .3; }
-  .mini-col { transition: background .15s; }
-  .mini-col.drag-over { background: #c8e6f5; outline: 2px dashed #0079bf; outline-offset: -3px; }
+  .mini-card small { color: var(--muted); font-size: 10px; }
+  .mini-chip { display: inline-block; border-radius: 3px; padding: 1px 6px; font-size: 9px; font-weight: 700; color: white; margin-bottom: 4px; letter-spacing: .3px; text-transform: uppercase; }
   @keyframes celebrate-mini {
-    0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
-    15%  { background: #fffde7; box-shadow: 0 0 12px 4px #ffd700; }
-    30%  { background: #f3e5f5; box-shadow: 0 0 12px 4px #ce93d8; }
-    45%  { background: #e8f5e9; box-shadow: 0 0 12px 4px #66bb6a; }
-    60%  { background: #e3f2fd; box-shadow: 0 0 12px 4px #42a5f5; }
-    75%  { background: #fff3e0; box-shadow: 0 0 12px 4px #ffa726; }
-    90%  { background: #fce4ec; box-shadow: 0 0 12px 4px #f48fb1; }
-    100% { background: #fff; box-shadow: 0 1px 3px rgba(9,30,66,.12); }
+    0%   { background:#fff; box-shadow:0 0 0 0 rgba(255,215,0,0); }
+    15%  { background:#fffde7; box-shadow:0 0 12px 4px #ffd700; }
+    30%  { background:#f3e5f5; box-shadow:0 0 12px 4px #ce93d8; }
+    45%  { background:#e8f5e9; box-shadow:0 0 12px 4px #66bb6a; }
+    60%  { background:#e3f2fd; box-shadow:0 0 12px 4px #42a5f5; }
+    75%  { background:#fff3e0; box-shadow:0 0 12px 4px #ffa726; }
+    90%  { background:#fce4ec; box-shadow:0 0 12px 4px #f48fb1; }
+    100% { background:#fff; box-shadow:0 1px 3px rgba(9,30,66,.12); }
   }
   .mini-card.celebrating { animation: celebrate-mini 1.4s ease-in-out; }
   #mini-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
-  .mockup-hint { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
 
   /* FEATURES */
-  .features {
-    padding: 72px 24px;
-    max-width: 960px; margin: 0 auto;
-  }
+  .features { padding: 72px 24px; max-width: 960px; margin: 0 auto; }
   .features h2 { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 48px; }
-  .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 24px;
-  }
-  .feature-card {
-    background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: 12px; padding: 28px 24px;
-    box-shadow: 0 1px 4px rgba(9,30,66,.07);
-    transition: box-shadow .15s, transform .15s;
-  }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+  .feature-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 28px 24px; box-shadow: 0 1px 4px rgba(9,30,66,.07); transition: box-shadow .15s, transform .15s; }
   .feature-card:hover { box-shadow: 0 4px 16px rgba(9,30,66,.12); transform: translateY(-2px); }
   .feature-icon { font-size: 30px; margin-bottom: 14px; display: block; }
   .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
   .feature-card p { font-size: .9rem; color: var(--muted); line-height: 1.6; }
 
-  /* OPEN SOURCE BADGE */
-  .oss-section {
-    padding: 48px 24px;
-    text-align: center;
-    background: var(--card-bg);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
+  /* OSS */
+  .oss-section { padding: 48px 24px; text-align: center; background: var(--card-bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
   .oss-section p { color: var(--muted); font-size: .95rem; max-width: 480px; margin: 12px auto 0; line-height: 1.6; }
 
   /* CTA BOTTOM */
-  .cta-bottom {
-    padding: 72px 24px; text-align: center;
-    background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%);
-    color: white;
-  }
+  .cta-bottom { padding: 72px 24px; text-align: center; background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%); color: white; }
   .cta-bottom h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 14px; }
   .cta-bottom p { opacity: .85; margin-bottom: 36px; font-size: 1rem; }
-  .cta-bottom a {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: #fff; color: var(--accent);
-    font-weight: 700; font-size: 1rem;
-    padding: 14px 32px; border-radius: 8px; text-decoration: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,.2);
-  }
+  .cta-bottom a { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--accent); font-weight: 700; font-size: 1rem; padding: 14px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
   .cta-bottom a:hover { opacity: .95; }
 
   /* FOOTER */
-  footer {
-    padding: 24px; text-align: center;
-    font-size: .82rem; color: var(--muted);
-    border-top: 1px solid var(--border);
-  }
+  footer { padding: 24px; text-align: center; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--border); }
   footer a { color: var(--accent); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
+<!-- Selector de idioma -->
+<div class="lang-switcher" id="langSwitcher">
+  <button class="lang-btn" data-lang="es">ES</button>
+  <button class="lang-btn" data-lang="en">EN</button>
+  <button class="lang-btn" data-lang="pt">PT</button>
+  <button class="lang-btn" data-lang="de">DE</button>
+</div>
+
 <!-- HERO -->
 <section class="hero">
   <span class="hero-logo">👑</span>
   <p class="hero-brand"><strong>FUN TasKing!</strong></p>
-  <h1>Organizá tu equipo,<br>sin complicaciones</h1>
-  <p><strong>FUN TasKing!</strong> es un tablero Kanban visual, multiusuario y de código abierto. Coordiná proyectos, seguí el avance y mantené a tu equipo sincronizado — todo desde el navegador.</p>
-  <a class="hero-cta" href="/auth/login">🚀 Entrar con Google</a>
+  <h1 data-i18n="hero.h1"></h1>
+  <p data-i18n="hero.p"></p>
+  <a class="hero-cta" href="/auth/login" data-i18n="hero.cta"></a>
 </section>
 
 <!-- MINI BOARD MOCKUP -->
 <section class="mockup-section">
-  <h2>Así trabajan los equipos que usan <strong>FUN TasKing!</strong></h2>
-  <p class="mockup-hint">✋ Arrastrá las tarjetas entre columnas — y festejá cuando algo llega a Terminado 🎉</p>
+  <h2 data-i18n="mockup.h2"></h2>
+  <p class="mockup-hint" data-i18n="mockup.hint"></p>
   <div class="mini-board">
     <div class="mini-col" data-col="pendiente">
-      <div class="mini-col-title">Pendiente</div>
+      <div class="mini-col-title" data-i18n="col.pendiente"></div>
       <div class="mini-cards-area">
-        <div class="mini-card"><span class="mini-chip" style="background:#F44336">Bug</span><br>Fix login en mobile</div>
-        <div class="mini-card">Rediseñar hero de la app</div>
-        <div class="mini-card"><span class="mini-chip" style="background:#2196F3">Feature</span><br>Notificaciones push</div>
+        <div class="mini-card" data-i18n="card.bug"></div>
+        <div class="mini-card" data-i18n="card.redesign"></div>
+        <div class="mini-card" data-i18n="card.feature"></div>
       </div>
     </div>
     <div class="mini-col" data-col="en-progreso">
-      <div class="mini-col-title">En progreso</div>
+      <div class="mini-col-title" data-i18n="col.progreso"></div>
       <div class="mini-cards-area">
-        <div class="mini-card"><span class="mini-chip" style="background:#4CAF50">Docs</span><br>Actualizar README</div>
-        <div class="mini-card">Refactor módulo auth</div>
+        <div class="mini-card" data-i18n="card.docs"></div>
+        <div class="mini-card" data-i18n="card.refactor"></div>
       </div>
     </div>
     <div class="mini-col" data-col="revision">
-      <div class="mini-col-title">Revisión</div>
+      <div class="mini-col-title" data-i18n="col.revision"></div>
       <div class="mini-cards-area">
-        <div class="mini-card"><span class="mini-chip" style="background:#9C27B0">UX</span><br>Dark mode toggle</div>
+        <div class="mini-card" data-i18n="card.ux"></div>
       </div>
     </div>
     <div class="mini-col" data-col="bloqueado">
-      <div class="mini-col-title">Bloqueado</div>
+      <div class="mini-col-title" data-i18n="col.bloqueado"></div>
       <div class="mini-cards-area">
-        <div class="mini-card">Integración Slack<br><small>Esperando API key del cliente</small></div>
+        <div class="mini-card" data-i18n="card.slack"></div>
       </div>
     </div>
     <div class="mini-col" data-col="terminado">
-      <div class="mini-col-title">✅ Terminado</div>
+      <div class="mini-col-title" data-i18n="col.terminado"></div>
       <div class="mini-cards-area">
-        <div class="mini-card">Landing page</div>
-        <div class="mini-card">Sistema de etiquetas</div>
-        <div class="mini-card">OAuth con Google</div>
+        <div class="mini-card" data-i18n="card.landing"></div>
+        <div class="mini-card" data-i18n="card.labels"></div>
+        <div class="mini-card" data-i18n="card.oauth"></div>
       </div>
     </div>
   </div>
@@ -208,141 +164,335 @@
 
 <!-- FEATURES -->
 <section class="features">
-  <h2>Todo lo que necesitabas,<br>ya está en <strong>FUN TasKing!</strong></h2>
+  <h2 data-i18n="features.h2"></h2>
   <div class="feature-grid">
     <div class="feature-card">
       <span class="feature-icon">🗂️</span>
-      <h3>Kanban visual</h3>
-      <p>Columnas Pendiente, En progreso, Revisión, Bloqueado y Terminado. Mové tarjetas con un clic.</p>
+      <h3 data-i18n="feat.kanban.title"></h3>
+      <p data-i18n="feat.kanban.desc"></p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">👥</span>
-      <h3>Multi-usuario</h3>
-      <p>Tableros compartidos con tu equipo. Acceso controlado por email: vos decidís quién puede ver y editar.</p>
+      <h3 data-i18n="feat.multi.title"></h3>
+      <p data-i18n="feat.multi.desc"></p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🏷️</span>
-      <h3>Etiquetas y filtros</h3>
-      <p>Etiquetá tarjetas por tipo, prioridad o área. Filtrá para ver solo lo que importa en este momento.</p>
+      <h3 data-i18n="feat.labels.title"></h3>
+      <p data-i18n="feat.labels.desc"></p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">📎</span>
-      <h3>Adjuntos</h3>
-      <p>Subí imágenes y archivos directo en las tarjetas. Almacenado de forma segura en Cloudflare R2.</p>
+      <h3 data-i18n="feat.attach.title"></h3>
+      <p data-i18n="feat.attach.desc"></p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🔍</span>
-      <h3>Búsqueda instantánea</h3>
-      <p>Encontrá cualquier tarjeta en segundos. Filtro por texto, etiqueta y columna. Atajos de teclado incluidos.</p>
+      <h3 data-i18n="feat.search.title"></h3>
+      <p data-i18n="feat.search.desc"></p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">🔒</span>
-      <h3>Acceso con Google</h3>
-      <p>Login seguro con OAuth de Google. Sin contraseñas que recordar, sin formularios de registro. Solo tu cuenta Google.</p>
+      <h3 data-i18n="feat.auth.title"></h3>
+      <p data-i18n="feat.auth.desc"></p>
     </div>
   </div>
 </section>
 
-<!-- OSS BANNER -->
+<!-- OSS -->
 <section class="oss-section">
   <span style="font-size:28px">🛠️</span>
-  <p><strong>FUN TasKing!</strong> es <strong>código abierto</strong>. Podés hostearlo vos mismo en Cloudflare Workers gratis, ver cómo está hecho y contribuir mejoras.</p>
+  <p data-i18n="oss.p"></p>
 </section>
 
 <!-- CTA BOTTOM -->
 <section class="cta-bottom">
-  <h2>¿Listo para empezar con <strong>FUN TasKing!</strong>?</h2>
-  <p>Pedí acceso al administrador de tu equipo y en minutos estás dentro.</p>
-  <a href="/auth/login">🚀 Entrar con Google</a>
+  <h2 data-i18n="cta.h2"></h2>
+  <p data-i18n="cta.p"></p>
+  <a href="/auth/login" data-i18n="cta.btn"></a>
 </section>
 
 <footer>
-  FUN TasKing! &mdash; Open Source &nbsp;·&nbsp; <a href="/terminos.html">Términos</a>
+  FUN TasKing! &mdash; Open Source &nbsp;·&nbsp; <a href="/terminos.html" data-i18n="footer.terms"></a>
 </footer>
 
 <canvas id="mini-confetti"></canvas>
 
 <script>
 (function () {
-  // --- Confetti (mismo sistema que el tablero real) ---
-  const canvas = document.getElementById('mini-confetti');
-  const ctx = canvas.getContext('2d');
-  const COLORS = ["#ffd700","#ff6b6b","#4ecdc4","#45b7d1","#96ceb4","#ff9ff3","#54a0ff","#5f27cd","#00d2d3","#ff9f43"];
-  let particles = [], rafId = null;
 
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
+// ---- Traducciones ----
+const T = {
+  es: {
+    'page.title':        'FUN TasKing! — Gestión visual de tareas',
+    'hero.h1':           'Organizá tu equipo,<br>sin complicaciones',
+    'hero.p':            '<strong>FUN TasKing!</strong> es un tablero Kanban visual, multiusuario y de código abierto. Coordiná proyectos, seguí el avance y mantené a tu equipo sincronizado — todo desde el navegador.',
+    'hero.cta':          '🚀 Entrar con Google',
+    'mockup.h2':         'Así trabajan los equipos que usan <strong>FUN TasKing!</strong>',
+    'mockup.hint':       '✋ Arrastrá las tarjetas entre columnas — ¡y festejá cuando algo llega a Terminado! 🎉',
+    'col.pendiente':     'Pendiente',
+    'col.progreso':      'En progreso',
+    'col.revision':      'Revisión',
+    'col.bloqueado':     'Bloqueado',
+    'col.terminado':     '✅ Terminado',
+    'card.bug':          '<span class="mini-chip" style="background:#F44336">Bug</span><br>Fix login en mobile',
+    'card.redesign':     'Rediseñar hero de la app',
+    'card.feature':      '<span class="mini-chip" style="background:#2196F3">Feature</span><br>Notificaciones push',
+    'card.docs':         '<span class="mini-chip" style="background:#4CAF50">Docs</span><br>Actualizar README',
+    'card.refactor':     'Refactor módulo auth',
+    'card.ux':           '<span class="mini-chip" style="background:#9C27B0">UX</span><br>Dark mode toggle',
+    'card.slack':        'Integración Slack<br><small>Esperando API key del cliente</small>',
+    'card.landing':      'Landing page',
+    'card.labels':       'Sistema de etiquetas',
+    'card.oauth':        'OAuth con Google',
+    'features.h2':       'Todo lo que necesitabas,<br>ya está en <strong>FUN TasKing!</strong>',
+    'feat.kanban.title': 'Kanban visual',
+    'feat.kanban.desc':  'Columnas Pendiente, En progreso, Revisión, Bloqueado y Terminado. Mové tarjetas con un clic.',
+    'feat.multi.title':  'Multi-usuario',
+    'feat.multi.desc':   'Tableros compartidos con tu equipo. Acceso controlado por email: vos decidís quién puede ver y editar.',
+    'feat.labels.title': 'Etiquetas y filtros',
+    'feat.labels.desc':  'Etiquetá tarjetas por tipo, prioridad o área. Filtrá para ver solo lo que importa en este momento.',
+    'feat.attach.title': 'Adjuntos',
+    'feat.attach.desc':  'Subí imágenes y archivos directo en las tarjetas. Almacenado de forma segura en Cloudflare R2.',
+    'feat.search.title': 'Búsqueda instantánea',
+    'feat.search.desc':  'Encontrá cualquier tarjeta en segundos. Filtro por texto, etiqueta y columna. Atajos de teclado incluidos.',
+    'feat.auth.title':   'Acceso con Google',
+    'feat.auth.desc':    'Login seguro con OAuth de Google. Sin contraseñas que recordar, sin formularios de registro. Solo tu cuenta Google.',
+    'oss.p':             '<strong>FUN TasKing!</strong> es <strong>código abierto</strong>. Podés hostearlo vos mismo en Cloudflare Workers gratis, ver cómo está hecho y contribuir mejoras.',
+    'cta.h2':            '¿Listo para empezar con <strong>FUN TasKing!</strong>?',
+    'cta.p':             'Pedí acceso al administrador de tu equipo y en minutos estás dentro.',
+    'cta.btn':           '🚀 Entrar con Google',
+    'footer.terms':      'Términos',
+  },
+  en: {
+    'page.title':        'FUN TasKing! — Visual task management',
+    'hero.h1':           'Organize your team,<br>without the hassle',
+    'hero.p':            '<strong>FUN TasKing!</strong> is a visual Kanban board, multi-user and open source. Coordinate projects, track progress and keep your team in sync — all from the browser.',
+    'hero.cta':          '🚀 Sign in with Google',
+    'mockup.h2':         'How teams work with <strong>FUN TasKing!</strong>',
+    'mockup.hint':       '✋ Drag cards between columns — and celebrate when something reaches Done! 🎉',
+    'col.pendiente':     'To Do',
+    'col.progreso':      'In Progress',
+    'col.revision':      'Review',
+    'col.bloqueado':     'Blocked',
+    'col.terminado':     '✅ Done',
+    'card.bug':          '<span class="mini-chip" style="background:#F44336">Bug</span><br>Fix mobile login',
+    'card.redesign':     'Redesign app hero',
+    'card.feature':      '<span class="mini-chip" style="background:#2196F3">Feature</span><br>Push notifications',
+    'card.docs':         '<span class="mini-chip" style="background:#4CAF50">Docs</span><br>Update README',
+    'card.refactor':     'Refactor auth module',
+    'card.ux':           '<span class="mini-chip" style="background:#9C27B0">UX</span><br>Dark mode toggle',
+    'card.slack':        'Slack integration<br><small>Waiting for client API key</small>',
+    'card.landing':      'Landing page',
+    'card.labels':       'Labels system',
+    'card.oauth':        'OAuth with Google',
+    'features.h2':       'Everything you needed,<br>now in <strong>FUN TasKing!</strong>',
+    'feat.kanban.title': 'Visual Kanban',
+    'feat.kanban.desc':  'Columns for To Do, In Progress, Review, Blocked and Done. Move cards with a click.',
+    'feat.multi.title':  'Multi-user',
+    'feat.multi.desc':   'Shared boards with your team. Email-based access control: you decide who can view and edit.',
+    'feat.labels.title': 'Labels & filters',
+    'feat.labels.desc':  'Tag cards by type, priority or area. Filter to see only what matters right now.',
+    'feat.attach.title': 'Attachments',
+    'feat.attach.desc':  'Upload images and files directly to cards. Stored securely on Cloudflare R2.',
+    'feat.search.title': 'Instant search',
+    'feat.search.desc':  'Find any card in seconds. Filter by text, label and column. Keyboard shortcuts included.',
+    'feat.auth.title':   'Google sign-in',
+    'feat.auth.desc':    'Secure login with Google OAuth. No passwords to remember, no registration forms. Just your Google account.',
+    'oss.p':             '<strong>FUN TasKing!</strong> is <strong>open source</strong>. You can self-host it on Cloudflare Workers for free, see how it\'s built and contribute improvements.',
+    'cta.h2':            'Ready to get started with <strong>FUN TasKing!</strong>?',
+    'cta.p':             'Ask your team admin for access and you\'ll be in within minutes.',
+    'cta.btn':           '🚀 Sign in with Google',
+    'footer.terms':      'Terms',
+  },
+  pt: {
+    'page.title':        'FUN TasKing! — Gestão visual de tarefas',
+    'hero.h1':           'Organize sua equipe,<br>sem complicações',
+    'hero.p':            '<strong>FUN TasKing!</strong> é um quadro Kanban visual, multiusuário e de código aberto. Coordene projetos, acompanhe o progresso e mantenha sua equipe sincronizada — tudo pelo navegador.',
+    'hero.cta':          '🚀 Entrar com Google',
+    'mockup.h2':         'Como as equipes trabalham com <strong>FUN TasKing!</strong>',
+    'mockup.hint':       '✋ Arraste os cartões entre colunas — e comemore quando algo chega em Concluído! 🎉',
+    'col.pendiente':     'A fazer',
+    'col.progreso':      'Em progresso',
+    'col.revision':      'Revisão',
+    'col.bloqueado':     'Bloqueado',
+    'col.terminado':     '✅ Concluído',
+    'card.bug':          '<span class="mini-chip" style="background:#F44336">Bug</span><br>Corrigir login no mobile',
+    'card.redesign':     'Redesenhar hero do app',
+    'card.feature':      '<span class="mini-chip" style="background:#2196F3">Feature</span><br>Notificações push',
+    'card.docs':         '<span class="mini-chip" style="background:#4CAF50">Docs</span><br>Atualizar README',
+    'card.refactor':     'Refatorar módulo auth',
+    'card.ux':           '<span class="mini-chip" style="background:#9C27B0">UX</span><br>Toggle modo escuro',
+    'card.slack':        'Integração Slack<br><small>Aguardando API key do cliente</small>',
+    'card.landing':      'Página inicial',
+    'card.labels':       'Sistema de etiquetas',
+    'card.oauth':        'OAuth com Google',
+    'features.h2':       'Tudo que você precisava,<br>já está no <strong>FUN TasKing!</strong>',
+    'feat.kanban.title': 'Kanban visual',
+    'feat.kanban.desc':  'Colunas A fazer, Em progresso, Revisão, Bloqueado e Concluído. Mova cartões com um clique.',
+    'feat.multi.title':  'Multiusuário',
+    'feat.multi.desc':   'Quadros compartilhados com sua equipe. Controle de acesso por e-mail: você decide quem pode ver e editar.',
+    'feat.labels.title': 'Etiquetas e filtros',
+    'feat.labels.desc':  'Etiquete cartões por tipo, prioridade ou área. Filtre para ver apenas o que importa agora.',
+    'feat.attach.title': 'Anexos',
+    'feat.attach.desc':  'Faça upload de imagens e arquivos direto nos cartões. Armazenado com segurança no Cloudflare R2.',
+    'feat.search.title': 'Busca instantânea',
+    'feat.search.desc':  'Encontre qualquer cartão em segundos. Filtro por texto, etiqueta e coluna. Atalhos de teclado incluídos.',
+    'feat.auth.title':   'Acesso com Google',
+    'feat.auth.desc':    'Login seguro com OAuth do Google. Sem senhas para lembrar, sem formulários de cadastro. Só sua conta Google.',
+    'oss.p':             '<strong>FUN TasKing!</strong> é <strong>código aberto</strong>. Você pode hospedá-lo no Cloudflare Workers de graça, ver como foi feito e contribuir com melhorias.',
+    'cta.h2':            'Pronto para começar com <strong>FUN TasKing!</strong>?',
+    'cta.p':             'Peça acesso ao administrador da sua equipe e em minutos você estará dentro.',
+    'cta.btn':           '🚀 Entrar com Google',
+    'footer.terms':      'Termos',
+  },
+  de: {
+    'page.title':        'FUN TasKing! — Visuelle Aufgabenverwaltung',
+    'hero.h1':           'Organisiere dein Team,<br>ganz ohne Komplikationen',
+    'hero.p':            '<strong>FUN TasKing!</strong> ist ein visuelles Kanban-Board, mehrbenutzer-fähig und Open Source. Koordiniere Projekte, verfolge Fortschritte und halte dein Team synchron — alles im Browser.',
+    'hero.cta':          '🚀 Mit Google anmelden',
+    'mockup.h2':         'So arbeiten Teams mit <strong>FUN TasKing!</strong>',
+    'mockup.hint':       '✋ Ziehe Karten zwischen Spalten — und feiere, wenn etwas Fertig erreicht! 🎉',
+    'col.pendiente':     'Offen',
+    'col.progreso':      'In Bearbeitung',
+    'col.revision':      'Überprüfung',
+    'col.bloqueado':     'Blockiert',
+    'col.terminado':     '✅ Fertig',
+    'card.bug':          '<span class="mini-chip" style="background:#F44336">Bug</span><br>Mobile-Login beheben',
+    'card.redesign':     'App-Hero neu gestalten',
+    'card.feature':      '<span class="mini-chip" style="background:#2196F3">Feature</span><br>Push-Benachrichtigungen',
+    'card.docs':         '<span class="mini-chip" style="background:#4CAF50">Docs</span><br>README aktualisieren',
+    'card.refactor':     'Auth-Modul refaktorieren',
+    'card.ux':           '<span class="mini-chip" style="background:#9C27B0">UX</span><br>Dunkelmodus-Schalter',
+    'card.slack':        'Slack-Integration<br><small>Warte auf API-Schlüssel des Kunden</small>',
+    'card.landing':      'Landingpage',
+    'card.labels':       'Etikettensystem',
+    'card.oauth':        'OAuth mit Google',
+    'features.h2':       'Alles, was du brauchtest,<br>jetzt in <strong>FUN TasKing!</strong>',
+    'feat.kanban.title': 'Visuelles Kanban',
+    'feat.kanban.desc':  'Spalten für Offen, In Bearbeitung, Überprüfung, Blockiert und Fertig. Karten per Klick verschieben.',
+    'feat.multi.title':  'Mehrbenutzer',
+    'feat.multi.desc':   'Gemeinsame Boards mit deinem Team. E-Mail-basierte Zugriffskontrolle: Du entscheidest, wer sehen und bearbeiten darf.',
+    'feat.labels.title': 'Etiketten & Filter',
+    'feat.labels.desc':  'Karten nach Typ, Priorität oder Bereich taggen. Filtern, um nur das Wichtige jetzt zu sehen.',
+    'feat.attach.title': 'Anhänge',
+    'feat.attach.desc':  'Bilder und Dateien direkt in Karten hochladen. Sicher auf Cloudflare R2 gespeichert.',
+    'feat.search.title': 'Sofortsuche',
+    'feat.search.desc':  'Jede Karte in Sekunden finden. Filter nach Text, Etikett und Spalte. Tastaturkürzel inklusive.',
+    'feat.auth.title':   'Google-Anmeldung',
+    'feat.auth.desc':    'Sicherer Login mit Google OAuth. Keine Passwörter merken, keine Registrierungsformulare. Nur dein Google-Konto.',
+    'oss.p':             '<strong>FUN TasKing!</strong> ist <strong>Open Source</strong>. Du kannst es kostenlos auf Cloudflare Workers hosten, nachsehen wie es gebaut wurde und Verbesserungen beitragen.',
+    'cta.h2':            'Bereit, mit <strong>FUN TasKing!</strong> loszulegen?',
+    'cta.p':             'Bitte den Administrator deines Teams um Zugang — in wenigen Minuten bist du drin.',
+    'cta.btn':           '🚀 Mit Google anmelden',
+    'footer.terms':      'Nutzungsbedingungen',
+  },
+};
 
-  function launchConfetti() {
-    particles = Array.from({ length: 160 }, () => ({
-      x: Math.random() * canvas.width, y: -10 - Math.random() * 40,
-      r: 5 + Math.random() * 6,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      angle: Math.random() * Math.PI * 2, spin: (Math.random() - .5) * .3,
-      vx: (Math.random() - .5) * 6, vy: 3 + Math.random() * 5,
-      gravity: .18 + Math.random() * .1, life: 1,
-      decay: .012 + Math.random() * .008,
-      shape: Math.random() > .5 ? 'rect' : 'circle',
-    }));
-    if (rafId) cancelAnimationFrame(rafId);
-    step();
-  }
+// ---- Detección y aplicación de idioma ----
+function detectLang() {
+  const saved = localStorage.getItem('tasking-lang');
+  if (saved && T[saved]) return saved;
+  const nav = (navigator.language || 'es').toLowerCase();
+  if (nav.startsWith('de')) return 'de';
+  if (nav.startsWith('pt')) return 'pt';
+  if (nav.startsWith('en')) return 'en';
+  return 'es';
+}
 
-  function step() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles = particles.filter(p => p.life > 0);
-    for (const p of particles) {
-      ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-      ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-      if (p.shape === 'rect') ctx.fillRect(-p.r/2, -p.r/4, p.r, p.r/2);
-      else { ctx.beginPath(); ctx.arc(0, 0, p.r/2, 0, Math.PI*2); ctx.fill(); }
-      ctx.restore();
-      p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
-      p.angle += p.spin; p.life -= p.decay;
-    }
-    if (particles.length) rafId = requestAnimationFrame(step);
-  }
-
-  function celebrateCard(card) {
-    launchConfetti();
-    card.classList.remove('celebrating');
-    void card.offsetWidth;
-    card.classList.add('celebrating');
-    card.addEventListener('animationend', () => card.classList.remove('celebrating'), { once: true });
-  }
-
-  // --- Drag & drop entre columnas ---
-  let dragging = null;
-
-  document.querySelectorAll('.mini-card').forEach(card => {
-    card.setAttribute('draggable', 'true');
-    card.addEventListener('dragstart', () => {
-      dragging = card;
-      setTimeout(() => card.classList.add('dragging'), 0);
-    });
-    card.addEventListener('dragend', () => {
-      card.classList.remove('dragging');
-      dragging = null;
-    });
+function applyLang(lang) {
+  localStorage.setItem('tasking-lang', lang);
+  document.documentElement.lang = lang;
+  document.title = T[lang]['page.title'];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const val = T[lang][el.dataset.i18n];
+    if (val !== undefined) el.innerHTML = val;
   });
-
-  document.querySelectorAll('.mini-col').forEach(col => {
-    col.addEventListener('dragover', e => {
-      e.preventDefault();
-      col.classList.add('drag-over');
-    });
-    col.addEventListener('dragleave', e => {
-      if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over');
-    });
-    col.addEventListener('drop', e => {
-      e.preventDefault();
-      col.classList.remove('drag-over');
-      if (!dragging || col.contains(dragging)) return;
-      const area = col.querySelector('.mini-cards-area');
-      area.appendChild(dragging);
-      if (col.dataset.col === 'terminado') celebrateCard(dragging);
-    });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
   });
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+applyLang(detectLang());
+
+// ---- Confetti (igual que el tablero real) ----
+const canvas = document.getElementById('mini-confetti');
+const ctx = canvas.getContext('2d');
+const COLORS = ["#ffd700","#ff6b6b","#4ecdc4","#45b7d1","#96ceb4","#ff9ff3","#54a0ff","#5f27cd","#00d2d3","#ff9f43"];
+let particles = [], rafId = null;
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+function launchConfetti() {
+  particles = Array.from({ length: 160 }, () => ({
+    x: Math.random() * canvas.width, y: -10 - Math.random() * 40,
+    r: 5 + Math.random() * 6,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    angle: Math.random() * Math.PI * 2, spin: (Math.random() - .5) * .3,
+    vx: (Math.random() - .5) * 6, vy: 3 + Math.random() * 5,
+    gravity: .18 + Math.random() * .1, life: 1,
+    decay: .012 + Math.random() * .008,
+    shape: Math.random() > .5 ? 'rect' : 'circle',
+  }));
+  if (rafId) cancelAnimationFrame(rafId);
+  step();
+}
+
+function step() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles = particles.filter(p => p.life > 0);
+  for (const p of particles) {
+    ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+    ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    if (p.shape === 'rect') ctx.fillRect(-p.r/2, -p.r/4, p.r, p.r/2);
+    else { ctx.beginPath(); ctx.arc(0, 0, p.r/2, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+    p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+    p.angle += p.spin; p.life -= p.decay;
+  }
+  if (particles.length) rafId = requestAnimationFrame(step);
+}
+
+function celebrateCard(card) {
+  launchConfetti();
+  card.classList.remove('celebrating');
+  void card.offsetWidth;
+  card.classList.add('celebrating');
+  card.addEventListener('animationend', () => card.classList.remove('celebrating'), { once: true });
+}
+
+// ---- Drag & drop entre columnas ----
+let dragging = null;
+
+document.querySelectorAll('.mini-card').forEach(card => {
+  card.setAttribute('draggable', 'true');
+  card.addEventListener('dragstart', () => {
+    dragging = card;
+    setTimeout(() => card.classList.add('dragging'), 0);
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    dragging = null;
+  });
+});
+
+document.querySelectorAll('.mini-col').forEach(col => {
+  col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
+  col.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over'); });
+  col.addEventListener('drop', e => {
+    e.preventDefault();
+    col.classList.remove('drag-over');
+    if (!dragging || col.contains(dragging)) return;
+    col.querySelector('.mini-cards-area').appendChild(dragging);
+    if (col.dataset.col === 'terminado') celebrateCard(dragging);
+  });
+});
+
 })();
 </script>
 </body>
