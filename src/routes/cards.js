@@ -132,17 +132,19 @@ export function setupCardRoutes(app) {
     const items = Array.isArray(body) ? body : (body && body.items) || [];
     if (!items.length) return c.json({ updated: 0 });
 
-    // Detectar cambios de columna para auditoría
-    const ids = items.map(it => it.id);
-    const placeholders = ids.map(() => "?").join(",");
+    // Detectar cambios de columna para auditoría (sin IN spread: evita límite de variables en D1)
     const current = await c.env.DB.prepare(
-      `SELECT id, column_id FROM cards WHERE id IN (${placeholders}) AND board_id = ?`
-    ).bind(...ids, boardId).all();
+      `SELECT id, column_id FROM cards WHERE board_id = ?`
+    ).bind(boardId).all();
     const colMap = new Map(current.results.map(r => [r.id, r.column_id]));
 
+    // Batch en bloques de 40 (5 vars × 40 = 200 por batch, dentro del límite de D1 local)
     const upd = c.env.DB.prepare("UPDATE cards SET column_id = ?, position = ?, updated_at = ? WHERE id = ? AND board_id = ?");
-    await c.env.DB.batch(items.map((it, i) =>
-      upd.bind(it.column, it.position != null ? it.position : i, now(), it.id, boardId)));
+    const CHUNK = 40;
+    for (let i = 0; i < items.length; i += CHUNK) {
+      await c.env.DB.batch(items.slice(i, i + CHUNK).map((it, j) =>
+        upd.bind(it.column, it.position != null ? it.position : i + j, now(), it.id, boardId)));
+    }
 
     // Loguear sólo las tarjetas que cambiaron de columna
     for (const it of items) {

@@ -6,6 +6,7 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
+  globalSetup: "./test/global-setup.mjs",
   use: {
     baseURL: "http://127.0.0.1:8787",
     trace: "retain-on-failure",
