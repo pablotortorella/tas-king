@@ -73,6 +73,25 @@
     letter-spacing: .3px; text-transform: uppercase;
   }
   .mini-card small { color: var(--muted); font-size: 10px; }
+  .mini-cards-area { overflow: hidden; max-height: 190px; }
+  .mini-card { cursor: grab; user-select: none; transition: opacity .15s, box-shadow .15s; }
+  .mini-card:active { cursor: grabbing; }
+  .mini-card.dragging { opacity: .3; }
+  .mini-col { transition: background .15s; }
+  .mini-col.drag-over { background: #c8e6f5; outline: 2px dashed #0079bf; outline-offset: -3px; }
+  @keyframes celebrate-mini {
+    0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+    15%  { background: #fffde7; box-shadow: 0 0 12px 4px #ffd700; }
+    30%  { background: #f3e5f5; box-shadow: 0 0 12px 4px #ce93d8; }
+    45%  { background: #e8f5e9; box-shadow: 0 0 12px 4px #66bb6a; }
+    60%  { background: #e3f2fd; box-shadow: 0 0 12px 4px #42a5f5; }
+    75%  { background: #fff3e0; box-shadow: 0 0 12px 4px #ffa726; }
+    90%  { background: #fce4ec; box-shadow: 0 0 12px 4px #f48fb1; }
+    100% { background: #fff; box-shadow: 0 1px 3px rgba(9,30,66,.12); }
+  }
+  .mini-card.celebrating { animation: celebrate-mini 1.4s ease-in-out; }
+  #mini-confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+  .mockup-hint { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
 
   /* FEATURES */
   .features {
@@ -147,46 +166,42 @@
 <!-- MINI BOARD MOCKUP -->
 <section class="mockup-section">
   <h2>Así trabajan los equipos que usan <strong>FUN TasKing!</strong></h2>
+  <p class="mockup-hint">✋ Arrastrá las tarjetas entre columnas — y festejá cuando algo llega a Terminado 🎉</p>
   <div class="mini-board">
-    <div class="mini-col">
+    <div class="mini-col" data-col="pendiente">
       <div class="mini-col-title">Pendiente</div>
-      <div class="mini-card">
-        <span class="mini-chip" style="background:#F44336">Bug</span><br>
-        Fix login en mobile
-      </div>
-      <div class="mini-card">Rediseñar hero de la app</div>
-      <div class="mini-card">
-        <span class="mini-chip" style="background:#2196F3">Feature</span><br>
-        Notificaciones push
+      <div class="mini-cards-area">
+        <div class="mini-card"><span class="mini-chip" style="background:#F44336">Bug</span><br>Fix login en mobile</div>
+        <div class="mini-card">Rediseñar hero de la app</div>
+        <div class="mini-card"><span class="mini-chip" style="background:#2196F3">Feature</span><br>Notificaciones push</div>
       </div>
     </div>
-    <div class="mini-col">
+    <div class="mini-col" data-col="en-progreso">
       <div class="mini-col-title">En progreso</div>
-      <div class="mini-card">
-        <span class="mini-chip" style="background:#4CAF50">Docs</span><br>
-        Actualizar README
+      <div class="mini-cards-area">
+        <div class="mini-card"><span class="mini-chip" style="background:#4CAF50">Docs</span><br>Actualizar README</div>
+        <div class="mini-card">Refactor módulo auth</div>
       </div>
-      <div class="mini-card">Refactor módulo auth</div>
     </div>
-    <div class="mini-col">
+    <div class="mini-col" data-col="revision">
       <div class="mini-col-title">Revisión</div>
-      <div class="mini-card">
-        <span class="mini-chip" style="background:#9C27B0">UX</span><br>
-        Dark mode toggle
+      <div class="mini-cards-area">
+        <div class="mini-card"><span class="mini-chip" style="background:#9C27B0">UX</span><br>Dark mode toggle</div>
       </div>
     </div>
-    <div class="mini-col">
+    <div class="mini-col" data-col="bloqueado">
       <div class="mini-col-title">Bloqueado</div>
-      <div class="mini-card">
-        Integración Slack<br>
-        <small>Esperando API key del cliente</small>
+      <div class="mini-cards-area">
+        <div class="mini-card">Integración Slack<br><small>Esperando API key del cliente</small></div>
       </div>
     </div>
-    <div class="mini-col">
+    <div class="mini-col" data-col="terminado">
       <div class="mini-col-title">✅ Terminado</div>
-      <div class="mini-card">Landing page</div>
-      <div class="mini-card">Sistema de etiquetas</div>
-      <div class="mini-card">OAuth con Google</div>
+      <div class="mini-cards-area">
+        <div class="mini-card">Landing page</div>
+        <div class="mini-card">Sistema de etiquetas</div>
+        <div class="mini-card">OAuth con Google</div>
+      </div>
     </div>
   </div>
 </section>
@@ -245,5 +260,90 @@
   FUN TasKing! &mdash; Open Source &nbsp;·&nbsp; <a href="/terminos.html">Términos</a>
 </footer>
 
+<canvas id="mini-confetti"></canvas>
+
+<script>
+(function () {
+  // --- Confetti (mismo sistema que el tablero real) ---
+  const canvas = document.getElementById('mini-confetti');
+  const ctx = canvas.getContext('2d');
+  const COLORS = ["#ffd700","#ff6b6b","#4ecdc4","#45b7d1","#96ceb4","#ff9ff3","#54a0ff","#5f27cd","#00d2d3","#ff9f43"];
+  let particles = [], rafId = null;
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  function launchConfetti() {
+    particles = Array.from({ length: 160 }, () => ({
+      x: Math.random() * canvas.width, y: -10 - Math.random() * 40,
+      r: 5 + Math.random() * 6,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      angle: Math.random() * Math.PI * 2, spin: (Math.random() - .5) * .3,
+      vx: (Math.random() - .5) * 6, vy: 3 + Math.random() * 5,
+      gravity: .18 + Math.random() * .1, life: 1,
+      decay: .012 + Math.random() * .008,
+      shape: Math.random() > .5 ? 'rect' : 'circle',
+    }));
+    if (rafId) cancelAnimationFrame(rafId);
+    step();
+  }
+
+  function step() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => p.life > 0);
+    for (const p of particles) {
+      ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+      ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+      if (p.shape === 'rect') ctx.fillRect(-p.r/2, -p.r/4, p.r, p.r/2);
+      else { ctx.beginPath(); ctx.arc(0, 0, p.r/2, 0, Math.PI*2); ctx.fill(); }
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+      p.angle += p.spin; p.life -= p.decay;
+    }
+    if (particles.length) rafId = requestAnimationFrame(step);
+  }
+
+  function celebrateCard(card) {
+    launchConfetti();
+    card.classList.remove('celebrating');
+    void card.offsetWidth;
+    card.classList.add('celebrating');
+    card.addEventListener('animationend', () => card.classList.remove('celebrating'), { once: true });
+  }
+
+  // --- Drag & drop entre columnas ---
+  let dragging = null;
+
+  document.querySelectorAll('.mini-card').forEach(card => {
+    card.setAttribute('draggable', 'true');
+    card.addEventListener('dragstart', () => {
+      dragging = card;
+      setTimeout(() => card.classList.add('dragging'), 0);
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      dragging = null;
+    });
+  });
+
+  document.querySelectorAll('.mini-col').forEach(col => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', e => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+    });
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if (!dragging || col.contains(dragging)) return;
+      const area = col.querySelector('.mini-cards-area');
+      area.appendChild(dragging);
+      if (col.dataset.col === 'terminado') celebrateCard(dragging);
+    });
+  });
+})();
+</script>
 </body>
 </html>
