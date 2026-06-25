@@ -34,10 +34,25 @@ export function commentToJSON(r) {
   };
 }
 
-export function cardToJSON(c, commentsByCard, attsByCard, labelsByCard) {
+export function checklistItemToJSON(r) {
+  return { id: r.id, checklistId: r.checklist_id, text: r.text, checked: !!r.checked, position: r.position };
+}
+
+export function checklistToJSON(cl, itemsByChecklist) {
+  return {
+    id: cl.id,
+    cardId: cl.card_id,
+    name: cl.name,
+    position: cl.position,
+    items: (itemsByChecklist.get(cl.id) || []).map(checklistItemToJSON),
+  };
+}
+
+export function cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklistsByCard) {
   const comments = (commentsByCard.get(c.id) || []).map(commentToJSON);
   const attachments = (attsByCard.get(c.id) || []).map(attachmentToJSON);
   const labels = labelsByCard?.get(c.id) || [];
+  const checklists = checklistsByCard?.get(c.id) || [];
   return {
     id: c.id,
     title: c.title,
@@ -52,11 +67,12 @@ export function cardToJSON(c, commentsByCard, attsByCard, labelsByCard) {
     comments,
     attachments,
     labels,
+    checklists,
   };
 }
 
 export async function getBoard(db, boardId) {
-  const [cards, comments, atts, labels] = await Promise.all([
+  const [cards, comments, atts, labels, cls, items] = await Promise.all([
     db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId).all(),
     db.prepare(`SELECT cm.id, cm.card_id, cm.text, cm.created_at, cm.author_email,
         u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
@@ -69,6 +85,8 @@ export async function getBoard(db, boardId) {
       FROM card_labels cl
       JOIN labels l ON l.id = cl.label_id
       WHERE l.board_id = ? ORDER BY l.position, l.name ASC`).bind(boardId).all(),
+    db.prepare(`SELECT ch.* FROM checklists ch JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ch.position ASC`).bind(boardId).all(),
+    db.prepare(`SELECT ci.* FROM checklist_items ci JOIN checklists ch ON ch.id = ci.checklist_id JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ci.position ASC`).bind(boardId).all(),
   ]);
   const commentsByCard = new Map();
   for (const r of comments.results) {
@@ -85,8 +103,18 @@ export async function getBoard(db, boardId) {
     if (!labelsByCard.has(r.card_id)) labelsByCard.set(r.card_id, []);
     labelsByCard.get(r.card_id).push({ id: r.id, name: r.name, color: r.color });
   }
+  const itemsByChecklist = new Map();
+  for (const r of items.results) {
+    if (!itemsByChecklist.has(r.checklist_id)) itemsByChecklist.set(r.checklist_id, []);
+    itemsByChecklist.get(r.checklist_id).push(r);
+  }
+  const checklistsByCard = new Map();
+  for (const r of cls.results) {
+    if (!checklistsByCard.has(r.card_id)) checklistsByCard.set(r.card_id, []);
+    checklistsByCard.get(r.card_id).push(checklistToJSON(r, itemsByChecklist));
+  }
   const version = cards.results.reduce((max, c) => Math.max(max, c.updated_at || 0), 0);
-  return { version, cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard, labelsByCard)) };
+  return { version, cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklistsByCard)) };
 }
 
 export async function getCardRow(db, id) {
@@ -96,7 +124,7 @@ export async function getCardRow(db, id) {
 export async function cardJSONById(db, id) {
   const c = await getCardRow(db, id);
   if (!c) return null;
-  const [comments, atts, labels] = await Promise.all([
+  const [comments, atts, labels, cls] = await Promise.all([
     db.prepare(`SELECT cm.id, cm.text, cm.created_at, cm.author_email,
         u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
       FROM comments cm LEFT JOIN users u ON u.email = cm.author_email
@@ -106,9 +134,16 @@ export async function cardJSONById(db, id) {
       FROM card_labels cl
       JOIN labels l ON l.id = cl.label_id
       WHERE cl.card_id = ? ORDER BY l.position, l.name ASC`).bind(id).all(),
+    db.prepare("SELECT * FROM checklists WHERE card_id = ? ORDER BY position ASC").bind(id).all(),
   ]);
   const labelsByCard = new Map([[id, labels.results.map(l => ({ id: l.id, name: l.name, color: l.color }))]]);
-  return cardToJSON(c, new Map([[id, comments.results]]), new Map([[id, atts.results]]), labelsByCard);
+  const itemsByChecklist = new Map();
+  for (const cl of cls.results) {
+    const its = await db.prepare("SELECT * FROM checklist_items WHERE checklist_id = ? ORDER BY position ASC").bind(cl.id).all();
+    itemsByChecklist.set(cl.id, its.results);
+  }
+  const checklistsByCard = new Map([[id, cls.results.map(cl => checklistToJSON(cl, itemsByChecklist))]]);
+  return cardToJSON(c, new Map([[id, comments.results]]), new Map([[id, atts.results]]), labelsByCard, checklistsByCard);
 }
 
 export async function nextPosition(db, boardId, columnId) {
