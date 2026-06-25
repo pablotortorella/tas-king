@@ -25,7 +25,7 @@ function deniedPage(msg) {
     <a href="/auth/login">Entrar con Google</a></div></body></html>`;
 }
 
-// Cache de public keys de Google (actualizar cada 24h)
+// Cache de public keys de Google en formato JWK (actualizar cada hora)
 let googleKeysCache = { keys: [], exp: 0 };
 
 async function getGooglePublicKeys() {
@@ -33,14 +33,15 @@ async function getGooglePublicKeys() {
   if (googleKeysCache.exp > now) return googleKeysCache.keys;
 
   try {
-    const res = await fetch("https://www.googleapis.com/oauth2/v1/certs", {
+    // v3/certs devuelve JWKs: compatible directo con crypto.subtle.importKey("jwk", ...)
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/certs", {
       headers: { "Accept": "application/json" }
     });
     if (!res.ok) throw new Error("Failed to fetch Google keys");
     const data = await res.json();
     googleKeysCache = {
-      keys: Object.entries(data).map(([kid, x5c]) => ({ kid, x5c })),
-      exp: now + 24 * 3600 * 1000
+      keys: data.keys || [],
+      exp: now + 3600 * 1000
     };
     return googleKeysCache.keys;
   } catch (e) {
@@ -49,13 +50,10 @@ async function getGooglePublicKeys() {
   }
 }
 
-async function pemToCryptoKey(pem) {
-  const binaryString = atob(pem.replace(/-----BEGIN CERTIFICATE-----|\n|-----END CERTIFICATE-----/g, ""));
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+async function importJWK(jwk) {
   return crypto.subtle.importKey(
-    "spki",
-    bytes.buffer,
+    "jwk",
+    jwk,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["verify"]
@@ -92,8 +90,8 @@ async function verifyGoogleJWT(idToken, expectedAudience) {
   const keyEntry = keys.find(k => k.kid === header.kid);
   if (!keyEntry) throw new Error("Key not found");
 
-  // Verificar la firma
-  const cryptoKey = await pemToCryptoKey(keyEntry.x5c);
+  // Verificar la firma usando JWK nativo
+  const cryptoKey = await importJWK(keyEntry);
   const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
   const isValid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", cryptoKey, signature, data);
   if (!isValid) throw new Error("Invalid signature");
