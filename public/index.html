@@ -217,6 +217,7 @@
     gap: 3px;
   }
   .badge.overdue { background: #ffebe6; color: var(--danger); }
+  .badge.badge-done { background: #e8f5e9; color: #2e7d32; }
 
   /* Etiquetas en tarjetas */
   .card-labels {
@@ -354,6 +355,8 @@
   }
   .modal h2 { margin: 0 0 14px; font-size: 16px; }
   .field { margin-bottom: 14px; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
   .field input[type=text], .field input[type=date], .field textarea, .field select {
     width: 100%;
@@ -573,13 +576,15 @@
       <label>Detalles</label>
       <textarea id="fDetails" placeholder="Descripción, contexto, pasos..."></textarea>
     </div>
-    <div class="field">
-      <label>Fecha límite</label>
-      <input type="date" id="fDue">
-    </div>
-    <div class="field">
-      <label>Responsable</label>
-      <select id="fAssignee"></select>
+    <div class="field-row">
+      <div class="field">
+        <label>Fecha límite</label>
+        <input type="date" id="fDue">
+      </div>
+      <div class="field">
+        <label>Responsable</label>
+        <select id="fAssignee"></select>
+      </div>
     </div>
     <div class="labels-section" id="fLabelsSection"></div>
     <div id="fChecklistsSection"></div>
@@ -1198,6 +1203,11 @@
       badges.push(`<span class="badge assignee">${avatarHtml(p, 16)} ${escapeHtml(p.name || shortName(card.assignee))}</span>`);
     }
     if (card.due) badges.push(`<span class="badge ${isOverdue(card) ? "overdue" : ""}">📅 ${fmtDate(card.due)}</span>`);
+    if (card.checklists && card.checklists.length) {
+      const totalItems = card.checklists.reduce((s, cl) => s + cl.items.length, 0);
+      const doneItems  = card.checklists.reduce((s, cl) => s + cl.items.filter(i => i.checked).length, 0);
+      if (totalItems > 0) badges.push(`<span class="badge${doneItems === totalItems ? ' badge-done' : ''}">☑ ${doneItems}/${totalItems}</span>`);
+    }
     if (card.comments && card.comments.length) badges.push(`<span class="badge">💬 ${card.comments.length}</span>`);
     if (card.attachments && card.attachments.length) badges.push(`<span class="badge">📎 ${card.attachments.length}</span>`);
     if (card.details) badges.push(`<span class="badge">≡</span>`);
