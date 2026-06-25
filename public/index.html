@@ -242,10 +242,10 @@
 
   /* Panel de gestión de etiquetas (inline en modal) */
   /* Checklist */
-  .checklist-section { margin: 14px 0; padding: 10px 0; border-top: 1px solid var(--border); }
+  .checklist-section { margin: 0 0 8px; }
   .checklist-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
   .checklist-name {
-    flex: 1; font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .03em;
+    flex: 1; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em;
     border: 1px solid transparent; border-radius: 4px; padding: 2px 6px; background: none; cursor: pointer;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -272,9 +272,10 @@
   .checklist-item-del:hover { color: #e53e3e; }
   .checklist-add { display: flex; gap: 6px; margin-top: 4px; }
   .checklist-add input { flex: 1; }
-  .add-checklist-btn { font-size: 12px; margin-top: 6px; }
-  .labels-section { margin: 14px 0; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-  .labels-section h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .add-checklist-btn { font-size: 12px; margin-top: 4px; }
+  #fChecklistsSection { margin-bottom: 14px; }
+  .labels-section { margin: 0 0 14px; }
+  .labels-section h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
   .labels-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .label-in-card {
     display: inline-flex;
