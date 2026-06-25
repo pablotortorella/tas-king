@@ -879,6 +879,7 @@
   let editingId = null;        // id de la tarjeta abierta, o null si es nueva
   let draftAttachments = [];   // adjuntos en edición (existentes + nuevos pendientes)
   let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
+  let draftChecklists = [];    // checklists en borrador para tarjetas nuevas (aún sin guardar)
   let searchQuery = "";        // texto del buscador (minúsculas)
   let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
   let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
@@ -1408,6 +1409,7 @@
     populateAssignee(card ? card.assignee : "");
     draftAttachments = card ? (card.attachments || []).map(a => ({ ...a })) : [];
     removedAttachmentIds = [];
+    draftChecklists = [];
     document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
@@ -1428,6 +1430,7 @@
     draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
     draftAttachments = [];
     removedAttachmentIds = [];
+    draftChecklists = [];
     document.getElementById("fCommentInput").value = "";
     document.getElementById("historyField").style.display = "none";
   }
@@ -1485,22 +1488,33 @@
   }
 
   // ---- Checklists ----
+  // Modo borrador (tarjeta nueva): todas las ops son en memoria sobre draftChecklists.
+  // Modo API (tarjeta existente): cada op llama al backend y recarga state.
   function renderChecklists() {
     const section = document.getElementById("fChecklistsSection");
     section.innerHTML = "";
-    if (!editingId) return;
-    const card = state.cards.find(c => c.id === editingId);
-    const checklists = card ? (card.checklists || []) : [];
+
+    const isDraft = !editingId;
+    let checklists;
+    if (isDraft) {
+      checklists = draftChecklists;
+    } else {
+      const card = state.cards.find(c => c.id === editingId);
+      checklists = card ? (card.checklists || []) : [];
+    }
+
+    function updateBar(cl, bar, progressEl) {
+      const done = cl.items.filter(i => i.checked).length;
+      const tot  = cl.items.length;
+      bar.style.width = (tot ? Math.round(done / tot * 100) : 0) + "%";
+      progressEl.textContent = tot ? `${done}/${tot}` : "";
+    }
 
     checklists.forEach(cl => {
-      const checked = cl.items.filter(i => i.checked).length;
-      const total = cl.items.length;
-      const pct = total ? Math.round(checked / total * 100) : 0;
-
       const wrap = document.createElement("div");
       wrap.className = "checklist-section";
 
-      // Header: nombre editable + progreso + botón borrar
+      // ── Header ──
       const header = document.createElement("div");
       header.className = "checklist-header";
 
@@ -1512,16 +1526,19 @@
       nameEl.addEventListener("change", async () => {
         const name = nameEl.value.trim();
         if (!name || name === cl.name) { nameEl.value = cl.name; return; }
-        try {
-          await api("PUT", "/api/checklists/" + cl.id, { name });
+        if (isDraft) {
           cl.name = name;
-        } catch (e) { nameEl.value = cl.name; alert("No se pudo renombrar: " + e.message); }
+        } else {
+          try {
+            await api("PUT", "/api/checklists/" + cl.id, { name });
+            cl.name = name;
+          } catch (e) { nameEl.value = cl.name; alert("No se pudo renombrar: " + e.message); }
+        }
       });
       nameEl.addEventListener("keydown", e => { if (e.key === "Enter") nameEl.blur(); });
 
       const progressEl = document.createElement("span");
       progressEl.className = "checklist-progress";
-      progressEl.textContent = total ? `${checked}/${total}` : "";
 
       const delBtn = document.createElement("button");
       delBtn.className = "checklist-delete";
@@ -1529,11 +1546,16 @@
       delBtn.title = "Eliminar checklist";
       delBtn.addEventListener("click", async () => {
         if (!confirm("¿Eliminar esta lista y todas sus subtareas?")) return;
-        try {
-          await api("DELETE", "/api/checklists/" + cl.id);
-          await loadCards();
+        if (isDraft) {
+          draftChecklists = draftChecklists.filter(x => x.id !== cl.id);
           renderChecklists();
-        } catch (e) { alert("No se pudo eliminar: " + e.message); }
+        } else {
+          try {
+            await api("DELETE", "/api/checklists/" + cl.id);
+            await loadCards();
+            renderChecklists();
+          } catch (e) { alert("No se pudo eliminar: " + e.message); }
+        }
       });
 
       header.appendChild(nameEl);
@@ -1541,16 +1563,16 @@
       header.appendChild(delBtn);
       wrap.appendChild(header);
 
-      // Barra de progreso
+      // ── Barra de progreso ──
       const barWrap = document.createElement("div");
       barWrap.className = "checklist-bar-wrap";
       const bar = document.createElement("div");
       bar.className = "checklist-bar";
-      bar.style.width = pct + "%";
       barWrap.appendChild(bar);
       wrap.appendChild(barWrap);
+      updateBar(cl, bar, progressEl);
 
-      // Ítems
+      // ── Ítems ──
       const ul = document.createElement("ul");
       ul.className = "checklist-items";
 
@@ -1564,21 +1586,21 @@
           cb.type = "checkbox";
           cb.checked = item.checked;
           cb.addEventListener("change", async () => {
-            try {
-              const updated = await api("PUT", "/api/checklist-items/" + item.id, { checked: cb.checked });
-              item.checked = updated.checked;
+            if (isDraft) {
+              item.checked = cb.checked;
               textEl.classList.toggle("checked", item.checked);
-              await loadCards();
-              // actualizar barra/contador sin re-renderizar todo
-              const c2 = state.cards.find(c => c.id === editingId);
-              const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
-              if (cl2) {
-                const c2h = cl2.items.filter(i => i.checked).length;
-                const t2 = cl2.items.length;
-                bar.style.width = (t2 ? Math.round(c2h / t2 * 100) : 0) + "%";
-                progressEl.textContent = t2 ? `${c2h}/${t2}` : "";
-              }
-            } catch (e) { cb.checked = !cb.checked; alert("Error: " + e.message); }
+              updateBar(cl, bar, progressEl);
+            } else {
+              try {
+                const updated = await api("PUT", "/api/checklist-items/" + item.id, { checked: cb.checked });
+                item.checked = updated.checked;
+                textEl.classList.toggle("checked", item.checked);
+                await loadCards();
+                const c2 = state.cards.find(c => c.id === editingId);
+                const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
+                if (cl2) updateBar(cl2, bar, progressEl);
+              } catch (e) { cb.checked = !cb.checked; alert("Error: " + e.message); }
+            }
           });
 
           const textEl = document.createElement("input");
@@ -1589,13 +1611,19 @@
           textEl.addEventListener("change", async () => {
             const text = textEl.value.trim();
             if (!text || text === item.text) { textEl.value = item.text; return; }
-            try {
-              await api("PUT", "/api/checklist-items/" + item.id, { text });
+            if (isDraft) {
               item.text = text;
-              await loadCards();
-            } catch (e) { textEl.value = item.text; alert("Error: " + e.message); }
+            } else {
+              try {
+                await api("PUT", "/api/checklist-items/" + item.id, { text });
+                item.text = text;
+                await loadCards();
+              } catch (e) { textEl.value = item.text; alert("Error: " + e.message); }
+            }
           });
           textEl.addEventListener("keydown", e => { if (e.key === "Enter") textEl.blur(); });
+
+          const swapPositions = (a, b) => { [a.position, b.position] = [b.position, a.position]; };
 
           const upBtn = document.createElement("button");
           upBtn.className = "checklist-item-move";
@@ -1604,14 +1632,16 @@
           upBtn.disabled = idx === 0;
           upBtn.addEventListener("click", async () => {
             const sorted = cl.items.slice().sort((a, b) => a.position - b.position);
-            const i = sorted.indexOf(item);
+            const i = sorted.findIndex(x => x.id === item.id);
             if (i <= 0) return;
-            [sorted[i].position, sorted[i - 1].position] = [sorted[i - 1].position, sorted[i].position];
-            await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
-            await loadCards();
-            const c2 = state.cards.find(c => c.id === editingId);
-            const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
-            if (cl2) { cl.items = cl2.items; renderItems(); }
+            swapPositions(sorted[i], sorted[i - 1]);
+            if (isDraft) { cl.items = sorted; renderItems(); }
+            else {
+              await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
+              await loadCards();
+              const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+              if (cl2) { cl.items = cl2.items; renderItems(); }
+            }
           });
 
           const downBtn = document.createElement("button");
@@ -1621,14 +1651,16 @@
           downBtn.disabled = idx === arr.length - 1;
           downBtn.addEventListener("click", async () => {
             const sorted = cl.items.slice().sort((a, b) => a.position - b.position);
-            const i = sorted.indexOf(item);
+            const i = sorted.findIndex(x => x.id === item.id);
             if (i >= sorted.length - 1) return;
-            [sorted[i].position, sorted[i + 1].position] = [sorted[i + 1].position, sorted[i].position];
-            await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
-            await loadCards();
-            const c2 = state.cards.find(c => c.id === editingId);
-            const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
-            if (cl2) { cl.items = cl2.items; renderItems(); }
+            swapPositions(sorted[i], sorted[i + 1]);
+            if (isDraft) { cl.items = sorted; renderItems(); }
+            else {
+              await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
+              await loadCards();
+              const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+              if (cl2) { cl.items = cl2.items; renderItems(); }
+            }
           });
 
           const delItemBtn = document.createElement("button");
@@ -1636,20 +1668,20 @@
           delItemBtn.textContent = "✕";
           delItemBtn.title = "Eliminar ítem";
           delItemBtn.addEventListener("click", async () => {
-            try {
-              await api("DELETE", "/api/checklist-items/" + item.id);
+            if (isDraft) {
               cl.items = cl.items.filter(x => x.id !== item.id);
-              await loadCards();
               renderItems();
-              const c2 = state.cards.find(c => c.id === editingId);
-              const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
-              if (cl2) {
-                const c2h = cl2.items.filter(i => i.checked).length;
-                const t2 = cl2.items.length;
-                bar.style.width = (t2 ? Math.round(c2h / t2 * 100) : 0) + "%";
-                progressEl.textContent = t2 ? `${c2h}/${t2}` : "";
-              }
-            } catch (e) { alert("Error: " + e.message); }
+              updateBar(cl, bar, progressEl);
+            } else {
+              try {
+                await api("DELETE", "/api/checklist-items/" + item.id);
+                cl.items = cl.items.filter(x => x.id !== item.id);
+                await loadCards();
+                renderItems();
+                const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+                if (cl2) updateBar(cl2, bar, progressEl);
+              } catch (e) { alert("Error: " + e.message); }
+            }
           });
 
           li.appendChild(cb);
@@ -1664,7 +1696,7 @@
       renderItems();
       wrap.appendChild(ul);
 
-      // Agregar ítem
+      // ── Agregar ítem ──
       const addRow = document.createElement("div");
       addRow.className = "checklist-add";
       const addInput = document.createElement("input");
@@ -1677,19 +1709,23 @@
         const text = addInput.value.trim();
         if (!text) return;
         addInput.value = "";
-        try {
-          const newItem = await api("POST", "/api/checklists/" + cl.id + "/items", { text });
-          cl.items.push(newItem);
-          await loadCards();
-          const c2 = state.cards.find(c => c.id === editingId);
-          const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
-          if (cl2) { cl.items = cl2.items; }
+        if (isDraft) {
+          cl.items.push({ id: crypto.randomUUID(), text, checked: false, position: cl.items.length });
           renderItems();
-          const t2 = cl.items.length;
-          const c2h = cl.items.filter(i => i.checked).length;
-          bar.style.width = (t2 ? Math.round(c2h / t2 * 100) : 0) + "%";
-          progressEl.textContent = t2 ? `${c2h}/${t2}` : "";
-        } catch (e) { alert("Error: " + e.message); }
+          updateBar(cl, bar, progressEl);
+          addInput.focus();
+        } else {
+          try {
+            const newItem = await api("POST", "/api/checklists/" + cl.id + "/items", { text });
+            cl.items.push(newItem);
+            await loadCards();
+            const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+            if (cl2) { cl.items = cl2.items; }
+            renderItems();
+            updateBar(cl, bar, progressEl);
+            addInput.focus();
+          } catch (e) { alert("Error: " + e.message); }
+        }
       };
       addItemBtn.addEventListener("click", doAdd);
       addInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doAdd(); } });
@@ -1700,20 +1736,23 @@
       section.appendChild(wrap);
     });
 
-    // Botón para agregar nuevo checklist
-    if (editingId) {
-      const addClBtn = document.createElement("button");
-      addClBtn.className = "btn btn-ghost btn-small add-checklist-btn";
-      addClBtn.textContent = "☑ Agregar checklist";
-      addClBtn.addEventListener("click", async () => {
+    // ── Botón agregar checklist (siempre visible en el modal) ──
+    const addClBtn = document.createElement("button");
+    addClBtn.className = "btn btn-ghost btn-small add-checklist-btn";
+    addClBtn.textContent = "☑ Agregar checklist";
+    addClBtn.addEventListener("click", async () => {
+      if (isDraft) {
+        draftChecklists.push({ id: crypto.randomUUID(), name: "Lista de tareas", items: [], position: draftChecklists.length });
+        renderChecklists();
+      } else {
         try {
-          const cl = await api("POST", "/api/cards/" + editingId + "/checklists", { name: "Lista de tareas" });
+          await api("POST", "/api/cards/" + editingId + "/checklists", { name: "Lista de tareas" });
           await loadCards();
           renderChecklists();
         } catch (e) { alert("Error: " + e.message); }
-      });
-      section.appendChild(addClBtn);
-    }
+      }
+    });
+    section.appendChild(addClBtn);
   }
 
   // Etiquetas: gestión de etiquetas asignadas a la tarjeta
@@ -1946,6 +1985,17 @@
           let msg = res.statusText;
           try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
           throw new Error(msg);
+        }
+      }
+
+      // 4) persistir checklists del borrador (sólo en tarjetas nuevas)
+      if (!editingId && draftChecklists.length) {
+        for (const cl of draftChecklists) {
+          const savedCl = await api("POST", "/api/cards/" + card.id + "/checklists", { name: cl.name });
+          for (const item of cl.items.slice().sort((a, b) => a.position - b.position)) {
+            const savedItem = await api("POST", "/api/checklists/" + savedCl.id + "/items", { text: item.text });
+            if (item.checked) await api("PUT", "/api/checklist-items/" + savedItem.id, { checked: true });
+          }
         }
       }
 

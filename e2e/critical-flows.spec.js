@@ -125,17 +125,30 @@ test("crea etiqueta y verifica que aparece en la tarjeta", async ({ page }) => {
   await card.click();
   await expect(page.locator("#overlay")).toHaveClass(/open/);
 
-  // Crear etiqueta nueva desde el picker
+  // Abrir el picker de etiquetas
   await page.locator(".add-label-btn").click();
-  await page.locator("#newLabelName").fill("TestBug");
-  await page.locator("#createLabelBtn").click();
+  await expect(page.locator(".label-picker")).toBeVisible();
 
-  // Esperar a que se asigne la etiqueta a la tarjeta
-  await page.waitForTimeout(500);
+  // Si el tablero ya tiene etiquetas, asignar la primera disponible.
+  // Si no, crear una nueva (el DB puede estar lleno de runs anteriores —
+  // usar un label existente evita chocar con el límite de 10).
+  // Nota: los botones "Agregar" son <span>, no <button>.
+  const addSpans = page.locator(".label-picker span").filter({ hasText: "Agregar" });
+  const existingCount = await addSpans.count();
+  if (existingCount > 0) {
+    await addSpans.first().click();
+  } else {
+    await page.locator("#newLabelName").fill(`Lbl-${runId}`);
+    await page.locator("#createLabelBtn").click();
+  }
+
+  // Esperar a que la etiqueta quede asignada (label-in-card visible en la sección del modal)
+  await expect(page.locator("#fLabelsSection .label-in-card")).toBeVisible({ timeout: 5000 });
 
   // Cerrar modal
   await page.locator("#cancelBtn").click();
+  await expect(page.locator("#overlay")).not.toHaveClass(/open/);
 
   // Verificar que la etiqueta aparece en la tarjeta del Kanban
-  await expect(page.locator(".card", { hasText: labelCardTitle }).locator(".label-chip")).toBeVisible();
+  await expect(page.locator(".card", { hasText: labelCardTitle }).locator(".label-chip")).toBeVisible({ timeout: 5000 });
 });
