@@ -203,6 +203,56 @@ do_deploy_prod() {
   pause
 }
 
+# ─── Disaster Recovery ──────────────────────────────────────────────────────
+
+do_backup_prod() {
+  briefing \
+    "Backup manual de producción" \
+    "Ejecuta 'wrangler d1 export --remote' para descargar un dump SQL completo de la DB de producción. Lo guarda en backups/ (ignorado por git)." \
+    "Solo lectura — no modifica nada. Requiere wrangler autenticado y conexión a internet." \
+    "Copia de seguridad local antes de un deploy riesgoso o cambio estructural. Complementa los backups automáticos del Cron Trigger."
+  confirm "¿Hacer backup de producción ahora? [s/N]" && run "bash scripts/db-backup-prod.sh" || echo -e "\n  ${DIM}Cancelado.${NC}"
+  pause
+}
+
+do_restore() {
+  briefing \
+    "Restaurar backup" \
+    "Restaura un archivo .sql sobre la DB elegida (local, staging o prod). Para producción exige triple confirmación y escribir 'RESTAURAR'." \
+    "⚠️  IRREVERSIBLE. Los datos posteriores al backup se pierden. Para producción: usuarios reales afectados." \
+    "Recuperar la DB a un estado conocido y funcional después de corrupción de datos o migración fallida."
+  echo ""
+  echo -e "  ${DIM}Backups disponibles:${NC}"
+  ls backups/*.sql 2>/dev/null | sort -r | head -10 | sed 's/^/    /' || echo "    (ninguno — corré 'npm run db:backup:prod' primero)"
+  echo ""
+  read -r -p "  Archivo SQL (path): " file
+  echo ""
+  echo "  Destinos: local / staging / prod"
+  read -r -p "  Destino: " target
+  [ -n "$file" ] && [ -n "$target" ] && run "bash scripts/db-restore.sh \"$file\" \"$target\"" || echo -e "\n  ${DIM}Cancelado.${NC}"
+  pause
+}
+
+do_rollback() {
+  briefing \
+    "Rollback de deploy" \
+    "Muestra los últimos deploys del Worker y permite hacer rollback a una versión anterior usando 'wrangler rollback'." \
+    "⚠️  Revierte el código pero NO la DB. Si el deploy incluyó una migración, el rollback de código solo no alcanza — combinar con restauración de backup." \
+    "Recuperar rápidamente de un deploy que rompió la app en producción, sin necesidad de tocar la DB."
+  confirm "¿Ver deployments y hacer rollback? [s/N]" || { echo -e "\n  ${DIM}Cancelado.${NC}"; pause; return; }
+  echo ""
+  run "npx wrangler deployments list"
+  echo ""
+  echo -e "  ${DIM}Dejá vacío para rollback al deploy anterior, o ingresá un deployment-id específico.${NC}"
+  read -r -p "  Deployment ID (Enter para anterior): " dep_id
+  if [ -z "$dep_id" ]; then
+    run "npx wrangler rollback"
+  else
+    run "npx wrangler rollback $dep_id"
+  fi
+  pause
+}
+
 # ─── Escape hatches ─────────────────────────────────────────────────────────
 
 do_sql_local() {
@@ -292,11 +342,16 @@ main_menu() {
     item 11 "Deploy a staging"                    "con tests + migraciones"
     item 12 "Deploy a PRODUCCIÓN"                 "⚠️⚠️  afecta usuarios reales"
 
+    section "DISASTER RECOVERY"
+    item 13 "Backup manual de producción"         "→ backups/ local"
+    item 14 "Restaurar backup"                    "local / staging / prod"
+    item 15 "Rollback de deploy"                  "versión anterior del Worker"
+
     section "ESCAPE HATCH  ⚠️"
-    item 13 "SQL directo en DB local"             "sin validaciones"
-    item 14 "SQL directo en DB de staging"        "remoto · doble confirmación"
-    item 15 "Deploy a staging SIN tests"          "bypasea verify-ready"
-    item 16 "Shell libre en el proyecto"          "sin restricciones"
+    item 16 "SQL directo en DB local"             "sin validaciones"
+    item 17 "SQL directo en DB de staging"        "remoto · doble confirmación"
+    item 18 "Deploy a staging SIN tests"          "bypasea verify-ready"
+    item 19 "Shell libre en el proyecto"          "sin restricciones"
 
     echo ""
     item  0 "Salir" ""
@@ -316,10 +371,13 @@ main_menu() {
       10) do_e2e_server ;;
       11) do_deploy_staging ;;
       12) do_deploy_prod ;;
-      13) do_sql_local ;;
-      14) do_sql_staging ;;
-      15) do_deploy_skip_tests ;;
-      16) do_shell ;;
+      13) do_backup_prod ;;
+      14) do_restore ;;
+      15) do_rollback ;;
+      16) do_sql_local ;;
+      17) do_sql_staging ;;
+      18) do_deploy_skip_tests ;;
+      19) do_shell ;;
       0)  echo -e "\n  ${DIM}Hasta la próxima.${NC}\n"; exit 0 ;;
       *)  echo -e "\n  ${YELLOW}Opción no válida.${NC}"; sleep 1 ;;
     esac

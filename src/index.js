@@ -10,6 +10,7 @@ import { setupUploadRoutes } from "./routes/uploads.js";
 import { setupAdminRoutes } from "./routes/admin.js";
 import { setupLabelRoutes } from "./routes/labels.js";
 import { setupChecklistRoutes } from "./routes/checklists.js";
+import { runBackup } from "./backup.js";
 
 const app = new Hono();
 
@@ -67,7 +68,19 @@ setupUploadRoutes(app);
 app.use("/api/admin/*", requireAdmin);
 setupAdminRoutes(app);
 
-export default app;
+export { app };
+
+export default {
+  fetch: app.fetch.bind(app),
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(
+      runBackup(env).then((result) => {
+        const status = result.errors.length === 0 ? "✅" : "⚠️";
+        console.log(`[backup] ${status} r2=${result.r2} github=${result.github}`, result.errors);
+      })
+    );
+  },
+};
 
 // Exportaciones puras para tests unitarios
 export {

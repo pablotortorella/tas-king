@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
-import app from "../src/index.js";
+import { app } from "../src/index.js";
 
 describe("JWT validation (Google OAuth)", () => {
   it("verifica firma RSA del JWT", () => {
