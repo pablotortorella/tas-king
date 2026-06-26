@@ -15,9 +15,13 @@ Checklists (#3), Protección adjuntos (#4), JWT Google (#5), i18n landing, Panel
 
 Opciones priorizadas por Pablo (ver `memory/roadmap.md` para lista completa):
 
-1. **Seguridad** (alta): CSP headers, verificar adjuntos protegidos, rate limiting granular
-2. **UX** (alta): Tab/Enter en toda la interfaz de tarjetas, onboarding nuevos usuarios
-3. **Features** (media): #6 Modo oscuro, #7 Lead time/tasa completitud, búsqueda avanzada
+1. **#8 Workflow Analytics Engine** (alta): enriquecer `GET /api/cards/:id/history` con KPIs. Ver `docs/ADRs/ADR-013-workflow-analytics-engine.md` y `PROJECT_BACKLOG.md` para especificación completa.
+   - Crear `calculateCardKPIs(cardId)` en `src/db/helpers.js`
+   - Modificar endpoint en `src/routes/cards.js` para devolver DTO con `summaryMetrics` + `activityLog`
+   - Tests unitarios con escenarios conocidos
+2. **Seguridad** (alta): CSP headers, rate limiting granular
+3. **UX** (alta): Tab/Enter en toda la interfaz de tarjetas, onboarding nuevos usuarios
+4. **Features** (media): #6 Modo oscuro, #7 Lead time/tasa completitud, búsqueda avanzada
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
@@ -84,11 +88,30 @@ Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR →
 
 ## Comandos útiles
 ```bash
+# Inicio de sesión
+npm run check:env                  # diagnóstico rápido del ambiente (recomendado al iniciar)
+
+# Desarrollo
 npm install                        # instalar dependencias
 npm run dev                        # servidor local → http://localhost:8787
-npm run db:migrate:local           # aplicar migraciones en D1 local
+npm run test:all                   # suite completa (unitarios + E2E)
+
+# Base de datos local
+npm run db:migrate:local           # aplicar migraciones pendientes en D1 local
+npm run db:reset:local             # borrar DB local y re-aplicar desde cero ⚠️
+npm run db:seed:local              # cargar datos de ejemplo (idempotente)
+
+# E2E
+npm run e2e:reset                  # limpiar estado E2E + re-aplicar seed (ante estado corrupto)
+npm run e2e:server                 # servidor E2E solo (para debugging de tests)
+
+# Deploy
+npm run deploy:staging             # deploy a staging (con tests)
+npm run deploy                     # deploy a producción (con tests) ⚠️ requiere aprobación
 npm run db:migrate:remote          # aplicar migraciones en D1 producción
-npm run deploy                     # build + deploy a Cloudflare Workers
+
+# Operación manual
+npm run operator                   # menú interactivo (solo para humanos — no usar en scripts)
 npx wrangler secret put <NOMBRE>   # cargar un secret en producción
 npx wrangler d1 execute tas-king --remote --command "SELECT ..."  # consulta SQL en prod
 ```

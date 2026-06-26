@@ -9,6 +9,7 @@
 ```bash
 git pull origin main
 npm install
+npm run check:env             # Diagnóstico rápido del ambiente
 npm run test:all              # Debe pasar 100% — si falla, STOP
 ```
 
@@ -74,11 +75,25 @@ Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
 ## 🧪 Comandos útiles
 
 ```bash
+# Desarrollo diario
 npm run dev                   # Servidor local (http://localhost:8787)
-npm run test:watch           # Tests en tiempo real (re-ejecuta al guardar)
-npm run test:all             # Suite completa (unitarios + E2E)
-npm run deploy:staging       # Deploy a staging (revisar antes de prod)
-npm run deploy               # Deploy a producción (después de revisar staging)
+npm run test:watch            # Tests en tiempo real (re-ejecuta al guardar)
+npm run test:all              # Suite completa (unitarios + E2E)
+
+# Deploy
+npm run deploy:staging        # Deploy a staging (revisar antes de prod)
+npm run deploy                # Deploy a producción (después de revisar staging)
+
+# Ambiente y datos
+npm run check:env             # Diagnóstico del ambiente (usar al inicio o ante problemas)
+npm run db:reset:local        # Borrar DB local y re-aplicar migraciones ⚠️ destructivo
+npm run db:seed:local         # Cargar datos de ejemplo en DB local (idempotente)
+npm run e2e:reset             # Limpiar estado E2E (cuando tests E2E fallan por estado)
+npm run e2e:server            # Servidor E2E solo (para debugging interactivo de tests)
+npm run setup:local           # Setup completo desde cero (primera vez o nueva máquina)
+
+# Para humanos
+npm run operator              # Menú interactivo con todas las operaciones + ayuda contextual
 ```
 
 **Flujo recomendado**: Local (dev + tests) → Staging (URL real) → Producción

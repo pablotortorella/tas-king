@@ -20,6 +20,7 @@ Objetivo: **Funcional** + **Hermoso** + **Veloz** + **Seguro** + **Sostenible**
 ```bash
 git pull origin main
 npm install
+npm run check:env             # Diagnóstico rápido del ambiente
 npm run test:all              # Debe pasar 100% — si falla, STOP
 ```
 
@@ -144,13 +145,27 @@ git push origin feature/...
 
 ---
 
+## 🛠️ Scripts de operación (uso frecuente para agentes y humanos)
+
+```bash
+npm run check:env             # Diagnóstico del ambiente (usar al inicio de sesión)
+npm run db:reset:local        # Borrar DB local y re-aplicar migraciones ⚠️ destructivo
+npm run db:seed:local         # Cargar datos de ejemplo (idempotente)
+npm run e2e:reset             # Limpiar estado E2E y re-aplicar seed (cuando E2E fallan por estado)
+npm run e2e:server            # Servidor E2E solo, sin tocar migraciones
+npm run setup:local           # Setup completo desde cero (primera vez o nueva máquina)
+npm run operator              # Menú interactivo con todas las operaciones (solo para humanos)
+```
+
+**Nota para agentes IA**: `operator` es interactivo y no puede usarse en modo no-interactivo.
+Llamar directamente los scripts individuales según la necesidad.
+
 ## 🆘 Si algo falla
 
 **Tests fallan localmente**:
 ```bash
-npm run test:all
-rm -rf .wrangler/state
-npm install
+npm run check:env             # Primero diagnosticar
+npm run db:reset:local        # Si la DB local está inconsistente
 npm run test:all
 ```
 
