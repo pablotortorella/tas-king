@@ -161,7 +161,41 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-25, Tests E2E completos + fix reorder bug — Claude Sonnet 4.6)
+## Último handoff (2026-06-26, Infraestructura ops + Disaster Recovery — Claude Sonnet 4.6)
+
+### ✅ Scripts de operación idempotentes (commit c1b6a30)
+- `.dev.vars.example`: plantilla commiteada para onboarding
+- `scripts/setup-local.sh`, `check-env.sh`, `db-reset-local.sh`, `seed-local.sh`, `e2e-reset.sh`, `operator.sh`
+- `npm run check:env` incorporado al checklist de inicio en CLAUDE.md y QUICK_START.md
+- `npm run operator`: menú interactivo con briefing de riesgos/ganancias antes de cada acción
+- `dev:e2e` separado en `e2e:setup` + `e2e:server`
+
+### ✅ Disaster Recovery (commit 50c7cce)
+- `src/backup.js`: genera dump SQL de D1, sube a R2, pushea a GitHub vía PAT
+- `src/index.js`: handler `scheduled` para Cron Trigger cada 8h; `export { app }` para tests
+- `wrangler.jsonc`: cron `"0 */8 * * *"` en env production
+- `scripts/db-backup-prod.sh`: backup manual local con `wrangler d1 export --remote`
+- `scripts/db-restore.sh`: restaura .sql en local/staging/prod con confirmaciones escalonadas
+- `npm run deploy` ahora incluye backup previo automático
+- `docs/DISASTER_RECOVERY.md`: runbook (4 escenarios, setup, RPO 8h / RTO 30min)
+
+### ⚠️ Pendiente para activar backup off-platform
+```bash
+# 1. Crear repo privado tas-king-backups en GitHub
+# 2. Crear PAT fine-grained con contents:write solo sobre ese repo
+npx wrangler secret put GITHUB_BACKUP_TOKEN --env production
+npx wrangler secret put GITHUB_BACKUP_REPO --env production
+# Valor: pablotortorella/tas-king-backups
+```
+Sin estos secrets, el backup a R2 funciona igual. El push a GitHub queda deshabilitado silenciosamente.
+
+### Estado tests
+- 48 unitarios (Vitest) ✅
+- 16 E2E (Playwright) ✅
+
+---
+
+## Anterior handoff (2026-06-25, Tests E2E completos + fix reorder bug — Claude Sonnet 4.6)
 
 ### ✅ Infraestructura de tests E2E con seed data
 - `test/fixtures/seed.sql`: limpia toda la DB y re-inserta estado conocido (usuario admin E2E, tablero, etiqueta, tarjeta base)
