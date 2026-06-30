@@ -1,5 +1,5 @@
 import { membership } from "../db/helpers.js";
-import { DONE_COLUMN } from "../constants.js";
+import { getDoneColumnId } from "../db/columns.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -8,8 +8,10 @@ const MAX_GOALS = 30;
 
 // Devuelve los objetivos del tablero con su progreso calculado.
 // Progreso = tarjetas vinculadas (no archivadas) que están en la columna
-// "terminado" sobre el total de tarjetas vinculadas (no archivadas).
+// marcada como "done" sobre el total de tarjetas vinculadas (no archivadas).
 export async function goalsWithProgress(db, boardId) {
+  const doneColumnId = await getDoneColumnId(db, boardId);
+
   const goals = await db
     .prepare("SELECT id, title, description, position FROM goals WHERE board_id = ? ORDER BY position, title")
     .bind(boardId)
@@ -26,7 +28,7 @@ export async function goalsWithProgress(db, boardId) {
        WHERE g.board_id = ? AND c.archived = 0
        GROUP BY cg.goal_id`
     )
-    .bind(DONE_COLUMN, boardId)
+    .bind(doneColumnId, boardId)
     .all();
 
   const byGoal = new Map();

@@ -2,6 +2,7 @@
 
 import { membership, ensureUser } from "../db/helpers.js";
 import { getBoard, auditRowToJSON } from "../db/queries.js";
+import { createDefaultColumns } from "./columns.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -19,6 +20,7 @@ export function setupBoardRoutes(app) {
       c.env.DB.prepare("INSERT INTO board_members (board_id, email, role, created_at) VALUES (?, ?, 'owner', ?)")
         .bind(id, email, now()),
     ]);
+    await createDefaultColumns(c.env.DB, id);
     return c.json({ id, name, isPersonal: false, role: "owner", ownerEmail: email, memberCount: 1 });
   });
 
@@ -50,6 +52,7 @@ export function setupBoardRoutes(app) {
       c.env.DB.prepare("DELETE FROM comments WHERE card_id IN (SELECT id FROM cards WHERE board_id = ?)").bind(boardId),
       c.env.DB.prepare("DELETE FROM attachments WHERE card_id IN (SELECT id FROM cards WHERE board_id = ?)").bind(boardId),
       c.env.DB.prepare("DELETE FROM cards WHERE board_id = ?").bind(boardId),
+      c.env.DB.prepare("DELETE FROM columns WHERE board_id = ?").bind(boardId),
       c.env.DB.prepare("DELETE FROM board_members WHERE board_id = ?").bind(boardId),
       c.env.DB.prepare("DELETE FROM boards WHERE id = ?").bind(boardId),
     ]);

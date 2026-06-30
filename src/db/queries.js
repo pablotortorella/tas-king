@@ -1,6 +1,7 @@
 // ---------- Database Queries ----------
 
 import { membership } from "./helpers.js";
+import { columnToJSON } from "./columns.js";
 
 const uid = () => crypto.randomUUID();
 
@@ -74,7 +75,8 @@ export function cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklis
 }
 
 export async function getBoard(db, boardId) {
-  const [cards, comments, atts, labels, cls, items, goals] = await Promise.all([
+  const [columns, cards, comments, atts, labels, cls, items, goals] = await Promise.all([
+    db.prepare("SELECT id, name, position, is_done FROM columns WHERE board_id = ? ORDER BY position ASC").bind(boardId).all(),
     db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId).all(),
     db.prepare(`SELECT cm.id, cm.card_id, cm.text, cm.created_at, cm.author_email,
         u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
@@ -125,7 +127,11 @@ export async function getBoard(db, boardId) {
     goalsByCard.get(r.card_id).push({ id: r.id, title: r.title });
   }
   const version = cards.results.reduce((max, c) => Math.max(max, c.updated_at || 0), 0);
-  return { version, cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklistsByCard, goalsByCard)) };
+  return {
+    version,
+    columns: columns.results.map(columnToJSON),
+    cards: cards.results.map(c => cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklistsByCard, goalsByCard)),
+  };
 }
 
 export async function getCardRow(db, id) {

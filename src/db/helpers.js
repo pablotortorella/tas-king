@@ -1,5 +1,7 @@
 // ---------- Database Helpers ----------
 
+import { createDefaultColumns } from "./columns.js";
+
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
 
@@ -15,6 +17,7 @@ export async function ensureUser(db, email) {
       db.prepare("INSERT OR IGNORE INTO board_members (board_id, email, role, created_at) VALUES (?, ?, 'owner', ?)")
         .bind(bid, email, now()),
     ]);
+    await createDefaultColumns(db, bid);
   }
 }
 
