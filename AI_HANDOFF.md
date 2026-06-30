@@ -4,27 +4,28 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v1.8 — **Tests**: 59 unitarios + 18 E2E ✅ Todos pasan
+**Versión actual**: v1.9 — **Tests**: 69 unitarios + 22 E2E ✅ Todos pasan
 
 **Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
-Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), i18n landing, Panel admin, IO menu.
+Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), Columnas customizables,
+i18n landing, Panel admin, IO menu.
 
-**En vuelo**: Objetivos (#8) en rama `claude/goal-management-features-71ddci` → **PR #9** abierto, sin merge.
-**Pendiente de retomar**: revisar #8 en **staging** antes de mergear (ver "Último handoff" para los pasos exactos).
+**En vuelo (2 PRs pendientes)**:
+- Objetivos (#8) → **PR #9** abierto en rama `claude/goal-management-features-71ddci`, sin merge.
+- Columnas → rama `claude/board-column-customization-jfqgmd` pusheada, **PR por abrir**.
 
-**Próximo**: #6 Modo oscuro, #7 Lead time/completitud, o mejoras de seguridad (CSP, rate limiting).
+**Pendiente de retomar**: ver ambas ramas en **staging** antes de mergear (ver "Último handoff").
+
+**Próximo (una vez mergeados los dos PRs)**: #6 Modo oscuro, Seguridad (CSP, rate limiting), #7 Lead time.
 
 ## 🎯 Objetivo siguiente sesión
 
-Opciones priorizadas por Pablo (ver `memory/roadmap.md` para lista completa):
+**Paso obligatorio**: mergear los dos PRs en vuelo antes de empezar algo nuevo.
 
-1. **#8 Workflow Analytics Engine** (alta): enriquecer `GET /api/cards/:id/history` con KPIs. Ver `docs/ADRs/ADR-013-workflow-analytics-engine.md` y `PROJECT_BACKLOG.md` para especificación completa.
-   - Crear `calculateCardKPIs(cardId)` en `src/db/helpers.js`
-   - Modificar endpoint en `src/routes/cards.js` para devolver DTO con `summaryMetrics` + `activityLog`
-   - Tests unitarios con escenarios conocidos
-2. **Seguridad** (alta): CSP headers, rate limiting granular
-3. **UX** (alta): Tab/Enter en toda la interfaz de tarjetas, onboarding nuevos usuarios
-4. **Features** (media): #6 Modo oscuro, #7 Lead time/tasa completitud, búsqueda avanzada
+1. **Revisar y mergear PR #9 (Objetivos)** — ya testeado, esperando staging review
+2. **Abrir PR para `claude/board-column-customization-jfqgmd`** (Columnas), revisar staging y mergear
+3. **Deploy a producción** con ambas migraciones (`0010_goals.sql` + `0011_columns.sql`)
+4. Una vez limpio: **#6 Modo oscuro** o **CSP headers** (seguridad)
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
@@ -166,7 +167,81 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-30, Gestión de objetivos #8 — Opus 4.8)
+## Último handoff (2026-06-30, Columnas customizables — Sonnet 4.6)
+
+### ✅ Columnas customizables — MVP completo
+- **Migración** `migrations/0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`,
+  índice `idx_columns_board`, e inserción automática de las 5 columnas por defecto en todos los
+  tableros existentes con los IDs legacy (`por_conversar`, `pendiente`, `en_progreso`, `por_revisar`, `terminado`).
+- **`src/db/columns.js`** (módulo nuevo, sin dependencias circulares):
+  `DEFAULT_COLUMNS`, `columnToJSON`, `createDefaultColumns`, `getDoneColumnId`.
+  Todos los demás módulos importan desde acá.
+- **`src/routes/columns.js`**: REST completo con 4 endpoints:
+  - `GET /api/boards/:boardId/columns` — lista columnas del tablero
+  - `POST /api/boards/:boardId/columns` — crear columna (owner only, máx 10, nombre máx 50 chars)
+  - `PATCH /api/boards/:boardId/columns/:columnId` — renombrar o marcar como `isDone`
+  - `DELETE /api/boards/:boardId/columns/:columnId` — eliminar (owner only, sin tarjetas activas, no puede ser la última; transfiere flag `isDone` si era la columna de cierre)
+- **`src/db/queries.js`**: `getBoard()` ahora lee las columnas de la DB (antes hardcodeadas).
+  Devuelve `{ version, columns, cards }`.
+- **`src/routes/goals.js`**: usa `getDoneColumnId()` en lugar de la constante `"terminado"`.
+- **`src/routes/boards.js`**: al crear un tablero nuevo llama `createDefaultColumns()`; al borrar un tablero borra sus columnas.
+- **`public/index.html`**:
+  - `COLUMNS` ahora es dinámico (se llena desde `state.columns` al cargar el tablero).
+  - Cada columna muestra botones **✏** (renombrar) y **✕** (eliminar) junto al contador de tarjetas.
+  - Widget **`+ Columna`** al final del board (solo owner) con input inline + confirm/cancel.
+  - Delegación de eventos en `#board` para renombrar (reemplaza `.col-name-text` por `<input>`)
+    y eliminar (confirm nativo + DELETE API).
+  - `getDoneColumnId()` derivado de `COLUMNS` (no más constante hardcodeada `"terminado"`).
+- **Tests**: 10 unitarios (`test/columns.test.js`) + 4 E2E seriales (`e2e/columns.spec.js`).
+  **Total post-sesión: 69 unit + 22 E2E ✅ todos pasan**.
+
+### 🌿 Rama / PR
+- Rama: `claude/board-column-customization-jfqgmd` — **pusheada, PR por abrir**.
+- **No hay PR abierto todavía** — el usuario debe abrirlo (ver pasos abajo).
+
+### ⏭️ PARA RETOMAR: revisar columnas en staging y mergear
+
+**Paso 0 — Mergear PR #9 (Objetivos) primero** (si aún no está mergeado):
+```bash
+# Revisar el PR #9 en GitHub y hacer merge desde la UI, o:
+git fetch origin main
+# Una vez mergeado, continuar con el paso 1.
+```
+
+**Paso 1 — Abrir PR para la rama de columnas** (desde GitHub UI o con `gh`):
+```
+Base: main
+Branch: claude/board-column-customization-jfqgmd
+Título: Columnas customizables: crear, renombrar y eliminar
+```
+
+**Paso 2 — Revisar en staging**:
+```bash
+git checkout claude/board-column-customization-jfqgmd
+npm install
+npx wrangler login            # si no estás logueado
+npm run deploy:staging        # deploya + aplica migraciones en D1 staging
+# → https://tas-king-staging.<subdominio>.workers.dev
+```
+- **Qué probar**: abrir un tablero → botones ✏ y ✕ en cada columna → renombrar → crear columna nueva → eliminar columna vacía → verificar que el confeti sigue disparando al mover tarjeta a la columna "done" → verificar que el progreso de objetivos sigue funcionando.
+
+**Paso 3 — Deploy a producción** (después de aprobación explícita):
+```bash
+npm run deploy                # incluye test:all + backup previo automático
+npm run db:migrate:remote     # aplica 0010_goals.sql + 0011_columns.sql en D1 prod
+```
+
+### ⚠️ Nota de entorno (E2E en remoto)
+El browser de Playwright instalado localmente puede diferir del disponible en el entorno remoto.
+Si los E2E fallan con "Executable doesn't exist", usar:
+```bash
+PW_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e
+```
+Localmente con `npx playwright install` no hace falta esta variable.
+
+---
+
+## Handoff anterior (2026-06-30, Gestión de objetivos #8 — Opus 4.8)
 
 ### ✅ Objetivos (gestión por metas) — MVP completo
 - **Decisión Opción A**: objetivos DENTRO de cada tablero (un tablero = un proyecto). No hay tablero de estrategia separado. Ver `docs/ADRs.md` → **ADR-013** (alternativas B/C/D + criterios de migración).
