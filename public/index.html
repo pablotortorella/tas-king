@@ -576,6 +576,33 @@
     width: 100%; margin-bottom: 8px; padding: 6px 8px; border: 1px solid var(--border);
     border-radius: 4px; font-size: 12px; box-sizing: border-box;
   }
+
+  /* Panel lateral (drawer) de objetivos — entra desde la izquierda, no bloquea el tablero */
+  .goals-drawer {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 50;
+    background: var(--bg); border-right: 1px solid var(--border);
+    box-shadow: 2px 0 12px rgba(0,0,0,.12);
+    transform: translateX(-100%); transition: transform .2s ease;
+    display: flex; flex-direction: column;
+  }
+  .goals-drawer.open { transform: translateX(0); }
+  .goals-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; font-weight: 600; border-bottom: 1px solid var(--border);
+  }
+  .goals-drawer-head button {
+    border: none; background: transparent; cursor: pointer; font-size: 16px; color: var(--muted);
+  }
+  .goals-drawer-hint { padding: 8px 14px; font-size: 12px; color: var(--muted); }
+  .goals-drawer-list { flex: 1; overflow-y: auto; padding: 8px 14px 16px; }
+  /* el tablero se corre a la derecha cuando el panel está abierto */
+  body.drawer-open #board, body.drawer-open .goals-board { margin-left: 320px; transition: margin-left .2s ease; }
+  .goal-card.selected { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .goals-drawer-list .goal-card { cursor: pointer; }
+
+  /* Resaltado de tarjetas cuando hay un objetivo seleccionado */
+  .card.card-dimmed { opacity: .35; }
+  .card.card-goal-match { box-shadow: 0 0 0 2px var(--accent); }
 </style>
 </head>
 <body>
@@ -595,8 +622,9 @@
   <div class="actions">
     <div class="view-toggle" id="viewToggle">
       <button id="viewTasksBtn" class="view-btn active" title="Ver tareas">📋 Tareas</button>
-      <button id="viewGoalsBtn" class="view-btn" title="Ver objetivos">🎯 Objetivos</button>
+      <button id="viewGoalsBtn" class="view-btn" title="Ver objetivos (pantalla completa)">🎯 Objetivos</button>
     </div>
+    <button id="goalsPanelBtn" title="Panel de objetivos: ver, editar y resaltar tarjetas">🎯 Panel</button>
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
     <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
@@ -623,6 +651,16 @@
 
 <div class="board" id="board"></div>
 <div class="goals-board" id="goalsBoard" style="display:none"></div>
+
+<!-- Panel lateral de objetivos (no bloquea el tablero) -->
+<aside class="goals-drawer" id="goalsDrawer" aria-label="Panel de objetivos">
+  <div class="goals-drawer-head">
+    <span>🎯 Objetivos</span>
+    <button id="goalsDrawerClose" title="Cerrar panel">✕</button>
+  </div>
+  <div class="goals-drawer-hint">Clic en un objetivo para resaltar sus tarjetas en el tablero.</div>
+  <div class="goals-drawer-list" id="goalsDrawerList"></div>
+</aside>
 
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta</span>
@@ -961,6 +999,7 @@
   let boardLabels = [];        // etiquetas del tablero actual
   let boardGoals = [];         // objetivos del tablero actual (con progreso)
   let currentView = "tasks";   // "tasks" | "goals"
+  let activeGoalFilter = null; // id de objetivo seleccionado en el panel (resalta sus tarjetas)
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
@@ -1052,7 +1091,7 @@
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
-    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; boardGoals = []; render(); renderGoals(); return; }
+    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; boardGoals = []; render(); refreshGoalsUI(); return; }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
     lastKnownVersion = state.version || 0;
@@ -1060,7 +1099,7 @@
     catch (e) { boardLabels = []; }
     await loadGoals();
     render();
-    renderGoals();
+    refreshGoalsUI();
   }
 
   async function loadGoals() {
@@ -1168,7 +1207,10 @@
   const board = document.getElementById("board");
   const goalsBoard = document.getElementById("goalsBoard");
 
-  // ---------- Vista de objetivos ----------
+  // ---------- Vista de objetivos (vista amplia + panel lateral) ----------
+  const goalsDrawer = document.getElementById("goalsDrawer");
+  const goalsDrawerList = document.getElementById("goalsDrawerList");
+
   function showView(view) {
     currentView = view;
     const isGoals = view === "goals";
@@ -1176,60 +1218,98 @@
     goalsBoard.style.display = isGoals ? "" : "none";
     document.getElementById("viewTasksBtn").classList.toggle("active", !isGoals);
     document.getElementById("viewGoalsBtn").classList.toggle("active", isGoals);
-    if (isGoals) renderGoals();
+    refreshGoalsUI();
   }
 
-  function renderGoals() {
-    goalsBoard.innerHTML = "";
-
-    boardGoals.forEach(goal => {
-      const card = document.createElement("div");
-      card.className = "goal-card";
-      const doneClass = goal.total > 0 && goal.done === goal.total ? " done" : "";
-      card.innerHTML = `
-        <div class="goal-head">
-          <h3>${escapeHtml(goal.title)}</h3>
-          <div class="goal-ops">
-            <button data-act="edit" title="Editar objetivo">✏️</button>
-            <button data-act="delete" title="Eliminar objetivo">🗑</button>
-          </div>
+  // Construye la tarjeta DOM de un objetivo. Si selectable, al hacer click resalta
+  // las tarjetas vinculadas en el tablero (atenúa el resto).
+  function buildGoalCard(goal, selectable) {
+    const card = document.createElement("div");
+    card.className = "goal-card" + (selectable && activeGoalFilter === goal.id ? " selected" : "");
+    const doneClass = goal.total > 0 && goal.done === goal.total ? " done" : "";
+    card.innerHTML = `
+      <div class="goal-head">
+        <h3>${escapeHtml(goal.title)}</h3>
+        <div class="goal-ops">
+          <button data-act="edit" title="Editar objetivo">✏️</button>
+          <button data-act="delete" title="Eliminar objetivo">🗑</button>
         </div>
-        ${goal.description ? `<div class="goal-desc">${escapeHtml(goal.description)}</div>` : ""}
-        <div class="goal-progress${doneClass}"><span style="width:${goal.pct}%"></span></div>
-        <div class="goal-stats">${goal.done}/${goal.total} tarjetas terminadas · ${goal.pct}%</div>
-      `;
-      card.querySelector('[data-act="edit"]').addEventListener("click", () => editGoal(goal));
-      card.querySelector('[data-act="delete"]').addEventListener("click", () => deleteGoal(goal));
-      goalsBoard.appendChild(card);
-    });
+      </div>
+      ${goal.description ? `<div class="goal-desc">${escapeHtml(goal.description)}</div>` : ""}
+      <div class="goal-progress${doneClass}"><span style="width:${goal.pct}%"></span></div>
+      <div class="goal-stats">${goal.done}/${goal.total} tarjetas terminadas · ${goal.pct}%</div>
+    `;
+    card.querySelector('[data-act="edit"]').addEventListener("click", e => { e.stopPropagation(); editGoal(goal); });
+    card.querySelector('[data-act="delete"]').addEventListener("click", e => { e.stopPropagation(); deleteGoal(goal); });
+    if (selectable) {
+      card.addEventListener("click", () => toggleGoalFilter(goal.id));
+    }
+    return card;
+  }
+
+  // Renderiza la lista de objetivos + formulario de creación dentro de un contenedor.
+  function renderGoalsList(container, selectable) {
+    container.innerHTML = "";
+
+    boardGoals.forEach(goal => container.appendChild(buildGoalCard(goal, selectable)));
 
     if (!boardGoals.length) {
       const empty = document.createElement("div");
       empty.className = "goals-empty";
       empty.textContent = "Todavía no hay objetivos. Creá uno para agrupar tus tarjetas y medir el avance.";
-      goalsBoard.appendChild(empty);
+      container.appendChild(empty);
     }
 
-    // Formulario para crear un objetivo nuevo
     const create = document.createElement("div");
     create.className = "goal-create";
     create.innerHTML = `
-      <input type="text" id="newGoalTitle" placeholder="Título del objetivo..." maxlength="120">
-      <textarea id="newGoalDesc" placeholder="Descripción (opcional)..." rows="2" maxlength="500"></textarea>
-      <button class="btn btn-primary btn-small" id="createGoalBtn">+ Crear objetivo</button>
+      <input type="text" class="new-goal-title" placeholder="Título del objetivo..." maxlength="120">
+      <textarea class="new-goal-desc" placeholder="Descripción (opcional)..." rows="2" maxlength="500"></textarea>
+      <button class="btn btn-primary btn-small new-goal-btn">+ Crear objetivo</button>
     `;
-    create.querySelector("#createGoalBtn").addEventListener("click", createGoal);
-    goalsBoard.appendChild(create);
+    create.querySelector(".new-goal-btn").addEventListener("click", () => createGoal(create));
+    container.appendChild(create);
   }
 
-  async function createGoal() {
-    const title = (document.getElementById("newGoalTitle").value || "").trim();
-    const description = (document.getElementById("newGoalDesc").value || "").trim();
+  // Re-renderiza la vista amplia y el panel (si está abierto).
+  function refreshGoalsUI() {
+    renderGoalsList(goalsBoard, false);
+    if (goalsDrawer.classList.contains("open")) renderGoalsList(goalsDrawerList, true);
+  }
+
+  // ---------- Panel lateral de objetivos ----------
+  function openGoalsDrawer() {
+    goalsDrawer.classList.add("open");
+    document.body.classList.add("drawer-open");
+    renderGoalsList(goalsDrawerList, true);
+  }
+
+  function closeGoalsDrawer() {
+    goalsDrawer.classList.remove("open");
+    document.body.classList.remove("drawer-open");
+    if (activeGoalFilter) { activeGoalFilter = null; render(); } // limpia el resaltado
+  }
+
+  function toggleGoalsDrawer() {
+    goalsDrawer.classList.contains("open") ? closeGoalsDrawer() : openGoalsDrawer();
+  }
+
+  // Selecciona/deselecciona un objetivo para resaltar sus tarjetas en el tablero.
+  function toggleGoalFilter(goalId) {
+    activeGoalFilter = activeGoalFilter === goalId ? null : goalId;
+    if (currentView === "goals") showView("tasks"); // el resaltado se ve en el tablero
+    render();
+    refreshGoalsUI();
+  }
+
+  async function createGoal(container) {
+    const title = (container.querySelector(".new-goal-title").value || "").trim();
+    const description = (container.querySelector(".new-goal-desc").value || "").trim();
     if (!title) { alert("Escribí un título para el objetivo."); return; }
     try {
       await api("POST", "/api/boards/" + currentBoardId + "/goals", { title, description });
       await loadGoals();
-      renderGoals();
+      refreshGoalsUI();
     } catch (e) { alert("No se pudo crear el objetivo: " + e.message); }
   }
 
@@ -1243,7 +1323,7 @@
       await api("PUT", "/api/boards/" + currentBoardId + "/goals/" + goal.id,
         { title: title.trim(), description: description.trim() });
       await loadGoals();
-      renderGoals();
+      refreshGoalsUI();
     } catch (e) { alert("No se pudo editar el objetivo: " + e.message); }
   }
 
@@ -1251,12 +1331,15 @@
     if (!confirm(`¿Eliminar el objetivo “${goal.title}”?\n\nLas tarjetas no se borran, solo se desvinculan.`)) return;
     try {
       await api("DELETE", "/api/boards/" + currentBoardId + "/goals/" + goal.id);
+      if (activeGoalFilter === goal.id) activeGoalFilter = null;
       await loadCards(); // refresca también las tarjetas (perdieron el vínculo)
     } catch (e) { alert("No se pudo eliminar el objetivo: " + e.message); }
   }
 
   document.getElementById("viewTasksBtn").addEventListener("click", () => showView("tasks"));
   document.getElementById("viewGoalsBtn").addEventListener("click", () => showView("goals"));
+  document.getElementById("goalsPanelBtn").addEventListener("click", toggleGoalsDrawer);
+  document.getElementById("goalsDrawerClose").addEventListener("click", closeGoalsDrawer);
 
   // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
   function matchesSearch(card) {
@@ -1372,6 +1455,12 @@
     el.className = "card";
     el.draggable = true;
     el.dataset.id = card.id;
+
+    // Resaltado por objetivo seleccionado: las vinculadas se marcan, el resto se atenúa.
+    if (activeGoalFilter) {
+      if ((card.goals || []).some(g => g.id === activeGoalFilter)) el.classList.add("card-goal-match");
+      else el.classList.add("card-dimmed");
+    }
 
     const badges = [];
     if (card.assignee) {
@@ -2586,6 +2675,8 @@
   document.getElementById("boardSelect").addEventListener("change", async e => {
     currentBoardId = e.target.value;
     assigneeFilter = "";
+    activeGoalFilter = null;
+    closeGoalsDrawer();
     showView("tasks");
     updateBoardControls();
     await loadMembers();
