@@ -1,5 +1,9 @@
 // ---------- Constants ----------
 
+// Id de la columna "Terminado" (debe coincidir con COLUMNS en public/index.html).
+// Se usa para derivar el progreso de los objetivos.
+export const DONE_COLUMN = "terminado";
+
 export const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 export const MAX_ATTACHMENTS_PER_CARD = 10;
 
