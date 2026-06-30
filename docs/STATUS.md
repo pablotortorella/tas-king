@@ -454,6 +454,36 @@
 
 ---
 
+### ❌ #8 Workflow Analytics Engine 📊
+
+**Qué hace**: Enriquece `GET /api/cards/:id/history` con KPIs calculados on-demand a partir del `audit_log`: cantidad de movimientos, tiempo promedio por columna, conteo de entradas por etapa.
+
+**Diseño (ver ADR-013)**:
+- **Opción A (MVP recomendada)**: cálculo on-demand en el endpoint — función `calculateCardKPIs(cardId)` en `src/db/helpers.js`
+- **Opción B (futuro)**: event sourcing / listener que mantiene `metrics_summary` actualizado en `cards`
+
+**DTO objetivo**:
+```json
+{
+  "cardId": "...",
+  "summaryMetrics": {
+    "totalMovementCount": 5,
+    "stageEntryCounts": { "Pendiente": 1, "En Progreso": 3 },
+    "timeInStageDays": { "Pendiente": 2.5, "En Progreso": 1.8 }
+  },
+  "activityLog": [ /* eventos cronológicos */ ]
+}
+```
+
+**Implementación necesaria**:
+- `src/db/helpers.js`: función `calculateCardKPIs(cardId)`
+- `src/routes/cards.js`: endpoint `/api/cards/:id/history` devuelve DTO enriquecido
+- Tests unitarios validando KPIs contra escenarios conocidos
+
+**Prioridad**: ALTA — ver `docs/ADRs/ADR-013-workflow-analytics-engine.md` y `PROJECT_BACKLOG.md`
+
+---
+
 ### ❌ #6 Modo oscuro/claro 🌙
 
 **Qué se necesita**:
