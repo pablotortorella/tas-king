@@ -13,7 +13,15 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        // Permite apuntar a un Chromium ya instalado (p. ej. en entornos donde
+        // no se puede correr `playwright install`). Sin la variable, usa el default.
+        ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
+      },
+    },
   ],
   webServer: {
     command: "npm run dev:e2e",
