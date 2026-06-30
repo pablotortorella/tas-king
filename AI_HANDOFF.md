@@ -4,10 +4,13 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v1.7 — **Tests**: 48 unitarios + 16 E2E ✅ Todos pasan
+**Versión actual**: v1.8 — **Tests**: 59 unitarios + 18 E2E ✅ Todos pasan
 
 **Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
-Checklists (#3), Protección adjuntos (#4), JWT Google (#5), i18n landing, Panel admin, IO menu.
+Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), i18n landing, Panel admin, IO menu.
+
+**En vuelo**: Objetivos (#8) en rama `claude/goal-management-features-71ddci` → **PR #9** abierto, sin merge.
+**Pendiente de retomar**: revisar #8 en **staging** antes de mergear (ver "Último handoff" para los pasos exactos).
 
 **Próximo**: #6 Modo oscuro, #7 Lead time/completitud, o mejoras de seguridad (CSP, rate limiting).
 
@@ -54,7 +57,7 @@ Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR →
 - `src/index.js`: setup del Worker (~80 líneas) — importa routes y middlewares
 - `src/routes/`: auth, boards, cards, checklists, labels, uploads, admin, users
 - `public/index.html`: frontend completo — UI Kanban, modales, drag & drop, atajos (~2800 líneas)
-- `migrations/`: esquema D1 incremental (0001 init → 0009 checklists)
+- `migrations/`: esquema D1 incremental (0001 init → 0010 goals)
 - `wrangler.jsonc`: configuración de Workers, D1 y R2
 - `.dev.vars`: variables locales (no commiteado — ver README para el formato)
 - `docs/STATUS.md`: **[IMPORTANTE]** estado de cada feature (qué está hecho, qué falta, tests)
@@ -132,6 +135,7 @@ manual complementario para IAs y personas están en `TESTING.md`.
 | #3 ✅ Checklists | ✅ Tests E2E | `checklists`+`checklist_items`, modo borrador, badge ☑ N/M. |
 | #4 🔐 Adjuntos | ✅ Tests E2E | 2-layer validation: sesión + membresía + MIME + tamaño + cantidad. |
 | #5 🛡️ JWT Google | ✅ Unitarios | Firma RSA + claims. Detecta tampering. |
+| #8 🎯 Objetivos | ✅ Tests (PR #9) | `goals`+`card_goals`, panel lateral + ⛶ Ampliar, filtro/lente, progreso por columna. Pendiente revisar en staging. |
 | ⇅ Menú IO | ✅ | Dropdown Datos: exportar CSV / copiar JSON / importar. |
 | 🌐 i18n landing | ✅ | ES/EN/PT/ZH inline en landing.html. |
 | #6 🌙 Modo oscuro | ❌ | CSS variables listas. Falta toggle + localStorage. |
@@ -147,6 +151,7 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - [x] #3 ✅ Checklists / subtareas
 - [x] #4 🔐 Proteger adjuntos
 - [x] #5 🛡️ Validar JWT de Google
+- [x] #8 🎯 Gestión de objetivos (MVP) — PR #9, pendiente revisar en staging + merge
 - [ ] Seguridad: CSP headers, rate limiting granular
 - [ ] UX: Tab/Enter en toda la interfaz, onboarding nuevos usuarios
 - [ ] #6 🌙 Modo oscuro/claro
@@ -161,7 +166,52 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-26, Infraestructura ops + Disaster Recovery — Claude Sonnet 4.6)
+## Último handoff (2026-06-30, Gestión de objetivos #8 — Opus 4.8)
+
+### ✅ Objetivos (gestión por metas) — MVP completo
+- **Decisión Opción A**: objetivos DENTRO de cada tablero (un tablero = un proyecto). No hay tablero de estrategia separado. Ver `docs/ADRs.md` → **ADR-013** (alternativas B/C/D + criterios de migración).
+- **DB**: migración `0010_goals.sql` (tablas `goals` + `card_goals`, índices + CASCADE).
+- **Backend**: `src/routes/goals.js` (CRUD + vincular/desvincular + progreso). Constante `DONE_COLUMN` en `src/constants.js`. `getBoard()` y `cardJSONById()` exponen `card.goals`.
+- **Frontend** (`public/index.html`):
+  - Acceso único **🎯 Objetivos** → **panel lateral** (drawer izquierda). Dentro, **⛶ Ampliar** → vista a pantalla completa con "📋 Volver al tablero".
+  - **Filtro/lente**: seleccionar un objetivo en el panel resalta sus tarjetas (`card-goal-match`) y atenúa el resto (`card-dimmed`).
+  - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban.
+  - Render compartido: `renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`.
+- **Tests**: 11 unit (`test/goals.test.js`) + 2 E2E (`e2e/goals.spec.js`). **Total: 59 unit + 18 E2E ✅**
+
+### 🌿 Rama / PR
+- Rama: `claude/goal-management-features-71ddci`.
+- **PR #9** abierto hacia `main`: https://github.com/pablotortorella/tas-king/pull/9 (dispara CI Tests). **Sin merge** — esperando revisión en staging.
+
+### ⏭️ PARA RETOMAR: ver #8 en staging (cuando estés frente a la compu)
+```bash
+git fetch origin claude/goal-management-features-71ddci
+git checkout claude/goal-management-features-71ddci
+npm install
+npx wrangler login            # una vez, si no estás logueado en Cloudflare
+npm run deploy:staging        # corre tests, deploya y migra la D1 de staging
+# → https://tas-king-staging.<tu-subdominio>.workers.dev
+```
+- **Pre-requisito** (si nunca deployaste staging): cargar los secrets en ese entorno:
+  ```bash
+  npx wrangler secret put SESSION_SECRET --env staging
+  npx wrangler secret put GOOGLE_CLIENT_ID --env staging
+  npx wrangler secret put GOOGLE_CLIENT_SECRET --env staging
+  npx wrangler secret put ADMIN_EMAILS --env staging
+  ```
+- Staging usa D1 `tas-king-staging` + R2 `tas-king-uploads-staging` (datos separados de prod).
+- **Qué probar**: 🎯 Objetivos → crear un objetivo, vincular una tarjeta, moverla a "Terminado" (ver progreso 100%), ⛶ Ampliar, y la lente (seleccionar objetivo resalta/atenúa tarjetas).
+- Si staging OK → mergear PR #9 y luego `npm run deploy` (con aprobación explícita, según CLAUDE.md).
+
+### ⚠️ Nota de entorno (solo CI / ejecución remota)
+- En el entorno remoto el browser de Playwright fijado (1228) no está instalado; los E2E se corren con `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium`. **Localmente NO hace falta** (usás `npx playwright install`). `playwright.config.mjs` respeta esa variable opcional sin afectar CI.
+
+### Extensiones futuras de la temática (detalle en ADR-013)
+1. Fecha objetivo + semáforo 🟢🟡🔴. 2. Key results numéricos (mini-OKR). 3. Burn-up con `audit_log`. 4. Métricas #7 por objetivo. 5. Reordenar/archivar objetivos. 6. Opción B (cross-board) si la estrategia cruza tableros.
+
+---
+
+## Anterior handoff (2026-06-26, Infraestructura ops + Disaster Recovery — Claude Sonnet 4.6)
 
 ### ✅ Scripts de operación idempotentes (commit c1b6a30)
 - `.dev.vars.example`: plantilla commiteada para onboarding
