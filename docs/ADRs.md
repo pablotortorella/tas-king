@@ -488,3 +488,57 @@ Implementar validación completa del JWT:
 - Si hay problemas de performance, cachear más agresivamente (pero verificar keys con menos frecuencia)
 
 ---
+
+## ADR-013: Gestión de objetivos dentro del tablero (no tablero de estrategia aparte)
+
+**Estado**: ✅ Aceptado (MVP implementado en v1.8)
+**Decidido**: 2026-06-30
+**Último review**: 2026-06-30
+
+**Problema**
+El tablero gestiona tareas sueltas, pero no había una capa que expresara *"estas tareas existen para lograr X"*. Queremos incorporar **gestión de objetivos**: agrupar tarjetas bajo una meta y medir el avance hacia un resultado, no solo el flujo Pendiente→Terminado.
+
+La decisión de diseño clave: **¿los objetivos viven dentro de un tablero, o por encima de varios tableros?** Esa elección define el modelo de datos.
+
+**Decisión (Opción A): objetivos dentro de cada tablero**
+- Un objetivo pertenece a un tablero (`goals.board_id`). `card_goals` solo vincula tarjetas del mismo tablero.
+- **No hay un segundo tablero** de estrategia. La vista de objetivos es otra forma de mirar el mismo board, accesible con un **toggle 📋 Tareas / 🎯 Objetivos**.
+- Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `src/constants.js`.
+
+**Criterio de la decisión**
+El uso real declarado es **un tablero = un proyecto**. Con ese supuesto, mantener objetivos *en contexto* dentro del tablero da el mayor valor con el menor riesgo: reutiliza la maquinaria probada (membresía, badges, barras de progreso de checklists, patrón de etiquetas) y evita los problemas de permisos cruzados que trae vincular tarjetas entre tableros.
+
+**Alternativas consideradas**
+- **B — Tablero de estrategia separado** (`is_strategy=1`, como `is_personal=1`), con objetivos que cruzan varios tableros. Es el modelo OKR "puro" y reutiliza boards/cards. Se descartó *por ahora* porque agrega vinculación cross-board y permisos cruzados que no se justifican mientras un tablero = un proyecto.
+- **C — Objetivo como tipo especial de tarjeta** (`card_type='goal'` con jerarquía padre/hijo). Mínima superficie nueva, pero mezcla conceptos en una sola tabla y un objetivo no se "siente" distinto de una tarea.
+- **D — Híbrido evolutivo**: empezar con A pero dejar el modelo listo para B. Es, de hecho, la senda de evolución que habilita esta decisión (ver "Cuándo cambiar").
+
+**Consecuencias**
+- ✅ **Ventajas**:
+  - Cero fricción: todo en contexto, sin cambiar de pantalla
+  - Reutiliza permisos de membresía y patrones de UI existentes
+  - Modelo de datos simple (`goals` + `card_goals`, espejo de `labels`)
+  - Bajo riesgo: no toca el flujo de tareas existente
+- ❌ **Desventajas / límites conocidos**:
+  - Un objetivo **no** puede agrupar tarjetas de varios tableros
+  - La "estrategia" queda dentro de cada tablero, no hay una vista global de objetivos del usuario
+  - El progreso es binario por columna (terminado / no terminado); no pondera tamaño ni esfuerzo
+
+**Cuándo cambiar (camino a Opción B)**
+Migrar a un tablero de estrategia cross-board cuando se cumpla cualquiera de estos:
+- Un mismo objetivo necesita tarjetas de **más de un tablero** de forma recurrente
+- Aparece la necesidad de un **dashboard global** de objetivos del usuario/organización
+- La estrategia trasciende el proyecto puntual (varios equipos/tableros bajo una misma meta)
+
+La migración es de bajo costo: `card_goals` ya referencia `card_id` sin atarlo rígido a un board, así que habilitar B implica sumar el flag `is_strategy`, una vista cross-board y revisar permisos — sin reescribir el modelo.
+
+**Iteraciones futuras (backlog de esta temática)**
+Ordenadas por relación valor/esfuerzo, a decidir según uso real:
+1. **Fecha objetivo + semáforo de riesgo** 🟢🟡🔴: `target_date` en `goals` + estado automático (en tiempo / cerca del límite / vencido). Aprovecha el polling de 5s.
+2. **Key Results numéricos (mini-OKR)**: resultados con `current`/`target` (ej. "Cerrar 10 ventas: 4/10"); progreso del objetivo = promedio de KRs. Salto de "lista de tareas" a "gestión por resultados".
+3. **Progreso histórico / burn-up** 📈: registrar en `audit_log` cuando una tarjeta vinculada llega a `terminado` y graficar el avance en el tiempo (sin tabla nueva).
+4. **Integración con métricas #7** (lead time / % completitud): expresar las métricas *por objetivo* ("avanza X%/semana, ETA estimado Y").
+5. **Reordenar objetivos** (drag & drop) y **archivar objetivos** cumplidos.
+6. **Opción B (cross-board)**: tablero de estrategia, según los criterios de migración de arriba.
+
+---
