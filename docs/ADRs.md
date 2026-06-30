@@ -502,8 +502,14 @@ La decisión de diseño clave: **¿los objetivos viven dentro de un tablero, o p
 
 **Decisión (Opción A): objetivos dentro de cada tablero**
 - Un objetivo pertenece a un tablero (`goals.board_id`). `card_goals` solo vincula tarjetas del mismo tablero.
-- **No hay un segundo tablero** de estrategia. La vista de objetivos es otra forma de mirar el mismo board, accesible con un **toggle 📋 Tareas / 🎯 Objetivos**.
+- **No hay un segundo tablero** de estrategia. La vista de objetivos es otra forma de mirar el mismo board.
 - Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `src/constants.js`.
+
+**Dos formas de acceso (UX), complementarias**
+1. **Vista amplia** (toggle 📋 Tareas / 🎯 Objetivos): reemplaza el tablero por la lista de objetivos a pantalla completa. Buena para revisar/planificar.
+2. **Panel lateral** (🎯 Panel, drawer desde la izquierda): se abre *sobre* la vista de tareas sin bloquearla — el tablero queda visible y operable a la derecha. Buena para edición rápida y para usar los objetivos como **lente**: al seleccionar un objetivo, sus tarjetas se resaltan y el resto se atenúa (no se ocultan), sin tocar los filtros de búsqueda/etiquetas.
+
+Se mantienen ambas a propósito (decisión del usuario): la vista amplia para foco total, el panel para trabajar el board y los objetivos en paralelo. La lógica de render es compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) para evitar divergencia.
 
 **Criterio de la decisión**
 El uso real declarado es **un tablero = un proyecto**. Con ese supuesto, mantener objetivos *en contexto* dentro del tablero da el mayor valor con el menor riesgo: reutiliza la maquinaria probada (membresía, badges, barras de progreso de checklists, patrón de etiquetas) y evita los problemas de permisos cruzados que trae vincular tarjetas entre tableros.

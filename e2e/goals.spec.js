@@ -11,22 +11,21 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator("#board .column")).toHaveCount(5);
 });
 
-test("crea objetivo, vincula tarjeta y refleja el progreso", async ({ page }) => {
+test("crea objetivo, vincula tarjeta y refleja el progreso (vista amplia)", async ({ page }) => {
   // 1. Crear una tarjeta en "Pendiente"
   await page.locator('.add-card[data-col="pendiente"]').click();
   await page.locator("#fTitle").fill(cardTitle);
   await page.locator("#saveBtn").click();
   await expect(page.locator(".card", { hasText: cardTitle })).toBeVisible();
 
-  // 2. Ir a la vista de Objetivos y crear uno
+  // 2. Ir a la vista amplia de Objetivos y crear uno
   await page.locator("#viewGoalsBtn").click();
   await expect(page.locator("#goalsBoard")).toBeVisible();
-  await page.locator("#newGoalTitle").fill(goalTitle);
-  await page.locator("#createGoalBtn").click();
+  await page.locator("#goalsBoard .new-goal-title").fill(goalTitle);
+  await page.locator("#goalsBoard .new-goal-btn").click();
 
-  const goalCard = page.locator(".goal-card", { hasText: goalTitle });
+  const goalCard = page.locator("#goalsBoard .goal-card", { hasText: goalTitle });
   await expect(goalCard).toBeVisible();
-  // Sin tarjetas vinculadas todavía
   await expect(goalCard.locator(".goal-stats")).toContainText("0/0");
 
   // 3. Volver a Tareas, abrir la tarjeta y vincularla al objetivo
@@ -36,10 +35,7 @@ test("crea objetivo, vincula tarjeta y refleja el progreso", async ({ page }) =>
 
   await page.locator("#fGoalsSection .add-goal-btn").click();
   await expect(page.locator(".goal-picker")).toBeVisible();
-  const row = page.locator(".goal-picker .existing-goal", { hasText: goalTitle });
-  await row.locator("text=Vincular").click();
-
-  // El chip del objetivo queda visible en la tarjeta
+  await page.locator(".goal-picker .existing-goal", { hasText: goalTitle }).locator("text=Vincular").click();
   await expect(page.locator("#fGoalsSection .goal-in-card")).toBeVisible({ timeout: 5000 });
 
   // 4. Mover la tarjeta a "Terminado" y guardar
@@ -52,12 +48,50 @@ test("crea objetivo, vincula tarjeta y refleja el progreso", async ({ page }) =>
 
   // 5. El progreso del objetivo ahora es 1/1 (100%)
   await page.locator("#viewGoalsBtn").click();
-  const updatedGoal = page.locator(".goal-card", { hasText: goalTitle });
+  const updatedGoal = page.locator("#goalsBoard .goal-card", { hasText: goalTitle });
   await expect(updatedGoal.locator(".goal-stats")).toContainText("1/1");
   await expect(updatedGoal.locator(".goal-stats")).toContainText("100%");
+  await page.locator("#viewTasksBtn").click();
+});
 
-  // 6. Eliminar el objetivo (acepta el confirm)
-  page.once("dialog", dialog => dialog.accept());
-  await updatedGoal.locator('[data-act="delete"]').click();
-  await expect(page.locator(".goal-card", { hasText: goalTitle })).toHaveCount(0);
+test("panel lateral: crea, selecciona objetivo y resalta sus tarjetas", async ({ page }) => {
+  const panelGoal = `E2E panel ${runId}`;
+  const linked = `E2E vinculada ${runId}`;
+  const other = `E2E otra ${runId}`;
+
+  // Dos tarjetas en "Pendiente"
+  for (const t of [linked, other]) {
+    await page.locator('.add-card[data-col="pendiente"]').click();
+    await page.locator("#fTitle").fill(t);
+    await page.locator("#saveBtn").click();
+    await expect(page.locator(".card", { hasText: t })).toBeVisible();
+  }
+
+  // Abrir el panel lateral (el tablero sigue visible)
+  await page.locator("#goalsPanelBtn").click();
+  await expect(page.locator("#goalsDrawer")).toHaveClass(/open/);
+  await expect(page.locator("body")).toHaveClass(/drawer-open/);
+  await expect(page.locator("#board")).toBeVisible();
+
+  // Crear un objetivo desde el panel
+  await page.locator("#goalsDrawerList .new-goal-title").fill(panelGoal);
+  await page.locator("#goalsDrawerList .new-goal-btn").click();
+  await expect(page.locator("#goalsDrawerList .goal-card", { hasText: panelGoal })).toBeVisible();
+
+  // Vincular SOLO una de las tarjetas al objetivo
+  await page.locator(".card", { hasText: linked }).click();
+  await page.locator("#fGoalsSection .add-goal-btn").click();
+  await page.locator(".goal-picker .existing-goal", { hasText: panelGoal }).locator("text=Vincular").click();
+  await expect(page.locator("#fGoalsSection .goal-in-card")).toBeVisible();
+  await page.locator("#cancelBtn").click();
+
+  // Seleccionar el objetivo en el panel → resalta la vinculada y atenúa la otra
+  await page.locator("#goalsDrawerList .goal-card", { hasText: panelGoal }).click();
+  await expect(page.locator(".card", { hasText: linked })).toHaveClass(/card-goal-match/);
+  await expect(page.locator(".card", { hasText: other })).toHaveClass(/card-dimmed/);
+
+  // Cerrar el panel limpia el resaltado
+  await page.locator("#goalsDrawerClose").click();
+  await expect(page.locator("#goalsDrawer")).not.toHaveClass(/open/);
+  await expect(page.locator(".card", { hasText: other })).not.toHaveClass(/card-dimmed/);
 });

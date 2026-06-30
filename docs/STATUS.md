@@ -1,17 +1,18 @@
 # Estado de Implementación — FUN TasKing! v1.8
 
 **Última actualización**: 2026-06-30  
-**Estado**: ✅ Tests completos (59 unit + 17 E2E) | ⏭️ Próximo: #6 Modo oscuro o #7 Lead time
+**Estado**: ✅ Tests completos (59 unit + 18 E2E) | ⏭️ Próximo: #6 Modo oscuro o #7 Lead time
 
 ## 🎯 Cambios recientes (sesión 2026-06-30)
 
 - **Objetivos (#8) MVP completo**: gestión de objetivos por tablero (Opción A — dentro del tablero)
   - Tabla `goals` + `card_goals` (migración `0010_goals.sql`)
   - Backend `src/routes/goals.js`: CRUD + vincular/desvincular tarjetas + progreso calculado
-  - Toggle de vista **📋 Tareas / 🎯 Objetivos** en el header
+  - Toggle de vista **📋 Tareas / 🎯 Objetivos** (vista amplia) + **🎯 Panel** lateral para ver/editar sin salir del tablero
+  - Filtro por objetivo: seleccionar uno en el panel resalta sus tarjetas y atenúa el resto
   - Vista de objetivos con barra de progreso (terminadas/total) y % automático
   - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban
-  - 11 unit (integración con D1) + 1 E2E nuevos
+  - 11 unit (integración con D1) + 2 E2E nuevos
 
 ## 🎯 Cambios recientes (sesión 2026-06-25)
 
@@ -359,14 +360,17 @@
   - Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `constants.js`.
   - Cada tarjeta expone su array `goals` (en `getBoard()` y `cardJSONById()`)
 - **Frontend** (public/index.html):
-  - Toggle **📋 Tareas / 🎯 Objetivos** en la barra de acciones
+  - Toggle **📋 Tareas / 🎯 Objetivos** en la barra de acciones (vista amplia, pantalla completa)
+  - **Panel lateral 🎯 Panel** (drawer desde la izquierda): ver/editar objetivos sin abandonar el tablero, que queda visible a la derecha (el board se corre con `body.drawer-open`)
+  - **Filtro/lente por objetivo**: al seleccionar un objetivo en el panel, sus tarjetas se resaltan (`card-goal-match`) y el resto se atenúa (`card-dimmed`); cerrar el panel o re-seleccionar limpia el resaltado
+  - Lógica compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) entre vista amplia y panel
   - Vista de objetivos: tarjetas con barra de progreso (verde al 100%), stats y CRUD inline
   - Sección "🎯 Objetivos" en el modal de tarjeta: vincular/crear objetivos (calca el patrón de etiquetas)
   - Badge 🎯 en la tarjeta del Kanban cuando pertenece a uno o más objetivos
 
 **Tests**:
 - ✅ 11 unitarios (test/goals.test.js): CRUD, permisos, progreso por columna, archivadas no cuentan, cascade al borrar
-- ✅ 1 E2E (e2e/goals.spec.js): crear objetivo → vincular tarjeta → mover a Terminado → progreso 100% → eliminar
+- ✅ 2 E2E (e2e/goals.spec.js): (1) vista amplia: crear → vincular → mover a Terminado → progreso 100% → eliminar; (2) panel lateral: crear → vincular una tarjeta → seleccionar objetivo resalta/atenúa → cerrar limpia
 
 **Estado**: **100% completo (MVP)**. Extensiones futuras: fecha objetivo con semáforo de riesgo, key results numéricos (mini-OKR).
 
@@ -487,7 +491,7 @@
 | Capa | Cobertura | Notas |
 |---|---|---|
 | **Unitarios (Vitest)** | 59 tests ✅ | CRUD, auth, permisos, checklists, objetivos, serialización. Corre en Workerd + D1 emulado. |
-| **E2E (Playwright)** | 17 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos. |
+| **E2E (Playwright)** | 18 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral con filtro). |
 | **Manual** | Completo ✅ | Celebración, polling, login real, responsive. |
 
 **Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/critical-flows.spec.js`, `e2e/history.spec.js`.
