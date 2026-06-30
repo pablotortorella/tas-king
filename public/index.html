@@ -294,8 +294,8 @@
   }
   .label-in-card .remove { cursor: pointer; margin-left: 4px; opacity: 0.8; }
   .label-in-card .remove:hover { opacity: 1; }
-  .add-label-btn { padding: 4px 8px; font-size: 12px; background: var(--col-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
-  .add-label-btn:hover { background: var(--border); }
+  .add-label-btn, .add-goal-btn { padding: 4px 8px; font-size: 12px; background: var(--col-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+  .add-label-btn:hover, .add-goal-btn:hover { background: var(--border); }
 
   /* Panel desplegable de crear/asignar etiqueta */
   .label-picker { margin-top: 8px; padding: 10px; background: var(--col-bg); border-radius: 6px; }
@@ -521,6 +521,87 @@
   .activity-card { font-size: 12px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; padding-top: 2px; }
   .activity-empty { padding: 14px 12px; font-size: 13px; color: var(--muted); }
+
+  /* Vista de objetivos */
+  .goals-board { padding: 16px; max-width: 760px; margin: 0 auto; }
+  .goals-fullhead {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; font-size: 16px; font-weight: 600;
+  }
+  .goals-board .goals-empty { color: var(--muted); font-size: 14px; padding: 24px; text-align: center; }
+  .goal-card {
+    background: var(--col-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; margin-bottom: 12px;
+  }
+  .goal-card .goal-head { display: flex; align-items: flex-start; gap: 8px; }
+  .goal-card h3 { margin: 0; font-size: 15px; flex: 1; word-break: break-word; }
+  .goal-card .goal-desc { margin: 4px 0 10px; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+  .goal-progress {
+    height: 10px; background: var(--border); border-radius: 6px; overflow: hidden; margin: 8px 0 4px;
+  }
+  .goal-progress > span { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .goal-progress.done > span { background: #2e7d32; }
+  .goal-stats { font-size: 12px; color: var(--muted); }
+  .goal-ops { display: flex; gap: 6px; flex: 0 0 auto; }
+  .goal-ops button {
+    border: none; background: transparent; cursor: pointer; font-size: 13px;
+    color: var(--muted); padding: 2px 4px; border-radius: 4px;
+  }
+  .goal-ops button:hover { background: var(--border); color: var(--text); }
+  .goal-create { margin-top: 8px; }
+  .goal-create input, .goal-create textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13px; font-family: inherit; margin-bottom: 8px; box-sizing: border-box;
+  }
+
+  /* Sección de objetivos dentro del modal de tarjeta */
+  .goals-card-section { margin: 14px 0; }
+  .goals-card-section h3 { font-size: 13px; margin: 0 0 6px; }
+  .goal-in-card {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--col-bg);
+    border: 1px solid var(--border); border-radius: 12px; padding: 3px 10px;
+    font-size: 12px; margin: 0 6px 6px 0;
+  }
+  .goal-in-card .remove { cursor: pointer; color: var(--danger); font-weight: 600; }
+  .goal-picker { margin-top: 8px; padding: 10px; background: var(--col-bg); border-radius: 6px; }
+  .goal-picker .existing-goal {
+    display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px;
+  }
+  .goal-picker input {
+    width: 100%; margin-bottom: 8px; padding: 6px 8px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 12px; box-sizing: border-box;
+  }
+
+  /* Panel lateral (drawer) de objetivos — entra desde la izquierda, no bloquea el tablero */
+  .goals-drawer {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 320px; z-index: 50;
+    background: var(--bg); border-right: 1px solid var(--border);
+    box-shadow: 2px 0 12px rgba(0,0,0,.12);
+    transform: translateX(-100%); transition: transform .2s ease;
+    display: flex; flex-direction: column;
+  }
+  .goals-drawer.open { transform: translateX(0); }
+  .goals-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; font-weight: 600; border-bottom: 1px solid var(--border);
+  }
+  .goals-drawer-actions { display: flex; align-items: center; gap: 4px; }
+  .goals-drawer-head button {
+    border: none; background: transparent; cursor: pointer; color: var(--muted);
+  }
+  #goalsExpandBtn { font-size: 12px; padding: 3px 6px; border-radius: 4px; }
+  #goalsExpandBtn:hover { background: var(--col-bg); color: var(--text); }
+  #goalsDrawerClose { font-size: 16px; }
+  .goals-drawer-hint { padding: 8px 14px; font-size: 12px; color: var(--muted); }
+  .goals-drawer-list { flex: 1; overflow-y: auto; padding: 8px 14px 16px; }
+  /* el tablero se corre a la derecha cuando el panel está abierto */
+  body.drawer-open #board, body.drawer-open .goals-board { margin-left: 320px; transition: margin-left .2s ease; }
+  .goal-card.selected { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .goals-drawer-list .goal-card { cursor: pointer; }
+
+  /* Resaltado de tarjetas cuando hay un objetivo seleccionado */
+  .card.card-dimmed { opacity: .35; }
+  .card.card-goal-match { box-shadow: 0 0 0 2px var(--accent); }
 </style>
 </head>
 <body>
@@ -538,6 +619,7 @@
     <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
+    <button id="goalsBtn" title="Objetivos: ver, editar y resaltar tarjetas">🎯 Objetivos</button>
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
     <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
@@ -563,6 +645,20 @@
 </header>
 
 <div class="board" id="board"></div>
+<div class="goals-board" id="goalsBoard" style="display:none"></div>
+
+<!-- Panel lateral de objetivos (no bloquea el tablero) -->
+<aside class="goals-drawer" id="goalsDrawer" aria-label="Panel de objetivos">
+  <div class="goals-drawer-head">
+    <span>🎯 Objetivos</span>
+    <div class="goals-drawer-actions">
+      <button id="goalsExpandBtn" title="Ampliar a pantalla completa">⛶ Ampliar</button>
+      <button id="goalsDrawerClose" title="Cerrar panel">✕</button>
+    </div>
+  </div>
+  <div class="goals-drawer-hint">Clic en un objetivo para resaltar sus tarjetas en el tablero.</div>
+  <div class="goals-drawer-list" id="goalsDrawerList"></div>
+</aside>
 
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta</span>
@@ -601,6 +697,7 @@
       </div>
     </div>
     <div class="labels-section" id="fLabelsSection"></div>
+    <div class="goals-card-section" id="fGoalsSection"></div>
     <div id="fChecklistsSection"></div>
     <div class="field">
       <label>Adjuntos (fotos y archivos)</label>
@@ -898,6 +995,9 @@
   let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
   let activeLabelFilters = new Set(); // ids de etiquetas para filtro OR
   let boardLabels = [];        // etiquetas del tablero actual
+  let boardGoals = [];         // objetivos del tablero actual (con progreso)
+  let currentView = "tasks";   // "tasks" | "goals"
+  let activeGoalFilter = null; // id de objetivo seleccionado en el panel (resalta sus tarjetas)
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
@@ -989,13 +1089,20 @@
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
-    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; render(); return; }
+    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; boardGoals = []; render(); refreshGoalsUI(); return; }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
     lastKnownVersion = state.version || 0;
     try { boardLabels = await api("GET", "/api/boards/" + currentBoardId + "/labels"); }
     catch (e) { boardLabels = []; }
+    await loadGoals();
     render();
+    refreshGoalsUI();
+  }
+
+  async function loadGoals() {
+    try { boardGoals = await api("GET", "/api/boards/" + currentBoardId + "/goals"); }
+    catch (e) { boardGoals = []; }
   }
 
   // ---------- Polling de cambios en tiempo real ----------
@@ -1096,6 +1203,160 @@
 
   // ---------- Render del tablero ----------
   const board = document.getElementById("board");
+  const goalsBoard = document.getElementById("goalsBoard");
+
+  // ---------- Vista de objetivos (vista amplia + panel lateral) ----------
+  const goalsDrawer = document.getElementById("goalsDrawer");
+  const goalsDrawerList = document.getElementById("goalsDrawerList");
+
+  function showView(view) {
+    currentView = view;
+    const isGoals = view === "goals";
+    board.style.display = isGoals ? "none" : "";
+    goalsBoard.style.display = isGoals ? "" : "none";
+    refreshGoalsUI();
+  }
+
+  // Construye la tarjeta DOM de un objetivo. Si selectable, al hacer click resalta
+  // las tarjetas vinculadas en el tablero (atenúa el resto).
+  function buildGoalCard(goal, selectable) {
+    const card = document.createElement("div");
+    card.className = "goal-card" + (selectable && activeGoalFilter === goal.id ? " selected" : "");
+    const doneClass = goal.total > 0 && goal.done === goal.total ? " done" : "";
+    card.innerHTML = `
+      <div class="goal-head">
+        <h3>${escapeHtml(goal.title)}</h3>
+        <div class="goal-ops">
+          <button data-act="edit" title="Editar objetivo">✏️</button>
+          <button data-act="delete" title="Eliminar objetivo">🗑</button>
+        </div>
+      </div>
+      ${goal.description ? `<div class="goal-desc">${escapeHtml(goal.description)}</div>` : ""}
+      <div class="goal-progress${doneClass}"><span style="width:${goal.pct}%"></span></div>
+      <div class="goal-stats">${goal.done}/${goal.total} tarjetas terminadas · ${goal.pct}%</div>
+    `;
+    card.querySelector('[data-act="edit"]').addEventListener("click", e => { e.stopPropagation(); editGoal(goal); });
+    card.querySelector('[data-act="delete"]').addEventListener("click", e => { e.stopPropagation(); deleteGoal(goal); });
+    if (selectable) {
+      card.addEventListener("click", () => toggleGoalFilter(goal.id));
+    }
+    return card;
+  }
+
+  // Renderiza la lista de objetivos + formulario de creación dentro de un contenedor.
+  // selectable: en el panel, click en un objetivo resalta sus tarjetas.
+  // fullView: en la vista ampliada, agrega una barra para volver al tablero.
+  function renderGoalsList(container, selectable, fullView) {
+    container.innerHTML = "";
+
+    if (fullView) {
+      const head = document.createElement("div");
+      head.className = "goals-fullhead";
+      head.innerHTML = `
+        <span>🎯 Objetivos</span>
+        <button class="btn btn-ghost btn-small goals-back-btn">📋 Volver al tablero</button>
+      `;
+      head.querySelector(".goals-back-btn").addEventListener("click", () => showView("tasks"));
+      container.appendChild(head);
+    }
+
+    boardGoals.forEach(goal => container.appendChild(buildGoalCard(goal, selectable)));
+
+    if (!boardGoals.length) {
+      const empty = document.createElement("div");
+      empty.className = "goals-empty";
+      empty.textContent = "Todavía no hay objetivos. Creá uno para agrupar tus tarjetas y medir el avance.";
+      container.appendChild(empty);
+    }
+
+    const create = document.createElement("div");
+    create.className = "goal-create";
+    create.innerHTML = `
+      <input type="text" class="new-goal-title" placeholder="Título del objetivo..." maxlength="120">
+      <textarea class="new-goal-desc" placeholder="Descripción (opcional)..." rows="2" maxlength="500"></textarea>
+      <button class="btn btn-primary btn-small new-goal-btn">+ Crear objetivo</button>
+    `;
+    create.querySelector(".new-goal-btn").addEventListener("click", () => createGoal(create));
+    container.appendChild(create);
+  }
+
+  // Re-renderiza la vista amplia y el panel (si está abierto).
+  function refreshGoalsUI() {
+    renderGoalsList(goalsBoard, false, true);
+    if (goalsDrawer.classList.contains("open")) renderGoalsList(goalsDrawerList, true, false);
+  }
+
+  // ---------- Panel lateral de objetivos ----------
+  function openGoalsDrawer() {
+    goalsDrawer.classList.add("open");
+    document.body.classList.add("drawer-open");
+    renderGoalsList(goalsDrawerList, true, false);
+  }
+
+  // Ampliar: cierra el panel y muestra la vista de objetivos a pantalla completa.
+  function expandGoals() {
+    goalsDrawer.classList.remove("open");
+    document.body.classList.remove("drawer-open");
+    showView("goals");
+  }
+
+  function closeGoalsDrawer() {
+    goalsDrawer.classList.remove("open");
+    document.body.classList.remove("drawer-open");
+    if (activeGoalFilter) { activeGoalFilter = null; render(); } // limpia el resaltado
+  }
+
+  function toggleGoalsDrawer() {
+    if (goalsDrawer.classList.contains("open")) { closeGoalsDrawer(); return; }
+    if (currentView === "goals") showView("tasks"); // el panel trabaja sobre el tablero
+    openGoalsDrawer();
+  }
+
+  // Selecciona/deselecciona un objetivo para resaltar sus tarjetas en el tablero.
+  function toggleGoalFilter(goalId) {
+    activeGoalFilter = activeGoalFilter === goalId ? null : goalId;
+    if (currentView === "goals") showView("tasks"); // el resaltado se ve en el tablero
+    render();
+    refreshGoalsUI();
+  }
+
+  async function createGoal(container) {
+    const title = (container.querySelector(".new-goal-title").value || "").trim();
+    const description = (container.querySelector(".new-goal-desc").value || "").trim();
+    if (!title) { alert("Escribí un título para el objetivo."); return; }
+    try {
+      await api("POST", "/api/boards/" + currentBoardId + "/goals", { title, description });
+      await loadGoals();
+      refreshGoalsUI();
+    } catch (e) { alert("No se pudo crear el objetivo: " + e.message); }
+  }
+
+  async function editGoal(goal) {
+    const title = prompt("Título del objetivo:", goal.title);
+    if (title === null) return;
+    if (!title.trim()) { alert("El título no puede quedar vacío."); return; }
+    const description = prompt("Descripción (opcional):", goal.description || "");
+    if (description === null) return;
+    try {
+      await api("PUT", "/api/boards/" + currentBoardId + "/goals/" + goal.id,
+        { title: title.trim(), description: description.trim() });
+      await loadGoals();
+      refreshGoalsUI();
+    } catch (e) { alert("No se pudo editar el objetivo: " + e.message); }
+  }
+
+  async function deleteGoal(goal) {
+    if (!confirm(`¿Eliminar el objetivo “${goal.title}”?\n\nLas tarjetas no se borran, solo se desvinculan.`)) return;
+    try {
+      await api("DELETE", "/api/boards/" + currentBoardId + "/goals/" + goal.id);
+      if (activeGoalFilter === goal.id) activeGoalFilter = null;
+      await loadCards(); // refresca también las tarjetas (perdieron el vínculo)
+    } catch (e) { alert("No se pudo eliminar el objetivo: " + e.message); }
+  }
+
+  document.getElementById("goalsBtn").addEventListener("click", toggleGoalsDrawer);
+  document.getElementById("goalsExpandBtn").addEventListener("click", expandGoals);
+  document.getElementById("goalsDrawerClose").addEventListener("click", closeGoalsDrawer);
 
   // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
   function matchesSearch(card) {
@@ -1212,6 +1473,12 @@
     el.draggable = true;
     el.dataset.id = card.id;
 
+    // Resaltado por objetivo seleccionado: las vinculadas se marcan, el resto se atenúa.
+    if (activeGoalFilter) {
+      if ((card.goals || []).some(g => g.id === activeGoalFilter)) el.classList.add("card-goal-match");
+      else el.classList.add("card-dimmed");
+    }
+
     const badges = [];
     if (card.assignee) {
       const p = memberByEmail(card.assignee) || { email: card.assignee };
@@ -1223,6 +1490,7 @@
       const doneItems  = card.checklists.reduce((s, cl) => s + cl.items.filter(i => i.checked).length, 0);
       if (totalItems > 0) badges.push(`<span class="badge${doneItems === totalItems ? ' badge-done' : ''}">☑ ${doneItems}/${totalItems}</span>`);
     }
+    if (card.goals && card.goals.length) badges.push(`<span class="badge" title="${escapeHtml(card.goals.map(g => g.title).join(", "))}">🎯 ${card.goals.length}</span>`);
     if (card.comments && card.comments.length) badges.push(`<span class="badge">💬 ${card.comments.length}</span>`);
     if (card.attachments && card.attachments.length) badges.push(`<span class="badge">📎 ${card.attachments.length}</span>`);
     if (card.details) badges.push(`<span class="badge">≡</span>`);
@@ -1321,6 +1589,7 @@
   const fAttachments = document.getElementById("fAttachments");
   const fComments = document.getElementById("fComments");
   const fLabelsSection = document.getElementById("fLabelsSection");
+  const fGoalsSection = document.getElementById("fGoalsSection");
 
   // poblar el selector de columnas una vez
   COLUMNS.forEach(c => {
@@ -1427,6 +1696,7 @@
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
     renderLabels();
+    renderCardGoals();
     renderChecklists();
     renderComments();
     renderHistory();
@@ -1909,6 +2179,117 @@
     } catch (e) { alert("No se pudo quitar: " + e.message); }
   }
 
+  // ---------- Objetivos dentro del modal de tarjeta ----------
+  function renderCardGoals() {
+    fGoalsSection.innerHTML = "";
+    if (!editingId) return;
+    const card = state.cards.find(c => c.id === editingId);
+    const cardGoals = card ? (card.goals || []) : [];
+
+    const section = document.createElement("div");
+    section.className = "goals-card-section";
+    section.innerHTML = `<h3>🎯 Objetivos</h3>`;
+
+    if (cardGoals.length > 0) {
+      const listDiv = document.createElement("div");
+      cardGoals.forEach(goal => {
+        const chip = document.createElement("span");
+        chip.className = "goal-in-card";
+        chip.innerHTML = `${escapeHtml(goal.title)}<span class="remove" title="Quitar del objetivo">✕</span>`;
+        chip.querySelector(".remove").addEventListener("click", () => removeGoal(goal.id));
+        listDiv.appendChild(chip);
+      });
+      section.appendChild(listDiv);
+    }
+
+    const btn = document.createElement("button");
+    btn.className = "add-goal-btn";
+    btn.textContent = cardGoals.length ? "+ Vincular a otro objetivo" : "+ Vincular a un objetivo";
+    btn.addEventListener("click", toggleGoalPicker);
+    section.appendChild(btn);
+
+    fGoalsSection.appendChild(section);
+  }
+
+  function toggleGoalPicker() {
+    const existing = fGoalsSection.querySelector(".goal-picker");
+    if (existing) { existing.remove(); return; }
+
+    const card = state.cards.find(c => c.id === editingId);
+    const assignedIds = new Set((card ? card.goals || [] : []).map(g => g.id));
+
+    const picker = document.createElement("div");
+    picker.className = "goal-picker";
+
+    const existingDiv = document.createElement("div");
+    existingDiv.innerHTML = '<h4 style="margin:0 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Objetivos del tablero:</h4>';
+
+    if (!boardGoals.length) {
+      const none = document.createElement("div");
+      none.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:6px";
+      none.textContent = "No hay objetivos todavía. Creá uno abajo.";
+      existingDiv.appendChild(none);
+    }
+
+    boardGoals.forEach(goal => {
+      const row = document.createElement("div");
+      row.className = "existing-goal";
+      const assigned = assignedIds.has(goal.id);
+      row.innerHTML = `
+        <span style="flex:1;font-weight:600">${escapeHtml(goal.title)}</span>
+        ${assigned
+          ? `<span class="del" style="cursor:pointer;color:var(--danger)" data-goal-id="${goal.id}">Quitar</span>`
+          : `<span style="cursor:pointer;color:var(--accent)" data-goal-id="${goal.id}">Vincular</span>`
+        }
+      `;
+      row.querySelector(`[data-goal-id="${goal.id}"]`)
+        .addEventListener("click", () => assigned ? removeGoal(goal.id) : assignGoal(goal.id));
+      existingDiv.appendChild(row);
+    });
+    picker.appendChild(existingDiv);
+
+    const createDiv = document.createElement("div");
+    createDiv.innerHTML = `
+      <h4 style="margin:10px 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Crear objetivo:</h4>
+      <input type="text" id="newGoalInline" placeholder="Título del objetivo..." maxlength="120">
+      <button id="createGoalInlineBtn" style="width:100%;padding:6px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">Crear y vincular</button>
+    `;
+    picker.appendChild(createDiv);
+
+    const create = async () => {
+      const title = (picker.querySelector("#newGoalInline").value || "").trim();
+      if (!title) { alert("Escribí un título."); return; }
+      try {
+        const goal = await api("POST", "/api/boards/" + currentBoardId + "/goals", { title });
+        await api("POST", `/api/cards/${editingId}/goals/${goal.id}`);
+        await loadCards();
+        renderCardGoals();
+      } catch (e) { alert("No se pudo crear: " + e.message); }
+    };
+    createDiv.querySelector("#createGoalInlineBtn").addEventListener("click", create);
+    createDiv.querySelector("#newGoalInline").addEventListener("keydown", e => {
+      if (e.key === "Enter") create();
+    });
+
+    fGoalsSection.appendChild(picker);
+  }
+
+  async function assignGoal(goalId) {
+    try {
+      await api("POST", `/api/cards/${editingId}/goals/${goalId}`);
+      await loadCards();
+      renderCardGoals();
+    } catch (e) { alert("No se pudo vincular: " + e.message); }
+  }
+
+  async function removeGoal(goalId) {
+    try {
+      await api("DELETE", `/api/cards/${editingId}/goals/${goalId}`);
+      await loadCards();
+      renderCardGoals();
+    } catch (e) { alert("No se pudo quitar: " + e.message); }
+  }
+
   async function createLabel(color) {
     if (!editingId || !currentBoardId) return;
     const name = document.getElementById("newLabelName")?.value.trim();
@@ -2311,6 +2692,9 @@
   document.getElementById("boardSelect").addEventListener("change", async e => {
     currentBoardId = e.target.value;
     assigneeFilter = "";
+    activeGoalFilter = null;
+    closeGoalsDrawer();
+    showView("tasks");
     updateBoardControls();
     await loadMembers();
     await loadCards();
