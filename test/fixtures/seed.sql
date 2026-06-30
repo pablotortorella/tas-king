@@ -4,12 +4,15 @@
 -- Limpiar en orden inverso a FK constraints
 DELETE FROM checklist_items;
 DELETE FROM checklists;
+DELETE FROM card_goals;
+DELETE FROM goals;
 DELETE FROM card_labels;
 DELETE FROM labels;
 DELETE FROM attachments;
 DELETE FROM comments;
 DELETE FROM audit_log;
 DELETE FROM cards;
+DELETE FROM columns;
 DELETE FROM board_members;
 DELETE FROM boards;
 DELETE FROM rate_limit_log;
@@ -28,6 +31,18 @@ INSERT INTO boards (id, name, owner_email, is_personal, created_at)
   VALUES ('board-e2e', 'Tablero E2E', 'e2e-admin@test.local', 1, 1000000000000);
 INSERT INTO board_members (board_id, email, role, created_at)
   VALUES ('board-e2e', 'e2e-admin@test.local', 'owner', 1000000000000);
+
+-- Columnas por defecto del tablero E2E (mismos IDs que el frontend histórico)
+INSERT INTO columns (id, board_id, name, position, is_done, created_at)
+  VALUES ('por_conversar', 'board-e2e', 'Por conversar', 1, 0, 1000000000000);
+INSERT INTO columns (id, board_id, name, position, is_done, created_at)
+  VALUES ('pendiente', 'board-e2e', 'Pendiente', 2, 0, 1000000000000);
+INSERT INTO columns (id, board_id, name, position, is_done, created_at)
+  VALUES ('en_progreso', 'board-e2e', 'En progreso', 3, 0, 1000000000000);
+INSERT INTO columns (id, board_id, name, position, is_done, created_at)
+  VALUES ('por_revisar', 'board-e2e', 'Por revisar', 4, 0, 1000000000000);
+INSERT INTO columns (id, board_id, name, position, is_done, created_at)
+  VALUES ('terminado', 'board-e2e', 'Terminado', 5, 1, 1000000000000);
 
 -- Etiqueta base reutilizable por los tests de etiquetas
 INSERT INTO labels (id, board_id, name, color, position, created_at)

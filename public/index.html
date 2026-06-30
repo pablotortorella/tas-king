@@ -174,6 +174,39 @@
     font-size: 12px;
     font-weight: 600;
   }
+  .col-actions { display: flex; align-items: center; gap: 4px; }
+  .col-action-btn {
+    background: none; border: none; cursor: pointer; font-size: 11px;
+    color: rgba(9,30,66,.35); padding: 2px 4px; border-radius: 4px; line-height: 1;
+  }
+  .col-action-btn:hover { background: rgba(9,30,66,.08); color: var(--text); }
+  .col-rename-input {
+    background: transparent; border: none; border-bottom: 2px solid var(--accent);
+    font-weight: 600; font-size: 14px; width: 140px; outline: none; padding: 0;
+    color: var(--text);
+  }
+  .add-column {
+    background: var(--col-bg); border-radius: 8px; width: 220px; flex: 0 0 220px;
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .add-column-btn {
+    background: none; border: 2px dashed rgba(9,30,66,.2); border-radius: 6px;
+    color: var(--muted); cursor: pointer; font-size: 14px; padding: 10px;
+    width: 100%; text-align: center; transition: border-color .15s, color .15s;
+  }
+  .add-column-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .add-column-form { display: flex; flex-direction: column; gap: 6px; }
+  .add-column-input {
+    border: 1px solid var(--border); border-radius: 6px; font-size: 14px;
+    padding: 6px 8px; width: 100%; box-sizing: border-box; outline: none;
+  }
+  .add-column-input:focus { border-color: var(--accent); }
+  .add-column-row { display: flex; gap: 6px; }
+  .add-column-confirm, .add-column-cancel {
+    flex: 1; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; padding: 6px;
+  }
+  .add-column-confirm { background: var(--accent); color: #fff; }
+  .add-column-cancel  { background: rgba(9,30,66,.08); color: var(--text); }
   .cards {
     padding: 0 8px 8px;
     flex: 1;
@@ -973,13 +1006,9 @@
 (function () {
   "use strict";
 
-  const COLUMNS = [
-    { id: "por_conversar", name: "Por conversar" },
-    { id: "pendiente",     name: "Pendiente" },
-    { id: "en_progreso",   name: "En progreso" },
-    { id: "por_revisar",   name: "Por revisar" },
-    { id: "terminado",     name: "Terminado" },
-  ];
+  // Columnas del tablero actual — se actualiza en loadCards()
+  let COLUMNS = [];
+  const getDoneColumnId = () => (COLUMNS.find(c => c.isDone) || {}).id || "terminado";
 
   /** @type {{cards: Array}} */
   let state = { cards: [] };
@@ -1090,10 +1119,16 @@
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
-    if (!currentBoardId) { state = { cards: [] }; boardLabels = []; boardGoals = []; render(); refreshGoalsUI(); return; }
+    if (!currentBoardId) {
+      state = { cards: [], columns: [] }; COLUMNS = [];
+      boardLabels = []; boardGoals = [];
+      populateColumnSelect(); render(); refreshGoalsUI(); return;
+    }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
+    COLUMNS = state.columns || [];
     lastKnownVersion = state.version || 0;
+    populateColumnSelect();
     try { boardLabels = await api("GET", "/api/boards/" + currentBoardId + "/labels"); }
     catch (e) { boardLabels = []; }
     await loadGoals();
@@ -1119,9 +1154,10 @@
         const { version } = await api("GET", "/api/boards/" + currentBoardId + "/version");
         if (version > lastKnownVersion) {
           lastKnownVersion = version;
-          const prevTerminados = new Set(state.cards.filter(c => c.column === "terminado").map(c => c.id));
+          const doneColId = getDoneColumnId();
+          const prevTerminados = new Set(state.cards.filter(c => c.column === doneColId).map(c => c.id));
           await loadCards();
-          state.cards.filter(c => c.column === "terminado" && !prevTerminados.has(c.id))
+          state.cards.filter(c => c.column === getDoneColumnId() && !prevTerminados.has(c.id))
             .forEach(c => celebrateCard(c.id));
         }
       } catch (e) { /* ignorar errores de red silenciosamente */ }
@@ -1190,14 +1226,14 @@
   }
 
   function isOverdue(card) {
-    if (!card.due || card.column === "terminado") return false;
+    if (!card.due || card.column === getDoneColumnId()) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return new Date(card.due + "T00:00:00") < today;
   }
 
-  // Urgente: vence hoy o mañana (o ya venció), y no está en "Terminado".
+  // Urgente: vence hoy o mañana (o ya venció), y no está en la columna "done".
   function isUrgent(card) {
-    if (!card.due || card.column === "terminado") return false;
+    if (!card.due || card.column === getDoneColumnId()) return false;
     const tomorrow = new Date(); tomorrow.setHours(0, 0, 0, 0); tomorrow.setDate(tomorrow.getDate() + 1);
     return new Date(card.due + "T00:00:00") <= tomorrow;
   }
@@ -1379,16 +1415,29 @@
     return (card.labels || []).some(l => activeLabelFilters.has(l.id));
   }
 
+  function isOwner() {
+    if (!me || !me.boards) return false;
+    const b = me.boards.find(b => b.id === currentBoardId);
+    return b && b.role === "owner";
+  }
+
   function render() {
     board.innerHTML = "";
+    const owner = isOwner();
     COLUMNS.forEach(col => {
       const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!urgentFilter || isUrgent(c)));
+      const activeCards = state.cards.filter(c => c.column === col.id && !c.archived).length;
       const colEl = document.createElement("div");
       colEl.className = "column";
+      const doneMarker = col.isDone ? ' <span title="Columna de cierre" style="color:var(--muted);font-size:11px">✓</span>' : "";
       colEl.innerHTML = `
         <div class="column-header">
-          <span>${escapeHtml(col.name)}</span>
-          <span class="count">${cards.length}</span>
+          <span class="col-name-text">${escapeHtml(col.name)}${doneMarker}</span>
+          <div class="col-actions">
+            ${owner ? `<button class="col-action-btn col-rename-btn" data-col="${col.id}" title="Renombrar columna">✏</button>` : ""}
+            ${owner && activeCards === 0 ? `<button class="col-action-btn col-delete-btn" data-col="${col.id}" title="Eliminar columna">✕</button>` : ""}
+            <span class="count">${cards.length}</span>
+          </div>
         </div>
         <div class="cards" data-col="${col.id}"></div>
         <div class="add-card" data-col="${col.id}">+ Añadir tarjeta</div>
@@ -1413,11 +1462,12 @@
       cardsEl.addEventListener("drop", async e => {
         e.preventDefault();
         cardsEl.classList.remove("drag-over");
+        const doneColId = getDoneColumnId();
         const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
         rebuildOrderFromDom();
         render();                 // refleja el nuevo orden de inmediato
-        // celebrar tarjetas que acaban de llegar a Terminado
-        state.cards.filter(c => c.column === "terminado" && prevCols[c.id] !== "terminado")
+        // celebrar tarjetas que acaban de llegar a la columna de cierre
+        state.cards.filter(c => c.column === doneColId && prevCols[c.id] !== doneColId)
           .forEach(c => celebrateCard(c.id));
         try { await persistOrder(); }
         catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
@@ -1426,6 +1476,44 @@
       colEl.querySelector(".add-card").addEventListener("click", () => openModal(null, col.id));
       board.appendChild(colEl);
     });
+
+    // Botón "+ Columna" al final (solo owner)
+    if (owner && currentBoardId) {
+      const addColEl = document.createElement("div");
+      addColEl.className = "add-column";
+      addColEl.innerHTML = `
+        <button class="add-column-btn">+ Columna</button>
+        <div class="add-column-form" style="display:none">
+          <input class="add-column-input" type="text" placeholder="Nombre de la columna" maxlength="50">
+          <div class="add-column-row">
+            <button class="add-column-confirm">✓ Agregar</button>
+            <button class="add-column-cancel">✕</button>
+          </div>
+        </div>
+      `;
+      const addBtn   = addColEl.querySelector(".add-column-btn");
+      const form     = addColEl.querySelector(".add-column-form");
+      const input    = addColEl.querySelector(".add-column-input");
+      const confirm  = addColEl.querySelector(".add-column-confirm");
+      const cancel   = addColEl.querySelector(".add-column-cancel");
+
+      addBtn.addEventListener("click", () => { addBtn.style.display = "none"; form.style.display = "flex"; input.focus(); });
+
+      const doAdd = async () => {
+        const name = input.value.trim();
+        if (!name) return;
+        try {
+          await api("POST", "/api/boards/" + currentBoardId + "/columns", { name });
+          await loadCards();
+        } catch (err) { alert(err.message || "Error al crear columna"); await loadCards(); }
+      };
+      input.addEventListener("keydown", async e => { if (e.key === "Enter") { e.preventDefault(); await doAdd(); } if (e.key === "Escape") await loadCards(); });
+      confirm.addEventListener("click", doAdd);
+      cancel.addEventListener("click", () => loadCards());
+
+      board.appendChild(addColEl);
+    }
+
   }
 
   // Devuelve la tarjeta ante la cual hay que insertar (o null para agregar al final),
@@ -1592,12 +1680,18 @@
   const fLabelsSection = document.getElementById("fLabelsSection");
   const fGoalsSection = document.getElementById("fGoalsSection");
 
-  // poblar el selector de columnas una vez
-  COLUMNS.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.id; opt.textContent = c.name;
-    fColumn.appendChild(opt);
-  });
+  // poblar el selector de columnas (se llama cada vez que cambian las columnas del tablero)
+  function populateColumnSelect() {
+    const prev = fColumn.value;
+    fColumn.innerHTML = "";
+    COLUMNS.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.id; opt.textContent = c.name;
+      fColumn.appendChild(opt);
+    });
+    // restaurar selección previa si sigue siendo válida
+    if (prev && COLUMNS.some(c => c.id === prev)) fColumn.value = prev;
+  }
 
   // pobla el selector de responsable con los miembros del tablero actual
   function populateAssignee(selected) {
@@ -1686,7 +1780,7 @@
     const card = id ? state.cards.find(c => c.id === id) : null;
     document.getElementById("modalTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
     fTitle.value = card ? card.title : "";
-    fColumn.value = card ? card.column : (defaultCol || COLUMNS[0].id);
+    fColumn.value = card ? card.column : (defaultCol || (COLUMNS[0] || {}).id || "");
     fDetails.value = card ? card.details : "";
     fDue.value = card ? (card.due || "") : "";
     populateAssignee(card ? card.assignee : "");
@@ -2952,6 +3046,46 @@
     panning = false;
     board.classList.remove("panning");
     headerEl.classList.remove("panning");
+  });
+
+  // ---------- Gestión de columnas (renombrar / eliminar) ----------
+  board.addEventListener("click", async e => {
+    if (e.target.closest(".col-rename-btn")) {
+      const btn = e.target.closest(".col-rename-btn");
+      const colId = btn.dataset.col;
+      const col = COLUMNS.find(c => c.id === colId);
+      if (!col) return;
+      const header = btn.closest(".column-header");
+      const nameSpan = header.querySelector(".col-name-text");
+      const input = document.createElement("input");
+      input.className = "col-rename-input";
+      input.value = col.name;
+      nameSpan.replaceWith(input);
+      input.select();
+      let saved = false;
+      const save = async () => {
+        if (saved) return; saved = true;
+        const newName = input.value.trim();
+        if (newName && newName !== col.name) {
+          try { await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { name: newName }); }
+          catch (err) { alert(err.message || "Error al renombrar"); }
+        }
+        await loadCards();
+      };
+      input.addEventListener("keydown", async ev => { if (ev.key === "Enter") { ev.preventDefault(); await save(); } if (ev.key === "Escape") { saved = true; await loadCards(); } });
+      input.addEventListener("blur", save);
+      return;
+    }
+    if (e.target.closest(".col-delete-btn")) {
+      const btn = e.target.closest(".col-delete-btn");
+      const colId = btn.dataset.col;
+      const col = COLUMNS.find(c => c.id === colId);
+      if (!confirm(`¿Eliminar la columna "${col?.name || colId}"?`)) return;
+      try {
+        await api("DELETE", "/api/boards/" + currentBoardId + "/columns/" + colId);
+        await loadCards();
+      } catch (err) { alert(err.message || "Error al eliminar columna"); }
+    }
   });
 
   // ---------- Atajos de teclado (F = mis tareas, U = urgentes, N = nueva tarjeta) ----------
