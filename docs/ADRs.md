@@ -505,11 +505,14 @@ La decisión de diseño clave: **¿los objetivos viven dentro de un tablero, o p
 - **No hay un segundo tablero** de estrategia. La vista de objetivos es otra forma de mirar el mismo board.
 - Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `src/constants.js`.
 
-**Dos formas de acceso (UX), complementarias**
-1. **Vista amplia** (toggle 📋 Tareas / 🎯 Objetivos): reemplaza el tablero por la lista de objetivos a pantalla completa. Buena para revisar/planificar.
-2. **Panel lateral** (🎯 Panel, drawer desde la izquierda): se abre *sobre* la vista de tareas sin bloquearla — el tablero queda visible y operable a la derecha. Buena para edición rápida y para usar los objetivos como **lente**: al seleccionar un objetivo, sus tarjetas se resaltan y el resto se atenúa (no se ocultan), sin tocar los filtros de búsqueda/etiquetas.
+**Un único acceso, con dos superficies (UX)**
+Hay un solo punto de entrada — el botón **🎯 Objetivos** — para evitar la ambigüedad de tener dos controles con el mismo ícono (un toggle previo + un botón de panel confundían). Desde ahí:
+1. **Panel lateral** (drawer desde la izquierda, superficie por defecto): se abre *sobre* la vista de tareas sin bloquearla — el tablero queda visible y operable a la derecha. Sirve para edición rápida y para usar los objetivos como **lente**: al seleccionar un objetivo, sus tarjetas se resaltan y el resto se atenúa (no se ocultan), sin tocar los filtros de búsqueda/etiquetas.
+2. **Vista ampliada** (botón **⛶ Ampliar** dentro del panel): lleva a la lista de objetivos a pantalla completa, con una barra "📋 Volver al tablero". Buena para revisar/planificar con foco total.
 
-Se mantienen ambas a propósito (decisión del usuario): la vista amplia para foco total, el panel para trabajar el board y los objetivos en paralelo. La lógica de render es compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) para evitar divergencia.
+> **Evolución de la decisión**: una primera iteración tuvo un toggle de vista (📋/🎯) *además* del panel. Se consolidó en un único acceso porque dos botones 🎯 hacia contenido casi idéntico recargaban la interfaz. La vista a pantalla completa pasó a ser un "Ampliar" dentro del panel, no un control separado.
+
+La lógica de render es compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) entre ambas superficies para evitar divergencia.
 
 **Criterio de la decisión**
 El uso real declarado es **un tablero = un proyecto**. Con ese supuesto, mantener objetivos *en contexto* dentro del tablero da el mayor valor con el menor riesgo: reutiliza la maquinaria probada (membresía, badges, barras de progreso de checklists, patrón de etiquetas) y evita los problemas de permisos cruzados que trae vincular tarjetas entre tableros.

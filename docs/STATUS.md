@@ -8,7 +8,7 @@
 - **Objetivos (#8) MVP completo**: gestión de objetivos por tablero (Opción A — dentro del tablero)
   - Tabla `goals` + `card_goals` (migración `0010_goals.sql`)
   - Backend `src/routes/goals.js`: CRUD + vincular/desvincular tarjetas + progreso calculado
-  - Toggle de vista **📋 Tareas / 🎯 Objetivos** (vista amplia) + **🎯 Panel** lateral para ver/editar sin salir del tablero
+  - Un único acceso **🎯 Objetivos** que abre un **panel lateral** (drawer) para ver/editar sin salir del tablero; dentro, **⛶ Ampliar** lleva a la vista a pantalla completa (con "📋 Volver al tablero")
   - Filtro por objetivo: seleccionar uno en el panel resalta sus tarjetas y atenúa el resto
   - Vista de objetivos con barra de progreso (terminadas/total) y % automático
   - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban
@@ -360,10 +360,10 @@
   - Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `constants.js`.
   - Cada tarjeta expone su array `goals` (en `getBoard()` y `cardJSONById()`)
 - **Frontend** (public/index.html):
-  - Toggle **📋 Tareas / 🎯 Objetivos** en la barra de acciones (vista amplia, pantalla completa)
-  - **Panel lateral 🎯 Panel** (drawer desde la izquierda): ver/editar objetivos sin abandonar el tablero, que queda visible a la derecha (el board se corre con `body.drawer-open`)
+  - **Acceso único 🎯 Objetivos** (botón en la barra de acciones) → abre el **panel lateral** (drawer desde la izquierda): ver/editar objetivos sin abandonar el tablero, que queda visible a la derecha (el board se corre con `body.drawer-open`)
+  - **⛶ Ampliar** dentro del panel → vista a pantalla completa, con barra "📋 Volver al tablero" (no hay toggle separado: un solo modelo mental, sin íconos 🎯 duplicados)
   - **Filtro/lente por objetivo**: al seleccionar un objetivo en el panel, sus tarjetas se resaltan (`card-goal-match`) y el resto se atenúa (`card-dimmed`); cerrar el panel o re-seleccionar limpia el resaltado
-  - Lógica compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) entre vista amplia y panel
+  - Lógica compartida (`renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`) entre vista ampliada y panel
   - Vista de objetivos: tarjetas con barra de progreso (verde al 100%), stats y CRUD inline
   - Sección "🎯 Objetivos" en el modal de tarjeta: vincular/crear objetivos (calca el patrón de etiquetas)
   - Badge 🎯 en la tarjeta del Kanban cuando pertenece a uno o más objetivos
