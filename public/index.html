@@ -990,6 +990,7 @@
   let draftAttachments = [];   // adjuntos en edición (existentes + nuevos pendientes)
   let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
   let draftChecklists = [];    // checklists en borrador para tarjetas nuevas (aún sin guardar)
+  let draftGoals = [];         // goal ids seleccionados para tarjetas nuevas (aún sin guardar)
   let searchQuery = "";        // texto del buscador (minúsculas)
   let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
   let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
@@ -1692,6 +1693,7 @@
     draftAttachments = card ? (card.attachments || []).map(a => ({ ...a })) : [];
     removedAttachmentIds = [];
     draftChecklists = [];
+    draftGoals = [];
     document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
@@ -1714,6 +1716,7 @@
     draftAttachments = [];
     removedAttachmentIds = [];
     draftChecklists = [];
+    draftGoals = [];
     document.getElementById("fCommentInput").value = "";
     document.getElementById("historyField").style.display = "none";
   }
@@ -2182,9 +2185,16 @@
   // ---------- Objetivos dentro del modal de tarjeta ----------
   function renderCardGoals() {
     fGoalsSection.innerHTML = "";
-    if (!editingId) return;
-    const card = state.cards.find(c => c.id === editingId);
-    const cardGoals = card ? (card.goals || []) : [];
+    if (!boardGoals && !editingId) return;
+
+    // En modo edición los goals vienen del state; en modo borrador de draftGoals
+    let cardGoals;
+    if (editingId) {
+      const card = state.cards.find(c => c.id === editingId);
+      cardGoals = card ? (card.goals || []) : [];
+    } else {
+      cardGoals = boardGoals.filter(g => draftGoals.includes(g.id));
+    }
 
     const section = document.createElement("div");
     section.className = "goals-card-section";
@@ -2196,7 +2206,10 @@
         const chip = document.createElement("span");
         chip.className = "goal-in-card";
         chip.innerHTML = `${escapeHtml(goal.title)}<span class="remove" title="Quitar del objetivo">✕</span>`;
-        chip.querySelector(".remove").addEventListener("click", () => removeGoal(goal.id));
+        chip.querySelector(".remove").addEventListener("click", () => {
+          if (editingId) removeGoal(goal.id);
+          else { draftGoals = draftGoals.filter(id => id !== goal.id); renderCardGoals(); }
+        });
         listDiv.appendChild(chip);
       });
       section.appendChild(listDiv);
@@ -2215,8 +2228,9 @@
     const existing = fGoalsSection.querySelector(".goal-picker");
     if (existing) { existing.remove(); return; }
 
-    const card = state.cards.find(c => c.id === editingId);
-    const assignedIds = new Set((card ? card.goals || [] : []).map(g => g.id));
+    const assignedIds = editingId
+      ? new Set((state.cards.find(c => c.id === editingId)?.goals || []).map(g => g.id))
+      : new Set(draftGoals);
 
     const picker = document.createElement("div");
     picker.className = "goal-picker";
@@ -2243,7 +2257,16 @@
         }
       `;
       row.querySelector(`[data-goal-id="${goal.id}"]`)
-        .addEventListener("click", () => assigned ? removeGoal(goal.id) : assignGoal(goal.id));
+        .addEventListener("click", () => {
+          if (editingId) {
+            assigned ? removeGoal(goal.id) : assignGoal(goal.id);
+          } else {
+            if (assigned) draftGoals = draftGoals.filter(id => id !== goal.id);
+            else if (!draftGoals.includes(goal.id)) draftGoals.push(goal.id);
+            picker.remove();
+            renderCardGoals();
+          }
+        });
       existingDiv.appendChild(row);
     });
     picker.appendChild(existingDiv);
@@ -2261,8 +2284,13 @@
       if (!title) { alert("Escribí un título."); return; }
       try {
         const goal = await api("POST", "/api/boards/" + currentBoardId + "/goals", { title });
-        await api("POST", `/api/cards/${editingId}/goals/${goal.id}`);
-        await loadCards();
+        if (editingId) {
+          await api("POST", `/api/cards/${editingId}/goals/${goal.id}`);
+          await loadCards();
+        } else {
+          await loadCards(); // refresca boardGoals con el nuevo objetivo
+          if (!draftGoals.includes(goal.id)) draftGoals.push(goal.id);
+        }
         renderCardGoals();
       } catch (e) { alert("No se pudo crear: " + e.message); }
     };
@@ -2390,6 +2418,13 @@
             const savedItem = await api("POST", "/api/checklists/" + savedCl.id + "/items", { text: item.text });
             if (item.checked) await api("PUT", "/api/checklist-items/" + savedItem.id, { checked: true });
           }
+        }
+      }
+
+      // 5) vincular objetivos del borrador (sólo en tarjetas nuevas)
+      if (!editingId && draftGoals.length) {
+        for (const goalId of draftGoals) {
+          await api("POST", `/api/cards/${card.id}/goals/${goalId}`);
         }
       }
 
