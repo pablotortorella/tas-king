@@ -708,20 +708,22 @@
   .lead-time-big { font-size: 32px; font-weight: 700; color: var(--accent); }
   .metrics-chart-wrap { width: 100%; overflow: visible; }
   .metrics-chart-wrap svg { display: block; width: 100%; }
-  /* Tooltip "i" para conceptos técnicos */
-  .info-tip { position: relative; display: inline-flex; cursor: help; }
-  .info-tip span { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-  .info-tip .tip-text { display: none; position: absolute; left: 50%; top: 20px; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 11px; font-weight: 400; padding: 6px 8px; border-radius: 6px; width: 200px; line-height: 1.4; z-index: 100; white-space: normal; }
-  .info-tip:hover .tip-text, .info-tip:focus-within .tip-text { display: block; }
+  /* Tooltip "i" para conceptos técnicos — tooltip global en position:fixed para escapar overflow */
+  .info-tip { display: inline-flex; cursor: help; }
+  .info-tip > span:first-child { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+  .info-tip .tip-text { display: none; } /* contenido oculto, leído por JS */
+  #globalTip { position: fixed; background: var(--text); color: var(--bg); font-size: 11px; padding: 6px 9px; border-radius: 6px; width: 210px; line-height: 1.45; z-index: 9999; pointer-events: none; display: none; white-space: normal; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
   /* Lista de tarjetas quietas */
   .stale-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-  .stale-item { background: var(--col-bg); border-radius: 6px; padding: 8px 10px; font-size: 12px; }
+  .stale-item { background: var(--col-bg); border-radius: 6px; padding: 8px 10px; font-size: 12px; cursor: pointer; transition: background .15s; }
+  .stale-item:hover { background: var(--card-hover); }
   .stale-item-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stale-item-meta { color: var(--muted); margin-top: 2px; font-size: 11px; }
 </style>
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
+<div id="globalTip"></div>
 <header>
   <div class="header-top">
     <div class="header-left">
@@ -1608,11 +1610,17 @@
     }
     list.innerHTML = cards.map(c => {
       const dias = c.daysSinceUpdate === 0 ? "hoy" : c.daysSinceUpdate === 1 ? "hace 1 día" : "hace " + c.daysSinceUpdate + " días";
-      return `<li class="stale-item">
+      return `<li class="stale-item" data-id="${escapeHtml(c.id)}" title="Abrir tarjeta">
         <div class="stale-item-title">${escapeHtml(c.title)}</div>
         <div class="stale-item-meta">📍 ${escapeHtml(c.columnName)} · ${dias}</div>
       </li>`;
     }).join("");
+    list.querySelectorAll(".stale-item[data-id]").forEach(li => {
+      li.addEventListener("click", () => {
+        closeMetricsDrawer();
+        openModal(li.dataset.id);
+      });
+    });
   }
 
   function renderBurnupChart(data) {
@@ -1670,6 +1678,21 @@
 
   document.getElementById("metricsBtn").addEventListener("click", toggleMetricsDrawer);
   document.getElementById("metricsDrawerClose").addEventListener("click", closeMetricsDrawer);
+
+  // Tooltip global (escapa overflow del drawer)
+  const globalTip = document.getElementById("globalTip");
+  document.querySelectorAll(".info-tip").forEach(tip => {
+    const text = tip.querySelector(".tip-text").textContent.trim();
+    tip.addEventListener("mouseenter", e => {
+      globalTip.textContent = text;
+      globalTip.style.display = "block";
+      const r = tip.getBoundingClientRect();
+      const left = Math.min(r.left - 80, window.innerWidth - 226);
+      globalTip.style.top  = (r.bottom + 6) + "px";
+      globalTip.style.left = Math.max(8, left) + "px";
+    });
+    tip.addEventListener("mouseleave", () => { globalTip.style.display = "none"; });
+  });
 
   // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
   function matchesSearch(card) {
