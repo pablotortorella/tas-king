@@ -24,6 +24,7 @@ test("al hacer click, panel desliza y muestra todas las secciones", async ({ pag
   await expect(page.locator("#mLeadAvg")).toBeVisible();
   await expect(page.locator("#metricsBurnupWrap")).toBeVisible();
   await expect(page.locator("#metricsWipWrap")).toBeVisible();
+  await expect(page.locator("#metricsStaleList")).toBeVisible();
 });
 
 test("números de completadas son >= 0 tras cargar", async ({ page }) => {

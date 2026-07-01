@@ -17,7 +17,7 @@ export function setupMetricsRoutes(app) {
     const weekStart  = now - 7  * 86400000;
     const monthStart = now - 30 * 86400000;
 
-    const [periodRow, leadRow, burnupRows, wipRows] = await Promise.all([
+    const [periodRow, leadRow, burnupRows, wipRows, staleRows] = await Promise.all([
       // A — tarjetas completadas por período (hoy / semana / mes)
       c.env.DB.prepare(`
         SELECT
@@ -73,16 +73,26 @@ export function setupMetricsRoutes(app) {
         WHERE col.board_id = ?
         GROUP BY col.id, col.name ORDER BY col.position
       `).bind(boardId).all(),
+
+      // E — Tarjetas más quietas (top 5 no archivadas, fuera de la columna done)
+      c.env.DB.prepare(`
+        SELECT c.id, c.title, col.name AS column_name,
+          c.updated_at,
+          CAST(ROUND((? - c.updated_at) / 86400000.0, 0) AS INTEGER) AS days_stale
+        FROM cards c
+        JOIN columns col ON col.id = c.column_id AND col.board_id = c.board_id
+        WHERE c.board_id = ? AND c.archived = 0 AND c.column_id != ?
+        ORDER BY c.updated_at ASC
+        LIMIT 5
+      `).bind(now, boardId, doneColId).all(),
     ]);
 
     // Acumular burn-up en JS
     let cumulative = 0;
-    const byDate = new Map((burnupRows.results || []).map(r => [r.d, r.count]));
     const burnup = (burnupRows.results || []).map(r => {
       cumulative += r.count;
       return { date: r.d, count: r.count, cumulative };
     });
-    void byDate; // referencia usada implícitamente arriba
 
     return c.json({
       completedByPeriod: {
@@ -94,7 +104,10 @@ export function setupMetricsRoutes(app) {
         ? { avg: leadRow.avg_days, min: leadRow.min_days, max: leadRow.max_days, sample: leadRow.sample }
         : null,
       burnup,
-      wipByColumn: (wipRows.results || []).map(r => ({ name: r.name, count: r.count })),
+      wipByColumn:  (wipRows.results  || []).map(r => ({ name: r.name, count: r.count })),
+      staleCards:   (staleRows.results || []).map(r => ({
+        id: r.id, title: r.title, columnName: r.column_name, daysSinceUpdate: r.days_stale,
+      })),
     });
   });
 }
