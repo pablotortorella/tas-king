@@ -53,11 +53,19 @@ npm run deploy:staging
 
 ### 5️⃣ Mergear a main
 
+**Convención: Squash and merge** (un feature = un commit en `main`).
+
+Una vez que el code review pasó y staging verificó OK, mergear el PR desde GitHub
+eligiendo **"Squash and merge"**. Deja el historial de `main` limpio y lineal
+(1 commit por feature), fácil de leer y de revertir.
+
 ```bash
-# Una vez que el code review pasó y staging verificó OK
-git merge --no-ff feature/mi-feature
-git push origin main
+# Equivalente por CLI (normalmente se hace desde la UI de GitHub):
+gh pr merge <número> --squash --delete-branch
 ```
+
+> Antes se usaba `git merge --no-ff`. Se cambió a squash para mantener un historial
+> de un commit por feature. Evitá mezclar convenciones.
 
 ### 6️⃣ Deployar a Producción
 
