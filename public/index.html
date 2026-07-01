@@ -4,17 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FUN TasKing!</title>
+<script>
+  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro).
+  (function () {
+    try {
+      var t = localStorage.getItem("tasking-theme");
+      if (t !== "dark" && t !== "light") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
+  })();
+</script>
 <style>
   :root {
     --bg: #f4f5f7;
     --col-bg: #ebecf0;
     --card-bg: #ffffff;
+    --card-hover: #fafbfc;
+    --input-bg: #fafbfc;
     --text: #172b4d;
     --muted: #6b778c;
     --accent: #0079bf;
     --danger: #c0392b;
     --border: #dfe1e6;
+    --hover: rgba(9,30,66,.08);
     --shadow: 0 1px 2px rgba(9,30,66,.15);
+    color-scheme: light;
+  }
+  /* Tema oscuro: redefine la paleta. El header y los colores semánticos
+     (verde/rojo de badges, confeti) se mantienen. */
+  html[data-theme="dark"] {
+    --bg: #1d2125;
+    --col-bg: #22272b;
+    --card-bg: #2c333a;
+    --card-hover: #333b42;
+    --input-bg: #22272b;
+    --text: #c7d1db;
+    --muted: #9fadbc;
+    --accent: #4c9aff;
+    --danger: #ff7a7a;
+    --border: #3d474f;
+    --hover: rgba(255,255,255,.08);
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body {
@@ -60,7 +93,7 @@
   }
   header .board-select {
     border: none; border-radius: 4px; padding: 6px 10px; font-size: 14px;
-    font-weight: 600; background: rgba(255,255,255,.9); color: var(--text); max-width: 240px;
+    font-weight: 600; background: var(--card-bg); color: var(--text); max-width: 240px;
   }
   header .header-left button {
     background: rgba(255,255,255,.2); color: #fff; border: none; width: 30px; height: 30px;
@@ -69,9 +102,14 @@
   header .header-left button:hover { background: rgba(255,255,255,.35); }
   header .user { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,.9); margin-left: 8px; }
   header .user a { color: #fff; text-decoration: underline; }
+  .theme-btn {
+    background: rgba(255,255,255,.18); border: none; border-radius: 5px; color: #fff;
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 4px 8px; margin-right: 4px;
+  }
+  .theme-btn:hover { background: rgba(255,255,255,.35); }
   header .actions select {
     border: none; border-radius: 4px; padding: 6px 8px; font-size: 13px;
-    background: rgba(255,255,255,.9); color: var(--text); max-width: 160px;
+    background: var(--card-bg); color: var(--text); max-width: 160px;
   }
   header .actions button {
     background: rgba(255,255,255,.2);
@@ -110,7 +148,7 @@
   header .io-panel {
     display: none; position: absolute; top: calc(100% + 8px); right: 0;
     flex-direction: column; align-items: stretch; gap: 2px; z-index: 150;
-    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 6px 20px rgba(9,30,66,.25); padding: 6px; min-width: 160px;
   }
   header .io-panel.open { display: flex; }
@@ -140,7 +178,7 @@
     flex: 0 0 auto;
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
     padding: 6px 16px; font-size: 12px; color: var(--muted);
-    background: #fff; border-top: 1px solid var(--border);
+    background: var(--card-bg); border-top: 1px solid var(--border);
   }
   .app-footer a { color: var(--accent); text-decoration: none; }
   .app-footer a:hover { text-decoration: underline; }
@@ -223,7 +261,7 @@
     font-size: 14px;
     position: relative;
   }
-  .card:hover { background: #fafbfc; }
+  .card:hover { background: var(--card-hover); }
   .card.dragging { opacity: .4; }
   @keyframes celebrate {
     0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
@@ -288,7 +326,7 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .checklist-name:hover { background: var(--bg); border-color: var(--border); }
-  .checklist-name:focus { outline: none; border-color: var(--accent); background: #fff; cursor: text; }
+  .checklist-name:focus { outline: none; border-color: var(--accent); background: var(--card-bg); cursor: text; }
   .checklist-delete { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 0 4px; line-height: 1; }
   .checklist-delete:hover { color: #e53e3e; }
   .checklist-progress { font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -303,7 +341,7 @@
   }
   .checklist-item-text.checked { text-decoration: line-through; color: var(--muted); }
   .checklist-item-text:hover { background: var(--bg); border-color: var(--border); }
-  .checklist-item-text:focus { outline: none; border-color: var(--accent); background: #fff; cursor: text; text-decoration: none; color: var(--text); }
+  .checklist-item-text:focus { outline: none; border-color: var(--accent); background: var(--card-bg); cursor: text; text-decoration: none; color: var(--text); }
   .checklist-item-move { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 0 2px; line-height: 1; }
   .checklist-item-move:hover { color: var(--text); }
   .checklist-item-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 0 2px; line-height: 1; }
@@ -323,7 +361,7 @@
     border-radius: 6px;
     font-size: 12px;
     color: #fff;
-    background: #ddd;
+    background: var(--border);
   }
   .label-in-card .remove { cursor: pointer; margin-left: 4px; opacity: 0.8; }
   .label-in-card .remove:hover { opacity: 1; }
@@ -340,7 +378,7 @@
   .label-picker button { padding: 6px 10px; font-size: 12px; background: var(--accent); color: #fff; border: none; border-radius: 4px; cursor: pointer; }
   .label-picker button:hover { opacity: 0.9; }
   .existing-labels { margin-top: 10px; }
-  .existing-label { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: #fff; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; margin-bottom: 4px; }
+  .existing-label { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; margin-bottom: 4px; }
   .existing-label .actions { display: flex; gap: 8px; }
   .existing-label .del { cursor: pointer; color: var(--danger); }
 
@@ -385,7 +423,7 @@
   }
   .overlay.open { display: flex; }
   .modal {
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 10px;
     width: 100%;
     max-width: 540px;
@@ -404,14 +442,14 @@
     padding: 8px 10px;
     font-size: 14px;
     font-family: inherit;
-    background: #fafbfc;
+    background: var(--card-hover);
   }
   .field textarea { resize: vertical; min-height: 70px; }
-  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); background: var(--card-bg); }
 
   .comments { list-style: none; padding: 0; margin: 0 0 8px; }
   .comment {
-    background: #f4f5f7;
+    background: var(--bg);
     border-radius: 6px;
     padding: 6px 10px;
     margin-bottom: 6px;
@@ -430,7 +468,7 @@
     border-radius: 6px;
     overflow: hidden;
     position: relative;
-    background: #fafbfc;
+    background: var(--card-hover);
     font-size: 11px;
   }
   .attachment img { width: 100%; height: 64px; object-fit: cover; display: block; }
@@ -502,7 +540,7 @@
   .picker .opt {
     width: 34px; height: 34px; border-radius: 8px; border: 2px solid transparent;
     cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 18px; background: #f4f5f7;
+    font-size: 18px; background: var(--bg);
   }
   .picker .opt.sel { border-color: var(--accent); }
   .picker .color-opt { width: 30px; height: 30px; border-radius: 50%; }
@@ -518,11 +556,11 @@
 
   /* Historial de actividad en el modal de tarjeta */
   .history-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
-  .history-entry { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+  .history-entry { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
   .history-entry:last-child { border-bottom: none; }
   .history-body { flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; }
-  .history-who { font-weight: 600; color: #172b4d; }
-  .history-action { color: #42526e; }
+  .history-who { font-weight: 600; color: var(--text); }
+  .history-action { color: var(--muted); }
   .history-time { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
   .history-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
 
@@ -533,24 +571,24 @@
     color: var(--muted); padding: 6px 14px 8px; margin-bottom: -2px;
     border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0;
   }
-  .tab-btn:hover { background: #f4f5f7; color: #172b4d; }
+  .tab-btn:hover { background: var(--bg); color: var(--text); }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* Panel de actividad del tablero (dentro de admin) */
   .activity-filters { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
   .activity-filters select, .activity-filters input[type=date] {
     border: 1px solid var(--border); border-radius: 5px; padding: 5px 8px;
-    font-size: 13px; background: #fafbfc; font-family: inherit;
+    font-size: 13px; background: var(--card-hover); font-family: inherit;
   }
-  .activity-list { max-height: 320px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; }
+  .activity-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
   .activity-entry {
     display: flex; align-items: flex-start; gap: 8px;
-    padding: 9px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+    padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px;
   }
   .activity-entry:last-child { border-bottom: none; }
   .activity-body { flex: 1; min-width: 0; }
-  .activity-who { font-weight: 600; color: #172b4d; }
-  .activity-action { color: #42526e; }
+  .activity-who { font-weight: 600; color: var(--text); }
+  .activity-action { color: var(--muted); }
   .activity-card { font-size: 12px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; padding-top: 2px; }
   .activity-empty { padding: 14px 12px; font-size: 13px; color: var(--muted); }
@@ -649,7 +687,7 @@
       <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
       <button id="newBoardBtn" title="Nuevo tablero">＋</button>
     </div>
-    <span class="user"><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><button id="themeBtn" class="theme-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
     <button id="goalsBtn" title="Objetivos: ver, editar y resaltar tarjetas">🎯 Objetivos</button>
@@ -865,10 +903,10 @@
     <!-- Tab: Usuarios -->
     <div id="adminPanelUsuarios" style="display:none">
       <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:5px;font-size:14px">
+        <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:14px">
         <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
       </div>
-      <div id="adminUserList" style="max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
+      <div id="adminUserList" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px"></div>
     </div>
 
     <!-- Tab: Actividad -->
@@ -911,7 +949,7 @@
       </div>
 
       <!-- Archivos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;margin-top:16px;padding-top:16px;border-top:1px solid #e0e0e0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
           <div style="font-size:28px;font-weight:bold;color:#3498db" id="statFileCount">-</div>
           <div style="font-size:12px;color:#666;margin-top:4px">Archivos</div>
@@ -926,7 +964,7 @@
       <div style="margin-bottom:16px;padding:12px;background:#f5f5f5;border-radius:6px">
         <div style="font-size:12px;font-weight:bold;margin-bottom:8px">Actividad de cuentas</div>
         <div style="display:flex;gap:8px;align-items:center;height:40px">
-          <div id="userActivityBar" style="flex:1;display:flex;height:24px;background:#eee;border-radius:4px;overflow:hidden"></div>
+          <div id="userActivityBar" style="flex:1;display:flex;height:24px;background:var(--border);border-radius:4px;overflow:hidden"></div>
         </div>
         <div style="font-size:11px;color:#666;margin-top:6px;display:flex;gap:12px">
           <span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:2px;margin-right:4px"></span>Activos</span>
@@ -940,7 +978,7 @@
         <div id="topUsersList" style="font-size:11px;color:#666;max-height:200px;overflow-y:auto"></div>
       </div>
 
-      <div id="inactiveUsersSection" style="display:none;margin-bottom:12px;border-top:1px solid #e0e0e0;padding-top:12px">
+      <div id="inactiveUsersSection" style="display:none;margin-bottom:12px;border-top:1px solid var(--border);padding-top:12px">
         <div style="font-size:12px;font-weight:bold;color:#e67e22;margin-bottom:8px">⚠️ Usuarios inactivos (sin acceso):</div>
         <div id="inactiveUsersList" style="font-size:11px;color:#666;max-height:120px;overflow-y:auto"></div>
       </div>
@@ -951,7 +989,7 @@
     <!-- Tab: Solicitudes de acceso -->
     <div id="adminPanelSolicitudes" style="display:none">
       <p style="font-size:13px;color:#6b778c;margin-bottom:12px">Usuarios que intentaron entrar pero no tienen acceso. Podés aprobarlos o rechazarlos.</p>
-      <div id="adminPendingList" style="max-height:320px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px"></div>
+      <div id="adminPendingList" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px"></div>
     </div>
 
     <div class="modal-footer" style="margin-top:16px">
@@ -1032,6 +1070,24 @@
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
+
+  // ---------- Tema claro/oscuro ----------
+  // El tema ya se aplicó en <head> (anti-flash); acá solo manejamos el toggle.
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function syncThemeButton() {
+    const btn = document.getElementById("themeBtn");
+    if (btn) btn.textContent = currentTheme() === "dark" ? "☀️" : "🌙";
+  }
+  function toggleTheme() {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tasking-theme", next); } catch (e) { /* modo privado */ }
+    syncThemeButton();
+  }
+  document.getElementById("themeBtn").addEventListener("click", toggleTheme);
+  syncThemeButton();
 
   // Paleta fija para avatares por defecto (derivada del email).
   const AVATAR_COLORS = ["#0079bf", "#519839", "#b04632", "#89609e", "#cd5a91", "#4bbf6b", "#00aecc", "#838c91", "#d29034"];
@@ -3236,9 +3292,9 @@
       const topList = document.getElementById("topUsersList");
       if (stats.topUsers?.length > 0) {
         topList.innerHTML = stats.topUsers.map(u =>
-          `<div style="padding:8px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center">
+          `<div style="padding:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
              <div>
-               <div style="font-weight:600;color:#333">${escapeHtml(u.name || u.email)}</div>
+               <div style="font-weight:600;color:var(--text)">${escapeHtml(u.name || u.email)}</div>
                <div style="font-size:10px;color:#999">${u.boards} tableros • ${u.cards} tarjetas • ${u.comments} comentarios</div>
              </div>
              <div style="font-weight:bold;color:#0079bf">${u.activity}</div>
@@ -3341,7 +3397,7 @@
       adminUserList.innerHTML = data.allowed.map(u => {
         const isAdm = adminEmails.has(u.email);
         const isSelf = u.email === me.email;
-        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f0f0f0">
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)">
           <span style="flex:1;font-size:13px">${escapeHtml(u.email)}${isAdm ? ' <span title="Admin" style="font-size:11px;background:#ffe082;border-radius:3px;padding:1px 5px">Admin</span>' : ''}</span>
           ${!isSelf ? `<label title="Admin" style="font-size:12px;color:#555;cursor:pointer"><input type="checkbox" data-email="${escapeHtml(u.email)}" data-action="admin" ${isAdm ? "checked" : ""}> Admin</label>` : ""}
           ${!isSelf ? `<button data-email="${escapeHtml(u.email)}" data-action="remove" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px" title="Eliminar">✕</button>` : ""}
@@ -3378,7 +3434,7 @@
         return;
       }
       list.innerHTML = data.pending.map(u => `
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #f0f0f0">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)">
           <div style="flex:1">
             <div style="font-size:13px;font-weight:600">${escapeHtml(u.name || u.email)}</div>
             <div style="font-size:11px;color:#888">${escapeHtml(u.email)}</div>
