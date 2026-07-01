@@ -243,26 +243,68 @@ export function setupCardRoutes(app) {
     const data = await c.req.json().catch(() => ({}));
     if (!Array.isArray(data.cards)) return c.json({ error: "Formato inválido: falta cards[]." }, 400);
 
-    const maxRows = await c.env.DB.prepare("SELECT column_id, MAX(position) AS m FROM cards WHERE board_id = ? GROUP BY column_id")
-      .bind(boardId).all();
+    const [maxRows, existingLabels, members] = await Promise.all([
+      c.env.DB.prepare("SELECT column_id, MAX(position) AS m FROM cards WHERE board_id = ? GROUP BY column_id").bind(boardId).all(),
+      c.env.DB.prepare("SELECT id, name, color FROM labels WHERE board_id = ? ORDER BY position").bind(boardId).all(),
+      c.env.DB.prepare("SELECT email FROM board_members WHERE board_id = ?").bind(boardId).all(),
+    ]);
+
     const posByCol = {};
     for (const r of maxRows.results) posByCol[r.column_id] = r.m || 0;
 
+    // name (lowercase) → { id, color } — allows finding/creating labels by name
+    const labelCache = new Map();
+    for (const l of existingLabels.results) labelCache.set(l.name.toLowerCase(), { id: l.id, color: l.color });
+    let nextLabelPos = existingLabels.results.length;
+
+    const memberSet = new Set(members.results.map(m => m.email));
+
     const insCard = c.env.DB.prepare(
-      `INSERT INTO cards (id, board_id, title, column_id, details, due, archived, archived_at, position, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO cards (id, board_id, title, column_id, details, due, assignee_email, archived, archived_at, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
+    const insLabel      = c.env.DB.prepare("INSERT INTO labels (id, board_id, name, color, position, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+    const insCardLabel  = c.env.DB.prepare("INSERT OR IGNORE INTO card_labels (card_id, label_id) VALUES (?, ?)");
+    const insChecklist  = c.env.DB.prepare("INSERT INTO checklists (id, card_id, name, position, created_at) VALUES (?, ?, ?, ?, ?)");
+    const insItem       = c.env.DB.prepare("INSERT INTO checklist_items (id, checklist_id, text, checked, position, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+
     const stmts = [];
     for (const card of data.cards) {
       const id = uid();
       const t = card.created || now();
       const col = card.column || "por_conversar";
       posByCol[col] = (posByCol[col] || 0) + 1;
+      const assignee = (card.assignee && memberSet.has(card.assignee)) ? card.assignee : null;
+
       stmts.push(insCard.bind(
         id, boardId, (card.title || "").trim(), col, card.details || "", card.due || "",
-        card.archived ? 1 : 0, card.archived ? (card.archivedAt || now()) : null, posByCol[col], t, t
+        assignee, card.archived ? 1 : 0, card.archived ? (card.archivedAt || now()) : null,
+        posByCol[col], t, t
       ));
       stmts.push(...replaceCommentsStmts(c.env.DB, id, card.comments));
+
+      // Labels: find by name, create if not found (up to 10 per board)
+      for (const l of (card.labels || [])) {
+        if (!l.name) continue;
+        const key = l.name.toLowerCase();
+        let entry = labelCache.get(key);
+        if (!entry && labelCache.size < 10) {
+          const newId = uid();
+          entry = { id: newId, color: l.color || "#9C27B0" };
+          labelCache.set(key, entry);
+          stmts.push(insLabel.bind(newId, boardId, l.name, entry.color, nextLabelPos++, t));
+        }
+        if (entry) stmts.push(insCardLabel.bind(id, entry.id));
+      }
+
+      // Checklists + items
+      for (const cl of (card.checklists || [])) {
+        const clId = uid();
+        stmts.push(insChecklist.bind(clId, id, cl.name || "Lista de tareas", cl.position ?? 0, t));
+        for (const item of (cl.items || [])) {
+          stmts.push(insItem.bind(uid(), clId, item.text || "", item.checked ? 1 : 0, item.position ?? 0, t));
+        }
+      }
     }
     if (stmts.length) await c.env.DB.batch(stmts);
     return c.json(await getBoard(c.env.DB, boardId));

@@ -641,7 +641,7 @@
 
   /* Sección de objetivos dentro del modal de tarjeta */
   .goals-card-section { margin: 14px 0; }
-  .goals-card-section h3 { font-size: 13px; margin: 0 0 6px; }
+  .goals-card-section h3 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 6px; }
   .goal-in-card {
     display: inline-flex; align-items: center; gap: 6px; background: var(--col-bg);
     border: 1px solid var(--border); border-radius: 12px; padding: 3px 10px;
@@ -872,9 +872,15 @@
           <label>Título</label>
           <input type="text" id="fTitle" placeholder="Título de la tarea">
         </div>
-        <div class="field">
-          <label>Columna</label>
-          <select id="fColumn"></select>
+        <div class="field-row">
+          <div class="field">
+            <label>Columna</label>
+            <select id="fColumn"></select>
+          </div>
+          <div class="field">
+            <label>Responsable</label>
+            <select id="fAssignee"></select>
+          </div>
         </div>
         <div class="field">
           <label>Detalles</label>
@@ -895,18 +901,12 @@
         </div>
       </div>
       <div class="modal-col-side">
-        <div class="field-row">
-          <div class="field">
-            <label>Fecha límite</label>
-            <input type="date" id="fDue">
-          </div>
-          <div class="field">
-            <label>Responsable</label>
-            <select id="fAssignee"></select>
-          </div>
-        </div>
-        <div class="labels-section" id="fLabelsSection"></div>
         <div class="goals-card-section" id="fGoalsSection"></div>
+        <div class="labels-section" id="fLabelsSection"></div>
+        <div class="field">
+          <label>Fecha límite</label>
+          <input type="date" id="fDue">
+        </div>
         <div class="field">
           <label>Adjuntos (fotos y archivos)</label>
           <div class="attachments" id="fAttachments"></div>
@@ -3034,6 +3034,9 @@
     const activas = cards.filter(c => !c.archived).length;
     const archivadas = total - activas;
     const conComentarios = cards.filter(c => (c.comments || []).length).length;
+    const conEtiquetas   = cards.filter(c => (c.labels || []).length).length;
+    const conChecklists  = cards.filter(c => (c.checklists || []).length).length;
+    const conResponsable = cards.filter(c => c.assignee).length;
 
     // conteo por columna (en el orden del tablero), solo de las no archivadas
     const porColumna = COLUMNS.map(col => {
@@ -3047,6 +3050,9 @@
         <li><span>Tarjetas a importar</span><b>${total}</b></li>
         ${archivadas ? `<li><span>· activas</span><b>${activas}</b></li><li><span>· archivadas</span><b>${archivadas}</b></li>` : ""}
         ${conComentarios ? `<li><span>· con comentarios</span><b>${conComentarios}</b></li>` : ""}
+        ${conEtiquetas   ? `<li><span>· con etiquetas</span><b>${conEtiquetas}</b></li>` : ""}
+        ${conChecklists  ? `<li><span>· con checklists</span><b>${conChecklists}</b></li>` : ""}
+        ${conResponsable ? `<li><span>· con responsable</span><b>${conResponsable}</b></li>` : ""}
       </ul>
       ${porColumna ? `<p class="import-sub">Por columna:</p><ul class="import-stats">${porColumna}</ul>` : ""}
       <p class="hint">Se <b>agregarán</b> al tablero actual (no se borra nada). Los adjuntos no se importan desde CSV/JSON.</p>
