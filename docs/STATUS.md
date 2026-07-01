@@ -1,7 +1,12 @@
 # Estado de Implementación — FUN TasKing! v1.9
 
 **Última actualización**: 2026-07-01  
-**Estado**: ✅ Tests completos (79 unit + 23 E2E) | main = staging = producción ✅
+**Estado**: ✅ Tests completos (79 unit + 25 E2E) | main = staging = producción ✅
+
+## 🎯 Cambios recientes (sesión 2026-07-01 — modo oscuro #6)
+
+- **Modo oscuro/claro (#6)**: toggle 🌙/☀️ en el header, persistencia en localStorage, fallback a `prefers-color-scheme`, sin flash (script en `<head>`). Paleta por `html[data-theme="dark"]` + `color-scheme`. Superficies/textos hardcodeados migrados a variables.
+- **2 E2E nuevos** (theme.spec.js) → **79 unit + 25 E2E ✅**
 
 ## 🎯 Cambios recientes (sesión 2026-07-01 — mejoras de columnas + historial)
 
@@ -524,15 +529,21 @@
 
 ---
 
-### ❌ #6 Modo oscuro/claro 🌙
+### ✅ #6 Modo oscuro/claro 🌙
 
-**Qué se necesita**:
-- Toggle en header
-- Guardar preferencia en localStorage
-- CSS variables ya están listos (--bg, --text, etc.)
-- Fallback a `prefers-color-scheme` del navegador
+**Qué hace**: Toggle 🌙/☀️ en el header que alterna tema claro/oscuro, persiste la preferencia y respeta la del sistema en el primer ingreso.
 
-**Prioridad**: BAJA (nice-to-have)
+**Implementación** (public/index.html):
+- **Paleta por variables**: `:root` (claro) + `html[data-theme="dark"]` (oscuro) redefiniendo `--bg`, `--col-bg`, `--card-bg`, `--card-hover`, `--input-bg`, `--text`, `--muted`, `--accent`, `--danger`, `--border`, `--hover`, `--shadow` + `color-scheme` (para que los controles nativos —date picker, selects, scrollbars— se oscurezcan).
+- **Sin flash**: script inline en `<head>` aplica el tema (localStorage → `prefers-color-scheme` → claro) **antes** de pintar.
+- **Toggle**: botón `#themeBtn` en el header; `toggleTheme()` cambia `data-theme`, guarda en `localStorage("tasking-theme")` y actualiza el ícono.
+- **Refactor**: superficies y textos hardcodeados (`#fff`, `#fafbfc`, `#f4f5f7`, bordes grises, textos `#172b4d/#42526e`) convertidos a variables. Se preservan el header (accent), el texto blanco sobre color y los colores semánticos (verde/rojo de badges, confeti).
+
+**Tests**:
+- ✅ 2 E2E (e2e/theme.spec.js): toggle + persistencia tras reload + respeta `prefers-color-scheme: dark`.
+- ✅ Verificación visual: board, modal y panel de objetivos en oscuro (sin parches blancos).
+
+**Estado**: **100% completo**.
 
 ---
 
@@ -560,8 +571,8 @@
 
 | Capa | Cobertura | Notas |
 |---|---|---|
-| **Unitarios (Vitest)** | 69 tests ✅ | CRUD, auth, permisos, checklists, objetivos, columnas, serialización. Corre en Workerd + D1 emulado. |
-| **E2E (Playwright)** | 22 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral), columnas (crear/renombrar/eliminar/cancelar). |
+| **Unitarios (Vitest)** | 79 tests ✅ | CRUD, auth, permisos, checklists, objetivos, columnas, serialización. Corre en Workerd + D1 emulado. |
+| **E2E (Playwright)** | 25 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral), columnas, tema claro/oscuro (toggle + persistencia + prefers-color-scheme). |
 | **Manual** | Completo ✅ | Celebración, polling, login real, responsive. |
 
 **Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/columns.spec.js`, `e2e/critical-flows.spec.js`, `e2e/goals.spec.js`, `e2e/history.spec.js`.
