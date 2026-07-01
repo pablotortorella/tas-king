@@ -1,7 +1,15 @@
-# Estado de Implementación — FUN TasKing! v2.0
+# Estado de Implementación — FUN TasKing! v2.1
 
 **Última actualización**: 2026-07-01  
-**Estado**: ✅ Tests completos (93 unit + 29 E2E) | main = staging = producción ✅
+**Estado**: ✅ Tests completos (101 unit + 29 E2E) | main = staging ✅ | producción pendiente aprobación
+
+## 🎯 Cambios recientes (sesión 2026-07-01 — import completo + modal 2 columnas + gestión de etiquetas)
+
+- **Import JSON completo**: el endpoint `POST /api/boards/:id/import` ahora restaura etiquetas (match por nombre, crea las nuevas hasta el límite de 10), checklists con todos sus ítems, y responsable (solo si el email es miembro del tablero). Antes solo importaba title/column/details/comments.
+- **Modal tarjeta en 2 columnas**: layout CSS Grid `@media (min-width: 700px)` — izquierda: título, columna+responsable, detalles, checklists, comentarios, historial; derecha: objetivos (arriba), etiquetas, fecha límite, adjuntos. Sin scroll en desktop.
+- **Gestión de etiquetas en ⚙️**: nueva tab "🏷️ Etiquetas" en el modal de configuración del tablero. Editar nombre/color o borrar etiquetas existentes, crear nuevas. 
+- **Preview de importación mejorado**: ahora muestra cuántas tarjetas tienen etiquetas, checklists y responsable asignado.
+- **8 nuevos tests de import** en `test/import.test.js` → **101 unit + 29 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-01 — métricas + columnas de cierre múltiples + UX)
 
