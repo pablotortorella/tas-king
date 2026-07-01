@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { resetDb } from "./helpers/reset-db.js";
+
+test.beforeAll(() => { resetDb(); });
 
 test.describe.configure({ mode: "serial" });
 
