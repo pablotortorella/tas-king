@@ -12,6 +12,7 @@ import { setupLabelRoutes } from "./routes/labels.js";
 import { setupChecklistRoutes } from "./routes/checklists.js";
 import { setupGoalRoutes } from "./routes/goals.js";
 import { setupColumnRoutes } from "./routes/columns.js";
+import { setupMetricsRoutes } from "./routes/metrics.js";
 import { runBackup } from "./backup.js";
 
 const app = new Hono();
@@ -68,6 +69,9 @@ setupGoalRoutes(app);
 
 // Rutas de columnas
 setupColumnRoutes(app);
+
+// Rutas de métricas
+setupMetricsRoutes(app);
 
 // Rutas de uploads (servir archivos)
 setupUploadRoutes(app);
