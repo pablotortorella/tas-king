@@ -703,10 +703,21 @@
   .metrics-stat-box .stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
   .metrics-stat-box .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
   .metrics-section { padding: 0 14px 14px; border-top: 1px solid var(--border); }
-  .metrics-section h3 { font-size: 13px; font-weight: 600; margin: 12px 0 8px; color: var(--text); }
+  .metrics-section h3 { font-size: 13px; font-weight: 600; margin: 12px 0 4px; color: var(--text); display: flex; align-items: center; gap: 5px; }
+  .metrics-section .section-desc { font-size: 11px; color: var(--muted); margin: 0 0 8px; line-height: 1.4; }
   .lead-time-big { font-size: 32px; font-weight: 700; color: var(--accent); }
   .metrics-chart-wrap { width: 100%; overflow: visible; }
   .metrics-chart-wrap svg { display: block; width: 100%; }
+  /* Tooltip "i" para conceptos técnicos */
+  .info-tip { position: relative; display: inline-flex; cursor: help; }
+  .info-tip span { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+  .info-tip .tip-text { display: none; position: absolute; left: 50%; top: 20px; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 11px; font-weight: 400; padding: 6px 8px; border-radius: 6px; width: 200px; line-height: 1.4; z-index: 100; white-space: normal; }
+  .info-tip:hover .tip-text, .info-tip:focus-within .tip-text { display: block; }
+  /* Lista de tarjetas quietas */
+  .stale-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .stale-item { background: var(--col-bg); border-radius: 6px; padding: 8px 10px; font-size: 12px; }
+  .stale-item-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stale-item-meta { color: var(--muted); margin-top: 2px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -725,7 +736,7 @@
   </div>
   <div class="actions">
     <button id="goalsBtn" title="Objetivos: ver, editar y resaltar tarjetas">🎯 Objetivos</button>
-    <button id="metricsBtn" title="Métricas del tablero">📊 Métricas</button>
+    <button id="metricsBtn" title="¿Cómo vamos?">📊 ¿Cómo vamos?</button>
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
     <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
@@ -766,10 +777,10 @@
   <div class="goals-drawer-list" id="goalsDrawerList"></div>
 </aside>
 
-<!-- Panel lateral de métricas (desliza desde la derecha) -->
-<aside class="metrics-drawer" id="metricsDrawer" aria-label="Panel de métricas">
+<!-- Panel lateral ¿Cómo vamos? (desliza desde la derecha) -->
+<aside class="metrics-drawer" id="metricsDrawer" aria-label="Panel ¿Cómo vamos?">
   <div class="metrics-drawer-head">
-    <span>📊 Métricas del tablero</span>
+    <span>📊 ¿Cómo vamos?</span>
     <button id="metricsDrawerClose" title="Cerrar panel">✕</button>
   </div>
   <div class="metrics-stats-row">
@@ -787,7 +798,13 @@
     </div>
   </div>
   <div class="metrics-section">
-    <h3>Lead time promedio</h3>
+    <h3>Velocidad promedio
+      <span class="info-tip" tabindex="0">
+        <span>i</span>
+        <span class="tip-text">Lead time: cuántos días tardaste, en promedio, desde que anotaste una tarea hasta que la terminaste. Cuanto más bajo, mejor.</span>
+      </span>
+    </h3>
+    <p class="section-desc">Días desde que creaste una tarea hasta que la terminaste</p>
     <div>
       <span class="lead-time-big" id="mLeadAvg">-</span>
       <span style="font-size:14px;color:var(--muted)"> días</span>
@@ -795,12 +812,29 @@
     <div style="font-size:12px;color:var(--muted);margin-top:2px" id="mLeadSub"></div>
   </div>
   <div class="metrics-section">
-    <h3>Burn-up — últimas 4 semanas</h3>
+    <h3>Ritmo de cierre
+      <span class="info-tip" tabindex="0">
+        <span>i</span>
+        <span class="tip-text">Burn-up: muestra cuántas tareas fuiste cerrando a lo largo del tiempo. Una curva que sube hacia la derecha es la señal de que el equipo avanza.</span>
+      </span>
+    </h3>
+    <p class="section-desc">Tareas terminadas en los últimos 30 días</p>
     <div class="metrics-chart-wrap" id="metricsBurnupWrap"></div>
   </div>
   <div class="metrics-section">
-    <h3>WIP por columna</h3>
+    <h3>Distribución actual
+      <span class="info-tip" tabindex="0">
+        <span>i</span>
+        <span class="tip-text">WIP (Work in Progress): cuántas tareas hay en cada columna ahora mismo. Muchas tareas en una sola columna puede indicar un cuello de botella.</span>
+      </span>
+    </h3>
+    <p class="section-desc">Cuántas tareas hay en cada columna en este momento</p>
     <div class="metrics-chart-wrap" id="metricsWipWrap"></div>
+  </div>
+  <div class="metrics-section">
+    <h3>¡Pilas con esto! 🔥</h3>
+    <p class="section-desc">Las tareas que más tiempo llevan sin moverse. Terminá una, archivála, o ponete en marcha.</p>
+    <ul class="stale-list" id="metricsStaleList"></ul>
   </div>
 </aside>
 
@@ -1560,9 +1594,25 @@
       }
       renderBurnupChart(m.burnup);
       renderWipChart(m.wipByColumn);
+      renderStaleCards(m.staleCards || []);
     } catch (e) {
       document.getElementById("mToday").textContent = "?";
     }
+  }
+
+  function renderStaleCards(cards) {
+    const list = document.getElementById("metricsStaleList");
+    if (!cards.length) {
+      list.innerHTML = '<li style="font-size:12px;color:var(--muted)">¡Todo al día! No hay tareas quietas. 🎉</li>';
+      return;
+    }
+    list.innerHTML = cards.map(c => {
+      const dias = c.daysSinceUpdate === 0 ? "hoy" : c.daysSinceUpdate === 1 ? "hace 1 día" : "hace " + c.daysSinceUpdate + " días";
+      return `<li class="stale-item">
+        <div class="stale-item-title">${escapeHtml(c.title)}</div>
+        <div class="stale-item-meta">📍 ${escapeHtml(c.columnName)} · ${dias}</div>
+      </li>`;
+    }).join("");
   }
 
   function renderBurnupChart(data) {

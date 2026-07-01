@@ -69,6 +69,37 @@ describe("Métricas del tablero", () => {
     expect(Array.isArray(burnup)).toBe(true);
   });
 
+  it("staleCards es un array con id, title, columnName y daysSinceUpdate", async () => {
+    const res = await request(`/api/boards/${boardId}/metrics`, { email: owner });
+    const { staleCards } = await res.json();
+    expect(Array.isArray(staleCards)).toBe(true);
+    for (const card of staleCards) {
+      expect(typeof card.id).toBe("string");
+      expect(typeof card.title).toBe("string");
+      expect(typeof card.columnName).toBe("string");
+      expect(typeof card.daysSinceUpdate).toBe("number");
+    }
+  });
+
+  it("staleCards no incluye tarjetas en la columna done ni archivadas", async () => {
+    // Obtener columnas y crear una tarjeta en la columna done
+    const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
+    const columns = await colsRes.json();
+    const doneCol = columns.find(c => c.is_done) || columns[columns.length - 1];
+
+    const cardRes = await request(`/api/boards/${boardId}/cards`, {
+      email: owner, method: "POST",
+      body: { title: "Tarjeta done para stale test", column: doneCol.id },
+    });
+    const card = await cardRes.json();
+
+    const metricsRes = await request(`/api/boards/${boardId}/metrics`, { email: owner });
+    const { staleCards } = await metricsRes.json();
+
+    // La tarjeta en done no debe aparecer en staleCards
+    expect(staleCards.find(c => c.id === card.id)).toBeUndefined();
+  });
+
   it("retorna 403 para no miembros", async () => {
     const res = await request(`/api/boards/${boardId}/metrics`, { email: outsider });
     expect(res.status).toBe(403);
