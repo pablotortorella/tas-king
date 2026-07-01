@@ -52,11 +52,13 @@ Un endpoint de lectura (`GET /api/cards/:id/history`) que devuelva un objeto enr
 | #3 | Checklists / subtareas | ✅ Completo | — |
 | #4 | Proteger adjuntos | ✅ Completo | — |
 | #5 | Validar JWT de Google | ✅ Completo | — |
-| #6 | Modo oscuro/claro | ❌ Pendiente | Baja |
-| #7 | Lead time y tasa completitud | ❌ Pendiente | Media |
-| **#8** | **Workflow Analytics Engine / ¿Cómo vamos?** | **✅ MVP completo** | **Alta** |
+| #6 | Modo oscuro/claro | ✅ Completo | — |
+| #7 | Lead time y tasa completitud | ✅ Completo (parte de #8) | — |
+| **#8** | **Workflow Analytics Engine / ¿Cómo vamos?** | **✅ MVP completo** | **—** |
 | **#9** | **¡Pilas con esto! — puerta de entrada inteligente** | **❌ Pendiente** | **Alta** |
-| — | CSP headers | ❌ Pendiente | Alta (seguridad) |
+| — | Columnas de cierre múltiples (isDone toggle) | ✅ Completo | — |
+| — | CSP + Security Headers | ✅ Completo | — |
+| — | Fix swatches etiquetas (tamaño) | ✅ Completo | — |
 | — | Tab/Enter en modal tarjeta | ❌ Pendiente | Alta (UX) |
 | — | Onboarding nuevos usuarios | ❌ Pendiente | Media |
 | — | Búsqueda avanzada full-text | ❌ Pendiente | Baja |

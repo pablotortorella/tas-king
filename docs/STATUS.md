@@ -1,7 +1,17 @@
-# Estado de Implementación — FUN TasKing! v1.9
+# Estado de Implementación — FUN TasKing! v2.0
 
 **Última actualización**: 2026-07-01  
-**Estado**: ✅ Tests completos (79 unit + 25 E2E) | main = staging = producción ✅
+**Estado**: ✅ Tests completos (93 unit + 29 E2E) | main = staging = producción ✅
+
+## 🎯 Cambios recientes (sesión 2026-07-01 — métricas + columnas de cierre múltiples + UX)
+
+- **Panel ¿Cómo vamos? (métricas)**: endpoint `GET /api/boards/:id/metrics` nuevo, panel lateral deslizante con 5 secciones: completadas hoy/semana/mes, velocidad promedio (lead time), ritmo de cierre (burn-up SVG 30 días), distribución actual (WIP SVG), y ¡Pilas con esto! (top 5 tarjetas más quietas, clickeables para abrir modal).
+- **Columnas de cierre múltiples**: botón 🏁 por columna (owner) para marcar/desmarcar como cierre; marcador ✅ en el nombre; `is_done` desacoplado de la posición — mover una columna no cambia su estado. Confeti, métricas e isUrgent/isOverdue usan todas las columnas `is_done=1`.
+- **Fix E2E flakiness**: `e2e/helpers/reset-db.js` + `test.beforeAll(() => resetDb())` en todas las 7 suites — 3 corridas consecutivas limpias.
+- **Fix swatches de etiquetas**: recuadros de color reducidos de ~60×60px a 20×20px compactos en fila flexible, con estado `selected` compatible con modo oscuro.
+- **Fix stale cards**: excluye tarjetas en columnas `is_done=1` (con fallback a última por posición si no hay ninguna marcada).
+- **Seguridad CSP**: ya estaba implementado (ver `src/middleware/cors.js`) — confirmado y documentado.
+- **93 unit + 29 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-01 — modo oscuro #6)
 
@@ -499,33 +509,39 @@
 
 ---
 
-### ❌ #8 Workflow Analytics Engine 📊
+### ✅ Security Headers (CSP + HSTS + anti-clickjack) 🛡️
 
-**Qué hace**: Enriquece `GET /api/cards/:id/history` con KPIs calculados on-demand a partir del `audit_log`: cantidad de movimientos, tiempo promedio por columna, conteo de entradas por etapa.
+**Qué hace**: Protege la app contra XSS, clickjacking e inyección de contenido.
 
-**Diseño (ver ADR-013)**:
-- **Opción A (MVP recomendada)**: cálculo on-demand en el endpoint — función `calculateCardKPIs(cardId)` en `src/db/helpers.js`
-- **Opción B (futuro)**: event sourcing / listener que mantiene `metrics_summary` actualizado en `cards`
+**Implementación** (`src/middleware/cors.js`):
+- `Content-Security-Policy`: `default-src 'self'`, `script-src 'unsafe-inline'` (necesario para el script anti-flash del tema), `connect-src` acepta cuentas de Google para OAuth
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: no-referrer`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Strict-Transport-Security` (HSTS) solo fuera de localhost: `max-age=31536000; includeSubDomains; preload`
 
-**DTO objetivo**:
-```json
-{
-  "cardId": "...",
-  "summaryMetrics": {
-    "totalMovementCount": 5,
-    "stageEntryCounts": { "Pendiente": 1, "En Progreso": 3 },
-    "timeInStageDays": { "Pendiente": 2.5, "En Progreso": 1.8 }
-  },
-  "activityLog": [ /* eventos cronológicos */ ]
-}
-```
+**Tests**: Manual (verificado con browser DevTools / curl -I).
 
-**Implementación necesaria**:
-- `src/db/helpers.js`: función `calculateCardKPIs(cardId)`
-- `src/routes/cards.js`: endpoint `/api/cards/:id/history` devuelve DTO enriquecido
-- Tests unitarios validando KPIs contra escenarios conocidos
+**Estado**: **100% completo** — implementado en el middleware CORS global.
 
-**Prioridad**: ALTA — ver `docs/ADRs/ADR-013-workflow-analytics-engine.md` y `PROJECT_BACKLOG.md`
+---
+
+### ✅ #8 Workflow Analytics Engine / ¿Cómo vamos? 📊
+
+**Qué hace**: Panel lateral de métricas del tablero con 5 secciones: completadas por período, velocidad promedio (lead time), ritmo de cierre (burn-up), distribución actual (WIP) y ¡Pilas con esto! (tarjetas más quietas, clickeables).
+
+**Implementación**:
+- **Backend**: `src/routes/metrics.js` — `GET /api/boards/:boardId/metrics` con 5 queries SQL en paralelo usando `audit_log` + `cards` + `columns` (sin nueva tabla).
+- **Frontend**: panel deslizante `#metricsDrawer`, gráficos SVG vanilla (burn-up + WIP), tooltips informativos con explicación de lead time, burn-up, etc.
+- Lead time: CTE con primera llegada a columna `is_done=1`; burn-up: acumulado diario últimos 30 días; stale: excluye `is_done=1`, fallback a última por posición.
+
+**Tests**:
+- ✅ 9 unitarios (`test/metrics.test.js`): estructura, períodos, lead time, WIP, stale cards, permisos, múltiples done columns
+- ✅ 4 E2E (`e2e/metrics.spec.js`): botón visible, panel abre con todas las secciones, números ≥ 0, cerrar
+
+**Estado**: **100% completo (MVP)**.
 
 ---
 
@@ -571,8 +587,8 @@
 
 | Capa | Cobertura | Notas |
 |---|---|---|
-| **Unitarios (Vitest)** | 79 tests ✅ | CRUD, auth, permisos, checklists, objetivos, columnas, serialización. Corre en Workerd + D1 emulado. |
-| **E2E (Playwright)** | 25 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral), columnas, tema claro/oscuro (toggle + persistencia + prefers-color-scheme). |
+| **Unitarios (Vitest)** | 93 tests ✅ | CRUD, auth, permisos, checklists, objetivos, columnas, métricas, múltiples done columns. Corre en Workerd + D1 emulado. |
+| **E2E (Playwright)** | 29 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos, columnas, tema, métricas. DB reset por spec (sin flakiness). |
 | **Manual** | Completo ✅ | Celebración, polling, login real, responsive. |
 
 **Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/columns.spec.js`, `e2e/critical-flows.spec.js`, `e2e/goals.spec.js`, `e2e/history.spec.js`.
