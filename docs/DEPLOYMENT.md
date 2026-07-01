@@ -191,6 +191,56 @@ Staging hereda el schema, pero no los datos. Para copiar datos de producción a 
 
 ---
 
+## 🤖 Deployar desde Claude Code (agentes remotos / VS Code extension)
+
+Esta sección es para Claude Code cuando corre en un sandbox remoto (VS Code extension, Claude.ai/code, fleet remoto).
+
+### Por qué falla `npm run deploy` en entornos remotos
+
+`wrangler deploy` necesita autenticarse contra la cuenta Cloudflare de Pablo. Hay dos formas:
+
+1. **OAuth local** (`wrangler login`): guarda tokens en `~/.wrangler/config/default.toml`. Funciona en la PC de Pablo, no en sandboxes remotos.
+2. **API Token** (`CLOUDFLARE_API_TOKEN`): una variable de entorno con el token. Los sandboxes remotos no la tienen por defecto.
+
+### Qué hacer si no hay auth
+
+**Opción A (recomendada): pedirle a Pablo que lo corra él**
+```bash
+# Pablo lo ejecuta en su PC — ya tiene wrangler login activo
+npm run deploy:staging
+npm run deploy
+```
+
+**Opción B: inyectar el token en la sesión**
+
+Pablo puede pegar el token en la conversación (o configurarlo como secret en el entorno):
+```bash
+export CLOUDFLARE_API_TOKEN="<token de Pablo>"
+npm run deploy:staging
+```
+
+El token se obtiene en: Cloudflare Dashboard → My Profile → API Tokens → Create Token → "Edit Cloudflare Workers" template. Permisos mínimos: Workers Scripts Edit, D1 Edit, R2 Edit.
+
+> ⚠️ **Nunca commitear el token.** Usarlo solo en la sesión actual y no guardarlo en archivos.
+
+### Lo que sí funciona siempre en remoto
+
+- `npm run dev` (wrangler dev emula D1/R2 localmente, sin auth Cloudflare)
+- `npm test` y `npm run test:e2e` (no necesitan auth)
+- Todo el desarrollo de código, commits y PRs vía `gh`
+
+### Resumen rápido
+
+| Operación | ¿Funciona sin token? |
+|---|---|
+| `npm run dev` | ✅ Siempre |
+| `npm test` / `npm run test:e2e` | ✅ Siempre |
+| `git push` / `gh pr create` | ✅ (usa GH_TOKEN) |
+| `npm run deploy:staging` | ❌ Necesita Cloudflare auth |
+| `npm run deploy` | ❌ Necesita Cloudflare auth |
+
+---
+
 ## 📋 Checklist antes de npm run deploy
 
 ```bash
@@ -237,5 +287,5 @@ npm run dev  # http://localhost:8787
 
 ---
 
-**Última actualización**: 2026-06-24  
+**Última actualización**: 2026-07-01  
 **Responsable**: Claude Code
