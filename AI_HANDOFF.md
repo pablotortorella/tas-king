@@ -4,28 +4,24 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v1.9 — **Tests**: 69 unitarios + 22 E2E ✅ Todos pasan
+**Versión actual**: v1.9 — **Tests**: 79 unitarios + 23 E2E ✅ Todos pasan
 
 **Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
-Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), Columnas customizables,
-i18n landing, Panel admin, IO menu.
+Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), Columnas customizables
+(#9 — crear/renombrar/eliminar/reordenar), i18n landing, Panel admin, IO menu.
 
-**En vuelo (2 PRs pendientes)**:
-- Objetivos (#8) → **PR #9** abierto en rama `claude/goal-management-features-71ddci`, sin merge.
-- Columnas → rama `claude/board-column-customization-jfqgmd` pusheada, **PR por abrir**.
+**Sin PRs en vuelo.** main, staging y producción están sincronizados.
 
-**Pendiente de retomar**: ver ambas ramas en **staging** antes de mergear (ver "Último handoff").
-
-**Próximo (una vez mergeados los dos PRs)**: #6 Modo oscuro, Seguridad (CSP, rate limiting), #7 Lead time.
+**Próximo**: #6 Modo oscuro, Seguridad (CSP, rate limiting), #7 Lead time/tasa completitud.
 
 ## 🎯 Objetivo siguiente sesión
 
-**Paso obligatorio**: mergear los dos PRs en vuelo antes de empezar algo nuevo.
+Opciones priorizadas (sin deuda técnica pendiente):
 
-1. **Revisar y mergear PR #9 (Objetivos)** — ya testeado, esperando staging review
-2. **Abrir PR para `claude/board-column-customization-jfqgmd`** (Columnas), revisar staging y mergear
-3. **Deploy a producción** con ambas migraciones (`0010_goals.sql` + `0011_columns.sql`)
-4. Una vez limpio: **#6 Modo oscuro** o **CSP headers** (seguridad)
+1. **Seguridad** (alta): CSP headers, rate limiting granular
+2. **#6 Modo oscuro/claro** (alta): toggle en header, persiste en localStorage
+3. **#7 Lead time / tasa de completitud** (media): métricas en panel de admin o por tarjeta
+4. **UX**: Tab/Enter en modal de tarjeta, onboarding nuevos usuarios
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
 Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).

@@ -1,30 +1,26 @@
 # Estado de Implementación — FUN TasKing! v1.9
 
-**Última actualización**: 2026-06-30  
-**Estado**: ✅ Tests completos (69 unit + 22 E2E) | ⏭️ Pendiente: mergear PR #9 (Objetivos) + abrir PR de Columnas
+**Última actualización**: 2026-07-01  
+**Estado**: ✅ Tests completos (79 unit + 23 E2E) | main = staging = producción ✅
 
-## 🎯 Cambios recientes (sesión 2026-06-30 — Columnas customizables)
+## 🎯 Cambios recientes (sesión 2026-07-01 — mejoras de columnas + historial)
 
-- **Columnas customizables**: crear, renombrar y eliminar columnas en cualquier tablero
-  - Migración `0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`; inserta 5 columnas legacy en todos los tableros existentes
-  - Módulo `src/db/columns.js` (sin dependencias circulares): `createDefaultColumns`, `getDoneColumnId`, `columnToJSON`
-  - Backend `src/routes/columns.js`: GET / POST / PATCH / DELETE con validaciones de owner, máx 10 columnas, sin tarjetas activas para borrar
-  - Frontend: botones ✏ y ✕ por columna + widget `+ Columna` al final; `COLUMNS` dinámico (ya no hardcodeado)
-  - `getDoneColumnId()` reemplaza la constante `"terminado"` en toda la lógica de cierre y progreso de objetivos
-  - 10 unit + 4 E2E nuevos — **69 unit + 22 E2E ✅ todos pasan**
-  - Rama: `claude/board-column-customization-jfqgmd` — **PR por abrir**
+- **Reordenar columnas**: botones ◀ ▶ en header de columna (PATCH `direction`), con o sin tarjetas
+- **Celebración en última columna por posición** (no por flag `isDone`)
+- **Historial con nombres del momento**: `card_created`/`card_moved`/`card_edited` guardan nombres de columna en el evento; fallback al nombre actual para eventos viejos
+- **Logs de columna**: `column_created`, `column_deleted`, `column_renamed`, `column_moved` en actividad del tablero
+- **UX**: botones ✏️ / 🗑️ más grandes; admin abre en Actividad del tablero por defecto
+- Notas de versión publicadas en `/releases` (v1.8 y v1.9)
+- **79 unit + 23 E2E ✅ todos pasan**
 
-## 🎯 Cambios recientes (sesión 2026-06-30 — Objetivos #8)
+## 🎯 Cambios recientes (sesión 2026-06-30 — Objetivos #8 + Columnas customizables)
 
-- **Objetivos (#8) MVP completo**: gestión de objetivos por tablero (Opción A — dentro del tablero)
-  - Tabla `goals` + `card_goals` (migración `0010_goals.sql`)
-  - Backend `src/routes/goals.js`: CRUD + vincular/desvincular tarjetas + progreso calculado
-  - Un único acceso **🎯 Objetivos** que abre un **panel lateral** (drawer) para ver/editar sin salir del tablero; dentro, **⛶ Ampliar** lleva a la vista a pantalla completa (con "📋 Volver al tablero")
-  - Filtro por objetivo: seleccionar uno en el panel resalta sus tarjetas y atenúa el resto
-  - Vista de objetivos con barra de progreso (terminadas/total) y % automático
-  - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban
-  - 11 unit (integración con D1) + 2 E2E nuevos
-  - Rama: `claude/goal-management-features-71ddci` — **PR #9 abierto, pendiente merge**
+- **Objetivos (#8) MVP completo**: gestión de objetivos por tablero, panel lateral, filtro, progreso automático, vincular al crear tarjeta
+  - Tablas `goals` + `card_goals` (migración `0010_goals.sql`)
+  - Backend `src/routes/goals.js`: CRUD + vincular/desvincular + progreso calculado
+- **Columnas customizables**: crear, renombrar, eliminar columnas; `COLUMNS` dinámico
+  - Migración `0011_columns.sql`: tabla `columns`, inserta 5 columnas legacy en tableros existentes
+  - Backend `src/routes/columns.js`: GET / POST / PATCH / DELETE
 
 ## 🎯 Cambios recientes (sesión 2026-06-25)
 
