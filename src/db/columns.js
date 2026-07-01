@@ -31,3 +31,10 @@ export async function getDoneColumnId(db, boardId) {
   ).bind(boardId).first();
   return col ? col.id : "terminado";
 }
+
+export async function getColumnName(db, boardId, columnId) {
+  const col = await db.prepare(
+    "SELECT name FROM columns WHERE board_id = ? AND id = ?"
+  ).bind(boardId, columnId).first();
+  return col ? col.name : columnId;
+}

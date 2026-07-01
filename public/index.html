@@ -176,8 +176,8 @@
   }
   .col-actions { display: flex; align-items: center; gap: 4px; }
   .col-action-btn {
-    background: none; border: none; cursor: pointer; font-size: 11px;
-    color: rgba(9,30,66,.35); padding: 2px 4px; border-radius: 4px; line-height: 1;
+    background: none; border: none; cursor: pointer; font-size: 14px;
+    color: rgba(9,30,66,.45); padding: 4px 7px; border-radius: 4px; line-height: 1;
   }
   .col-action-btn:hover { background: rgba(9,30,66,.08); color: var(--text); }
   .col-rename-input {
@@ -856,14 +856,14 @@
   <div class="modal" style="max-width:580px;width:100%">
     <h2>⚙ Administración</h2>
     <div class="admin-tabs">
-      <button class="tab-btn active" id="adminTabUsuarios">Usuarios</button>
-      <button class="tab-btn" id="adminTabActividad">Actividad del tablero</button>
+      <button class="tab-btn active" id="adminTabActividad">Actividad del tablero</button>
+      <button class="tab-btn" id="adminTabUsuarios">Usuarios</button>
       <button class="tab-btn" id="adminTabStats">📊 Estadísticas</button>
       <button class="tab-btn" id="adminTabSolicitudes">🔔 Solicitudes</button>
     </div>
 
     <!-- Tab: Usuarios -->
-    <div id="adminPanelUsuarios">
+    <div id="adminPanelUsuarios" style="display:none">
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:5px;font-size:14px">
         <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
@@ -872,7 +872,7 @@
     </div>
 
     <!-- Tab: Actividad -->
-    <div id="adminPanelActividad" style="display:none">
+    <div id="adminPanelActividad">
       <div class="activity-filters">
         <select id="activityUserFilter" title="Filtrar por usuario"></select>
         <input type="date" id="activityFrom" title="Desde">
@@ -1008,7 +1008,8 @@
 
   // Columnas del tablero actual — se actualiza en loadCards()
   let COLUMNS = [];
-  const getDoneColumnId = () => (COLUMNS.find(c => c.isDone) || {}).id || "terminado";
+  // La columna de cierre es siempre la más a la derecha (mayor position).
+  const getDoneColumnId = () => (COLUMNS[COLUMNS.length - 1] || {}).id || "terminado";
 
   /** @type {{cards: Array}} */
   let state = { cards: [] };
@@ -1424,18 +1425,22 @@
   function render() {
     board.innerHTML = "";
     const owner = isOwner();
-    COLUMNS.forEach(col => {
+    COLUMNS.forEach((col, colIdx) => {
       const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!urgentFilter || isUrgent(c)));
       const activeCards = state.cards.filter(c => c.column === col.id && !c.archived).length;
       const colEl = document.createElement("div");
       colEl.className = "column";
       const doneMarker = col.isDone ? ' <span title="Columna de cierre" style="color:var(--muted);font-size:11px">✓</span>' : "";
+      const isFirst = colIdx === 0;
+      const isLast  = colIdx === COLUMNS.length - 1;
       colEl.innerHTML = `
         <div class="column-header">
           <span class="col-name-text">${escapeHtml(col.name)}${doneMarker}</span>
           <div class="col-actions">
-            ${owner ? `<button class="col-action-btn col-rename-btn" data-col="${col.id}" title="Renombrar columna">✏</button>` : ""}
-            ${owner && activeCards === 0 ? `<button class="col-action-btn col-delete-btn" data-col="${col.id}" title="Eliminar columna">✕</button>` : ""}
+            ${owner && !isFirst ? `<button class="col-action-btn col-move-btn" data-col="${col.id}" data-dir="left" title="Mover columna a la izquierda">◀</button>` : ""}
+            ${owner && !isLast  ? `<button class="col-action-btn col-move-btn" data-col="${col.id}" data-dir="right" title="Mover columna a la derecha">▶</button>` : ""}
+            ${owner ? `<button class="col-action-btn col-rename-btn" data-col="${col.id}" title="Renombrar columna">✏️</button>` : ""}
+            ${owner && activeCards === 0 ? `<button class="col-action-btn col-delete-btn" data-col="${col.id}" title="Eliminar columna">🗑️</button>` : ""}
             <span class="count">${cards.length}</span>
           </div>
         </div>
@@ -1724,10 +1729,11 @@
 
   function actionLabel(action, details) {
     const d = details || {};
-    const colName = id => (COLUMNS.find(c => c.id === id) || { name: id }).name;
+    // Prefiere el nombre guardado en el evento; cae en el nombre actual como fallback para eventos viejos.
+    const colName = (id, saved) => saved || (COLUMNS.find(c => c.id === id) || { name: id }).name;
     switch (action) {
       case "card_created":
-        return d.column ? `Creó la tarjeta en "${colName(d.column)}"` : "Creó la tarjeta";
+        return d.column ? `Creó la tarjeta en "${colName(d.column, d.columnName)}"` : "Creó la tarjeta";
       case "card_deleted":   return "Eliminó la tarjeta";
       case "card_archived":  return "Archivó la tarjeta";
       case "card_restored":  return "Restauró la tarjeta";
@@ -1735,16 +1741,24 @@
       case "attachment_added":
         return d.files && d.files.length ? `Adjuntó: ${d.files.join(", ")}` : "Subió un adjunto";
       case "card_moved":
-        return d.column ? `Movió a "${colName(d.column.to)}"` : "Movió la tarjeta";
+        return d.column ? `Movió a "${colName(d.column.to, d.column.toName)}"` : "Movió la tarjeta";
       case "card_edited": {
         const parts = [];
         if (d.title)    parts.push("cambió el título");
-        if (d.column)   parts.push(`movió a "${colName(d.column.to)}"`);
+        if (d.column)   parts.push(`movió a "${colName(d.column.to, d.column.toName)}"`);
         if (d.details)  parts.push("editó la descripción");
         if (d.due)      parts.push(d.due.to ? `fecha: ${d.due.to}` : "quitó la fecha");
         if (d.assignee) parts.push(d.assignee.to ? `asignó a ${shortName(d.assignee.to)}` : "quitó el responsable");
         return parts.length ? `Editó: ${parts.join(", ")}` : "Editó la tarjeta";
       }
+      case "column_renamed":
+        return d.from && d.to ? `Renombró columna "${d.from}" → "${d.to}"` : "Renombró una columna";
+      case "column_created":
+        return d.name ? `Creó la columna "${d.name}"` : "Creó una columna";
+      case "column_deleted":
+        return d.name ? `Eliminó la columna "${d.name}"` : "Eliminó una columna";
+      case "column_moved":
+        return d.name ? `Movió "${d.name}" hacia la ${d.direction === "left" ? "izquierda" : "derecha"}` : "Reordenó columnas";
       default: return action;
     }
   }
@@ -3048,8 +3062,19 @@
     headerEl.classList.remove("panning");
   });
 
-  // ---------- Gestión de columnas (renombrar / eliminar) ----------
+  // ---------- Gestión de columnas (mover / renombrar / eliminar) ----------
   board.addEventListener("click", async e => {
+    if (e.target.closest(".col-move-btn")) {
+      const btn = e.target.closest(".col-move-btn");
+      const colId = btn.dataset.col;
+      const dir   = btn.dataset.dir;
+      btn.disabled = true;
+      try {
+        await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { direction: dir });
+        await loadCards();
+      } catch (err) { alert(err.message || "Error al mover columna"); btn.disabled = false; }
+      return;
+    }
     if (e.target.closest(".col-rename-btn")) {
       const btn = e.target.closest(".col-rename-btn");
       const colId = btn.dataset.col;
@@ -3299,7 +3324,7 @@
   });
 
   async function openAdmin() {
-    switchAdminTab("usuarios");
+    switchAdminTab("actividad");
     adminOverlay.classList.add("open");
     await renderAdminList();
   }

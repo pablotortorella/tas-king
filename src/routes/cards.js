@@ -1,7 +1,7 @@
 // ---------- Routes: Cards ----------
 
-import { membership } from "../db/helpers.js";
-import { logEvent } from "../db/helpers.js";
+import { membership, logEvent } from "../db/helpers.js";
+import { getColumnName } from "../db/columns.js";
 import {
   getBoard, getCardRow, cardJSONById, nextPosition, cardWithAccess,
   replaceCommentsStmts, commentToJSON, auditRowToJSON
@@ -43,7 +43,8 @@ export function setupCardRoutes(app) {
          VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
       ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
     ]);
-    await logEvent(c.env.DB, boardId, id, "card_created", email, { column: b.column });
+    const columnName = await getColumnName(c.env.DB, boardId, b.column);
+    await logEvent(c.env.DB, boardId, id, "card_created", email, { column: b.column, columnName });
     return c.json(await cardJSONById(c.env.DB, id));
   });
 
@@ -78,7 +79,13 @@ export function setupCardRoutes(app) {
 
     const changes = {};
     if (b.title != null && String(b.title).trim() !== card.title) changes.title = { from: card.title, to: String(b.title).trim() };
-    if (column !== card.column_id) changes.column = { from: card.column_id, to: column };
+    if (column !== card.column_id) {
+      const [fromName, toName] = await Promise.all([
+        getColumnName(c.env.DB, card.board_id, card.column_id),
+        getColumnName(c.env.DB, card.board_id, column),
+      ]);
+      changes.column = { from: card.column_id, to: column, fromName, toName };
+    }
     if (b.details != null && b.details !== card.details) changes.details = true;
     if (b.due != null && b.due !== card.due) changes.due = { from: card.due || null, to: b.due || null };
     if (b.assignee !== undefined && (b.assignee || null) !== card.assignee_email) {
@@ -147,10 +154,16 @@ export function setupCardRoutes(app) {
     }
 
     // Loguear sólo las tarjetas que cambiaron de columna
+    const colNameCache = new Map();
+    const cachedColName = async (colId) => {
+      if (!colNameCache.has(colId)) colNameCache.set(colId, await getColumnName(c.env.DB, boardId, colId));
+      return colNameCache.get(colId);
+    };
     for (const it of items) {
       const prev = colMap.get(it.id);
       if (prev && prev !== it.column) {
-        await logEvent(c.env.DB, boardId, it.id, "card_moved", email, { column: { from: prev, to: it.column } });
+        const [fromName, toName] = await Promise.all([cachedColName(prev), cachedColName(it.column)]);
+        await logEvent(c.env.DB, boardId, it.id, "card_moved", email, { column: { from: prev, to: it.column, fromName, toName } });
       }
     }
 

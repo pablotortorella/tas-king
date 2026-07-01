@@ -1,6 +1,6 @@
 // ---------- Routes: Columns ----------
 
-import { membership } from "../db/helpers.js";
+import { membership, logEvent } from "../db/helpers.js";
 import { columnToJSON } from "../db/columns.js";
 
 export { createDefaultColumns, columnToJSON } from "../db/columns.js";
@@ -45,6 +45,7 @@ export function setupColumnRoutes(app) {
       "INSERT INTO columns (id, board_id, name, position, is_done, created_at) VALUES (?, ?, ?, ?, 0, ?)"
     ).bind(id, boardId, colName, position, now()).run();
 
+    await logEvent(c.env.DB, boardId, null, "column_created", email, { name: colName });
     return c.json({ id, name: colName, position, isDone: false });
   });
 
@@ -62,7 +63,31 @@ export function setupColumnRoutes(app) {
     ).bind(boardId, columnId).first();
     if (!col) return c.json({ error: "Columna no encontrada." }, 404);
 
-    const { name, isDone } = await c.req.json().catch(() => ({}));
+    const { name, isDone, direction } = await c.req.json().catch(() => ({}));
+
+    // Reordenar: intercambiar posición con la columna adyacente
+    if (direction === "left" || direction === "right") {
+      const all = await c.env.DB.prepare(
+        "SELECT id, position FROM columns WHERE board_id = ? ORDER BY position ASC"
+      ).bind(boardId).all();
+      const idx = all.results.findIndex(c => c.id === columnId);
+      const swapIdx = direction === "left" ? idx - 1 : idx + 1;
+      if (idx < 0 || swapIdx < 0 || swapIdx >= all.results.length)
+        return c.json({ error: "No se puede mover en esa dirección." }, 400);
+      const swap = all.results[swapIdx];
+      await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE columns SET position = ? WHERE board_id = ? AND id = ?").bind(swap.position, boardId, columnId),
+        c.env.DB.prepare("UPDATE columns SET position = ? WHERE board_id = ? AND id = ?").bind(col.position, boardId, swap.id),
+      ]);
+      await logEvent(c.env.DB, boardId, null, "column_moved", email, {
+        columnId, name: col.name, direction,
+      });
+      const updated = await c.env.DB.prepare(
+        "SELECT id, name, position, is_done FROM columns WHERE board_id = ? AND id = ?"
+      ).bind(boardId, columnId).first();
+      return c.json(columnToJSON(updated));
+    }
+
     const updates = [];
     const values = [];
 
@@ -86,6 +111,15 @@ export function setupColumnRoutes(app) {
       `UPDATE columns SET ${updates.join(", ")} WHERE board_id = ? AND id = ?`
     ).bind(...values).run();
 
+    if (name !== undefined) {
+      const newName = (name || "").trim();
+      if (newName !== col.name) {
+        await logEvent(c.env.DB, boardId, null, "column_renamed", email, {
+          columnId, from: col.name, to: newName,
+        });
+      }
+    }
+
     const updated = await c.env.DB.prepare(
       "SELECT id, name, position, is_done FROM columns WHERE board_id = ? AND id = ?"
     ).bind(boardId, columnId).first();
@@ -105,7 +139,7 @@ export function setupColumnRoutes(app) {
     if (colCount.n <= 1) return c.json({ error: "No se puede eliminar la única columna del tablero." }, 400);
 
     const col = await c.env.DB.prepare(
-      "SELECT id, is_done FROM columns WHERE board_id = ? AND id = ?"
+      "SELECT id, name, is_done FROM columns WHERE board_id = ? AND id = ?"
     ).bind(boardId, columnId).first();
     if (!col) return c.json({ error: "Columna no encontrada." }, 404);
 
@@ -115,6 +149,7 @@ export function setupColumnRoutes(app) {
     if (cards.n > 0) return c.json({ error: "No se puede eliminar una columna con tarjetas activas. Mové o archivá las tarjetas primero." }, 400);
 
     await c.env.DB.prepare("DELETE FROM columns WHERE board_id = ? AND id = ?").bind(boardId, columnId).run();
+    await logEvent(c.env.DB, boardId, null, "column_deleted", email, { name: col.name });
 
     // Si era la columna "terminado", transferir el flag a la nueva última columna
     if (col.is_done) {

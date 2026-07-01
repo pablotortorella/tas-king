@@ -54,6 +54,16 @@ test("administra la lista de acceso desde la UI", async ({ page }) => {
   await expect(page.locator("#adminBtn")).toBeVisible();
   await page.locator("#adminBtn").click();
   await expect(page.locator("#adminOverlay")).toHaveClass(/open/);
+
+  // El primer tab visible debe ser Actividad del tablero
+  await expect(page.locator("#adminTabActividad")).toHaveClass(/active/);
+  await expect(page.locator("#adminTabUsuarios")).not.toHaveClass(/active/);
+  await expect(page.locator("#adminPanelActividad")).toBeVisible();
+  await expect(page.locator("#adminPanelUsuarios")).not.toBeVisible();
+
+  // Cambiar al tab Usuarios para gestionar acceso
+  await page.locator("#adminTabUsuarios").click();
+  await expect(page.locator("#adminPanelUsuarios")).toBeVisible();
   await page.locator("#adminNewEmail").fill(allowedEmail);
   await page.locator("#adminAddBtn").click();
   await expect(page.locator("#adminUserList")).toContainText(allowedEmail);

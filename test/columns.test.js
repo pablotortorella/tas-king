@@ -48,6 +48,38 @@ describe("Estructura de columna", () => {
   });
 });
 
+describe("Columna de cierre (celebración)", () => {
+  // getDoneColumnId vive en el frontend; testeamos la lógica pura aquí.
+  const getDoneColumnId = (columns) =>
+    (columns[columns.length - 1] || {}).id || "terminado";
+
+  it("la columna de cierre es la última por posición (más a la derecha)", () => {
+    const cols = [
+      { id: "pendiente", position: 1 },
+      { id: "en_progreso", position: 2 },
+      { id: "terminado", position: 3 },
+    ];
+    expect(getDoneColumnId(cols)).toBe("terminado");
+  });
+
+  it("si se agrega una columna al final, pasa a ser la de cierre", () => {
+    const cols = [
+      { id: "pendiente", position: 1 },
+      { id: "terminado", position: 2 },
+      { id: "publicado", position: 3 },
+    ];
+    expect(getDoneColumnId(cols)).toBe("publicado");
+  });
+
+  it("si solo hay una columna, esa es la de cierre", () => {
+    expect(getDoneColumnId([{ id: "unica", position: 1 }])).toBe("unica");
+  });
+
+  it("con array vacío devuelve el fallback 'terminado'", () => {
+    expect(getDoneColumnId([])).toBe("terminado");
+  });
+});
+
 describe("Validación de nombre de columna", () => {
   const MAX_NAME = 50;
 
