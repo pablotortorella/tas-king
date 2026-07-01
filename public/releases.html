@@ -31,6 +31,29 @@
   <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
 
   <div class="release">
+    <h2>v2.1 — Modal en dos columnas, gestión de etiquetas e import completo <span class="tag">Release 12</span></h2>
+    <div class="date">Julio de 2026</div>
+    <ul>
+      <li><b>Modal de tarjeta en dos columnas</b>: en pantallas anchas, el modal reorganiza los campos en una columna principal (título, columna, responsable, detalles, checklists, comentarios, historial) y una barra lateral (objetivos, etiquetas, fecha límite, adjuntos). Sin scroll en desktop.</li>
+      <li><b>Gestión de etiquetas en ⚙️ Configuración</b>: nueva pestaña "🏷️ Etiquetas" para renombrar, cambiar el color o borrar etiquetas del tablero, además de crear nuevas.</li>
+      <li><b>Import JSON completo</b>: al importar un JSON exportado, ahora se restauran las etiquetas (se reutilizan las existentes por nombre, se crean las nuevas), los checklists con todos sus ítems y el responsable asignado (si es miembro del tablero). Antes solo se importaban título, columna, detalles y comentarios.</li>
+      <li>La vista previa de importación muestra cuántas tarjetas traen etiquetas, checklists y responsable.</li>
+      <li>101 pruebas unitarias y 29 pruebas E2E, todas en verde.</li>
+    </ul>
+  </div>
+
+  <div class="release">
+    <h2>v2.0 — Panel ¿Cómo vamos? y columnas de cierre múltiples <span class="tag">Release 11</span></h2>
+    <div class="date">Julio de 2026</div>
+    <ul>
+      <li><b>Panel ¿Cómo vamos?</b>: botón 📊 en el header abre un drawer lateral con métricas del tablero — tarjetas completadas hoy/semana/mes, lead time promedio (con mín/máx/muestra), gráfico de burn-up de los últimos 30 días, WIP por columna y las 5 tarjetas más quietas (¡Pilas con esto!).</li>
+      <li><b>Columnas de cierre múltiples</b>: cualquier columna puede marcarse como "columna de cierre" con el botón 🏁 (owners). Las columnas marcadas aparecen con ✅ en el nombre. Las métricas, el confeti y el cálculo de urgencia usan todas las columnas marcadas.</li>
+      <li>Etiquetas de colores: recuadros compactos (20×20 px) en fila, con estado seleccionado compatible con modo oscuro.</li>
+      <li>93 pruebas unitarias y 29 pruebas E2E, todas en verde.</li>
+    </ul>
+  </div>
+
+  <div class="release">
     <h2>v1.9 — Columnas editables: reordenar, historial y UX <span class="tag">Release 10</span></h2>
     <div class="date">Julio de 2026</div>
     <ul>
