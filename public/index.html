@@ -26,13 +26,14 @@
     --text: #172b4d;
     --muted: #6b778c;
     --accent: #0079bf;
+    --header-bg: #0079bf;
     --danger: #c0392b;
     --border: #dfe1e6;
     --hover: rgba(9,30,66,.08);
     --shadow: 0 1px 2px rgba(9,30,66,.15);
     color-scheme: light;
   }
-  /* Tema oscuro: redefine la paleta. El header y los colores semánticos
+  /* Tema oscuro: redefine la paleta. Los colores semánticos
      (verde/rojo de badges, confeti) se mantienen. */
   html[data-theme="dark"] {
     --bg: #1d2125;
@@ -43,6 +44,7 @@
     --text: #c7d1db;
     --muted: #9fadbc;
     --accent: #4c9aff;
+    --header-bg: #0f1f2e;
     --danger: #ff7a7a;
     --border: #3d474f;
     --hover: rgba(255,255,255,.08);
@@ -61,7 +63,7 @@
     overflow: hidden;
   }
   header {
-    background: var(--accent);
+    background: var(--header-bg);
     color: #fff;
     padding: 10px 16px;
     display: flex;
