@@ -4,27 +4,30 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v1.10 — **Tests**: 79 unitarios + 25 E2E ✅ Todos pasan
+**Versión actual**: v2.1 — **Tests**: 101 unitarios + 29 E2E ✅ Todos pasan  
+**Rama**: `main` — producción actualizada ✅
 
-**Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
-Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Modo oscuro (#6), Objetivos (#8),
-Columnas customizables (#9 — crear/renombrar/eliminar/reordenar), i18n landing, Panel admin, IO menu.
+**Features completos**: Deep-link, Polling real-time, Celebración con confeti, Historial (#1),
+Etiquetas (#2) con gestión desde ⚙️, Checklists (#3), Protección adjuntos (#4), JWT Google (#5),
+Modo oscuro (#6), Panel ¿Cómo vamos? / Métricas (#7 + #8), Objetivos (#8), Columnas de cierre
+múltiples (🏁 toggle isDone), Columnas customizables (crear/renombrar/eliminar/reordenar),
+Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta 2 columnas,
+CSP + Security headers, i18n landing, Panel admin, IO menu.
 
-**PR en vuelo**: Modo oscuro (#6) → rama `claude/goal-management-features-71ddci`, pendiente de merge/deploy.
-
-**Próximo**: Seguridad (audit/hardening CSP + rate limiting), #7 Lead time/tasa completitud, objetivos: fecha+semáforo.
+**Próximo**: #9 ¡Pilas con esto! como puerta de entrada inteligente (ver PROJECT_BACKLOG.md),
+o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
 
 ## 🎯 Objetivo siguiente sesión
 
-Opciones priorizadas (sin deuda técnica pendiente):
+Opciones priorizadas:
 
-1. **Seguridad** (alta): audit + hardening (CSP ya existe; revisar inline, uploads, sesión)
-2. **#7 Lead time / tasa de completitud** (media): métricas en panel de admin o por tarjeta
-3. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8
-4. **UX**: Tab/Enter en modal de tarjeta, onboarding nuevos usuarios
+1. **#9 ¡Pilas con esto! inteligente** (alta): convertir la sección en puerta de entrada activa al abrir la app — "¿por dónde empezamos hoy?". Ver ideas en PROJECT_BACKLOG.md.
+2. **Onboarding nuevos usuarios** (media): primera vez que alguien entra y ve el tablero vacío, guiarlos.
+3. **Búsqueda full-text** (baja): buscar por título + detalles en todas las tarjetas.
+4. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8 con 🟢🟡🔴.
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
-Ver `docs/WORKFLOW.md` para cómo trabajar (branch → code → tests → PR → merge → deploy).
+Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deben cumplirse en cada feature nueva.
 
 ## Stack
 - **Runtime**: Cloudflare Workers
@@ -163,7 +166,48 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-06-30, Columnas customizables — Sonnet 4.6)
+## Último handoff (2026-07-01, UX teclado + import completo + documentación — Sonnet 4.6)
+
+### ✅ Import JSON completo
+El endpoint `POST /api/boards/:boardId/import` ahora restaura la totalidad de los datos exportados:
+- **Responsable** (`assignee_email`): se asigna solo si el email es miembro del tablero destino.
+- **Etiquetas**: busca por nombre (case-insensitive) en el tablero; reutiliza las existentes, crea las nuevas hasta el límite de 10.
+- **Checklists** con todos sus ítems (texto, checked/unchecked, posición).
+- Adjuntos: se ignoran sin error (los archivos binarios no viajan en el JSON).
+- La vista previa de importación muestra cuántas tarjetas traen cada tipo de dato.
+- **8 nuevos tests** en `test/import.test.js` → 101 unit ✅
+
+### ✅ Modal de tarjeta en dos columnas
+Layout CSS Grid `@media (min-width: 700px)` sin cambios de JS:
+- **Izquierda**: título, campo-fila (columna + responsable), detalles, checklists, comentarios, historial.
+- **Derecha**: objetivos (arriba por su componente estratégica), etiquetas, fecha límite, adjuntos.
+- Mobile: sigue siendo una sola columna, sin cambios.
+
+### ✅ Gestión de etiquetas en ⚙️ Configuración
+Nueva tab "🏷️ Etiquetas" en el modal de settings del tablero. Permite editar nombre/color o borrar etiquetas existentes, y crear nuevas. Usa los endpoints PUT/DELETE de `src/routes/labels.js` (ya existían pero no tenían UI).
+
+### ✅ UX de teclado — ESC y orden de tabs Admin
+- ESC cierra el panel de Objetivos y el de Métricas (sumados a la cadena de cierre existente).
+- Tabs del panel Admin reordenados: Actividad del tablero → 📊 Estadísticas → Usuarios → 🔔 Solicitudes.
+- El resto de los handlers de Enter/Ctrl+Enter ya estaban implementados desde sesiones anteriores.
+
+### ✅ Columnas de cierre múltiples (sesión anterior, completado)
+- Botón 🏁 por columna (owners) marca/desmarca como `is_done=1`. Marcador ✅ en nombre.
+- `is_done` desacoplado de la posición: mover una columna no cambia su estado.
+- Confeti, métricas, staleCards e isUrgent/isOverdue usan todas las columnas `is_done=1`.
+
+### ✅ Documentación de estándares (esta sesión)
+- **ADR-014** (`docs/ADRs/ADR-014-keyboard-ux-standards.md`): criterios de teclado (Enter / Ctrl+Enter / ESC), tabla de estado de implementación, alternativas descartadas.
+- **WORKFLOW.md** ampliado: nueva sección "Estándares de UI y consistencia" con checklist obligatorio para cualquier feature con interfaz — tipografía, teclado e import/export en sync.
+
+### Estado final
+- **101 unit + 29 E2E ✅ todos pasan**
+- **main = staging = producción ✅**
+- Notas de versión v2.0 y v2.1 publicadas en `/releases`
+
+---
+
+## Handoff anterior (2026-06-30, Panel Métricas + Columnas customizables — Sonnet 4.6)
 
 ### ✅ Columnas customizables — MVP completo
 - **Migración** `migrations/0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`,

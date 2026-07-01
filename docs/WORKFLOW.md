@@ -313,6 +313,52 @@ Antes de mergear, estos checks deben pasar:
 
 ---
 
+## 🎨 Estándares de UI y consistencia
+
+### Documentar decisiones de diseño — hábito obligatorio
+
+Cada vez que se toma una decisión de diseño o UX no trivial durante una sesión, se documenta **en el mismo commit** donde se implementa:
+
+- **Decisión de diseño** (criterio que aplica en múltiples features, con alternativas consideradas) → crear o actualizar un ADR en `docs/ADRs/`
+- **Regla de proceso** (algo que hay que hacer repetidamente en cada feature) → agregar a `docs/WORKFLOW.md` (este archivo)
+- **¿No sabés cuál va?** → preguntá antes de commitear
+
+**¿Por qué?** Ya ocurrió dos veces que una decisión implícita causó trabajo extra posterior:
+- El título "Objetivos" en el modal de tarjeta se creó con tipografía diferente al estándar ya establecido → fix en sesión 2026-07-01.
+- Labels, checklists y assignee se implementaron en varias sesiones pero el import JSON no los soportó → fix en sesión 2026-07-01.
+
+---
+
+### Checklist de consistencia UI — antes de cerrar cualquier feature con interfaz
+
+**1. Tipografía de encabezados de sección**
+
+Los títulos de sección en modales y paneles siguen este estándar (ya definido en el CSS global):
+
+```css
+font-size: 12px; font-weight: 600; color: var(--muted);
+text-transform: uppercase; letter-spacing: .03em; margin: 0 0 6px;
+```
+
+Clase disponible: `.field-label` para labels de campos. No inventar estilos ad-hoc ni usar `<h3>` con estilos propios sin verificar que coincidan con el estándar.
+
+**2. Interacción por teclado**
+
+Seguir **ADR-014** (`docs/ADRs/ADR-014-keyboard-ux-standards.md`):
+- `<input type="text">` que crea algo → handler de `Enter`
+- `<textarea>` de edición larga → handler de `Ctrl+Enter` para guardar
+- Panel/drawer que se abre → agregarlo a la cadena de `Escape`
+
+**3. Import/Export en sincronía con el modelo de datos**
+
+Cuando se agrega una entidad nueva a la DB (tabla nueva o campo nuevo en `cards`):
+- Verificar que `toCSV()` en `public/index.html` la incluya (si aplica para CSV plano)
+- Verificar que el endpoint `POST /api/boards/:boardId/import` en `src/routes/cards.js` la maneje
+
+No dejar "para después". El import incompleto es invisible hasta que alguien intenta restaurar datos reales.
+
+---
+
 ## 📝 Documentación obligatoria
 
 Cuando terminas una feature:
