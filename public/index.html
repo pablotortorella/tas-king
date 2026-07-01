@@ -1155,8 +1155,11 @@
 
   // Columnas del tablero actual — se actualiza en loadCards()
   let COLUMNS = [];
-  // La columna de cierre es siempre la más a la derecha (mayor position).
-  const getDoneColumnId = () => (COLUMNS[COLUMNS.length - 1] || {}).id || "terminado";
+  // Columnas de cierre: las marcadas con is_done=1; fallback a la última por posición.
+  const getDoneColumnIds = () => {
+    const done = COLUMNS.filter(c => c.isDone).map(c => c.id);
+    return new Set(done.length > 0 ? done : [(COLUMNS[COLUMNS.length - 1] || {}).id || "terminado"]);
+  };
 
   /** @type {{cards: Array}} */
   let state = { cards: [] };
@@ -1320,10 +1323,10 @@
         const { version } = await api("GET", "/api/boards/" + currentBoardId + "/version");
         if (version > lastKnownVersion) {
           lastKnownVersion = version;
-          const doneColId = getDoneColumnId();
-          const prevTerminados = new Set(state.cards.filter(c => c.column === doneColId).map(c => c.id));
+          const doneColIds = getDoneColumnIds();
+          const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
           await loadCards();
-          state.cards.filter(c => c.column === getDoneColumnId() && !prevTerminados.has(c.id))
+          state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
             .forEach(c => celebrateCard(c.id));
         }
       } catch (e) { /* ignorar errores de red silenciosamente */ }
@@ -1392,14 +1395,14 @@
   }
 
   function isOverdue(card) {
-    if (!card.due || card.column === getDoneColumnId()) return false;
+    if (!card.due || getDoneColumnIds().has(card.column)) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return new Date(card.due + "T00:00:00") < today;
   }
 
-  // Urgente: vence hoy o mañana (o ya venció), y no está en la columna "done".
+  // Urgente: vence hoy o mañana (o ya venció), y no está en columna de cierre.
   function isUrgent(card) {
-    if (!card.due || card.column === getDoneColumnId()) return false;
+    if (!card.due || getDoneColumnIds().has(card.column)) return false;
     const tomorrow = new Date(); tomorrow.setHours(0, 0, 0, 0); tomorrow.setDate(tomorrow.getDate() + 1);
     return new Date(card.due + "T00:00:00") <= tomorrow;
   }
@@ -1728,7 +1731,7 @@
       const activeCards = state.cards.filter(c => c.column === col.id && !c.archived).length;
       const colEl = document.createElement("div");
       colEl.className = "column";
-      const doneMarker = col.isDone ? ' <span title="Columna de cierre" style="color:var(--muted);font-size:11px">✓</span>' : "";
+      const doneMarker = col.isDone ? ' <span title="Columna de cierre">✅</span>' : "";
       const isFirst = colIdx === 0;
       const isLast  = colIdx === COLUMNS.length - 1;
       colEl.innerHTML = `
@@ -1738,6 +1741,7 @@
             ${owner && !isFirst ? `<button class="col-action-btn col-move-btn" data-col="${col.id}" data-dir="left" title="Mover columna a la izquierda">◀</button>` : ""}
             ${owner && !isLast  ? `<button class="col-action-btn col-move-btn" data-col="${col.id}" data-dir="right" title="Mover columna a la derecha">▶</button>` : ""}
             ${owner ? `<button class="col-action-btn col-rename-btn" data-col="${col.id}" title="Renombrar columna">✏️</button>` : ""}
+            ${owner ? `<button class="col-action-btn col-toggle-done-btn" data-col="${col.id}" data-done="${col.isDone ? '1' : '0'}" title="${col.isDone ? 'Quitar columna de cierre' : 'Marcar como columna de cierre'}">🏁</button>` : ""}
             ${owner && activeCards === 0 ? `<button class="col-action-btn col-delete-btn" data-col="${col.id}" title="Eliminar columna">🗑️</button>` : ""}
             <span class="count">${cards.length}</span>
           </div>
@@ -1765,12 +1769,12 @@
       cardsEl.addEventListener("drop", async e => {
         e.preventDefault();
         cardsEl.classList.remove("drag-over");
-        const doneColId = getDoneColumnId();
+        const doneColIds = getDoneColumnIds();
         const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
         rebuildOrderFromDom();
         render();                 // refleja el nuevo orden de inmediato
-        // celebrar tarjetas que acaban de llegar a la columna de cierre
-        state.cards.filter(c => c.column === doneColId && prevCols[c.id] !== doneColId)
+        // celebrar tarjetas que acaban de llegar a cualquier columna de cierre
+        state.cards.filter(c => doneColIds.has(c.column) && !doneColIds.has(prevCols[c.id]))
           .forEach(c => celebrateCard(c.id));
         try { await persistOrder(); }
         catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
@@ -3371,6 +3375,17 @@
         await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { direction: dir });
         await loadCards();
       } catch (err) { alert(err.message || "Error al mover columna"); btn.disabled = false; }
+      return;
+    }
+    if (e.target.closest(".col-toggle-done-btn")) {
+      const btn = e.target.closest(".col-toggle-done-btn");
+      const colId = btn.dataset.col;
+      const isDone = btn.dataset.done === "1";
+      btn.disabled = true;
+      try {
+        await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { isDone: !isDone });
+        await loadCards();
+      } catch (err) { alert(err.message || "Error al actualizar la columna"); btn.disabled = false; }
       return;
     }
     if (e.target.closest(".col-rename-btn")) {

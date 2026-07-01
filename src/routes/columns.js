@@ -99,9 +99,9 @@ export function setupColumnRoutes(app) {
       values.push(newName);
     }
 
-    if (isDone === true) {
-      await c.env.DB.prepare("UPDATE columns SET is_done = 0 WHERE board_id = ?").bind(boardId).run();
-      updates.push("is_done = 1");
+    if (isDone === true || isDone === false) {
+      updates.push("is_done = ?");
+      values.push(isDone ? 1 : 0);
     }
 
     if (updates.length === 0) return c.json({ error: "Sin cambios." }, 400);
@@ -151,14 +151,19 @@ export function setupColumnRoutes(app) {
     await c.env.DB.prepare("DELETE FROM columns WHERE board_id = ? AND id = ?").bind(boardId, columnId).run();
     await logEvent(c.env.DB, boardId, null, "column_deleted", email, { name: col.name });
 
-    // Si era la columna "terminado", transferir el flag a la nueva última columna
+    // Si era una columna de cierre y ya no quedan otras, transferir el flag a la última restante
     if (col.is_done) {
-      const last = await c.env.DB.prepare(
-        "SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1"
+      const remaining = await c.env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM columns WHERE board_id = ? AND is_done = 1"
       ).bind(boardId).first();
-      if (last) {
-        await c.env.DB.prepare("UPDATE columns SET is_done = 1 WHERE board_id = ? AND id = ?")
-          .bind(boardId, last.id).run();
+      if (remaining.n === 0) {
+        const last = await c.env.DB.prepare(
+          "SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1"
+        ).bind(boardId).first();
+        if (last) {
+          await c.env.DB.prepare("UPDATE columns SET is_done = 1 WHERE board_id = ? AND id = ?")
+            .bind(boardId, last.id).run();
+        }
       }
     }
 

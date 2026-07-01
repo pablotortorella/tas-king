@@ -85,7 +85,7 @@ describe("Métricas del tablero", () => {
     // Obtener columnas y crear una tarjeta en la columna done
     const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
     const columns = await colsRes.json();
-    const doneCol = columns.find(c => c.is_done) || columns[columns.length - 1];
+    const doneCol = columns.find(c => c.isDone) || columns[columns.length - 1];
 
     const cardRes = await request(`/api/boards/${boardId}/cards`, {
       email: owner, method: "POST",
@@ -109,7 +109,7 @@ describe("Métricas del tablero", () => {
     // Obtener columnas del tablero
     const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
     const columns = await colsRes.json();
-    const doneCol = columns.find(c => c.is_done) || columns[columns.length - 1];
+    const doneCol = columns.find(c => c.isDone) || columns[columns.length - 1];
     const firstCol = columns[0];
 
     // Crear tarjeta en primera columna
@@ -136,5 +136,77 @@ describe("Métricas del tablero", () => {
     expect(typeof leadTimeDays.min).toBe("number");
     expect(typeof leadTimeDays.max).toBe("number");
     expect(leadTimeDays.sample).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("Múltiples columnas de cierre", () => {
+  let boardId;
+
+  beforeAll(async () => {
+    boardId = (await (await request("/api/me", { email: owner })).json()).boards[0].id;
+  });
+
+  it("PATCH con isDone=true marca la columna como cierre sin afectar otras", async () => {
+    const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
+    const columns = await colsRes.json();
+    const notDone = columns.find(c => !c.isDone);
+
+    const patchRes = await request(`/api/boards/${boardId}/columns/${notDone.id}`, {
+      email: owner, method: "PATCH",
+      body: { isDone: true },
+    });
+    expect(patchRes.status).toBe(200);
+    const updated = await patchRes.json();
+    expect(updated.isDone).toBe(true);
+
+    // Las demás columnas mantienen su estado
+    const afterRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
+    const after = await afterRes.json();
+    const originalDone = after.find(c => c.id === columns.find(c2 => c2.isDone)?.id);
+    if (originalDone) expect(originalDone.isDone).toBe(true);
+  });
+
+  it("PATCH con isDone=false desmarca la columna", async () => {
+    const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
+    const columns = await colsRes.json();
+    const doneCol = columns.find(c => c.isDone);
+    if (!doneCol) return; // sin done cols no aplica
+
+    const patchRes = await request(`/api/boards/${boardId}/columns/${doneCol.id}`, {
+      email: owner, method: "PATCH",
+      body: { isDone: false },
+    });
+    expect(patchRes.status).toBe(200);
+    const updated = await patchRes.json();
+    expect(updated.isDone).toBe(false);
+  });
+
+  it("staleCards excluye tarjetas en todas las columnas marcadas como done", async () => {
+    const colsRes = await request(`/api/boards/${boardId}/columns`, { email: owner });
+    const columns = await colsRes.json();
+
+    // Marcar dos columnas como done
+    const toMark = columns.filter(c => !c.isDone).slice(0, 2);
+    for (const col of toMark) {
+      await request(`/api/boards/${boardId}/columns/${col.id}`, {
+        email: owner, method: "PATCH", body: { isDone: true },
+      });
+    }
+
+    // Crear tarjeta en cada columna marcada
+    const cards = [];
+    for (const col of toMark) {
+      const r = await request(`/api/boards/${boardId}/cards`, {
+        email: owner, method: "POST",
+        body: { title: `Tarjeta done ${col.name}`, column: col.id },
+      });
+      cards.push(await r.json());
+    }
+
+    const metricsRes = await request(`/api/boards/${boardId}/metrics`, { email: owner });
+    const { staleCards } = await metricsRes.json();
+    for (const card of cards) {
+      expect(staleCards.find(c => c.id === card.id)).toBeUndefined();
+    }
   });
 });

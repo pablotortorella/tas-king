@@ -1,5 +1,4 @@
 import { membership } from "../db/helpers.js";
-import { getDoneColumnId } from "../db/columns.js";
 
 export function setupMetricsRoutes(app) {
   app.get("/api/boards/:boardId/metrics", async c => {
@@ -10,12 +9,13 @@ export function setupMetricsRoutes(app) {
       return c.json({ error: "Sin acceso a este tablero." }, 403);
     }
 
-    const doneColId = await getDoneColumnId(c.env.DB, boardId);
-
     const now = Date.now();
     const todayStart = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").getTime();
     const weekStart  = now - 7  * 86400000;
     const monthStart = now - 30 * 86400000;
+
+    // Subquery reutilizable: columnas de cierre (is_done = 1)
+    const doneSubq = "SELECT id FROM columns WHERE board_id = ? AND is_done = 1";
 
     const [periodRow, leadRow, burnupRows, wipRows, staleRows] = await Promise.all([
       // A — tarjetas completadas por período (hoy / semana / mes)
@@ -26,16 +26,17 @@ export function setupMetricsRoutes(app) {
           COUNT(DISTINCT CASE WHEN ts >= ? THEN card_id END) AS thisMonth
         FROM audit_log
         WHERE board_id = ? AND action IN ('card_moved','card_edited')
-          AND json_extract(details, '$.column.to') = ? AND ts >= ?
-      `).bind(todayStart, weekStart, monthStart, boardId, doneColId, monthStart).first(),
+          AND json_extract(details, '$.column.to') IN (${doneSubq})
+          AND ts >= ?
+      `).bind(todayStart, weekStart, monthStart, boardId, boardId, monthStart).first(),
 
-      // B — lead time: tiempo desde creación hasta primera llegada a columna done
+      // B — lead time: tiempo desde creación hasta primera llegada a cualquier columna done
       c.env.DB.prepare(`
         WITH first_done AS (
           SELECT card_id, MIN(ts) AS done_ts
           FROM audit_log
           WHERE board_id = ? AND action IN ('card_moved','card_edited')
-            AND json_extract(details, '$.column.to') = ?
+            AND json_extract(details, '$.column.to') IN (${doneSubq})
           GROUP BY card_id
         ),
         card_start AS (
@@ -54,16 +55,17 @@ export function setupMetricsRoutes(app) {
           COUNT(*) AS sample
         FROM first_done f JOIN card_start s ON f.card_id = s.card_id
         WHERE f.done_ts > s.start_ts
-      `).bind(boardId, doneColId, boardId, boardId, boardId).first(),
+      `).bind(boardId, boardId, boardId, boardId, boardId).first(),
 
       // C — burn-up: tarjetas completadas por día (últimos 30 días)
       c.env.DB.prepare(`
         SELECT date(ts/1000, 'unixepoch') AS d, COUNT(DISTINCT card_id) AS count
         FROM audit_log
         WHERE board_id = ? AND action IN ('card_moved','card_edited')
-          AND json_extract(details, '$.column.to') = ? AND ts >= ?
+          AND json_extract(details, '$.column.to') IN (${doneSubq})
+          AND ts >= ?
         GROUP BY d ORDER BY d
-      `).bind(boardId, doneColId, monthStart).all(),
+      `).bind(boardId, boardId, monthStart).all(),
 
       // D — WIP actual por columna
       c.env.DB.prepare(`
@@ -74,23 +76,29 @@ export function setupMetricsRoutes(app) {
         GROUP BY col.id, col.name ORDER BY col.position
       `).bind(boardId).all(),
 
-      // E — Tarjetas más quietas (top 5 no archivadas, fuera de la última columna por posición)
+      // E — tarjetas más quietas (top 5, excluye todas las columnas de cierre; fallback a última por posición)
       c.env.DB.prepare(`
+        WITH done_cols AS (
+          ${doneSubq}
+        )
         SELECT c.id, c.title, col.name AS column_name,
           c.updated_at,
           CAST(ROUND((? - c.updated_at) / 86400000.0, 0) AS INTEGER) AS days_stale
         FROM cards c
         JOIN columns col ON col.id = c.column_id AND col.board_id = c.board_id
         WHERE c.board_id = ? AND c.archived = 0
-          AND c.column_id != (
-            SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1
+          AND (
+            c.column_id NOT IN (SELECT id FROM done_cols)
+            OR NOT EXISTS (SELECT 1 FROM done_cols)
           )
-        ORDER BY c.updated_at ASC
-        LIMIT 5
-      `).bind(now, boardId, boardId).all(),
+          AND (
+            EXISTS (SELECT 1 FROM done_cols)
+            OR c.column_id != (SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1)
+          )
+        ORDER BY c.updated_at ASC LIMIT 5
+      `).bind(boardId, now, boardId, boardId).all(),
     ]);
 
-    // Acumular burn-up en JS
     let cumulative = 0;
     const burnup = (burnupRows.results || []).map(r => {
       cumulative += r.count;

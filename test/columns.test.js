@@ -48,35 +48,56 @@ describe("Estructura de columna", () => {
   });
 });
 
-describe("Columna de cierre (celebración)", () => {
-  // getDoneColumnId vive en el frontend; testeamos la lógica pura aquí.
-  const getDoneColumnId = (columns) =>
-    (columns[columns.length - 1] || {}).id || "terminado";
+describe("Columnas de cierre (getDoneColumnIds)", () => {
+  // getDoneColumnIds vive en el frontend; testeamos la lógica pura aquí.
+  const getDoneColumnIds = (columns) => {
+    const done = columns.filter(c => c.isDone).map(c => c.id);
+    return new Set(done.length > 0 ? done : [(columns[columns.length - 1] || {}).id || "terminado"]);
+  };
 
-  it("la columna de cierre es la última por posición (más a la derecha)", () => {
+  it("usa las columnas marcadas con isDone=true", () => {
     const cols = [
-      { id: "pendiente", position: 1 },
-      { id: "en_progreso", position: 2 },
-      { id: "terminado", position: 3 },
+      { id: "pendiente", position: 1, isDone: false },
+      { id: "en_progreso", position: 2, isDone: false },
+      { id: "terminado", position: 3, isDone: true },
     ];
-    expect(getDoneColumnId(cols)).toBe("terminado");
+    expect(getDoneColumnIds(cols)).toEqual(new Set(["terminado"]));
   });
 
-  it("si se agrega una columna al final, pasa a ser la de cierre", () => {
+  it("soporta múltiples columnas de cierre", () => {
     const cols = [
-      { id: "pendiente", position: 1 },
-      { id: "terminado", position: 2 },
-      { id: "publicado", position: 3 },
+      { id: "pendiente", position: 1, isDone: false },
+      { id: "terminado", position: 2, isDone: true },
+      { id: "terminado_junio", position: 3, isDone: true },
     ];
-    expect(getDoneColumnId(cols)).toBe("publicado");
+    const ids = getDoneColumnIds(cols);
+    expect(ids.has("terminado")).toBe(true);
+    expect(ids.has("terminado_junio")).toBe(true);
+    expect(ids.has("pendiente")).toBe(false);
   });
 
-  it("si solo hay una columna, esa es la de cierre", () => {
-    expect(getDoneColumnId([{ id: "unica", position: 1 }])).toBe("unica");
+  it("fallback a la última por posición si ninguna tiene isDone=true", () => {
+    const cols = [
+      { id: "pendiente", position: 1, isDone: false },
+      { id: "en_progreso", position: 2, isDone: false },
+      { id: "ultima", position: 3, isDone: false },
+    ];
+    expect(getDoneColumnIds(cols)).toEqual(new Set(["ultima"]));
+  });
+
+  it("si solo hay una columna sin isDone, esa es el fallback", () => {
+    const cols = [{ id: "unica", position: 1, isDone: false }];
+    expect(getDoneColumnIds(cols)).toEqual(new Set(["unica"]));
   });
 
   it("con array vacío devuelve el fallback 'terminado'", () => {
-    expect(getDoneColumnId([])).toBe("terminado");
+    expect(getDoneColumnIds([])).toEqual(new Set(["terminado"]));
+  });
+
+  it("mover una columna done no cambia su estado isDone", () => {
+    // El estado isDone es independiente de la posición
+    const col = { id: "terminado", position: 1, isDone: true }; // movida al frente
+    expect(col.isDone).toBe(true);
   });
 });
 

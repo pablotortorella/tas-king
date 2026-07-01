@@ -32,6 +32,17 @@ export async function getDoneColumnId(db, boardId) {
   return col ? col.id : "terminado";
 }
 
+export async function getDoneColumnIds(db, boardId) {
+  const rows = await db.prepare(
+    "SELECT id FROM columns WHERE board_id = ? AND is_done = 1"
+  ).bind(boardId).all();
+  if (rows.results.length > 0) return rows.results.map(r => r.id);
+  const last = await db.prepare(
+    "SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1"
+  ).bind(boardId).first();
+  return last ? [last.id] : ["terminado"];
+}
+
 export async function getColumnName(db, boardId, columnId) {
   const col = await db.prepare(
     "SELECT name FROM columns WHERE board_id = ? AND id = ?"
