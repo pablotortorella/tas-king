@@ -17,31 +17,33 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ## 📍 Dónde estamos (Estado actual)
 
-**Última actualización**: 2026-06-24  
-**Versión**: 1.8 (Feature #2: Etiquetas + filtro completado)
+**Última actualización**: 2026-06-30  
+**Versión**: 1.9 (Columnas customizables — rama lista, pendiente merge)
 
 ### ✅ Completado esta sesión
-- Feature #2: Etiquetas + filtro 🏷️
-  - Migración DB: tablas `labels` y `card_labels`
-  - Backend: 6 nuevos endpoints (crear/editar/eliminar/asignar/quitar)
-  - Frontend: pastillas de color en tarjetas, gestión inline en modal, filtro OR con atajos 0-9
-  - Página de ayuda: F1 muestra todos los atajos del sistema
-  - Tests: unitarios + E2E ✅ Todos pasan (38 unitarios + 6 E2E)
+- **Columnas customizables** (crear / renombrar / eliminar) en todos los tableros
+  - Migración `0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`
+  - Módulo `src/db/columns.js` (sin dependencias circulares): `createDefaultColumns`, `getDoneColumnId`, `columnToJSON`
+  - Backend `src/routes/columns.js`: GET / POST / PATCH / DELETE `/api/boards/:id/columns`
+  - Frontend: botones ✏ y ✕ por columna + widget `+ Columna` al final del tablero
+  - Tests: 10 unitarios (Vitest) + 4 E2E (Playwright) ✅ — **Total: 69 unit + 22 E2E**
+  - Rama: `claude/board-column-customization-jfqgmd` — PR por abrir
 
-### 🔄 En progreso
-(nada)
+### 🔄 En vuelo
+- **Objetivos (#8)** — PR #9 abierto, **pendiente revisar en staging y mergear**
+- **Columnas** — rama `claude/board-column-customization-jfqgmd` pusheada, **pendiente abrir PR, revisar staging y mergear**
 
-### ⏭️ Próximo
-**Feature #3: Checklists / subtareas** (MEDIA priority)
-- Tabla: `checklist_items` (id, card_id, text, completed, position)
-- API: CRUD de items
-- UI: agregar/editar/tachar items en modal de tarjeta
-- Progreso visual (N/M items completados)
+### ⏭️ Próximo (una vez mergeados los dos PRs)
+- **#6 Modo oscuro** — CSS variables ya listas, falta toggle + localStorage
+- **Seguridad** — CSP headers, rate limiting granular
+- **#7 Lead time / tasa de completitud**
 
 Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
 
-### ⚠️ Blockers
-(ninguno)
+### ⚠️ Orden de merges recomendado
+1. Primero mergear PR #9 (Objetivos) — ya probado en sesiones anteriores
+2. Luego abrir PR para `claude/board-column-customization-jfqgmd`, revisar en staging, mergear
+3. Deploy a producción con ambas migraciones (`0010_goals.sql` + `0011_columns.sql`)
 
 ---
 

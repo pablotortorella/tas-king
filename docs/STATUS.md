@@ -1,9 +1,20 @@
-# Estado de Implementación — FUN TasKing! v1.8
+# Estado de Implementación — FUN TasKing! v1.9
 
 **Última actualización**: 2026-06-30  
-**Estado**: ✅ Tests completos (59 unit + 18 E2E) | ⏭️ Próximo: #6 Modo oscuro o #7 Lead time
+**Estado**: ✅ Tests completos (69 unit + 22 E2E) | ⏭️ Pendiente: mergear PR #9 (Objetivos) + abrir PR de Columnas
 
-## 🎯 Cambios recientes (sesión 2026-06-30)
+## 🎯 Cambios recientes (sesión 2026-06-30 — Columnas customizables)
+
+- **Columnas customizables**: crear, renombrar y eliminar columnas en cualquier tablero
+  - Migración `0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`; inserta 5 columnas legacy en todos los tableros existentes
+  - Módulo `src/db/columns.js` (sin dependencias circulares): `createDefaultColumns`, `getDoneColumnId`, `columnToJSON`
+  - Backend `src/routes/columns.js`: GET / POST / PATCH / DELETE con validaciones de owner, máx 10 columnas, sin tarjetas activas para borrar
+  - Frontend: botones ✏ y ✕ por columna + widget `+ Columna` al final; `COLUMNS` dinámico (ya no hardcodeado)
+  - `getDoneColumnId()` reemplaza la constante `"terminado"` en toda la lógica de cierre y progreso de objetivos
+  - 10 unit + 4 E2E nuevos — **69 unit + 22 E2E ✅ todos pasan**
+  - Rama: `claude/board-column-customization-jfqgmd` — **PR por abrir**
+
+## 🎯 Cambios recientes (sesión 2026-06-30 — Objetivos #8)
 
 - **Objetivos (#8) MVP completo**: gestión de objetivos por tablero (Opción A — dentro del tablero)
   - Tabla `goals` + `card_goals` (migración `0010_goals.sql`)
@@ -13,6 +24,7 @@
   - Vista de objetivos con barra de progreso (terminadas/total) y % automático
   - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban
   - 11 unit (integración con D1) + 2 E2E nuevos
+  - Rama: `claude/goal-management-features-71ddci` — **PR #9 abierto, pendiente merge**
 
 ## 🎯 Cambios recientes (sesión 2026-06-25)
 
@@ -345,6 +357,38 @@
 
 ---
 
+### ✅ Columnas customizables 🗂️
+
+**Qué hace**: Los owners de un tablero pueden crear columnas nuevas, renombrar las existentes y eliminar las vacías. Las columnas se guardan en la DB (no más array hardcodeado) y admiten hasta 10 por tablero.
+
+**Implementación**:
+- **Base de datos**: Tabla `columns` (id, board_id, name, position, is_done, created_at) — migración `0011_columns.sql`, PK compuesta `(board_id, id)`, índice por `(board_id, position)`. Los 5 IDs legacy (`por_conversar`, `pendiente`, `en_progreso`, `por_revisar`, `terminado`) se insertan automáticamente en tableros existentes con `INSERT OR IGNORE`.
+- **`src/db/columns.js`** (módulo independiente, sin dependencias circulares):
+  - `DEFAULT_COLUMNS`: constante con las 5 columnas legacy
+  - `columnToJSON(row)`: serialización `{ id, name, position, isDone }`
+  - `createDefaultColumns(db, boardId)`: crea las 5 columnas al crear un tablero nuevo
+  - `getDoneColumnId(db, boardId)`: busca la columna con `is_done=1` (fallback a `"terminado"`)
+- **`src/routes/columns.js`**: 4 endpoints (owner-only salvo GET):
+  - GET `/api/boards/:boardId/columns`
+  - POST `/api/boards/:boardId/columns` — nombre requerido (máx 50 chars), máx 10 columnas
+  - PATCH `/api/boards/:boardId/columns/:columnId` — renombrar y/o cambiar `isDone`
+  - DELETE `/api/boards/:boardId/columns/:columnId` — sólo si no tiene tarjetas activas y no es la última columna; transfiere el flag `is_done` a la siguiente columna si era la de cierre
+- **Módulos actualizados**: `getBoard()` en `queries.js` devuelve `{ version, columns, cards }`; `goals.js` usa `getDoneColumnId()` en lugar de la constante `"terminado"`.
+- **Frontend** (public/index.html):
+  - `let COLUMNS = []` — se carga dinámicamente desde `state.columns` al hacer `loadCards()`
+  - Cada columna muestra botones **✏** (renombrar) y **✕** (eliminar si vacía), visibles siempre (sin hover-trick opaco)
+  - Widget **`+ Columna`** al final del board (solo owner): botón → input inline → ✓ Agregar / ✕ cancelar
+  - Delegación de eventos en `#board`: click en ✏ reemplaza `.col-name-text` por `<input.col-rename-input>` (Enter/blur guarda, Escape cancela); click en ✕ confirma y llama DELETE API
+  - `getDoneColumnId()` derivado de `COLUMNS.find(c => c.isDone)` — toda la lógica de confeti, progreso y urgencia usa este getter
+
+**Tests**:
+- ✅ 10 unitarios (`test/columns.test.js`): `columnToJSON`, `MAX_COLUMNS`, estructura de columnas, validaciones de nombre
+- ✅ 4 E2E seriales (`e2e/columns.spec.js`): (1) agregar columna, (2) renombrar, (3) eliminar columna vacía, (4) cancelar con Escape
+
+**Estado**: **100% completo (MVP)**. Extensiones futuras: reordenar columnas via drag & drop, límite configurable por tablero.
+
+---
+
 ### ✅ #8 Objetivos (gestión por metas) 🎯
 
 **Qué hace**: Agrupa tarjetas de un tablero bajo objetivos y mide el avance hacia un resultado. Cada objetivo muestra cuántas de sus tarjetas vinculadas están terminadas y el % de progreso.
@@ -357,7 +401,7 @@
   - GET `/api/boards/:boardId/goals` — objetivos del tablero con progreso (`total`, `done`, `pct`)
   - POST/PUT/DELETE `/api/boards/:boardId/goals[/:goalId]` — CRUD (máx 30 por tablero)
   - POST/DELETE `/api/cards/:cardId/goals/:goalId` — vincular/desvincular tarjeta
-  - Progreso = tarjetas vinculadas (no archivadas) en columna `terminado` / total. Constante `DONE_COLUMN` en `constants.js`.
+  - Progreso = tarjetas vinculadas (no archivadas) en la columna marcada `is_done=1` / total. Usa `getDoneColumnId()` de `src/db/columns.js` (ya no hay constante hardcodeada `"terminado"`).
   - Cada tarjeta expone su array `goals` (en `getBoard()` y `cardJSONById()`)
 - **Frontend** (public/index.html):
   - **Acceso único 🎯 Objetivos** (botón en la barra de acciones) → abre el **panel lateral** (drawer desde la izquierda): ver/editar objetivos sin abandonar el tablero, que queda visible a la derecha (el board se corre con `body.drawer-open`)
@@ -520,11 +564,11 @@
 
 | Capa | Cobertura | Notas |
 |---|---|---|
-| **Unitarios (Vitest)** | 59 tests ✅ | CRUD, auth, permisos, checklists, objetivos, serialización. Corre en Workerd + D1 emulado. |
-| **E2E (Playwright)** | 18 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral con filtro). |
+| **Unitarios (Vitest)** | 69 tests ✅ | CRUD, auth, permisos, checklists, objetivos, columnas, serialización. Corre en Workerd + D1 emulado. |
+| **E2E (Playwright)** | 22 tests ✅ | Checklists, adjuntos, historial (drag & drop), critical flows, etiquetas, objetivos (vista amplia + panel lateral), columnas (crear/renombrar/eliminar/cancelar). |
 | **Manual** | Completo ✅ | Celebración, polling, login real, responsive. |
 
-**Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/critical-flows.spec.js`, `e2e/history.spec.js`.
+**Infraestructura E2E**: seed SQL + `test/global-setup.mjs` — la DB E2E se resetea a estado conocido antes de cada corrida. Archivos: `e2e/attachments.spec.js`, `e2e/checklists.spec.js`, `e2e/columns.spec.js`, `e2e/critical-flows.spec.js`, `e2e/goals.spec.js`, `e2e/history.spec.js`.
 
 **Ejecutar**:
 ```bash
@@ -537,8 +581,8 @@ npm run test:e2e:ui    # Playwright visual
 
 ## Notas Técnicas
 
-- **D1 Migraciones**: 0001_init → 0009_checklists. Cada sesión que agregue tablas suma una nueva.
-- **Frontend**: Un único `public/index.html` sin build. ~2800 líneas de código.
+- **D1 Migraciones**: 0001_init → 0011_columns. Cada sesión que agregue tablas suma una nueva.
+- **Frontend**: Un único `public/index.html` sin build. ~3000 líneas de código.
 - **Backend modular**: `src/index.js` (~80 líneas setup) + `src/routes/` + `src/middleware/` + `src/db/`.
 - **Base de datos**: SQLite en D1, emulado localmente con Wrangler + Miniflare.
 - **Archivos**: R2 bucket `tas-king-uploads`.
