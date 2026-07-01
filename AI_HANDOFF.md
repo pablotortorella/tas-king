@@ -4,23 +4,23 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v1.9 — **Tests**: 79 unitarios + 23 E2E ✅ Todos pasan
+**Versión actual**: v1.10 — **Tests**: 79 unitarios + 25 E2E ✅ Todos pasan
 
 **Features completos**: Deep-link, Polling real-time, Celebración, Historial (#1), Etiquetas (#2),
-Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Objetivos (#8), Columnas customizables
-(#9 — crear/renombrar/eliminar/reordenar), i18n landing, Panel admin, IO menu.
+Checklists (#3), Protección adjuntos (#4), JWT Google (#5), Modo oscuro (#6), Objetivos (#8),
+Columnas customizables (#9 — crear/renombrar/eliminar/reordenar), i18n landing, Panel admin, IO menu.
 
-**Sin PRs en vuelo.** main, staging y producción están sincronizados.
+**PR en vuelo**: Modo oscuro (#6) → rama `claude/goal-management-features-71ddci`, pendiente de merge/deploy.
 
-**Próximo**: #6 Modo oscuro, Seguridad (CSP, rate limiting), #7 Lead time/tasa completitud.
+**Próximo**: Seguridad (audit/hardening CSP + rate limiting), #7 Lead time/tasa completitud, objetivos: fecha+semáforo.
 
 ## 🎯 Objetivo siguiente sesión
 
 Opciones priorizadas (sin deuda técnica pendiente):
 
-1. **Seguridad** (alta): CSP headers, rate limiting granular
-2. **#6 Modo oscuro/claro** (alta): toggle en header, persiste en localStorage
-3. **#7 Lead time / tasa de completitud** (media): métricas en panel de admin o por tarjeta
+1. **Seguridad** (alta): audit + hardening (CSP ya existe; revisar inline, uploads, sesión)
+2. **#7 Lead time / tasa de completitud** (media): métricas en panel de admin o por tarjeta
+3. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8
 4. **UX**: Tab/Enter en modal de tarjeta, onboarding nuevos usuarios
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
@@ -135,9 +135,9 @@ manual complementario para IAs y personas están en `TESTING.md`.
 | #8 🎯 Objetivos | ✅ Tests (PR #9) | `goals`+`card_goals`, panel lateral + ⛶ Ampliar, filtro/lente, progreso por columna. Pendiente revisar en staging. |
 | ⇅ Menú IO | ✅ | Dropdown Datos: exportar CSV / copiar JSON / importar. |
 | 🌐 i18n landing | ✅ | ES/EN/PT/ZH inline en landing.html. |
-| #6 🌙 Modo oscuro | ❌ | CSS variables listas. Falta toggle + localStorage. |
+| #6 🌙 Modo oscuro | ✅ Tests E2E | Toggle 🌙/☀️ en header, `data-theme` + `color-scheme`, localStorage, prefers-color-scheme, sin flash. |
 | #7 📊 Lead time | ❌ | Métricas personales de productividad. |
-| CSP headers | ❌ Seguridad | Content-Security-Policy pendiente. |
+| CSP + security headers | ✅ | CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy en `middleware/cors.js`. Rate limiting por endpoint en `middleware/rateLimit.js`. Pendiente: audit/hardening. |
 
 ## Pendientes
 - [x] #0 🔗 Deep-link a una tarjeta
@@ -151,7 +151,7 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - [x] #8 🎯 Gestión de objetivos (MVP) — PR #9, pendiente revisar en staging + merge
 - [ ] Seguridad: CSP headers, rate limiting granular
 - [ ] UX: Tab/Enter en toda la interfaz, onboarding nuevos usuarios
-- [ ] #6 🌙 Modo oscuro/claro
+- [x] #6 🌙 Modo oscuro/claro
 - [ ] #7 📊 Lead time y tasa de completitud
 - [ ] Búsqueda avanzada (full-text en título + detalles)
 
