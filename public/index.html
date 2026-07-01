@@ -675,6 +675,38 @@
   /* Resaltado de tarjetas cuando hay un objetivo seleccionado */
   .card.card-dimmed { opacity: .35; }
   .card.card-goal-match { box-shadow: 0 0 0 2px var(--accent); }
+
+  /* Panel lateral de métricas — entra desde la derecha */
+  .metrics-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 50;
+    background: var(--bg); border-left: 1px solid var(--border);
+    box-shadow: -2px 0 12px rgba(0,0,0,.12);
+    transform: translateX(100%); transition: transform .25s ease;
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .metrics-drawer.open { transform: translateX(0); }
+  body.metrics-open #board, body.metrics-open .goals-board { margin-right: 340px; transition: margin-right .25s ease; }
+  .metrics-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; font-weight: 600; font-size: 14px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .metrics-drawer-head button {
+    border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 16px;
+  }
+  .metrics-stats-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px 14px;
+  }
+  .metrics-stat-box {
+    background: var(--col-bg); border-radius: 6px; padding: 10px 8px; text-align: center;
+  }
+  .metrics-stat-box .stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
+  .metrics-stat-box .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .metrics-section { padding: 0 14px 14px; border-top: 1px solid var(--border); }
+  .metrics-section h3 { font-size: 13px; font-weight: 600; margin: 12px 0 8px; color: var(--text); }
+  .lead-time-big { font-size: 32px; font-weight: 700; color: var(--accent); }
+  .metrics-chart-wrap { width: 100%; overflow: visible; }
+  .metrics-chart-wrap svg { display: block; width: 100%; }
 </style>
 </head>
 <body>
@@ -693,6 +725,7 @@
   </div>
   <div class="actions">
     <button id="goalsBtn" title="Objetivos: ver, editar y resaltar tarjetas">🎯 Objetivos</button>
+    <button id="metricsBtn" title="Métricas del tablero">📊 Métricas</button>
     <input type="search" id="searchInput" placeholder="🔍 Buscar tarjetas...">
     <select id="assigneeFilter" title="Filtrar por responsable"></select>
     <button id="urgentBtn" title="Urgentes: vencen hoy o mañana (U)">📅❗</button>
@@ -731,6 +764,44 @@
   </div>
   <div class="goals-drawer-hint">Clic en un objetivo para resaltar sus tarjetas en el tablero.</div>
   <div class="goals-drawer-list" id="goalsDrawerList"></div>
+</aside>
+
+<!-- Panel lateral de métricas (desliza desde la derecha) -->
+<aside class="metrics-drawer" id="metricsDrawer" aria-label="Panel de métricas">
+  <div class="metrics-drawer-head">
+    <span>📊 Métricas del tablero</span>
+    <button id="metricsDrawerClose" title="Cerrar panel">✕</button>
+  </div>
+  <div class="metrics-stats-row">
+    <div class="metrics-stat-box">
+      <div class="stat-num" id="mToday">-</div>
+      <div class="stat-label">Terminadas hoy</div>
+    </div>
+    <div class="metrics-stat-box">
+      <div class="stat-num" id="mWeek">-</div>
+      <div class="stat-label">Esta semana</div>
+    </div>
+    <div class="metrics-stat-box">
+      <div class="stat-num" id="mMonth">-</div>
+      <div class="stat-label">Este mes</div>
+    </div>
+  </div>
+  <div class="metrics-section">
+    <h3>Lead time promedio</h3>
+    <div>
+      <span class="lead-time-big" id="mLeadAvg">-</span>
+      <span style="font-size:14px;color:var(--muted)"> días</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px" id="mLeadSub"></div>
+  </div>
+  <div class="metrics-section">
+    <h3>Burn-up — últimas 4 semanas</h3>
+    <div class="metrics-chart-wrap" id="metricsBurnupWrap"></div>
+  </div>
+  <div class="metrics-section">
+    <h3>WIP por columna</h3>
+    <div class="metrics-chart-wrap" id="metricsWipWrap"></div>
+  </div>
 </aside>
 
 <footer class="app-footer">
@@ -1453,6 +1524,102 @@
   document.getElementById("goalsBtn").addEventListener("click", toggleGoalsDrawer);
   document.getElementById("goalsExpandBtn").addEventListener("click", expandGoals);
   document.getElementById("goalsDrawerClose").addEventListener("click", closeGoalsDrawer);
+
+  // ── Panel de métricas ──────────────────────────────────────────────────
+  const metricsDrawer = document.getElementById("metricsDrawer");
+
+  function openMetricsDrawer() {
+    closeGoalsDrawer();
+    metricsDrawer.classList.add("open");
+    document.body.classList.add("metrics-open");
+    loadMetrics();
+  }
+  function closeMetricsDrawer() {
+    metricsDrawer.classList.remove("open");
+    document.body.classList.remove("metrics-open");
+  }
+  function toggleMetricsDrawer() {
+    if (metricsDrawer.classList.contains("open")) { closeMetricsDrawer(); return; }
+    openMetricsDrawer();
+  }
+
+  async function loadMetrics() {
+    if (!currentBoardId) return;
+    try {
+      const m = await api("GET", "/api/boards/" + currentBoardId + "/metrics");
+      document.getElementById("mToday").textContent = m.completedByPeriod.today;
+      document.getElementById("mWeek").textContent  = m.completedByPeriod.thisWeek;
+      document.getElementById("mMonth").textContent = m.completedByPeriod.thisMonth;
+      if (m.leadTimeDays) {
+        document.getElementById("mLeadAvg").textContent = m.leadTimeDays.avg;
+        document.getElementById("mLeadSub").textContent =
+          "de " + m.leadTimeDays.sample + " tarjetas · mín " + m.leadTimeDays.min + " · máx " + m.leadTimeDays.max + " días";
+      } else {
+        document.getElementById("mLeadAvg").textContent = "N/A";
+        document.getElementById("mLeadSub").textContent = "Sin tarjetas completadas aún";
+      }
+      renderBurnupChart(m.burnup);
+      renderWipChart(m.wipByColumn);
+    } catch (e) {
+      document.getElementById("mToday").textContent = "?";
+    }
+  }
+
+  function renderBurnupChart(data) {
+    const wrap = document.getElementById("metricsBurnupWrap");
+    const W = 312, H = 80, PAD = 4;
+    // Construir los últimos 30 días
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    // Acumulado con carry-forward
+    const byDate = new Map(data.map(d => [d.date, d.cumulative]));
+    let last = 0;
+    const points = days.map(date => {
+      if (byDate.has(date)) last = byDate.get(date);
+      return last;
+    });
+    const maxVal = Math.max(...points, 1);
+    const barW = (W - PAD * 2) / 30;
+    const bars = points.map((v, i) => {
+      const h = Math.max(2, Math.round((v / maxVal) * (H - 12)));
+      const x = (PAD + i * barW).toFixed(1);
+      const y = H - h - 4;
+      return `<rect x="${x}" y="${y}" width="${(barW - 1).toFixed(1)}" height="${h}" fill="var(--accent)" opacity="0.7" rx="1"/>`;
+    }).join("");
+    wrap.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" style="height:${H}px">
+        <text x="${PAD}" y="10" font-size="9" fill="var(--muted)">${maxVal}</text>
+        ${bars}
+      </svg>
+      <div style="font-size:10px;color:var(--muted);display:flex;justify-content:space-between;margin-top:2px">
+        <span>${days[0].slice(5)}</span><span>hoy</span>
+      </div>`;
+  }
+
+  function renderWipChart(data) {
+    const wrap = document.getElementById("metricsWipWrap");
+    if (!data.length) { wrap.innerHTML = '<div style="color:var(--muted);font-size:12px">Sin columnas.</div>'; return; }
+    const maxCount = Math.max(...data.map(d => d.count), 1);
+    const ROW_H = 22, PAD = 4, LABEL_W = 90, BAR_AREA = 170, NUM_W = 30;
+    const svgH = data.length * ROW_H + PAD;
+    const rows = data.map((col, i) => {
+      const barW = Math.max(2, Math.round((col.count / maxCount) * BAR_AREA));
+      const y = PAD + i * ROW_H;
+      return `
+        <text x="0" y="${y + 14}" font-size="11" fill="var(--text)"
+          textLength="${LABEL_W - 4}" lengthAdjust="spacingAndGlyphs">${escapeHtml(col.name)}</text>
+        <rect x="${LABEL_W}" y="${y + 4}" width="${barW}" height="14"
+          fill="var(--accent)" opacity="0.6" rx="2"/>
+        <text x="${LABEL_W + BAR_AREA + 4}" y="${y + 14}" font-size="11" fill="var(--muted)">${col.count}</text>`;
+    }).join("");
+    wrap.innerHTML = `<svg viewBox="0 0 ${LABEL_W + BAR_AREA + NUM_W} ${svgH}" style="height:${svgH}px">${rows}</svg>`;
+  }
+
+  document.getElementById("metricsBtn").addEventListener("click", toggleMetricsDrawer);
+  document.getElementById("metricsDrawerClose").addEventListener("click", closeMetricsDrawer);
 
   // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
   function matchesSearch(card) {
