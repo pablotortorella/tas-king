@@ -74,17 +74,20 @@ export function setupMetricsRoutes(app) {
         GROUP BY col.id, col.name ORDER BY col.position
       `).bind(boardId).all(),
 
-      // E — Tarjetas más quietas (top 5 no archivadas, fuera de la columna done)
+      // E — Tarjetas más quietas (top 5 no archivadas, fuera de la última columna por posición)
       c.env.DB.prepare(`
         SELECT c.id, c.title, col.name AS column_name,
           c.updated_at,
           CAST(ROUND((? - c.updated_at) / 86400000.0, 0) AS INTEGER) AS days_stale
         FROM cards c
         JOIN columns col ON col.id = c.column_id AND col.board_id = c.board_id
-        WHERE c.board_id = ? AND c.archived = 0 AND c.column_id != ?
+        WHERE c.board_id = ? AND c.archived = 0
+          AND c.column_id != (
+            SELECT id FROM columns WHERE board_id = ? ORDER BY position DESC LIMIT 1
+          )
         ORDER BY c.updated_at ASC
         LIMIT 5
-      `).bind(now, boardId, doneColId).all(),
+      `).bind(now, boardId, boardId).all(),
     ]);
 
     // Acumular burn-up en JS
