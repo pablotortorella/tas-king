@@ -432,6 +432,18 @@
     padding: 20px;
     box-shadow: 0 8px 24px rgba(9,30,66,.3);
   }
+  /* Modal de tarjeta: más ancho en desktop para el layout de dos columnas */
+  #overlay .modal { max-width: 900px; }
+  @media (min-width: 700px) {
+    .modal-cols { display: grid; grid-template-columns: 1fr 260px; gap: 0 24px; align-items: start; }
+    #fDetails { min-height: 140px; }
+  }
+  /* Gestión de etiquetas en configuración del tablero */
+  .board-label-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; background: var(--col-bg); margin-bottom: 4px; font-size: 13px; }
+  .board-label-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  .board-label-name { flex: 1; font-size: 13px; }
+  .board-label-edit-form { padding: 10px; background: var(--col-bg); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+  .board-label-edit-form input { width: 100%; margin-bottom: 6px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: var(--input-bg); color: var(--text); }
   .modal h2 { margin: 0 0 14px; font-size: 16px; }
   .field { margin-bottom: 14px; }
   .field-row { display: flex; gap: 12px; }
@@ -854,48 +866,54 @@
 <div class="overlay" id="overlay">
   <div class="modal">
     <h2 id="modalTitle">Tarjeta</h2>
-    <div class="field">
-      <label>Título</label>
-      <input type="text" id="fTitle" placeholder="Título de la tarea">
-    </div>
-    <div class="field">
-      <label>Columna</label>
-      <select id="fColumn"></select>
-    </div>
-    <div class="field">
-      <label>Detalles</label>
-      <textarea id="fDetails" placeholder="Descripción, contexto, pasos..."></textarea>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Fecha límite</label>
-        <input type="date" id="fDue">
+    <div class="modal-cols">
+      <div class="modal-col-main">
+        <div class="field">
+          <label>Título</label>
+          <input type="text" id="fTitle" placeholder="Título de la tarea">
+        </div>
+        <div class="field">
+          <label>Columna</label>
+          <select id="fColumn"></select>
+        </div>
+        <div class="field">
+          <label>Detalles</label>
+          <textarea id="fDetails" placeholder="Descripción, contexto, pasos..."></textarea>
+        </div>
+        <div id="fChecklistsSection"></div>
+        <div class="field">
+          <label>Comentarios</label>
+          <ul class="comments" id="fComments"></ul>
+          <div class="comment-add">
+            <input type="text" id="fCommentInput" placeholder="Escribir un comentario...">
+            <button class="btn btn-primary btn-small" id="addCommentBtn">Agregar</button>
+          </div>
+        </div>
+        <div class="field" id="historyField" style="display:none">
+          <label>📜 Historial</label>
+          <ul class="history-list" id="fHistory"></ul>
+        </div>
       </div>
-      <div class="field">
-        <label>Responsable</label>
-        <select id="fAssignee"></select>
+      <div class="modal-col-side">
+        <div class="field-row">
+          <div class="field">
+            <label>Fecha límite</label>
+            <input type="date" id="fDue">
+          </div>
+          <div class="field">
+            <label>Responsable</label>
+            <select id="fAssignee"></select>
+          </div>
+        </div>
+        <div class="labels-section" id="fLabelsSection"></div>
+        <div class="goals-card-section" id="fGoalsSection"></div>
+        <div class="field">
+          <label>Adjuntos (fotos y archivos)</label>
+          <div class="attachments" id="fAttachments"></div>
+          <input type="file" id="fFile" multiple accept="*/*">
+          <div class="hint">Las imágenes se muestran como miniatura. Los archivos se guardan en el servidor.</div>
+        </div>
       </div>
-    </div>
-    <div class="labels-section" id="fLabelsSection"></div>
-    <div class="goals-card-section" id="fGoalsSection"></div>
-    <div id="fChecklistsSection"></div>
-    <div class="field">
-      <label>Adjuntos (fotos y archivos)</label>
-      <div class="attachments" id="fAttachments"></div>
-      <input type="file" id="fFile" multiple accept="*/*">
-      <div class="hint">Las imágenes se muestran como miniatura. Los archivos se guardan en el servidor.</div>
-    </div>
-    <div class="field">
-      <label>Comentarios</label>
-      <ul class="comments" id="fComments"></ul>
-      <div class="comment-add">
-        <input type="text" id="fCommentInput" placeholder="Escribir un comentario...">
-        <button class="btn btn-primary btn-small" id="addCommentBtn">Agregar</button>
-      </div>
-    </div>
-    <div class="field" id="historyField" style="display:none">
-      <label>📜 Historial</label>
-      <ul class="history-list" id="fHistory"></ul>
     </div>
     <div class="modal-footer">
       <div>
@@ -941,25 +959,40 @@
   </div>
 </div>
 
-<!-- Miembros del tablero -->
+<!-- Configuración del tablero (miembros + etiquetas) -->
 <div class="overlay" id="membersOverlay">
   <div class="modal">
-    <h2 id="membersTitle">👥 Miembros</h2>
-    <div class="field" id="renameRow" style="margin-bottom:14px">
-      <label>Nombre del tablero</label>
-      <div class="comment-add">
-        <input type="text" id="renameInput" placeholder="Nombre del tablero">
-        <button class="btn btn-primary btn-small" id="renameBtn">Renombrar</button>
+    <h2 id="membersTitle">⚙️ Configuración</h2>
+    <div class="admin-tabs" style="margin-bottom:14px">
+      <button class="tab-btn active" id="settingsTabMiembros">👥 Miembros</button>
+      <button class="tab-btn" id="settingsTabEtiquetas">🏷️ Etiquetas</button>
+    </div>
+    <div id="settingsMiembrosPanel">
+      <div class="field" id="renameRow" style="margin-bottom:14px">
+        <label>Nombre del tablero</label>
+        <div class="comment-add">
+          <input type="text" id="renameInput" placeholder="Nombre del tablero">
+          <button class="btn btn-primary btn-small" id="renameBtn">Renombrar</button>
+        </div>
+      </div>
+      <div id="membersList"></div>
+      <div class="field" id="inviteRow" style="margin-top:14px">
+        <label>Invitar por email</label>
+        <div class="comment-add">
+          <input type="email" id="inviteEmail" placeholder="persona@ejemplo.com">
+          <button class="btn btn-primary btn-small" id="inviteBtn">Invitar</button>
+        </div>
+        <div class="hint">La persona accede con su cuenta de Google la próxima vez que entre.</div>
       </div>
     </div>
-    <div id="membersList"></div>
-    <div class="field" id="inviteRow" style="margin-top:14px">
-      <label>Invitar por email</label>
-      <div class="comment-add">
-        <input type="email" id="inviteEmail" placeholder="persona@ejemplo.com">
-        <button class="btn btn-primary btn-small" id="inviteBtn">Invitar</button>
+    <div id="settingsEtiquetasPanel" style="display:none">
+      <div id="boardLabelsList" style="margin-bottom:12px"></div>
+      <div class="field" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <label>Nueva etiqueta</label>
+        <input type="text" id="boardLabelName" placeholder="Nombre..." maxlength="30" style="width:100%;margin-bottom:6px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--input-bg);color:var(--text)">
+        <div class="label-colors" id="boardColorGrid" style="margin-bottom:8px"></div>
+        <button class="btn btn-primary btn-small" id="boardCreateLabelBtn">Crear etiqueta</button>
       </div>
-      <div class="hint">La persona accede con su cuenta de Google la próxima vez que entre.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="deleteBoardBtn">Eliminar tablero</button>
@@ -3171,10 +3204,137 @@
   // ---------- Modal de miembros ----------
   const membersOverlay = document.getElementById("membersOverlay");
 
+  // ---------- Configuración del tablero: tabs ----------
+  function switchSettingsTab(tab) {
+    document.getElementById("settingsMiembrosPanel").style.display  = tab === "miembros"  ? "" : "none";
+    document.getElementById("settingsEtiquetasPanel").style.display = tab === "etiquetas" ? "" : "none";
+    document.getElementById("settingsTabMiembros").classList.toggle("active",  tab === "miembros");
+    document.getElementById("settingsTabEtiquetas").classList.toggle("active", tab === "etiquetas");
+    if (tab === "etiquetas") renderBoardLabelsManager();
+  }
+  document.getElementById("settingsTabMiembros").addEventListener("click",  () => switchSettingsTab("miembros"));
+  document.getElementById("settingsTabEtiquetas").addEventListener("click", () => switchSettingsTab("etiquetas"));
+
+  // ---------- Gestión de etiquetas del tablero ----------
+  function renderBoardLabelsManager() {
+    const list = document.getElementById("boardLabelsList");
+    list.innerHTML = "";
+    if (!boardLabels.length) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:6px 0">Sin etiquetas en este tablero.</div>';
+      return;
+    }
+    boardLabels.forEach(label => {
+      const row = document.createElement("div");
+      row.className = "board-label-row";
+      row.dataset.id = label.id;
+      row.innerHTML = `
+        <span class="board-label-swatch" style="background:${label.color}"></span>
+        <span class="board-label-name">${escapeHtml(label.name)}</span>
+        <div style="display:flex;gap:4px">
+          <button class="col-action-btn board-label-edit-btn" data-id="${label.id}" title="Editar">✏️</button>
+          <button class="col-action-btn board-label-del-btn" data-id="${label.id}" style="color:var(--danger)" title="Eliminar">✕</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll(".board-label-edit-btn").forEach(btn => {
+      btn.addEventListener("click", () => startEditBoardLabel(btn.dataset.id));
+    });
+    list.querySelectorAll(".board-label-del-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const label = boardLabels.find(l => l.id === btn.dataset.id);
+        if (!label || !confirm(`¿Eliminar la etiqueta "${label.name}"? Se quitará de todas las tarjetas.`)) return;
+        try {
+          await api("DELETE", `/api/boards/${currentBoardId}/labels/${btn.dataset.id}`);
+          await loadCards();
+          renderBoardLabelsManager();
+        } catch (e) { alert(e.message || "Error al eliminar etiqueta"); }
+      });
+    });
+  }
+
+  function startEditBoardLabel(labelId) {
+    const label = boardLabels.find(l => l.id === labelId);
+    if (!label) return;
+    const list = document.getElementById("boardLabelsList");
+    const row = list.querySelector(`[data-id="${labelId}"]`);
+    if (!row) return;
+
+    let editColor = label.color;
+    const form = document.createElement("div");
+    form.className = "board-label-edit-form";
+    form.innerHTML = `
+      <input type="text" value="${escapeHtml(label.name)}" maxlength="30" placeholder="Nombre...">
+      <div class="label-colors" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary btn-small" id="saveLabelEditBtn">Guardar</button>
+        <button class="btn btn-ghost btn-small" id="cancelLabelEditBtn">Cancelar</button>
+      </div>
+    `;
+    row.replaceWith(form);
+
+    const colorGrid = form.querySelector(".label-colors");
+    LABEL_COLORS.forEach(color => {
+      const opt = document.createElement("div");
+      opt.className = "color-opt" + (color === editColor ? " selected" : "");
+      opt.style.backgroundColor = color;
+      opt.addEventListener("click", () => {
+        form.querySelectorAll(".color-opt").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        editColor = color;
+      });
+      colorGrid.appendChild(opt);
+    });
+
+    form.querySelector("#saveLabelEditBtn").addEventListener("click", async () => {
+      const name = form.querySelector("input").value.trim();
+      if (!name) return;
+      try {
+        await api("PUT", `/api/boards/${currentBoardId}/labels/${labelId}`, { name, color: editColor });
+        await loadCards();
+        renderBoardLabelsManager();
+      } catch (e) { alert(e.message || "Error al actualizar etiqueta"); }
+    });
+    form.querySelector("#cancelLabelEditBtn").addEventListener("click", () => renderBoardLabelsManager());
+  }
+
+  // Color picker para crear etiqueta desde configuración
+  let boardSelectedColor = LABEL_COLORS[0];
+  (function initBoardColorGrid() {
+    const grid = document.getElementById("boardColorGrid");
+    LABEL_COLORS.forEach(color => {
+      const opt = document.createElement("div");
+      opt.className = "color-opt" + (color === boardSelectedColor ? " selected" : "");
+      opt.style.backgroundColor = color;
+      opt.addEventListener("click", () => {
+        grid.querySelectorAll(".color-opt").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        boardSelectedColor = color;
+      });
+      grid.appendChild(opt);
+    });
+  })();
+
+  document.getElementById("boardCreateLabelBtn").addEventListener("click", async () => {
+    const input = document.getElementById("boardLabelName");
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    try {
+      await api("POST", `/api/boards/${currentBoardId}/labels`, { name, color: boardSelectedColor });
+      input.value = "";
+      await loadCards();
+      renderBoardLabelsManager();
+    } catch (e) { alert(e.message || "Error al crear etiqueta"); }
+  });
+  document.getElementById("boardLabelName").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("boardCreateLabelBtn").click(); }
+  });
+
   function renderMembers() {
     const b = currentBoard();
     const isOwner = b && b.role === "owner";
-    document.getElementById("membersTitle").textContent = "⚙️ " + (b ? b.name : "") + " · miembros y configuración";
+    document.getElementById("membersTitle").textContent = "⚙️ " + (b ? b.name : "");
     // invitar, renombrar y eliminar tablero solo para el dueño
     document.getElementById("inviteRow").style.display = isOwner ? "" : "none";
     // renombrar: solo el dueño, y no en el tablero personal
@@ -3207,6 +3367,7 @@
 
   document.getElementById("membersBtn").addEventListener("click", () => {
     if (!currentBoardId) return;
+    switchSettingsTab("miembros");
     renderMembers();
     membersOverlay.classList.add("open");
   });
