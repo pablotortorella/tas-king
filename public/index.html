@@ -1037,8 +1037,8 @@
     <h2>⚙ Administración</h2>
     <div class="admin-tabs">
       <button class="tab-btn active" id="adminTabActividad">Actividad del tablero</button>
-      <button class="tab-btn" id="adminTabUsuarios">Usuarios</button>
       <button class="tab-btn" id="adminTabStats">📊 Estadísticas</button>
+      <button class="tab-btn" id="adminTabUsuarios">Usuarios</button>
       <button class="tab-btn" id="adminTabSolicitudes">🔔 Solicitudes</button>
     </div>
 
@@ -2900,6 +2900,8 @@
     else if (importOverlay.classList.contains("open")) closeImportPreview();
     else if (membersOverlay.classList.contains("open")) membersOverlay.classList.remove("open");
     else if (archiveOverlay.classList.contains("open")) archiveOverlay.classList.remove("open");
+    else if (goalsDrawer.classList.contains("open")) closeGoalsDrawer();
+    else if (metricsDrawer.classList.contains("open")) closeMetricsDrawer();
   });
 
   // ---------- Exportar / Importar ----------
