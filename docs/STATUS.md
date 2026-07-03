@@ -1,7 +1,17 @@
 # Estado de Implementación — FUN TasKing! v2.1
 
-**Última actualización**: 2026-07-01  
-**Estado**: ✅ Tests completos (101 unit + 29 E2E) | main = staging ✅ | producción pendiente aprobación
+**Última actualización**: 2026-07-03  
+**Estado**: ✅ Tests completos (111 unit + 31 E2E) | main = staging ✅ | producción pendiente aprobación
+
+## 🎯 Cambios recientes (sesión 2026-07-03 — ¡Pilas con esto! distingue quietas vs por vencer)
+
+- **Problema**: el panel mostraba como "quieta" cualquier tarjeta sin tocar hace tiempo, sin importar que ya tuviera una fecha límite lejana (ej. a 2 meses) — ruido para tareas ya agendadas a propósito.
+- **Solución**: `GET /api/boards/:id/metrics` ahora separa dos listas independientes:
+  - **staleCards ("🔥 Quietas")**: solo tarjetas *sin* fecha límite, ordenadas por inactividad (sin cambios de comportamiento para ese caso).
+  - **dueSoonCards ("⏰ Por vencer")**: tarjetas con fecha límite vencida o dentro de un umbral configurable (`due_soon_days`, default 3), sin importar cuándo se tocaron por última vez, ordenadas por vencimiento (más vencidas primero).
+  - Una tarjeta con fecha límite lejana (fuera del umbral) no aparece en ninguna de las dos listas hasta que se acerca su vencimiento.
+- **Configuración por tablero**: migración `0012_due_soon_days.sql` agrega `boards.due_soon_days`. Editable en ⚙️ → campo "días antes" (solo dueño), vía `PATCH /api/boards/:id { dueSoonDays }`. Expuesto en `GET /api/me` para cada tablero.
+- **10 nuevos tests** (`test/boards.test.js` + casos agregados a `test/metrics.test.js`) y **2 E2E nuevos** (`e2e/metrics.spec.js`) → **111 unit + 31 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-01 — import completo + modal 2 columnas + gestión de etiquetas)
 
@@ -538,16 +548,19 @@
 
 ### ✅ #8 Workflow Analytics Engine / ¿Cómo vamos? 📊
 
-**Qué hace**: Panel lateral de métricas del tablero con 5 secciones: completadas por período, velocidad promedio (lead time), ritmo de cierre (burn-up), distribución actual (WIP) y ¡Pilas con esto! (tarjetas más quietas, clickeables).
+**Qué hace**: Panel lateral de métricas del tablero con 5 secciones: completadas por período, velocidad promedio (lead time), ritmo de cierre (burn-up), distribución actual (WIP) y ¡Pilas con esto! (dos listas: "Por vencer" y "Quietas", clickeables).
 
 **Implementación**:
-- **Backend**: `src/routes/metrics.js` — `GET /api/boards/:boardId/metrics` con 5 queries SQL en paralelo usando `audit_log` + `cards` + `columns` (sin nueva tabla).
+- **Backend**: `src/routes/metrics.js` — `GET /api/boards/:boardId/metrics` con 6 queries SQL en paralelo usando `audit_log` + `cards` + `columns` + `boards.due_soon_days` (sin nueva tabla).
 - **Frontend**: panel deslizante `#metricsDrawer`, gráficos SVG vanilla (burn-up + WIP), tooltips informativos con explicación de lead time, burn-up, etc.
-- Lead time: CTE con primera llegada a columna `is_done=1`; burn-up: acumulado diario últimos 30 días; stale: excluye `is_done=1`, fallback a última por posición.
+- Lead time: CTE con primera llegada a columna `is_done=1`; burn-up: acumulado diario últimos 30 días.
+- **¡Pilas con esto!** — dos señales de urgencia, mutuamente excluyentes:
+  - `staleCards` ("Quietas"): solo tarjetas *sin* fecha límite, top 5 por inactividad. Excluye `is_done=1` (fallback a última por posición si no hay ninguna marcada).
+  - `dueSoonCards` ("Por vencer"): tarjetas con fecha límite vencida o dentro de `due_soon_days` (configurable por tablero, default 3, editable en ⚙️ por el dueño vía `PATCH /api/boards/:id`), ordenadas por vencimiento ascendente (lo más vencido primero). Una fecha límite lejana no aparece en ninguna lista.
 
 **Tests**:
-- ✅ 9 unitarios (`test/metrics.test.js`): estructura, períodos, lead time, WIP, stale cards, permisos, múltiples done columns
-- ✅ 4 E2E (`e2e/metrics.spec.js`): botón visible, panel abre con todas las secciones, números ≥ 0, cerrar
+- ✅ 13 unitarios (`test/metrics.test.js` + `test/boards.test.js`): estructura, períodos, lead time, WIP, stale cards, dueSoonCards, permisos, múltiples done columns, PATCH dueSoonDays (validación y permisos)
+- ✅ 6 E2E (`e2e/metrics.spec.js`): botón visible, panel abre con todas las secciones, números ≥ 0, cerrar, quietas vs por vencer, configuración de umbral en ⚙️
 
 **Estado**: **100% completo (MVP)**.
 

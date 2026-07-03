@@ -11,13 +11,17 @@ export function setupMetricsRoutes(app) {
 
     const now = Date.now();
     const todayStart = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").getTime();
+    const todayStr   = new Date().toISOString().slice(0, 10);
     const weekStart  = now - 7  * 86400000;
     const monthStart = now - 30 * 86400000;
+
+    const boardRow = await c.env.DB.prepare("SELECT due_soon_days FROM boards WHERE id = ?").bind(boardId).first();
+    const dueSoonDays = boardRow?.due_soon_days ?? 3;
 
     // Subquery reutilizable: columnas de cierre (is_done = 1)
     const doneSubq = "SELECT id FROM columns WHERE board_id = ? AND is_done = 1";
 
-    const [periodRow, leadRow, burnupRows, wipRows, staleRows] = await Promise.all([
+    const [periodRow, leadRow, burnupRows, wipRows, staleRows, dueSoonRows] = await Promise.all([
       // A — tarjetas completadas por período (hoy / semana / mes)
       c.env.DB.prepare(`
         SELECT
@@ -76,7 +80,8 @@ export function setupMetricsRoutes(app) {
         GROUP BY col.id, col.name ORDER BY col.position
       `).bind(boardId).all(),
 
-      // E — tarjetas más quietas (top 5, excluye todas las columnas de cierre; fallback a última por posición)
+      // E — tarjetas más quietas (top 5, excluye columnas de cierre y tarjetas con fecha límite:
+      // esas ya están agendadas a propósito, solo se muestran -en "por vencer"- cuando se acercan)
       c.env.DB.prepare(`
         WITH done_cols AS (
           ${doneSubq}
@@ -86,7 +91,7 @@ export function setupMetricsRoutes(app) {
           CAST(ROUND((? - c.updated_at) / 86400000.0, 0) AS INTEGER) AS days_stale
         FROM cards c
         JOIN columns col ON col.id = c.column_id AND col.board_id = c.board_id
-        WHERE c.board_id = ? AND c.archived = 0
+        WHERE c.board_id = ? AND c.archived = 0 AND c.due = ''
           AND (
             c.column_id NOT IN (SELECT id FROM done_cols)
             OR NOT EXISTS (SELECT 1 FROM done_cols)
@@ -97,6 +102,19 @@ export function setupMetricsRoutes(app) {
           )
         ORDER BY c.updated_at ASC LIMIT 5
       `).bind(boardId, now, boardId, boardId).all(),
+
+      // F — tarjetas por vencer: fecha límite vencida o dentro del umbral configurado del
+      // tablero, sin importar hace cuánto se tocaron. Excluye columnas de cierre.
+      c.env.DB.prepare(`
+        SELECT c.id, c.title, col.name AS column_name, c.due,
+          CAST(ROUND(julianday(c.due) - julianday(?)) AS INTEGER) AS days_until_due
+        FROM cards c
+        JOIN columns col ON col.id = c.column_id AND col.board_id = c.board_id
+        WHERE c.board_id = ? AND c.archived = 0 AND c.due != ''
+          AND c.column_id NOT IN (${doneSubq})
+          AND julianday(c.due) - julianday(?) <= ?
+        ORDER BY days_until_due ASC LIMIT 5
+      `).bind(todayStr, boardId, boardId, todayStr, dueSoonDays).all(),
     ]);
 
     let cumulative = 0;
@@ -119,6 +137,10 @@ export function setupMetricsRoutes(app) {
       staleCards:   (staleRows.results || []).map(r => ({
         id: r.id, title: r.title, columnName: r.column_name, daysSinceUpdate: r.days_stale,
       })),
+      dueSoonCards: (dueSoonRows.results || []).map(r => ({
+        id: r.id, title: r.title, columnName: r.column_name, due: r.due, daysUntilDue: r.days_until_due,
+      })),
+      dueSoonDays,
     });
   });
 }

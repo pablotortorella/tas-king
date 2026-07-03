@@ -29,12 +29,29 @@ export function setupBoardRoutes(app) {
     const boardId = c.req.param("boardId");
     const m = await membership(c.env.DB, boardId, email);
     if (!m) return c.json({ error: "Sin acceso a este tablero." }, 403);
-    if (m.role !== "owner") return c.json({ error: "Solo el dueño puede renombrar el tablero." }, 403);
+    if (m.role !== "owner") return c.json({ error: "Solo el dueño puede editar el tablero." }, 403);
     const b = await c.req.json().catch(() => ({}));
-    const name = (b.name || "").trim();
-    if (!name) return c.json({ error: "Falta el nombre." }, 400);
-    await c.env.DB.prepare("UPDATE boards SET name = ? WHERE id = ?").bind(name, boardId).run();
-    return c.json({ id: boardId, name });
+
+    const sets = [];
+    const binds = [];
+    if (b.name !== undefined) {
+      const name = String(b.name).trim();
+      if (!name) return c.json({ error: "Falta el nombre." }, 400);
+      sets.push("name = ?"); binds.push(name);
+    }
+    if (b.dueSoonDays !== undefined) {
+      const days = parseInt(b.dueSoonDays, 10);
+      if (!Number.isInteger(days) || days < 0 || days > 90) {
+        return c.json({ error: "Los días de anticipación deben ser un número entre 0 y 90." }, 400);
+      }
+      sets.push("due_soon_days = ?"); binds.push(days);
+    }
+    if (!sets.length) return c.json({ error: "Nada para actualizar." }, 400);
+
+    binds.push(boardId);
+    await c.env.DB.prepare(`UPDATE boards SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
+    const row = await c.env.DB.prepare("SELECT name, due_soon_days FROM boards WHERE id = ?").bind(boardId).first();
+    return c.json({ id: boardId, name: row.name, dueSoonDays: row.due_soon_days });
   });
 
   app.delete("/api/boards/:boardId", async c => {

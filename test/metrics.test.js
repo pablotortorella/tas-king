@@ -210,3 +210,61 @@ describe("Múltiples columnas de cierre", () => {
     }
   });
 });
+
+describe("Pilas con esto: quietas vs por vencer", () => {
+  let boardId, columnId;
+  const isoPlusDays = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+
+  beforeAll(async () => {
+    boardId = (await me(owner)).boards[0].id;
+    await request(`/api/boards/${boardId}`, { email: owner, method: "PATCH", body: { dueSoonDays: 3 } });
+    const columns = await (await request(`/api/boards/${boardId}/columns`, { email: owner })).json();
+    columnId = columns.find(c => !c.isDone).id;
+  });
+
+  it("dueSoonDays en la respuesta refleja la configuración del tablero", async () => {
+    const res = await request(`/api/boards/${boardId}/metrics`, { email: owner });
+    const { dueSoonDays } = await res.json();
+    expect(dueSoonDays).toBe(3);
+  });
+
+  it("una tarjeta quieta con vencimiento lejano no aparece en ninguna lista", async () => {
+    const card = await (await request(`/api/boards/${boardId}/cards`, {
+      email: owner, method: "POST",
+      body: { title: "Vence en 60 días", column: columnId, due: isoPlusDays(60) },
+    })).json();
+    // Simula que hace 40 días que nadie la toca.
+    await env.DB.prepare("UPDATE cards SET updated_at = ? WHERE id = ?")
+      .bind(Date.now() - 40 * 86400000, card.id).run();
+
+    const { staleCards, dueSoonCards } = await (await request(`/api/boards/${boardId}/metrics`, { email: owner })).json();
+    expect(staleCards.find(c => c.id === card.id)).toBeUndefined();
+    expect(dueSoonCards.find(c => c.id === card.id)).toBeUndefined();
+  });
+
+  it("una tarjeta recién tocada pero por vencer aparece en dueSoonCards, no en staleCards", async () => {
+    const card = await (await request(`/api/boards/${boardId}/cards`, {
+      email: owner, method: "POST",
+      body: { title: "Vence mañana", column: columnId, due: isoPlusDays(1) },
+    })).json();
+
+    const { staleCards, dueSoonCards } = await (await request(`/api/boards/${boardId}/metrics`, { email: owner })).json();
+    expect(staleCards.find(c => c.id === card.id)).toBeUndefined();
+    const found = dueSoonCards.find(c => c.id === card.id);
+    expect(found).toBeDefined();
+    expect(found.daysUntilDue).toBe(1);
+  });
+
+  it("una tarjeta vencida aparece primero en dueSoonCards (días negativos)", async () => {
+    const card = await (await request(`/api/boards/${boardId}/cards`, {
+      email: owner, method: "POST",
+      body: { title: "Ya venció", column: columnId, due: isoPlusDays(-2) },
+    })).json();
+
+    const { dueSoonCards } = await (await request(`/api/boards/${boardId}/metrics`, { email: owner })).json();
+    const found = dueSoonCards.find(c => c.id === card.id);
+    expect(found).toBeDefined();
+    expect(found.daysUntilDue).toBe(-2);
+    expect(dueSoonCards[0].id).toBe(card.id); // orden ascendente: lo más vencido primero
+  });
+});
