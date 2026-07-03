@@ -731,6 +731,7 @@
   .stale-item:hover { background: var(--card-hover); }
   .stale-item-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stale-item-meta { color: var(--muted); margin-top: 2px; font-size: 11px; }
+  .stale-item-meta.overdue { color: var(--danger); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -847,7 +848,10 @@
   </div>
   <div class="metrics-section">
     <h3>¡Pilas con esto! 🔥</h3>
-    <p class="section-desc">Las tareas que más tiempo llevan sin moverse. Terminá una, archivála, o ponete en marcha.</p>
+    <p class="section-desc">Vencimientos que se acercan primero; después, lo que hace más tiempo que no se toca.</p>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px">⏰ Por vencer</div>
+    <ul class="stale-list" id="metricsDueSoonList"></ul>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:10px 0 4px">🔥 Quietas</div>
     <ul class="stale-list" id="metricsStaleList"></ul>
   </div>
 </aside>
@@ -983,6 +987,15 @@
           <button class="btn btn-primary btn-small" id="inviteBtn">Invitar</button>
         </div>
         <div class="hint">La persona accede con su cuenta de Google la próxima vez que entre.</div>
+      </div>
+      <div class="field" id="dueSoonRow" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+        <label>¡Pilas con esto! — avisar vencimientos con anticipación</label>
+        <div class="comment-add">
+          <input type="number" id="dueSoonInput" min="0" max="90" style="width:80px">
+          <span style="align-self:center;font-size:12px;color:var(--muted)">días antes</span>
+          <button class="btn btn-primary btn-small" id="dueSoonBtn">Guardar</button>
+        </div>
+        <div class="hint">Tarjetas con fecha límite más lejana no se muestran como "quietas"; aparecen en "Por vencer" cuando falte esta cantidad de días.</div>
       </div>
     </div>
     <div id="settingsEtiquetasPanel" style="display:none">
@@ -1633,6 +1646,7 @@
       renderBurnupChart(m.burnup);
       renderWipChart(m.wipByColumn);
       renderStaleCards(m.staleCards || []);
+      renderDueSoonCards(m.dueSoonCards || []);
     } catch (e) {
       document.getElementById("mToday").textContent = "?";
     }
@@ -1651,6 +1665,30 @@
         <div class="stale-item-meta">📍 ${escapeHtml(c.columnName)} · ${dias}</div>
       </li>`;
     }).join("");
+    bindStaleItemClicks(list);
+  }
+
+  function renderDueSoonCards(cards) {
+    const list = document.getElementById("metricsDueSoonList");
+    if (!cards.length) {
+      list.innerHTML = '<li style="font-size:12px;color:var(--muted)">Sin vencimientos cercanos. 🎉</li>';
+      return;
+    }
+    list.innerHTML = cards.map(c => {
+      const dias = c.daysUntilDue < 0
+        ? "venció hace " + (-c.daysUntilDue) + (c.daysUntilDue === -1 ? " día" : " días")
+        : c.daysUntilDue === 0 ? "vence hoy"
+        : c.daysUntilDue === 1 ? "vence mañana"
+        : "vence en " + c.daysUntilDue + " días";
+      return `<li class="stale-item" data-id="${escapeHtml(c.id)}" title="Abrir tarjeta">
+        <div class="stale-item-title">${escapeHtml(c.title)}</div>
+        <div class="stale-item-meta ${c.daysUntilDue < 0 ? "overdue" : ""}">📍 ${escapeHtml(c.columnName)} · ${dias}</div>
+      </li>`;
+    }).join("");
+    bindStaleItemClicks(list);
+  }
+
+  function bindStaleItemClicks(list) {
     list.querySelectorAll(".stale-item[data-id]").forEach(li => {
       li.addEventListener("click", () => {
         closeMetricsDrawer();
@@ -3348,6 +3386,9 @@
     // renombrar: solo el dueño, y no en el tablero personal
     document.getElementById("renameRow").style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
     document.getElementById("renameInput").value = b ? b.name : "";
+    // días de anticipación para "por vencer": solo el dueño lo edita
+    document.getElementById("dueSoonRow").style.display = isOwner ? "" : "none";
+    document.getElementById("dueSoonInput").value = b ? b.dueSoonDays : 3;
     const delBtn = document.getElementById("deleteBoardBtn");
     delBtn.style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
 
@@ -3406,6 +3447,17 @@
       await loadBoard();          // refresca el nombre en el selector
       renderMembers();
     } catch (e) { alert("No se pudo renombrar: " + e.message); }
+  }
+
+  document.getElementById("dueSoonBtn").addEventListener("click", saveDueSoonDays);
+  async function saveDueSoonDays() {
+    const days = parseInt(document.getElementById("dueSoonInput").value, 10);
+    if (!Number.isInteger(days) || days < 0 || days > 90) { alert("Ingresá un número de días entre 0 y 90."); return; }
+    try {
+      await api("PATCH", "/api/boards/" + currentBoardId, { dueSoonDays: days });
+      await loadBoard();
+      renderMembers();
+    } catch (e) { alert("No se pudo guardar: " + e.message); }
   }
 
   document.getElementById("deleteBoardBtn").addEventListener("click", async () => {

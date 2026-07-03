@@ -78,7 +78,11 @@ La lógica recomendada es siempre la misma: **terminar algo que está empezado a
 
 ### Ideas de evolución
 
-1. **Destello periódico en tarjetas en progreso** — cada N segundos, las tarjetas de las columnas intermedias (no la primera, no la última) reciben un destello visual similar al confeti de celebración. Empezando por las más a la derecha: las más cerca de terminar. El objetivo: hacer visible lo que está casi listo para que el usuario lo termine.
+1. **Pulso periódico en tarjetas WIP, con el lema "Dejar de empezar y empezar a terminar"** (refinado 2026-07-03) — cada tanto, las tarjetas de las columnas intermedias (no la primera, no la última — todas las WIP) reciben un pulso visual **sutil** (no un blink/destello brusco: hay gente sensible al parpadeo), en secuencia de derecha a izquierda — primero lo más cerca de terminar. Detalles acordados:
+   - **Sutileza ante todo**: pulso lento, no loop constante — dispara cada tanto, no todo el tiempo. Respeta `prefers-reduced-motion`. Con toggle para apagarlo si distrae.
+   - **Frase ligada al momento del pulso**: en vez de un tooltip estático "i", un rótulo efímero ("🎯 Dejar de empezar y empezar a terminar") que aparece con fade cerca de las columnas justo cuando corre la animación — así el mensaje queda asociado al gesto visual, no perdido en un ícono que nadie hace hover.
+   - **Solo la primera vez del día**: para no cansar, mostrar la frase (no necesariamente el pulso) una única vez por día por usuario.
+   - Pendiente de definir antes de implementar: intervalo exacto del pulso, y si el toggle vive en ⚙️ del tablero o es una preferencia de usuario.
 
 2. **Panel de entrada** — al abrir Fun TasKing!, en vez de arrancar con el tablero vacío, mostrar brevemente "¿Por dónde empezamos hoy?" con la lista ¡Pilas con esto! como punto de partida, y un botón "Ver tablero" para continuar.
 

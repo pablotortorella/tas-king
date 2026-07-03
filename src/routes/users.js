@@ -5,7 +5,7 @@ export function setupUserRoutes(app) {
     const email = c.get("email");
     const [rows, user] = await Promise.all([
       c.env.DB.prepare(`
-        SELECT b.id, b.name, b.is_personal, b.owner_email, bm.role,
+        SELECT b.id, b.name, b.is_personal, b.owner_email, b.due_soon_days, bm.role,
           (SELECT COUNT(*) FROM board_members x WHERE x.board_id = b.id) AS member_count
         FROM boards b
         JOIN board_members bm ON bm.board_id = b.id
@@ -35,6 +35,7 @@ export function setupUserRoutes(app) {
       boards: rows.results.map(r => ({
         id: r.id, name: r.name, isPersonal: !!r.is_personal,
         role: r.role, ownerEmail: r.owner_email, memberCount: r.member_count,
+        dueSoonDays: r.due_soon_days,
       })),
     });
   });
