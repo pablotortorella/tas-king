@@ -604,6 +604,20 @@
 
 ---
 
+### ❌ Backlog — Pulso WIP "Dejar de empezar y empezar a terminar" 🎯
+
+**Qué hace**: Refuerza visualmente el principio de Kanban "stop starting, start finishing". Cada tanto, las tarjetas en columnas WIP (ni la primera ni la última) reciben un pulso sutil en secuencia de derecha a izquierda — primero lo más cerca de terminar — invitando a cerrar trabajo en progreso antes de arrancar algo nuevo.
+
+**Diseño acordado (2026-07-03, ver `PROJECT_BACKLOG.md` #9 para detalle completo)**:
+- Pulso lento y sutil, no un blink brusco — dispara cada tanto, no en loop continuo. Respeta `prefers-reduced-motion` y tiene toggle para apagarlo.
+- La frase "🎯 Dejar de empezar y empezar a terminar" aparece como rótulo efímero (fade) ligado al momento exacto del pulso, no como tooltip estático.
+- La frase se muestra solo la primera vez del día por usuario, para no cansar.
+- Pendiente definir antes de implementar: intervalo del pulso, y si el toggle vive en ⚙️ del tablero o es preferencia de usuario.
+
+**Prioridad**: Alta (extiende #9 ¡Pilas con esto!, corazón del producto) — aún no implementado.
+
+---
+
 ## Resumen de Cobertura de Tests
 
 | Capa | Cobertura | Notas |
