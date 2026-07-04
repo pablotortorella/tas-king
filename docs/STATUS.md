@@ -1,7 +1,16 @@
 # Estado de Implementación — FUN TasKing! v2.1
 
 **Última actualización**: 2026-07-03  
-**Estado**: ✅ Tests completos (111 unit + 31 E2E) | main = staging ✅ | producción pendiente aprobación
+**Estado**: ✅ Tests completos (111 unit + 34 E2E) | main = staging ✅ | producción pendiente aprobación
+
+## 🎯 Cambios recientes (sesión 2026-07-03 — Pulso WIP "Dejar de empezar y empezar a terminar")
+
+- **Pulso visual en tarjetas WIP**: cada 5 minutos (si el tablero está a la vista), las tarjetas en columnas "en curso" (ni la primera, ni las de cierre) reciben un pulso sutil — glow con `var(--accent)`, sin blink brusco — en secuencia de derecha a izquierda: primero lo más cerca de terminar.
+- **Mensaje ligado al pulso**: un rótulo efímero "🎯 Dejar de empezar y empezar a terminar" aparece con fade cerca del pie de página en el primer pulso del día por usuario (no se repite el mismo día).
+- **Accesibilidad**: la animación completa está envuelta en `@media (prefers-reduced-motion: no-preference)` — con esa preferencia del sistema actada, las tarjetas no titilan (no-op limpio, sin lógica JS condicional).
+- **Preferencia de usuario**: botón 🎯 en el header (junto al de tema), estado en `localStorage` (como el modo oscuro) — cada persona decide para sí misma, no es config de tablero.
+- **Hook de test**: `window.runWipPulseSequence()` expuesto para disparar la secuencia manualmente (evita depender del timer real de 5 min en tests).
+- **3 E2E nuevos** (`e2e/wip-pulse.spec.js`): toggle persiste, pulso + mensaje una vez por día, excluye primera columna y columnas de cierre → **111 unit + 34 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-03 — ¡Pilas con esto! distingue quietas vs por vencer)
 
@@ -604,17 +613,22 @@
 
 ---
 
-### ❌ Backlog — Pulso WIP "Dejar de empezar y empezar a terminar" 🎯
+### ✅ Pulso WIP "Dejar de empezar y empezar a terminar" 🎯
 
-**Qué hace**: Refuerza visualmente el principio de Kanban "stop starting, start finishing". Cada tanto, las tarjetas en columnas WIP (ni la primera ni la última) reciben un pulso sutil en secuencia de derecha a izquierda — primero lo más cerca de terminar — invitando a cerrar trabajo en progreso antes de arrancar algo nuevo.
+**Qué hace**: Refuerza visualmente el principio de Kanban "stop starting, start finishing". Cada 5 minutos (tablero visible), las tarjetas en columnas WIP (ni la primera, ni las de cierre) reciben un pulso sutil en secuencia de derecha a izquierda — primero lo más cerca de terminar — invitando a cerrar trabajo en progreso antes de arrancar algo nuevo.
 
-**Diseño acordado (2026-07-03, ver `PROJECT_BACKLOG.md` #9 para detalle completo)**:
-- Pulso lento y sutil, no un blink brusco — dispara cada tanto, no en loop continuo. Respeta `prefers-reduced-motion` y tiene toggle para apagarlo.
-- La frase "🎯 Dejar de empezar y empezar a terminar" aparece como rótulo efímero (fade) ligado al momento exacto del pulso, no como tooltip estático.
-- La frase se muestra solo la primera vez del día por usuario, para no cansar.
-- Pendiente definir antes de implementar: intervalo del pulso, y si el toggle vive en ⚙️ del tablero o es preferencia de usuario.
+**Implementación** (`public/index.html`):
+- **Columnas WIP**: todas menos la primera por posición y las marcadas `isDone` — `wipColumnsRightToLeft()`, ordenadas de mayor a menor posición.
+- **Animación**: `@keyframes wip-pulse` (glow con `var(--accent)`) envuelta en `@media (prefers-reduced-motion: no-preference)` — se desactiva sola con esa preferencia del SO, sin rama de código extra.
+- **Secuencia**: `runWipPulseSequence()` dispara `pulseColumn()` por columna con 500ms de stagger, de derecha a izquierda.
+- **Mensaje**: toast `#wipToast` con fade, solo la primera vez del día (`localStorage["tasking-wip-msg-date"]`).
+- **Preferencia de usuario**: botón `#wipPulseBtn` (🎯) en el header, estado en `localStorage["tasking-wip-pulse"]` — igual patrón que el toggle de tema.
+- **Ciclo de vida**: `startWipPulse()`/`stopWipPulse()` enganchados a carga de tablero, cambio de tablero y `visibilitychange` (igual que el polling).
+- **Testing**: `window.runWipPulseSequence()` expuesto para disparo manual en E2E sin depender del timer real.
 
-**Prioridad**: Alta (extiende #9 ¡Pilas con esto!, corazón del producto) — aún no implementado.
+**Tests**: 3 E2E (`e2e/wip-pulse.spec.js`) — toggle persiste tras reload, pulso resalta tarjeta WIP + mensaje una vez por día, excluye primera columna y columnas de cierre.
+
+**Prioridad**: Alta (extiende #9 ¡Pilas con esto!, corazón del producto) — **100% completo**.
 
 ---
 
