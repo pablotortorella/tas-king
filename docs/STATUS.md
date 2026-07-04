@@ -1,7 +1,15 @@
 # Estado de Implementación — FUN TasKing! v2.1
 
-**Última actualización**: 2026-07-03  
-**Estado**: ✅ Tests completos (111 unit + 34 E2E) | main = staging ✅ | producción pendiente aprobación
+**Última actualización**: 2026-07-04  
+**Estado**: ✅ Tests completos (111 unit + 36 E2E) | main = staging ✅ | producción pendiente aprobación
+
+## 🎯 Cambios recientes (sesión 2026-07-04 — Pulso WIP: preview inmediato + atajo P)
+
+- **Preview inmediato al activar**: tocar el botón 🎯 para pasar de apagado a encendido dispara un pulso ahora mismo, sin esperar el timer de 5 min — feedback visual instantáneo de que quedó prendido.
+- **Atajo de teclado `P`**: dispara la secuencia de pulso manualmente en cualquier momento (documentado en la ayuda F1, no en el pie de página — ver siguiente punto). No depende del estado del toggle.
+- **Fix mensaje invisible al probar**: el límite de "una vez por día" aplicaba también a los disparos manuales (toggle, `P`), así que al probar varias veces seguidas el texto solo se veía la primera. Ahora ese límite es solo para el pulso automático — un disparo manual siempre muestra el mensaje. Duración del toast: 4s → 5s para dar más tiempo a leerlo.
+- **Pie de página**: se saca `P` (queda solo en la ayuda F1) y se agrega `F1` — el pie ahora lista `F · U · N · F1`, deletreando FUN.
+- **2 E2E nuevos** (`e2e/wip-pulse.spec.js`): preview al encender, atajo P, disparo manual siempre muestra el mensaje → **111 unit + 36 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-03 — Pulso WIP "Dejar de empezar y empezar a terminar")
 
@@ -622,11 +630,12 @@
 - **Animación**: `@keyframes wip-pulse` (glow con `var(--accent)`) envuelta en `@media (prefers-reduced-motion: no-preference)` — se desactiva sola con esa preferencia del SO, sin rama de código extra.
 - **Secuencia**: `runWipPulseSequence()` dispara `pulseColumn()` por columna con 500ms de stagger, de derecha a izquierda.
 - **Mensaje**: toast `#wipToast` con fade, solo la primera vez del día (`localStorage["tasking-wip-msg-date"]`).
-- **Preferencia de usuario**: botón `#wipPulseBtn` (🎯) en el header, estado en `localStorage["tasking-wip-pulse"]` — igual patrón que el toggle de tema.
+- **Preferencia de usuario**: botón `#wipPulseBtn` (🎯) en el header, estado en `localStorage["tasking-wip-pulse"]` — igual patrón que el toggle de tema. Al pasar de apagado a encendido dispara un preview inmediato (`toggleWipPulse()`), sin esperar el timer.
+- **Atajo `P`**: dispara `runWipPulseSequence()` manualmente en cualquier momento, independiente del estado del toggle. Documentado en la ayuda F1 y el pie de página.
 - **Ciclo de vida**: `startWipPulse()`/`stopWipPulse()` enganchados a carga de tablero, cambio de tablero y `visibilitychange` (igual que el polling).
 - **Testing**: `window.runWipPulseSequence()` expuesto para disparo manual en E2E sin depender del timer real.
 
-**Tests**: 3 E2E (`e2e/wip-pulse.spec.js`) — toggle persiste tras reload, pulso resalta tarjeta WIP + mensaje una vez por día, excluye primera columna y columnas de cierre.
+**Tests**: 5 E2E (`e2e/wip-pulse.spec.js`) — toggle persiste tras reload, preview inmediato al encender, atajo P, pulso + mensaje una vez por día, excluye primera columna y columnas de cierre.
 
 **Prioridad**: Alta (extiende #9 ¡Pilas con esto!, corazón del producto) — **100% completo**.
 

@@ -877,7 +877,7 @@
 <div class="wip-toast" id="wipToast">🎯 Dejar de empezar y empezar a terminar</div>
 
 <footer class="app-footer">
-  <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta</span>
+  <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta · <kbd>F1</kbd> ayuda</span>
   <span class="dot">·</span>
   <a href="/releases" target="_blank" rel="noopener">Novedades</a>
   <a href="/terminos" target="_blank" rel="noopener">Términos</a>
@@ -1192,6 +1192,10 @@
         <span>Nueva tarjeta bajo el cursor</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
+        <kbd style="font-family:monospace;font-weight:600">P</kbd>
+        <span>Disparar ahora el pulso de tareas en progreso 🎯</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding:6px;background:var(--col-bg);border-radius:4px">
         <kbd style="font-family:monospace;font-weight:600">0</kbd>
         <span>Quitar filtro de etiqueta</span>
       </div>
@@ -1281,8 +1285,10 @@
     if (btn) btn.classList.toggle("wip-pulse-off", !wipPulseEnabled());
   }
   function toggleWipPulse() {
-    try { localStorage.setItem("tasking-wip-pulse", wipPulseEnabled() ? "off" : "on"); } catch (e) { /* modo privado */ }
+    const turningOn = !wipPulseEnabled();
+    try { localStorage.setItem("tasking-wip-pulse", turningOn ? "on" : "off"); } catch (e) { /* modo privado */ }
     syncWipPulseButton();
+    if (turningOn) runWipPulseSequence({ alwaysShowMessage: true }); // preview inmediato, sin esperar los 5 minutos
   }
   document.getElementById("wipPulseBtn").addEventListener("click", toggleWipPulse);
   syncWipPulseButton();
@@ -1308,22 +1314,28 @@
     });
   }
 
+  function showWipToast() {
+    const toast = document.getElementById("wipToast");
+    if (!toast) return;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 5000);
+  }
+
+  // Límite de una vez por día: aplica solo al pulso automático, para no repetir
+  // el mensaje de fondo. Los disparos manuales (toggle, atajo P) lo muestran siempre.
   function maybeShowWipToast() {
     const today = new Date().toISOString().slice(0, 10);
     try {
       if (localStorage.getItem("tasking-wip-msg-date") === today) return;
       localStorage.setItem("tasking-wip-msg-date", today);
     } catch (e) { /* modo privado: mostrar igual, sin recordar */ }
-    const toast = document.getElementById("wipToast");
-    if (!toast) return;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 4000);
+    showWipToast();
   }
 
-  function runWipPulseSequence() {
+  function runWipPulseSequence({ alwaysShowMessage = false } = {}) {
     const cols = wipColumnsRightToLeft();
     if (!cols.length) return;
-    maybeShowWipToast();
+    if (alwaysShowMessage) showWipToast(); else maybeShowWipToast();
     cols.forEach((col, i) => setTimeout(() => pulseColumn(col.id), i * 500));
   }
   window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
@@ -3791,6 +3803,7 @@
     if (k === "f") { e.preventDefault(); toggleMyTasks(); }
     else if (k === "u") { e.preventDefault(); toggleUrgent(); }
     else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
+    else if (k === "p") { e.preventDefault(); runWipPulseSequence({ alwaysShowMessage: true }); }
     else if (k === "0") { e.preventDefault(); activeLabelFilters.clear(); render(); }
     else if (k >= "1" && k <= "9") {
       const idx = parseInt(k) - 1;

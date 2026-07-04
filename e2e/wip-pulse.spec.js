@@ -26,6 +26,25 @@ test("🎯 alterna encendido/apagado y persiste tras recargar", async ({ page })
   await expect(page.locator("#wipPulseBtn")).not.toHaveClass(/wip-pulse-off/);
 });
 
+test("activar el toggle dispara un pulso de preview inmediato, sin esperar el timer", async ({ page }) => {
+  const btn = page.locator("#wipPulseBtn");
+  const seedCard = page.locator(".card", { hasText: "Tarjeta seed" }); // columna "pendiente", es WIP
+
+  // Apagar y volver a prender: el prendido debe disparar el preview.
+  await btn.click();
+  await expect(btn).toHaveClass(/wip-pulse-off/);
+  await btn.click();
+  await expect(btn).not.toHaveClass(/wip-pulse-off/);
+
+  await expect(seedCard).toHaveClass(/wip-pulse/, { timeout: 3000 });
+});
+
+test("el atajo P dispara el pulso manualmente", async ({ page }) => {
+  const seedCard = page.locator(".card", { hasText: "Tarjeta seed" });
+  await page.keyboard.press("p");
+  await expect(seedCard).toHaveClass(/wip-pulse/, { timeout: 3000 });
+});
+
 test("el pulso resalta las tarjetas en curso y muestra el mensaje una vez por día", async ({ page }) => {
   const runId = Date.now().toString(36);
   const title = `E2E wip-pulse ${runId}`;
@@ -46,11 +65,15 @@ test("el pulso resalta las tarjetas en curso y muestra el mensaje una vez por d�
   await expect(toast).toHaveClass(/show/);
   await expect(toast).toHaveText(/Dejar de empezar y empezar a terminar/);
 
-  // Si se dispara de nuevo el mismo día, el mensaje no vuelve a aparecer.
-  await expect(toast).not.toHaveClass(/show/, { timeout: 5000 });
+  // Si se dispara de nuevo el mismo día (pulso automático), el mensaje no vuelve a aparecer.
+  await expect(toast).not.toHaveClass(/show/, { timeout: 6000 });
   await page.evaluate(() => window.runWipPulseSequence());
   await page.waitForTimeout(300);
   await expect(toast).not.toHaveClass(/show/);
+
+  // Pero un disparo manual (atajo P) sí lo muestra, aunque ya se haya visto hoy.
+  await page.keyboard.press("p");
+  await expect(toast).toHaveClass(/show/);
 });
 
 test("no pulsa tarjetas en la primera columna ni en columnas de cierre", async ({ page }) => {
