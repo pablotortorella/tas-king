@@ -6,8 +6,10 @@
 ## 🎯 Cambios recientes (sesión 2026-07-04 — Pulso WIP: preview inmediato + atajo P)
 
 - **Preview inmediato al activar**: tocar el botón 🎯 para pasar de apagado a encendido dispara un pulso ahora mismo, sin esperar el timer de 5 min — feedback visual instantáneo de que quedó prendido.
-- **Atajo de teclado `P`**: dispara la secuencia de pulso manualmente en cualquier momento (documentado en la ayuda F1 y en el pie de página). No depende del estado del toggle.
-- **2 E2E nuevos** (`e2e/wip-pulse.spec.js`): preview al encender, atajo P → **111 unit + 36 E2E ✅ todos pasan**
+- **Atajo de teclado `P`**: dispara la secuencia de pulso manualmente en cualquier momento (documentado en la ayuda F1, no en el pie de página — ver siguiente punto). No depende del estado del toggle.
+- **Fix mensaje invisible al probar**: el límite de "una vez por día" aplicaba también a los disparos manuales (toggle, `P`), así que al probar varias veces seguidas el texto solo se veía la primera. Ahora ese límite es solo para el pulso automático — un disparo manual siempre muestra el mensaje. Duración del toast: 4s → 5s para dar más tiempo a leerlo.
+- **Pie de página**: se saca `P` (queda solo en la ayuda F1) y se agrega `F1` — el pie ahora lista `F · U · N · F1`, deletreando FUN.
+- **2 E2E nuevos** (`e2e/wip-pulse.spec.js`): preview al encender, atajo P, disparo manual siempre muestra el mensaje → **111 unit + 36 E2E ✅ todos pasan**
 
 ## 🎯 Cambios recientes (sesión 2026-07-03 — Pulso WIP "Dejar de empezar y empezar a terminar")
 

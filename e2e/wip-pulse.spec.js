@@ -65,11 +65,15 @@ test("el pulso resalta las tarjetas en curso y muestra el mensaje una vez por d�
   await expect(toast).toHaveClass(/show/);
   await expect(toast).toHaveText(/Dejar de empezar y empezar a terminar/);
 
-  // Si se dispara de nuevo el mismo día, el mensaje no vuelve a aparecer.
-  await expect(toast).not.toHaveClass(/show/, { timeout: 5000 });
+  // Si se dispara de nuevo el mismo día (pulso automático), el mensaje no vuelve a aparecer.
+  await expect(toast).not.toHaveClass(/show/, { timeout: 6000 });
   await page.evaluate(() => window.runWipPulseSequence());
   await page.waitForTimeout(300);
   await expect(toast).not.toHaveClass(/show/);
+
+  // Pero un disparo manual (atajo P) sí lo muestra, aunque ya se haya visto hoy.
+  await page.keyboard.press("p");
+  await expect(toast).toHaveClass(/show/);
 });
 
 test("no pulsa tarjetas en la primera columna ni en columnas de cierre", async ({ page }) => {
