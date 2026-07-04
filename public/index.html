@@ -277,6 +277,24 @@
   }
   .card.celebrating { animation: celebrate 1.6s ease-in-out; }
   #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes wip-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+      50%      { box-shadow: 0 0 0 4px var(--accent); }
+    }
+    .card.wip-pulse { animation: wip-pulse 1.4s ease-in-out; }
+  }
+  .wip-toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 8px);
+    background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 500;
+  }
+  .wip-toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) {
+    .wip-toast { transition: opacity .01s; transform: translate(-50%, 0); }
+  }
+  .theme-btn.wip-pulse-off { opacity: .35; }
   .card-title { font-weight: 500; word-break: break-word; }
   .card-meta {
     display: flex;
@@ -747,7 +765,7 @@
       <button id="membersBtn" title="Miembros y configuración del tablero">⚙️</button>
       <button id="newBoardBtn" title="Nuevo tablero">＋</button>
     </div>
-    <span class="user"><button id="themeBtn" class="theme-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
+    <span class="user"><button id="wipPulseBtn" class="theme-btn" title="Pulso de tareas en progreso — clic para activar/desactivar" aria-label="Activar o desactivar el pulso de tareas en progreso">🎯</button><button id="themeBtn" class="theme-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button><button class="me" id="profileBtn" title="Editar mi perfil"></button><button id="adminBtn" title="Administración" style="display:none;background:rgba(255,255,255,.18);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:3px 8px;margin-right:4px;position:relative">⚙ Admin<span id="adminBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e74c3c;color:white;border-radius:50%;min-width:17px;height:17px;font-size:10px;font-weight:700;text-align:center;line-height:17px;padding:0 3px"></span></button><a href="/auth/logout" title="Cerrar sesión">Salir</a></span>
   </div>
   <div class="actions">
     <button id="goalsBtn" title="Objetivos: ver, editar y resaltar tarjetas">🎯 Objetivos</button>
@@ -855,6 +873,8 @@
     <ul class="stale-list" id="metricsStaleList"></ul>
   </div>
 </aside>
+
+<div class="wip-toast" id="wipToast">🎯 Dejar de empezar y empezar a terminar</div>
 
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta</span>
@@ -1246,6 +1266,78 @@
   }
   document.getElementById("themeBtn").addEventListener("click", toggleTheme);
   syncThemeButton();
+
+  // ---------- Pulso WIP: "Dejar de empezar y empezar a terminar" ----------
+  // Recorre las columnas en curso (ni la primera, ni las de cierre) de derecha a
+  // izquierda con un pulso sutil, para invitar a terminar antes de empezar algo nuevo.
+  const WIP_PULSE_INTERVAL = 5 * 60 * 1000;
+  let wipPulseTimer = null;
+
+  function wipPulseEnabled() {
+    try { return localStorage.getItem("tasking-wip-pulse") !== "off"; } catch (e) { return true; }
+  }
+  function syncWipPulseButton() {
+    const btn = document.getElementById("wipPulseBtn");
+    if (btn) btn.classList.toggle("wip-pulse-off", !wipPulseEnabled());
+  }
+  function toggleWipPulse() {
+    try { localStorage.setItem("tasking-wip-pulse", wipPulseEnabled() ? "off" : "on"); } catch (e) { /* modo privado */ }
+    syncWipPulseButton();
+  }
+  document.getElementById("wipPulseBtn").addEventListener("click", toggleWipPulse);
+  syncWipPulseButton();
+
+  // Columnas "en curso": todas menos la primera (sin empezar) y las de cierre,
+  // ordenadas de la más cercana a terminar (derecha) a la más lejos (izquierda).
+  function wipColumnsRightToLeft() {
+    if (COLUMNS.length < 2) return [];
+    const doneIds = getDoneColumnIds();
+    const sorted = [...COLUMNS].sort((a, b) => a.position - b.position);
+    const firstId = sorted[0].id;
+    return sorted
+      .filter(c => c.id !== firstId && !doneIds.has(c.id))
+      .sort((a, b) => b.position - a.position);
+  }
+
+  function pulseColumn(colId) {
+    document.querySelectorAll(`.cards[data-col="${CSS.escape(colId)}"] .card`).forEach(el => {
+      el.classList.remove("wip-pulse");
+      void el.offsetWidth; // reflow para poder reiniciar la animación
+      el.classList.add("wip-pulse");
+      el.addEventListener("animationend", () => el.classList.remove("wip-pulse"), { once: true });
+    });
+  }
+
+  function maybeShowWipToast() {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      if (localStorage.getItem("tasking-wip-msg-date") === today) return;
+      localStorage.setItem("tasking-wip-msg-date", today);
+    } catch (e) { /* modo privado: mostrar igual, sin recordar */ }
+    const toast = document.getElementById("wipToast");
+    if (!toast) return;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 4000);
+  }
+
+  function runWipPulseSequence() {
+    const cols = wipColumnsRightToLeft();
+    if (!cols.length) return;
+    maybeShowWipToast();
+    cols.forEach((col, i) => setTimeout(() => pulseColumn(col.id), i * 500));
+  }
+  window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
+
+  function startWipPulse() {
+    stopWipPulse();
+    wipPulseTimer = setInterval(() => {
+      if (!currentBoardId || document.hidden || !wipPulseEnabled()) return;
+      runWipPulseSequence();
+    }, WIP_PULSE_INTERVAL);
+  }
+  function stopWipPulse() {
+    if (wipPulseTimer) { clearInterval(wipPulseTimer); wipPulseTimer = null; }
+  }
 
   // Paleta fija para avatares por defecto (derivada del email).
   const AVATAR_COLORS = ["#0079bf", "#519839", "#b04632", "#89609e", "#cd5a91", "#4bbf6b", "#00aecc", "#838c91", "#d29034"];
@@ -3223,6 +3315,7 @@
     await loadMembers();
     await loadCards();
     startPolling();
+    startWipPulse();
   });
 
   // Renombrar rápido desde el header (lápiz)
@@ -3984,9 +4077,9 @@
     }
   }
 
-  loadBoard().then(() => { startPolling(); checkDeepLink(); });
+  loadBoard().then(() => { startPolling(); startWipPulse(); checkDeepLink(); });
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopPolling(); else startPolling();
+    if (document.hidden) { stopPolling(); stopWipPulse(); } else { startPolling(); startWipPulse(); }
   });
 })();
 </script>
