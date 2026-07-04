@@ -52,38 +52,53 @@ VALUES ('usr_dev', '${DEV_EMAIL}', 'Dev Local', '🧑‍💻', '#6366f1', ${NOW}
 "
 ok "Usuario: ${DEV_EMAIL}"
 
-step "Creando tablero personal"
+# Reutilizar el tablero personal si ya existe para este email (p. ej. el que
+# crea la migración 0002 para pablotortorella@gmail.com), en vez de crear uno
+# nuevo con id fijo — evitaba terminar con dos "Mi tablero" para el mismo dueño.
+step "Buscando tablero personal existente"
+BOARD_ID=$(npx wrangler d1 execute tas-king --local --json --command \
+  "SELECT id FROM boards WHERE owner_email = '${DEV_EMAIL}' AND is_personal = 1 LIMIT 1" 2>/dev/null \
+  | grep -oP '"id":\s*"\K[^"]+' | head -1 || echo "")
+if [ -z "$BOARD_ID" ]; then
+  BOARD_ID="brd_dev_personal"
+  ok "No había tablero previo — se creará ${BOARD_ID}"
+else
+  ok "Usando tablero existente: ${BOARD_ID}"
+fi
+
+step "Preparando tablero personal"
 npx wrangler d1 execute tas-king --local --command "
 INSERT OR IGNORE INTO boards (id, name, owner_email, is_personal, created_at)
-VALUES ('brd_dev_personal', 'Mi tablero', '${DEV_EMAIL}', 1, ${NOW});
+VALUES ('${BOARD_ID}', 'Mi tablero', '${DEV_EMAIL}', 1, ${NOW});
 
 INSERT OR IGNORE INTO board_members (board_id, email, role, created_at)
-VALUES ('brd_dev_personal', '${DEV_EMAIL}', 'owner', ${NOW});
+VALUES ('${BOARD_ID}', '${DEV_EMAIL}', 'owner', ${NOW});
 "
-ok "Tablero personal creado"
+ok "Tablero personal listo: ${BOARD_ID}"
 
 step "Creando etiquetas"
 npx wrangler d1 execute tas-king --local --command "
 INSERT OR IGNORE INTO labels (id, board_id, name, color, position, created_at)
 VALUES
-  ('lbl_bug',     'brd_dev_personal', 'Bug',      '#ef4444', 0, ${NOW}),
-  ('lbl_feature', 'brd_dev_personal', 'Feature',  '#3b82f6', 1, ${NOW}),
-  ('lbl_ux',      'brd_dev_personal', 'UX',       '#a855f7', 2, ${NOW}),
-  ('lbl_urgent',  'brd_dev_personal', 'Urgente',  '#f97316', 3, ${NOW});
+  ('lbl_bug',     '${BOARD_ID}', 'Bug',      '#ef4444', 0, ${NOW}),
+  ('lbl_feature', '${BOARD_ID}', 'Feature',  '#3b82f6', 1, ${NOW}),
+  ('lbl_ux',      '${BOARD_ID}', 'UX',       '#a855f7', 2, ${NOW}),
+  ('lbl_urgent',  '${BOARD_ID}', 'Urgente',  '#f97316', 3, ${NOW});
 "
 ok "4 etiquetas creadas"
 
+# IDs de columna: deben coincidir con DEFAULT_COLUMNS (src/db/columns.js).
 step "Creando tarjetas de ejemplo"
 npx wrangler d1 execute tas-king --local --command "
 INSERT OR IGNORE INTO cards (id, title, column_id, details, due, position, board_id, assignee_email, archived, created_at, updated_at)
 VALUES
-  ('seed_sentinel',  'Seed aplicado',          'pendiente',   'Registro centinela — no borrar.',               '',           0.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_1',    'Revisar diseño del login','pendiente',   'Verificar flujo OAuth en mobile.',              '2026-07-15', 1.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_2',    'Fix: botón guardar',      'en-progreso', 'En algunos casos no responde al primer click.', '2026-07-10', 0.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_3',    'Agregar paginación',      'en-progreso', 'El listado de tarjetas archivadas crece mucho.','2026-08-01', 1.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_4',    'Deploy a staging',        'revision',    'Verificar en URL real antes de producción.',    '2026-07-08', 0.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_5',    'Documentar API pública',  'terminado',   'Endpoints de boards y cards con ejemplos.',     '',           0.0, 'brd_dev_personal', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
-  ('seed_card_6',    'Tarjeta archivada',       'pendiente',   'Esta tarjeta está archivada.',                  '',           2.0, 'brd_dev_personal', '${DEV_EMAIL}', 1, ${NOW}, ${NOW});
+  ('seed_sentinel',  'Seed aplicado',          'pendiente',    'Registro centinela — no borrar.',               '',           0.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_1',    'Revisar diseño del login','pendiente',   'Verificar flujo OAuth en mobile.',              '2026-07-15', 1.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_2',    'Fix: botón guardar',      'en_progreso', 'En algunos casos no responde al primer click.', '2026-07-10', 0.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_3',    'Agregar paginación',      'en_progreso', 'El listado de tarjetas archivadas crece mucho.','2026-08-01', 1.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_4',    'Deploy a staging',        'por_revisar', 'Verificar en URL real antes de producción.',    '2026-07-08', 0.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_5',    'Documentar API pública',  'terminado',   'Endpoints de boards y cards con ejemplos.',     '',           0.0, '${BOARD_ID}', '${DEV_EMAIL}', 0, ${NOW}, ${NOW}),
+  ('seed_card_6',    'Tarjeta archivada',       'pendiente',   'Esta tarjeta está archivada.',                  '',           2.0, '${BOARD_ID}', '${DEV_EMAIL}', 1, ${NOW}, ${NOW});
 "
 ok "7 tarjetas creadas (incluye 1 archivada)"
 
