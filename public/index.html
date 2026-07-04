@@ -262,9 +262,10 @@
     cursor: pointer;
     font-size: 14px;
     position: relative;
+    touch-action: none; /* el arrastre táctil lo maneja JS (Pointer Events), no el scroll nativo */
   }
   .card:hover { background: var(--card-hover); }
-  .card.dragging { opacity: .4; }
+  .card.dragging { opacity: .4; user-select: none; }
   @keyframes celebrate {
     0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
     15%  { background: #fffde7; box-shadow: 0 0 12px 4px #ffd700; }
@@ -1927,33 +1928,8 @@
       const cardsEl = colEl.querySelector(".cards");
       cards.forEach(card => cardsEl.appendChild(renderCard(card)));
 
-      // drag & drop: reubica la tarjeta arrastrada en vivo según la posición del cursor
-      cardsEl.addEventListener("dragover", e => {
-        e.preventDefault();
-        cardsEl.classList.add("drag-over");
-        const dragging = document.querySelector(".card.dragging");
-        if (!dragging) return;
-        const afterEl = getDragAfterElement(cardsEl, e.clientY);
-        if (afterEl == null) cardsEl.appendChild(dragging);
-        else cardsEl.insertBefore(dragging, afterEl);
-      });
-      cardsEl.addEventListener("dragleave", e => {
-        // solo quitar el resaltado si el cursor salió realmente del contenedor
-        if (!cardsEl.contains(e.relatedTarget)) cardsEl.classList.remove("drag-over");
-      });
-      cardsEl.addEventListener("drop", async e => {
-        e.preventDefault();
-        cardsEl.classList.remove("drag-over");
-        const doneColIds = getDoneColumnIds();
-        const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
-        rebuildOrderFromDom();
-        render();                 // refleja el nuevo orden de inmediato
-        // celebrar tarjetas que acaban de llegar a cualquier columna de cierre
-        state.cards.filter(c => doneColIds.has(c.column) && !doneColIds.has(prevCols[c.id]))
-          .forEach(c => celebrateCard(c.id));
-        try { await persistOrder(); }
-        catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
-      });
+      // drag & drop de tarjetas: implementado con Pointer Events, ver startCardDrag() más abajo
+      // (no usa HTML5 dragover/drop nativo porque no es confiable con touch en todos los navegadores)
 
       colEl.querySelector(".add-card").addEventListener("click", () => openModal(null, col.id));
       board.appendChild(colEl);
@@ -2041,7 +2017,6 @@
   function renderCard(card) {
     const el = document.createElement("div");
     el.className = "card";
-    el.draggable = true;
     el.dataset.id = card.id;
 
     // Resaltado por objetivo seleccionado: las vinculadas se marcan, el resto se atenúa.
@@ -2075,14 +2050,82 @@
       ${badges.length ? `<div class="card-meta">${badges.join("")}</div>` : ""}
       ${labels ? `<div class="card-labels">${labels}</div>` : ""}
     `;
-    el.addEventListener("click", () => openModal(card.id));
-    el.addEventListener("dragstart", e => {
-      e.dataTransfer.setData("text/plain", card.id);
-      el.classList.add("dragging");
+    el.addEventListener("click", () => {
+      if (el._justDragged) { el._justDragged = false; return; }
+      openModal(card.id);
     });
-    el.addEventListener("dragend", () => el.classList.remove("dragging"));
+    el.addEventListener("pointerdown", e => startCardDrag(e, el, card));
     return el;
   }
+
+  // ---------- Drag & drop de tarjetas (Pointer Events) ----------
+  // HTML5 Drag&Drop nativo (dragstart/dragover) depende de que el navegador traduzca
+  // gestos táctiles a esos eventos. Chrome lo hace (de forma no estándar); Firefox para
+  // Android no, así que ahí tocar y arrastrar una tarjeta solo scrollea el tablero.
+  // Con Pointer Events el mismo código maneja mouse y touch en cualquier navegador.
+  const CARD_DRAG_THRESHOLD = 5; // px de movimiento antes de considerar que empezó un arrastre
+  let cardDrag = null; // { el, pointerId, startX, startY, active }
+
+  function startCardDrag(e, el, card) {
+    if (e.pointerType === "mouse" && e.button !== 0) return; // solo botón principal
+    if (cardDrag) return;
+    cardDrag = { el, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, active: false };
+  }
+
+  function activateCardDrag(e) {
+    cardDrag.active = true;
+    cardDrag.el._justDragged = true;
+    cardDrag.el.classList.add("dragging");
+    cardDrag.el.style.pointerEvents = "none"; // para que elementFromPoint "vea" lo que hay debajo
+    try { cardDrag.el.setPointerCapture(cardDrag.pointerId); } catch { /* no soportado, no es crítico */ }
+  }
+
+  function endCardDrag() {
+    const wasActive = cardDrag.active;
+    const el = cardDrag.el;
+    el.classList.remove("dragging");
+    el.style.pointerEvents = "";
+    document.querySelectorAll(".cards.drag-over").forEach(c => c.classList.remove("drag-over"));
+    cardDrag = null;
+    return wasActive;
+  }
+
+  window.addEventListener("pointermove", e => {
+    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
+    if (!cardDrag.active) {
+      const dist = Math.hypot(e.clientX - cardDrag.startX, e.clientY - cardDrag.startY);
+      if (dist < CARD_DRAG_THRESHOLD) return;
+      activateCardDrag(e);
+    }
+    e.preventDefault();
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const cardsEl = target && target.closest(".cards");
+    document.querySelectorAll(".cards.drag-over").forEach(c => { if (c !== cardsEl) c.classList.remove("drag-over"); });
+    if (!cardsEl) return;
+    cardsEl.classList.add("drag-over");
+    const afterEl = getDragAfterElement(cardsEl, e.clientY);
+    if (afterEl == null) cardsEl.appendChild(cardDrag.el);
+    else cardsEl.insertBefore(cardDrag.el, afterEl);
+  });
+
+  window.addEventListener("pointerup", async e => {
+    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
+    if (!endCardDrag()) return; // no hubo arrastre real: fue un tap/click normal
+    const doneColIds = getDoneColumnIds();
+    const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
+    rebuildOrderFromDom();
+    render();                 // refleja el nuevo orden de inmediato
+    // celebrar tarjetas que acaban de llegar a cualquier columna de cierre
+    state.cards.filter(c => doneColIds.has(c.column) && !doneColIds.has(prevCols[c.id]))
+      .forEach(c => celebrateCard(c.id));
+    try { await persistOrder(); }
+    catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
+  });
+
+  window.addEventListener("pointercancel", e => {
+    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
+    endCardDrag();
+  });
 
   // ---------- Archivar / Eliminar / Restaurar ----------
   async function archiveCard(id) {
