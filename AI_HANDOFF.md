@@ -14,14 +14,14 @@ múltiples (🏁 toggle isDone), Columnas customizables (crear/renombrar/elimina
 Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta 2 columnas,
 CSP + Security headers, i18n landing, Panel admin, IO menu.
 
-**Próximo**: #9 ¡Pilas con esto! como puerta de entrada inteligente (ver PROJECT_BACKLOG.md),
+**Próximo**: #9 ¡Pilas con esto! como puerta de entrada inteligente (ver docs/PRODUCT_BACKLOG.md),
 o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
 
 ## 🎯 Objetivo siguiente sesión
 
 Opciones priorizadas:
 
-1. **#9 ¡Pilas con esto! inteligente** (alta): convertir la sección en puerta de entrada activa al abrir la app — "¿por dónde empezamos hoy?". Ver ideas en PROJECT_BACKLOG.md.
+1. **#9 ¡Pilas con esto! inteligente** (alta): convertir la sección en puerta de entrada activa al abrir la app — "¿por dónde empezamos hoy?". Ver ideas en docs/PRODUCT_BACKLOG.md.
 2. **Onboarding nuevos usuarios** (media): primera vez que alguien entra y ve el tablero vacío, guiarlos.
 3. **Búsqueda full-text** (baja): buscar por título + detalles en todas las tarjetas.
 4. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8 con 🟢🟡🔴.
