@@ -26,6 +26,25 @@ test("🎯 alterna encendido/apagado y persiste tras recargar", async ({ page })
   await expect(page.locator("#wipPulseBtn")).not.toHaveClass(/wip-pulse-off/);
 });
 
+test("activar el toggle dispara un pulso de preview inmediato, sin esperar el timer", async ({ page }) => {
+  const btn = page.locator("#wipPulseBtn");
+  const seedCard = page.locator(".card", { hasText: "Tarjeta seed" }); // columna "pendiente", es WIP
+
+  // Apagar y volver a prender: el prendido debe disparar el preview.
+  await btn.click();
+  await expect(btn).toHaveClass(/wip-pulse-off/);
+  await btn.click();
+  await expect(btn).not.toHaveClass(/wip-pulse-off/);
+
+  await expect(seedCard).toHaveClass(/wip-pulse/, { timeout: 3000 });
+});
+
+test("el atajo P dispara el pulso manualmente", async ({ page }) => {
+  const seedCard = page.locator(".card", { hasText: "Tarjeta seed" });
+  await page.keyboard.press("p");
+  await expect(seedCard).toHaveClass(/wip-pulse/, { timeout: 3000 });
+});
+
 test("el pulso resalta las tarjetas en curso y muestra el mensaje una vez por día", async ({ page }) => {
   const runId = Date.now().toString(36);
   const title = `E2E wip-pulse ${runId}`;
