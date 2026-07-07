@@ -26,6 +26,11 @@ export const RATE_LIMITS = {
   api: { requests: 500, window: 5 * 60 * 1000 },           // 500 / 5 min
 };
 
+// Retención de rate_limit_log: la ventana más larga de RATE_LIMITS es 15 min;
+// 24 h dejan margen de sobra para diagnóstico sin que la tabla crezca sin límite.
+// El cron (scheduled handler) borra las filas más viejas que esto.
+export const RATE_LIMIT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
 export const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "Lax", path: "/" };
 
 export const ALLOWED_ORIGINS = [
