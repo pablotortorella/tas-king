@@ -14,6 +14,7 @@ import { setupGoalRoutes } from "./routes/goals.js";
 import { setupColumnRoutes } from "./routes/columns.js";
 import { setupMetricsRoutes } from "./routes/metrics.js";
 import { runBackup } from "./backup.js";
+import { purgeRateLimitLog } from "./middleware/rateLimit.js";
 
 const app = new Hono();
 
@@ -85,12 +86,13 @@ export { app };
 export default {
   fetch: app.fetch.bind(app),
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(
-      runBackup(env).then((result) => {
-        const status = result.errors.length === 0 ? "✅" : "⚠️";
-        console.log(`[backup] ${status} r2=${result.r2} github=${result.github}`, result.errors);
-      })
-    );
+    ctx.waitUntil((async () => {
+      const purged = await purgeRateLimitLog(env.DB);
+      console.log(`[purge] rate_limit_log: ${purged} filas eliminadas`);
+      const result = await runBackup(env);
+      const status = result.errors.length === 0 ? "✅" : "⚠️";
+      console.log(`[backup] ${status} r2=${result.r2} github=${result.github}`, result.errors);
+    })());
   },
 };
 

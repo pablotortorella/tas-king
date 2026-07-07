@@ -42,12 +42,15 @@ export async function runBackup(env) {
 async function generateSQLDump(db) {
   let sql = `-- TasKing DB Backup\n-- Generated: ${new Date().toISOString()}\nPRAGMA foreign_keys = OFF;\nBEGIN TRANSACTION;\n\n`;
 
+  // rate_limit_log es log operativo (se purga cada 8h), no datos de usuario:
+  // se excluye del dump. Al restaurar, la migración 0006 recrea la tabla vacía.
   const { results: tables } = await db.prepare(
     `SELECT name, sql FROM sqlite_master
      WHERE type = 'table'
        AND name NOT LIKE 'sqlite_%'
-       AND name NOT LIKE '_cf_KV'
+       AND name NOT LIKE '\\_cf\\_%' ESCAPE '\\'
        AND name NOT LIKE 'd1_%'
+       AND name != 'rate_limit_log'
      ORDER BY name`
   ).all();
 

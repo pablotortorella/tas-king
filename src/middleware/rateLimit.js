@@ -1,6 +1,6 @@
 // ---------- Rate Limiting ----------
 
-import { RATE_LIMITS } from "../constants.js";
+import { RATE_LIMITS, RATE_LIMIT_RETENTION_MS } from "../constants.js";
 import { getClientIP } from "./logging.js";
 
 const uid = () => crypto.randomUUID();
@@ -30,6 +30,19 @@ export async function checkRateLimit(db, ip, endpoint, config) {
     // Si la tabla no existe o hay error, permitir el request (rate limiting deshabilitado)
     console.warn("Rate limit check failed:", e.message);
     return true;
+  }
+}
+
+// Borra las filas más viejas que RATE_LIMIT_RETENTION_MS. Usa el índice
+// rate_limit_cleanup (ts). Devuelve cuántas filas eliminó (-1 si falló).
+export async function purgeRateLimitLog(db) {
+  try {
+    const cutoff = now() - RATE_LIMIT_RETENTION_MS;
+    const res = await db.prepare("DELETE FROM rate_limit_log WHERE ts < ?").bind(cutoff).run();
+    return res.meta?.changes ?? 0;
+  } catch (e) {
+    console.warn("Rate limit purge failed:", e.message);
+    return -1;
   }
 }
 
