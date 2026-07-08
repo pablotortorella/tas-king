@@ -1,7 +1,7 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-07-04
-**Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados en esta fecha.
+**Última actualización**: 2026-07-08
+**Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
 
@@ -41,7 +41,7 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 | — | 💬 Autoría en comentarios | Autor + avatar + fecha |
 | — | ✏️ Renombrar tablero desde la UI | |
 | — | 🗑️ Borrar tablero | Solo dueño, tablero no personal |
-| — | 💾 Backup automático (Cron + R2) | Falta config de push a GitHub off-platform (secrets pendientes, ver Media prioridad) |
+| — | 💾 Backup automático (Cron + R2) | ⚠️ Corregido 2026-07-07: NO estaba operativo en prod — cron sin aplicar al worker + bug `_cf_METADATA` rompía el dump. Ver hallazgos 🔴 abajo. Falta además el push a GitHub (secrets pendientes, ver Media prioridad) |
 | — | Import/Export JSON + CSV completo | Incluye etiquetas, checklists, responsable |
 | — | 🎯 Objetivos (gestión por metas) | |
 | — | 🎯 Pulso WIP "Dejar de empezar y empezar a terminar" | 2026-07-04 — ver detalle en `docs/STATUS.md` |
@@ -64,6 +64,8 @@ Ideas de evolución, en orden de qué falta:
 4. **Notificación silenciosa** — si una tarea lleva más de X días sin moverse, mostrar un badge o ícono especial en la tarjeta directamente en el tablero (sin tener que abrir el panel).
 
 **Por qué es clave**: FUN TasKing! se posiciona como una herramienta que no solo organiza tareas sino que empuja a terminarlas. "¡Pilas con esto!" es la manifestación más directa de esa filosofía: no acumular, no olvidar, cerrar el loop.
+
+> ⚠️ **Compiten en prioridad con #9**: los 3 hallazgos 🔴 del análisis técnico 2026-07-07 (backup no operativo, revocación de acceso, purga de `rate_limit_log`) — ver sección 🩺 más abajo. Los tres son de esfuerzo chico.
 
 ---
 
@@ -94,6 +96,46 @@ Ideas de evolución, en orden de qué falta:
 - **Papelera (soft-delete)**: recuperar tarjetas borradas (distinto del archivo actual, que ya permite restaurar tarjetas archivadas — evaluar si esto ya cubre la necesidad antes de construir algo nuevo).
 - **Rol "solo lectura"** en tableros compartidos.
 - **PWA instalable** + mejoras de mobile.
+
+---
+
+## 🩺 Hallazgos del análisis técnico (2026-07-07)
+
+Resultado del análisis funcional y técnico completo (código, seguridad, operación, docs). La criticidad pondera **riesgo × impacto**, no esfuerzo — casi todos los fixes son chicos (esfuerzo: 🟢 chico · 🟡 medio · 🔴 grande). Al resolver un ítem: moverlo a ✅ Completado con fecha; el detalle técnico va en `docs/STATUS.md`.
+
+### 🔴 Crítico
+
+- **Backup automático no operativo en producción** — 🟢 chico. Dos causas que se suman: (1) `npm run deploy` corre `wrangler deploy` sin `--env production`, y los `triggers.crons` están definidos solo dentro de ese env en `wrangler.jsonc` → el worker productivo no tiene el cron aplicado (verificado con `--dry-run`); (2) `generateSQLDump()` rompía con `SQLITE_AUTH` al leer la tabla interna protegida `_cf_METADATA` (el filtro excluía solo `_cf_KV` exacto) — fix ya incluido en PR #19. **Riesgo**: sin backups automáticos, ante corrupción o borrado accidental el único respaldo son los dumps manuales pre-deploy. **Acción**: mover `triggers` al nivel raíz de `wrangler.jsonc` (deployar con `--env production` cambiaría el nombre del worker), mergear PR #19 y verificar en los logs el primer ciclo del cron.
+- **Revocación de acceso no efectiva** — 🟢 chico. El middleware de auth (`src/middleware/auth.js`) valida la cookie firmada (30 días) pero no re-chequea `allowed_emails`; `ensureUser` incluso recrea el usuario borrado. **Riesgo**: sacar a alguien desde el panel admin no le corta el acceso hasta que expire su sesión — hasta 30 días. Grave si la remoción es por un incidente. **Acción**: re-chequear `isEmailAllowed()` en el middleware (1 query extra por request; cacheable unos minutos si preocupa el costo).
+- **Purga de `rate_limit_log`** — ✅ en curso: PR #19 (2026-07-07). La tabla recibía un INSERT por cada request API y nada la purgaba (el índice `rate_limit_cleanup` existía para eso): DB y dump de backup crecían sin límite. Falta: revisar, mergear y deployar con aprobación.
+
+### 🟠 Alto — bugs funcionales visibles
+
+- **El polling no sincroniza comentarios, checklists ni borrados** — 🟡 medio. `/api/boards/:id/version` devuelve `MAX(updated_at)` de las tarjetas: agregar/borrar comentarios y toda operación de checklist no tocan `updated_at`, y el frontend solo refresca si la versión *sube* (borrar una tarjeta la baja o la deja igual). **Impacto**: en tableros compartidos, los demás no ven comentarios/checklists nuevos ni tarjetas borradas hasta que otra cosa cambie — rompe la promesa multiusuario "en tiempo real". Etiquetas y objetivos sí lo hacen bien (bumpean `updated_at`). **Acción**: bumpear `updated_at` en esas operaciones + refrescar por *desigualdad* de versión.
+- **Progreso de objetivos ignora columnas de cierre múltiples** — 🟢 chico. `goalsWithProgress` usa `getDoneColumnId` (una sola columna, `LIMIT 1`), mientras confeti/métricas/urgencia usan todas las `is_done=1` (`getDoneColumnIds`). **Impacto**: con 2+ columnas de cierre, el % de avance queda subestimado — el usuario ve datos incorrectos.
+- **Nadie valida que la columna exista** al crear/editar/importar tarjetas — 🟢 chico. El import usa default `por_conversar`, que puede no existir en tableros con columnas custom. **Impacto**: tarjetas huérfanas en columnas inexistentes, invisibles en la UI y sin error — se percibe como pérdida de datos.
+- **Docs de arranque desactualizadas** — 🟢 chico. `QUICK_START.md` (lectura obligatoria por sesión) congelado al 2026-06-30: menciona PRs "pendientes de merge" ya mergeados y deployados, y "69 unit + 22 E2E" (son 111+36). `STATUS.md`: la sección "Features NO Implementados" está llena de features implementadas, y dice "máx 20 etiquetas / paleta de 20 colores" cuando el código impone 10 y 10. **Impacto**: cada sesión (humana o IA) arranca con un mapa falso del proyecto.
+
+### 🟡 Medio — endurecimiento y robustez
+
+- **CSP con `'unsafe-inline'`** — 🟡 medio. La directiva anula gran parte de la protección XSS del CSP. La salida real: separar el JS de `index.html` (4.100 líneas) a un `app.js` estático — sin build step, se mantiene la filosofía — + hash/nonce para el mini-script anti-flash del tema. Bonus: mantenibilidad del frontend.
+- **Sin límites de longitud en inputs** — 🟢 chico. Título, detalles, comentarios e ítems de checklist no tienen máximo server-side (columnas y perfil sí). **Riesgo**: payloads de MB guardados en D1 por cualquier miembro.
+- **Rate limit de descargas de adjuntos demasiado bajo** — 🟢 chico. `GET /uploads/:key` usa 50 req/5 min **por IP**: una oficina con NAT compartido y un tablero con muchas imágenes rompe la carga de previews. Nota: el límite se llama `uploadAttachment` pero aplica a las descargas; el POST de subida usa el límite genérico de API.
+- **MIME de uploads confía en el `Content-Type` del cliente** — 🟡 medio. La whitelist mitiga (y SVG está excluido, bien); validar magic bytes sería el paso siguiente.
+- **Backups en el mismo bucket R2 que los uploads** (prefijo `backups/`) — 🟢 chico. Hoy no son alcanzables vía `/uploads/:key` (requiere match en `attachments`), pero un bucket dedicado elimina la clase de riesgo de exponer el dump completo de la DB.
+- **Cualquier miembro puede borrar comentarios y adjuntos ajenos** — 🟢 chico. No hay check de autoría. Puede ser decisión válida para equipos chicos — decidirlo a propósito y registrarlo en `docs/ADRs.md` (o restringir a autor + owner).
+- **Overhead D1 por request** — 🟡 medio. Cada request API paga ~4-5 queries antes del handler (COUNT + INSERT del rate limit, SELECT+INSERT de `ensureUser`, `seedAdminIfNeeded`), multiplicado por el polling de 5s de cada usuario = el grueso del consumo D1. `ensureUser` podría correr solo en login/`/api/me`. (Relacionado con "Rate limiting más granular", ya listado en Media.)
+- **Export CSV sin protección contra formula injection** de Excel — 🟢 chico. Celdas que empiezan con `=`, `+`, `-`, `@` se ejecutan como fórmula al abrir el CSV.
+
+### 🟢 Bajo — limpieza
+
+- `deniedPage()` (`src/routes/auth.js`) interpola el email en HTML sin escapar — riesgo real bajísimo (viene verificado por Google), pero escapar cuesta una línea.
+- `Logger("debug")` nunca funciona: `this.levels[level] || 1` — `debug` vale 0 (falsy) y cae a `info`.
+- `DONE_COLUMN` en `src/constants.js` es código muerto desde que las columnas son dinámicas.
+- `checklists.js` monkey-patchea `c.req.param` para reusar `cardWithAccess` — frágil; refactor honesto: `cardWithAccessById(db, cardId, email)`.
+- Timestamps mixtos: epoch ms en casi todo, `datetime('now')` (string) en `allowed_emails`.
+- `ALLOWED_ORIGINS` no incluye la URL de staging (irrelevante mientras todo sea same-origin; anotado por si algún día hay frontend separado).
+- ~10 ramas locales ya mergeadas sin borrar (`feature/deep-link`, `feature/proteger-adjuntos`, …).
 
 ---
 
