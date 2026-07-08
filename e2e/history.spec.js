@@ -51,23 +51,34 @@ test("historial registra cambio de columna via drag & drop", async ({ page }) =>
 
   await expect(page.locator(".card", { hasText: title })).toBeVisible();
 
-  // page.dragAndDrop/dragTo no funcionan bien con la implementación HTML5 de la app.
+  // page.dragAndDrop/dragTo no funcionan bien con la implementación de la app.
   // Interceptamos la respuesta del reorder para capturar errores antes de disparar el drag.
   const reorderResponse = page.waitForResponse(
     resp => resp.url().includes("/reorder"),
     { timeout: 10000 }
   );
 
-  // Simulamos el drag: agregamos .dragging, movemos el nodo al target y disparamos "drop"
-  // para que el handler llame rebuildOrderFromDom() + persistOrder().
+  // Simulamos el drag con Pointer Events (pointerdown -> pointermove -> pointerup),
+  // que es como la app implementa el arrastre (ver startCardDrag en public/index.html).
   await page.evaluate((cardTitle) => {
     const card = [...document.querySelectorAll(".card")].find(c => c.textContent.includes(cardTitle));
     const target = document.querySelector('.cards[data-col="en_progreso"]');
     if (!card || !target) throw new Error(`No se encontró card "${cardTitle}" o target en_progreso`);
 
-    card.classList.add("dragging");
-    target.appendChild(card);
-    target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true }));
+    const startBox = card.getBoundingClientRect();
+    const targetBox = target.getBoundingClientRect();
+    const startX = startBox.left + startBox.width / 2;
+    const startY = startBox.top + startBox.height / 2;
+    const endX = targetBox.left + targetBox.width / 2;
+    const endY = targetBox.top + targetBox.height / 2;
+
+    const fire = (type, el, x, y) => el.dispatchEvent(new PointerEvent(type, {
+      pointerId: 1, pointerType: "mouse", button: 0, clientX: x, clientY: y, bubbles: true, cancelable: true
+    }));
+
+    fire("pointerdown", card, startX, startY);
+    fire("pointermove", window, endX, endY);
+    fire("pointerup", window, endX, endY);
   }, title);
 
   // Esperar el API call (el card_moved ya está logeado al completar)
@@ -82,6 +93,53 @@ test("historial registra cambio de columna via drag & drop", async ({ page }) =>
   // Abrir y verificar historial
   await page.locator(".card", { hasText: title }).click();
   await expect(page.locator("#fHistory")).toContainText('En progreso', { timeout: 5000 });
+});
+
+test("drag & drop de tarjetas funciona con eventos táctiles (Pointer Events)", async ({ page }) => {
+  const title = `E2E touch-drag ${runId}`;
+
+  // Crear tarjeta en Pendiente
+  await page.locator('.add-card[data-col="pendiente"]').click();
+  await page.locator("#fTitle").fill(title);
+  await page.locator("#saveBtn").click();
+
+  await expect(page.locator(".card", { hasText: title })).toBeVisible();
+
+  const reorderResponse = page.waitForResponse(
+    resp => resp.url().includes("/reorder"),
+    { timeout: 10000 }
+  );
+
+  // Reproduce el caso que fallaba en Firefox para Android: el D&D nativo HTML5
+  // (dragstart/dragover) no se dispara con touch ahí. Con Pointer Events (pointerType:
+  // "touch") el mismo código de arrastre debe funcionar igual que con mouse.
+  await page.evaluate((cardTitle) => {
+    const card = [...document.querySelectorAll(".card")].find(c => c.textContent.includes(cardTitle));
+    const target = document.querySelector('.cards[data-col="en_progreso"]');
+    if (!card || !target) throw new Error(`No se encontró card "${cardTitle}" o target en_progreso`);
+
+    const startBox = card.getBoundingClientRect();
+    const targetBox = target.getBoundingClientRect();
+    const startX = startBox.left + startBox.width / 2;
+    const startY = startBox.top + startBox.height / 2;
+    const endX = targetBox.left + targetBox.width / 2;
+    const endY = targetBox.top + targetBox.height / 2;
+
+    const fire = (type, el, x, y) => el.dispatchEvent(new PointerEvent(type, {
+      pointerId: 2, pointerType: "touch", clientX: x, clientY: y, bubbles: true, cancelable: true
+    }));
+
+    fire("pointerdown", card, startX, startY);
+    fire("pointermove", window, endX, endY);
+    fire("pointerup", window, endX, endY);
+  }, title);
+
+  const reorderResp = await reorderResponse;
+  expect(reorderResp.status()).toBe(200);
+
+  await expect(
+    page.locator('.cards[data-col="en_progreso"] .card', { hasText: title })
+  ).toBeVisible({ timeout: 5000 });
 });
 
 test("historial registra edición de título", async ({ page }) => {
