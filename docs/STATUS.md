@@ -1,7 +1,18 @@
 # Estado de Implementación — FUN TasKing! v2.1
 
-**Última actualización**: 2026-07-04  
-**Estado**: ✅ Tests completos (111 unit + 36 E2E) | main = staging ✅ | producción pendiente aprobación
+**Última actualización**: 2026-07-11  
+**Estado**: ✅ Tests completos (121 unit + 43 E2E) | main = staging ✅ | producción pendiente aprobación
+
+## 🎯 Cambios recientes (sesión 2026-07-11 — #10 Temas de color: paleta oficial + selector por tablero)
+
+- **Candy Pop es el default de toda la app**: reemplaza el azul de marca de Trello (`#0079bf`) hardcodeado — aplica al Kanban, modales/paneles, y a `landing.html`/`terminos.html`/`releases.html`.
+- **4 paletas seleccionables por tablero** (Sunset Pop, Candy Pop, Citrus Fresh, Jungle Pop, cada una con variante clara/oscura): migración `0013_board_theme.sql` agrega `boards.theme` (nullable, `NULL` = Candy Pop) y `boards.theme_prompt_seen`. CSS generalizado con `html[data-palette="..."]` combinado con el `data-theme` claro/oscuro existente (8 combinaciones de variables). Nuevo token `--success` (antes `#27ae60` hardcoded ×3 en el panel admin).
+- **Selector permanente en ⚙️ → 🎨 Tema**: grid de swatches, solo el dueño edita (mismo patrón de permisos que Miembros/Etiquetas).
+- **Prompt de bienvenida por tablero**: dispara solo para el dueño, la primera vez que abre un tablero sin paleta asignada (`theme_prompt_seen=0`). Elegir una paleta o cerrarlo (botón "Omitir", click afuera, Escape) marca `theme_prompt_seen`; omitir deja Candy Pop.
+- **Páginas públicas** (`landing.html`, `terminos.html`, `releases.html`): mismo mecanismo de claro/oscuro que `index.html` (comparten la clave `localStorage "tasking-theme"`), sin selector de paleta — siempre Candy Pop.
+- `PATCH /api/boards/:id` acepta `theme`/`themePromptSeen`; `GET /api/me` los expone por tablero.
+- **10 tests unitarios nuevos** (`test/boards.test.js`) + **6 E2E nuevos** (`e2e/board-theme.spec.js`, `e2e/public-pages-theme.spec.js`) → **121 unit + 43 E2E ✅ todos pasan**. Implementado en 4 PRs chicos (#24 backend, #25 CSS default, #26 selector+prompt, #27 páginas públicas), todos mergeados.
+- Decisiones de diseño (mecanismo del prompt, qué pasa con tableros existentes, modo oscuro en páginas públicas) documentadas en `docs/PRODUCT_BACKLOG.md` antes de implementar (PR #23).
 
 ## 🎯 Cambios recientes (sesión 2026-07-04 — Pulso WIP: preview inmediato + atajo P)
 
