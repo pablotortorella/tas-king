@@ -17,39 +17,69 @@
   })();
 </script>
 <style>
+  /* Paleta de color por tablero (#10): 4 paletas × claro/oscuro, elegidas vía
+     data-palette en <html> (ver applyBoardPalette). Sin data-palette (o
+     "candy_pop") = Candy Pop, la paleta oficial/default de la app — por eso
+     vive en :root / [data-theme="dark"] sin selector de atributo extra.
+     --card-hover, --input-bg, --hover, --shadow y --danger no varían por
+     paleta (tonos neutros/semánticos, ver docs/PRODUCT_BACKLOG.md #10). */
   :root {
-    --bg: #f4f5f7;
-    --col-bg: #ebecf0;
-    --card-bg: #ffffff;
+    --bg: #FBF7FF;
+    --col-bg: #F1E9FB;
+    --card-bg: #FFFFFF;
     --card-hover: #fafbfc;
     --input-bg: #fafbfc;
-    --text: #172b4d;
-    --muted: #6b778c;
-    --accent: #0079bf;
-    --header-bg: #0079bf;
+    --text: #362A4A;
+    --muted: #8577A3;
+    --accent: #9B5DE5;
+    --header-bg: #7C3AED;
+    --success: #178F73;
     --danger: #c0392b;
-    --border: #dfe1e6;
+    --border: #E4D6F5;
     --hover: rgba(9,30,66,.08);
     --shadow: 0 1px 2px rgba(9,30,66,.15);
     color-scheme: light;
   }
-  /* Tema oscuro: redefine la paleta. Los colores semánticos
-     (verde/rojo de badges, confeti) se mantienen. */
   html[data-theme="dark"] {
-    --bg: #1d2125;
-    --col-bg: #22272b;
-    --card-bg: #2c333a;
+    --bg: #1E1329;
+    --col-bg: #281A38;
+    --card-bg: #332145;
     --card-hover: #333b42;
     --input-bg: #22272b;
-    --text: #c7d1db;
-    --muted: #9fadbc;
-    --accent: #4c9aff;
-    --header-bg: #0f1f2e;
+    --text: #F0E6FF;
+    --muted: #B9A8D9;
+    --accent: #C084FC;
+    --header-bg: #4B2378;
+    --success: #4EEBC0;
     --danger: #ff7a7a;
-    --border: #3d474f;
+    --border: #4A2F63;
     --hover: rgba(255,255,255,.08);
     --shadow: 0 1px 2px rgba(0,0,0,.4);
     color-scheme: dark;
+  }
+  html[data-palette="sunset_pop"] {
+    --bg: #FFF9F2; --col-bg: #FCEEE1; --card-bg: #FFFFFF; --text: #402A1F;
+    --muted: #8C7367; --border: #F0DCC9; --header-bg: #D9432A; --accent: #F16A3D; --success: #178C7B;
+  }
+  html[data-palette="sunset_pop"][data-theme="dark"] {
+    --bg: #241A1D; --col-bg: #34252A; --card-bg: #3D2C31; --text: #F5E6DE;
+    --muted: #C7A99C; --border: #4A363B; --header-bg: #7A2E22; --accent: #FF8563; --success: #3FD6BC;
+  }
+  html[data-palette="citrus_fresh"] {
+    --bg: #FAFBEF; --col-bg: #EFF6D9; --card-bg: #FFFFFF; --text: #2E3B1F;
+    --muted: #74805C; --border: #E3ECC7; --header-bg: #CC6600; --accent: #E8720C; --success: #4C9A17;
+  }
+  html[data-palette="citrus_fresh"][data-theme="dark"] {
+    --bg: #1E2213; --col-bg: #262C18; --card-bg: #303620; --text: #EFF3DE;
+    --muted: #B7C29A; --border: #454C2E; --header-bg: #7A4A0A; --accent: #FFB020; --success: #9BE23D;
+  }
+  html[data-palette="jungle_pop"] {
+    --bg: #F7FBF3; --col-bg: #E9F5E0; --card-bg: #FFFFFF; --text: #1F3B24;
+    --muted: #6E8874; --border: #DCEBD3; --header-bg: #1F7A4D; --accent: #2FA866; --success: #C98A1D;
+  }
+  html[data-palette="jungle_pop"][data-theme="dark"] {
+    --bg: #17231A; --col-bg: #1F2E22; --card-bg: #28392C; --text: #E8F3E6;
+    --muted: #A8C2AC; --border: #3B4F3E; --header-bg: #0F4A2E; --accent: #45D686; --success: #FFC94D;
   }
   * { box-sizing: border-box; }
   body {
@@ -1105,7 +1135,7 @@
           <div style="font-size:12px;color:#666;margin-top:4px">Usuarios totales</div>
         </div>
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
-          <div style="font-size:28px;font-weight:bold;color:#27ae60" id="statActiveUsers">-</div>
+          <div style="font-size:28px;font-weight:bold;color:var(--success)" id="statActiveUsers">-</div>
           <div style="font-size:12px;color:#666;margin-top:4px">Activos</div>
         </div>
         <div style="padding:12px;background:#f5f5f5;border-radius:6px;text-align:center">
@@ -1143,7 +1173,7 @@
           <div id="userActivityBar" style="flex:1;display:flex;height:24px;background:var(--border);border-radius:4px;overflow:hidden"></div>
         </div>
         <div style="font-size:11px;color:#666;margin-top:6px;display:flex;gap:12px">
-          <span><span style="display:inline-block;width:12px;height:12px;background:#27ae60;border-radius:2px;margin-right:4px"></span>Activos</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:var(--success);border-radius:2px;margin-right:4px"></span>Activos</span>
           <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;border-radius:2px;margin-right:4px"></span>Inactivos</span>
         </div>
       </div>
@@ -3911,7 +3941,7 @@
       const activePercent = (active / total) * 100;
       const inactivePercent = (inactive / total) * 100;
       document.getElementById("userActivityBar").innerHTML = `
-        <div style="width:${activePercent}%;background:#27ae60;transition:all 0.3s"></div>
+        <div style="width:${activePercent}%;background:var(--success);transition:all 0.3s"></div>
         <div style="width:${inactivePercent}%;background:#e67e22;transition:all 0.3s"></div>
       `;
 
