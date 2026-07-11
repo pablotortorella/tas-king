@@ -4,27 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Novedades · FUN TasKing!</title>
+<script>
+  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
+  (function () {
+    try {
+      var t = localStorage.getItem("tasking-theme");
+      if (t !== "dark" && t !== "light") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
+  })();
+</script>
 <style>
-  :root { --bg:#f4f5f7; --text:#172b4d; --muted:#6b778c; --accent:#0079bf; --border:#dfe1e6; }
+  /* Candy Pop, la paleta oficial (#10) — páginas públicas no tienen selector de
+     paleta por tablero, solo claro/oscuro. */
+  :root { --bg:#FBF7FF; --text:#362A4A; --muted:#8577A3; --accent:#9B5DE5; --header-bg:#7C3AED; --border:#E4D6F5; --card-bg:#FFFFFF; --tag-bg:#F1E9FB; --tag-text:#7C3AED; }
+  html[data-theme="dark"] { --bg:#1E1329; --text:#F0E6FF; --muted:#B9A8D9; --accent:#C084FC; --header-bg:#4B2378; --border:#4A2F63; --card-bg:#332145; --tag-bg:#4A2F63; --tag-text:#F0E6FF; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     line-height:1.6; }
-  header { background:var(--accent); color:#fff; padding:14px 20px; }
+  header { background:var(--header-bg); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
   header a { color:#fff; text-decoration:none; font-size:14px; }
+  .theme-btn { background:rgba(255,255,255,.18); border:none; border-radius:5px; color:#fff; cursor:pointer; font-size:15px; padding:3px 8px; }
+  .theme-btn:hover { background:rgba(255,255,255,.35); }
   main { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
   h1 { font-size:24px; margin:0 0 24px; }
   a { color:var(--accent); }
-  .release { background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:16px; }
+  .release { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:16px; }
   .release h2 { font-size:18px; margin:0 0 2px; }
   .release .date { color:var(--muted); font-size:13px; margin-bottom:10px; }
   .release ul { margin:0; padding-left:20px; }
   .release li { font-size:15px; margin-bottom:3px; }
-  .tag { display:inline-block; background:#e3effc; color:#0c447c; border-radius:10px; padding:1px 8px; font-size:12px; font-weight:600; margin-left:6px; vertical-align:middle; }
+  .tag { display:inline-block; background:var(--tag-bg); color:var(--tag-text); border-radius:10px; padding:1px 8px; font-size:12px; font-weight:600; margin-left:6px; vertical-align:middle; }
 </style>
 </head>
 <body>
-<header><a href="/">← Volver al tablero</a></header>
+<header><a href="/">← Volver al tablero</a><button id="themeBtn" class="theme-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button></header>
 <main>
   <h1>📣 Novedades</h1>
 
@@ -172,5 +189,20 @@
     </ul>
   </div>
 </main>
+<script>
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function syncThemeButton() {
+    document.getElementById("themeBtn").textContent = currentTheme() === "dark" ? "☀️" : "🌙";
+  }
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tasking-theme", next); } catch (e) { /* modo privado */ }
+    syncThemeButton();
+  });
+  syncThemeButton();
+</script>
 </body>
 </html>

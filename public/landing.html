@@ -4,20 +4,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FUN TasKing! — Gestión visual de tareas</title>
+<script>
+  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
+  (function () {
+    try {
+      var t = localStorage.getItem("tasking-theme");
+      if (t !== "dark" && t !== "light") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
+  })();
+</script>
 <style>
+  /* Candy Pop, la paleta oficial (#10) — landing no tiene selector de paleta
+     por tablero, solo claro/oscuro. */
   :root {
-    --accent: #0079bf;
-    --bg: #f4f5f7;
-    --text: #172b4d;
-    --muted: #6b778c;
-    --card-bg: #fff;
-    --border: #dfe1e6;
+    --accent: #9B5DE5;
+    --header-bg: #7C3AED;
+    --bg: #FBF7FF;
+    --col-bg: #F1E9FB;
+    --text: #362A4A;
+    --muted: #8577A3;
+    --card-bg: #FFFFFF;
+    --border: #E4D6F5;
+    --hero-grad-a: #7C3AED;
+    --hero-grad-b: #4B2378;
+    --drag-over-bg: #E4D6F5;
+  }
+  html[data-theme="dark"] {
+    --accent: #C084FC;
+    --header-bg: #4B2378;
+    --bg: #1E1329;
+    --col-bg: #281A38;
+    --text: #F0E6FF;
+    --muted: #B9A8D9;
+    --card-bg: #332145;
+    --border: #4A2F63;
+    --hero-grad-a: #4B2378;
+    --hero-grad-b: #1E1329;
+    --drag-over-bg: #4A2F63;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
 
   /* HERO */
-  .hero { background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%); color: white; padding: 72px 24px 88px; text-align: center; }
+  .hero { background: linear-gradient(135deg, var(--hero-grad-a) 0%, var(--hero-grad-b) 100%); color: white; padding: 72px 24px 88px; text-align: center; }
   .hero-logo { font-size: 52px; margin-bottom: 12px; display: block; }
   .hero-brand { font-size: 1.1rem; font-weight: 800; letter-spacing: .5px; opacity: .9; margin-bottom: 20px; }
   .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800; margin-bottom: 18px; line-height: 1.2; }
@@ -46,16 +78,25 @@
   .lang-btn.active { background: rgba(255,255,255,.25); color: #fff; }
   .lang-btn:hover:not(.active) { color: #fff; }
 
+  /* THEME SWITCHER */
+  .theme-switcher {
+    position: fixed; top: 12px; left: 16px; z-index: 200;
+    background: rgba(0,0,0,.38); backdrop-filter: blur(6px);
+    border-radius: 20px; padding: 4px;
+  }
+  .theme-switcher button { background: none; border: none; cursor: pointer; font-size: 15px; color: #fff; padding: 3px 7px; border-radius: 12px; }
+  .theme-switcher button:hover { background: rgba(255,255,255,.25); }
+
   /* MINI BOARD MOCKUP */
-  .mockup-section { background: linear-gradient(180deg, #e8edf3 0%, #f4f5f7 100%); padding: 64px 24px; text-align: center; }
+  .mockup-section { background: linear-gradient(180deg, var(--col-bg) 0%, var(--bg) 100%); padding: 64px 24px; text-align: center; }
   .mockup-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: var(--text); }
   .mockup-hint { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
   .mini-board { display: flex; gap: 12px; overflow-x: auto; max-width: 900px; margin: 0 auto; padding-bottom: 8px; justify-content: center; }
-  .mini-col { background: #ebecf0; border-radius: 10px; padding: 12px; min-width: 160px; flex: 0 0 160px; transition: background .15s; }
-  .mini-col.drag-over { background: #c8e6f5; outline: 2px dashed #0079bf; outline-offset: -3px; }
+  .mini-col { background: var(--col-bg); border-radius: 10px; padding: 12px; min-width: 160px; flex: 0 0 160px; transition: background .15s; }
+  .mini-col.drag-over { background: var(--drag-over-bg); outline: 2px dashed var(--accent); outline-offset: -3px; }
   .mini-col-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
   .mini-cards-area { overflow: hidden; max-height: 190px; }
-  .mini-card { background: #fff; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 11.5px; box-shadow: 0 1px 3px rgba(9,30,66,.12); text-align: left; line-height: 1.4; cursor: grab; user-select: none; transition: opacity .15s; }
+  .mini-card { background: var(--card-bg); color: var(--text); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 11.5px; box-shadow: 0 1px 3px rgba(9,30,66,.12); text-align: left; line-height: 1.4; cursor: grab; user-select: none; transition: opacity .15s; }
   .mini-card:active { cursor: grabbing; }
   .mini-card.dragging { opacity: .3; }
   .mini-card small { color: var(--muted); font-size: 10px; }
@@ -88,7 +129,7 @@
   .oss-section p { color: var(--muted); font-size: .95rem; max-width: 480px; margin: 12px auto 0; line-height: 1.6; }
 
   /* CTA BOTTOM */
-  .cta-bottom { padding: 72px 24px; text-align: center; background: linear-gradient(135deg, #0079bf 0%, #004e8c 100%); color: white; }
+  .cta-bottom { padding: 72px 24px; text-align: center; background: linear-gradient(135deg, var(--hero-grad-a) 0%, var(--hero-grad-b) 100%); color: white; }
   .cta-bottom h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 14px; }
   .cta-bottom p { opacity: .85; margin-bottom: 36px; font-size: 1rem; }
   .cta-bottom a { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--accent); font-weight: 700; font-size: 1rem; padding: 14px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
@@ -101,6 +142,9 @@
 </style>
 </head>
 <body>
+
+<!-- Toggle de tema -->
+<div class="theme-switcher"><button id="themeBtn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button></div>
 
 <!-- Selector de idioma -->
 <div class="lang-switcher" id="langSwitcher">
@@ -537,6 +581,21 @@ document.querySelectorAll('.mini-col').forEach(col => {
 });
 
 })();
+</script>
+<script>
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function syncThemeButton() {
+    document.getElementById("themeBtn").textContent = currentTheme() === "dark" ? "☀️" : "🌙";
+  }
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tasking-theme", next); } catch (e) { /* modo privado */ }
+    syncThemeButton();
+  });
+  syncThemeButton();
 </script>
 </body>
 </html>

@@ -4,25 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Términos y responsabilidad · FUN TasKing!</title>
+<script>
+  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
+  (function () {
+    try {
+      var t = localStorage.getItem("tasking-theme");
+      if (t !== "dark" && t !== "light") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
+  })();
+</script>
 <style>
-  :root { --bg:#f4f5f7; --text:#172b4d; --muted:#6b778c; --accent:#0079bf; --border:#dfe1e6; }
+  /* Candy Pop, la paleta oficial (#10) — páginas públicas no tienen selector de
+     paleta por tablero, solo claro/oscuro. */
+  :root { --bg:#FBF7FF; --text:#362A4A; --muted:#8577A3; --accent:#9B5DE5; --header-bg:#7C3AED; --border:#E4D6F5; --card-bg:#FFFFFF; }
+  html[data-theme="dark"] { --bg:#1E1329; --text:#F0E6FF; --muted:#B9A8D9; --accent:#C084FC; --header-bg:#4B2378; --border:#4A2F63; --card-bg:#332145; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     line-height:1.6; }
-  header { background:var(--accent); color:#fff; padding:14px 20px; }
+  header { background:var(--header-bg); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
   header a { color:#fff; text-decoration:none; font-size:14px; }
+  .theme-btn { background:rgba(255,255,255,.18); border:none; border-radius:5px; color:#fff; cursor:pointer; font-size:15px; padding:3px 8px; }
+  .theme-btn:hover { background:rgba(255,255,255,.35); }
   main { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
   h1 { font-size:24px; margin:0 0 6px; }
   h2 { font-size:17px; margin:26px 0 6px; }
   .updated { color:var(--muted); font-size:13px; margin-bottom:18px; }
   p, li { font-size:15px; }
   a { color:var(--accent); }
-  .note { background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; color:var(--muted); margin-top:24px; }
+  .note { background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; color:var(--muted); margin-top:24px; }
 </style>
 </head>
 <body>
-<header><a href="/">← Volver al tablero</a></header>
+<header><a href="/">← Volver al tablero</a><button id="themeBtn" class="theme-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button></header>
 <main>
   <h1>Términos de uso y responsabilidad</h1>
   <div class="updated">FUN TasKing! · última actualización: junio de 2026</div>
@@ -71,5 +88,20 @@
   asesoramiento legal. Si necesitás términos con validez legal específica para tu caso,
   consultá con un profesional.</div>
 </main>
+<script>
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function syncThemeButton() {
+    document.getElementById("themeBtn").textContent = currentTheme() === "dark" ? "☀️" : "🌙";
+  }
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("tasking-theme", next); } catch (e) { /* modo privado */ }
+    syncThemeButton();
+  });
+  syncThemeButton();
+</script>
 </body>
 </html>
