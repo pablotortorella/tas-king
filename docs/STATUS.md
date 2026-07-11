@@ -1,7 +1,13 @@
 # Estado de Implementación — FUN TasKing! v2.1
 
 **Última actualización**: 2026-07-11  
-**Estado**: ✅ Tests completos (121 unit + 43 E2E) | main = staging ✅ | producción pendiente aprobación
+**Estado**: ✅ Tests completos (121 unit + 43 E2E) | main = staging = producción ✅ (deployado y verificado)
+
+## 🎯 Cambios recientes (sesión 2026-07-11 — fix: cron de producción no registrado)
+
+- **Diagnóstico**: el código de la purga de `rate_limit_log` + backup automático (PR #19, 2026-07-07) ya estaba mergeado y cubierto por tests (`test/ratelimit.test.js`), pero el cron nunca corría en producción — `triggers.crons` en `wrangler.jsonc` vivía solo dentro de `env.production`, y `npm run deploy` corre `wrangler deploy` **sin** `--env production` a propósito (usar ese flag crearía/apuntaría a un worker distinto). El bare `wrangler deploy` solo lee la config de nivel raíz, que no tenía `triggers`.
+- **Fix**: mover `triggers.crons` (`"0 */8 * * *"`) al nivel raíz de `wrangler.jsonc`, dejando un comentario explicando por qué no vive en `env.production`. Sin cambios de código de aplicación.
+- **Verificado en el deploy**: el output pasó de `Deployed tas-king triggers (0.91 sec)` (sin schedule) a `Deployed tas-king triggers (1.71 sec)` seguido de `schedule: 0 */8 * * *` — confirmación directa de que el cron quedó registrado en el worker real.
 
 ## 🎯 Cambios recientes (sesión 2026-07-11 — #10 Temas de color: paleta oficial + selector por tablero)
 

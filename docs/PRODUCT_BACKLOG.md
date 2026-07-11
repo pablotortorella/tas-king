@@ -46,6 +46,7 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 | — | 🎯 Objetivos (gestión por metas) | |
 | — | 🎯 Pulso WIP "Dejar de empezar y empezar a terminar" | 2026-07-04 — ver detalle en `docs/STATUS.md` |
 | #10 | 🎨 Temas de color (paleta oficial + selector por tablero) | 2026-07-11 — Candy Pop es el default de toda la app (Kanban + páginas públicas); Sunset Pop/Citrus Fresh/Jungle Pop seleccionables por tablero desde ⚙️ → Tema; prompt de bienvenida para el dueño en tableros sin paleta. Ver detalle en `docs/STATUS.md` |
+| — | 🧹 Purga de `rate_limit_log` + backup automático operativo | 2026-07-11 — código de PR #19 (2026-07-07) ya estaba mergeado y testeado; el gap real era que el cron nunca se registraba en el worker de producción (`triggers.crons` vivía solo en `env.production`, no en el nivel raíz que usa `npm run deploy`). Fix + verificado en el log del deploy (`schedule: 0 */8 * * *`) |
 
 ---
 
@@ -106,9 +107,7 @@ Resultado del análisis funcional y técnico completo (código, seguridad, opera
 
 ### 🔴 Crítico
 
-- **Backup automático no operativo en producción** — 🟢 chico. Dos causas que se suman: (1) `npm run deploy` corre `wrangler deploy` sin `--env production`, y los `triggers.crons` están definidos solo dentro de ese env en `wrangler.jsonc` → el worker productivo no tiene el cron aplicado (verificado con `--dry-run`); (2) `generateSQLDump()` rompía con `SQLITE_AUTH` al leer la tabla interna protegida `_cf_METADATA` (el filtro excluía solo `_cf_KV` exacto) — fix ya incluido en PR #19. **Riesgo**: sin backups automáticos, ante corrupción o borrado accidental el único respaldo son los dumps manuales pre-deploy. **Acción**: mover `triggers` al nivel raíz de `wrangler.jsonc` (deployar con `--env production` cambiaría el nombre del worker), mergear PR #19 y verificar en los logs el primer ciclo del cron.
 - **Revocación de acceso no efectiva** — 🟢 chico. El middleware de auth (`src/middleware/auth.js`) valida la cookie firmada (30 días) pero no re-chequea `allowed_emails`; `ensureUser` incluso recrea el usuario borrado. **Riesgo**: sacar a alguien desde el panel admin no le corta el acceso hasta que expire su sesión — hasta 30 días. Grave si la remoción es por un incidente. **Acción**: re-chequear `isEmailAllowed()` en el middleware (1 query extra por request; cacheable unos minutos si preocupa el costo).
-- **Purga de `rate_limit_log`** — ✅ en curso: PR #19 (2026-07-07). La tabla recibía un INSERT por cada request API y nada la purgaba (el índice `rate_limit_cleanup` existía para eso): DB y dump de backup crecían sin límite. Falta: revisar, mergear y deployar con aprobación.
 
 ### 🟠 Alto — bugs funcionales visibles
 
