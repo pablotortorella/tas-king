@@ -9,11 +9,11 @@
   },
   // Entorno: DESARROLLO LOCAL (wrangler dev)
   "env": {
-    // Producción (ACTUAL)
+    // Producción (ACTUAL). OJO: "npm run deploy" corre `wrangler deploy` SIN
+    // --env production (usarlo cambiaría el nombre del worker) — por eso los
+    // triggers no van acá, van al nivel raíz (ver más abajo), que es la
+    // config que realmente aplica al worker que sirve producción.
     "production": {
-      "triggers": {
-        "crons": ["0 */8 * * *"]
-      },
       "d1_databases": [
         {
           "binding": "DB",
@@ -46,6 +46,13 @@
         }
       ]
     }
+  },
+  // Nivel raíz = config real de "npm run deploy" (bare `wrangler deploy`,
+  // sin --env) = el worker que sirve producción en tas-king.pablotortorella.workers.dev.
+  // El cron (purga de rate_limit_log + backup) tiene que estar acá, no en
+  // env.production, o nunca se registra en el worker que corre de verdad.
+  "triggers": {
+    "crons": ["0 */8 * * *"]
   },
   // Local (default, wrangler dev) — sin cambios
   "d1_databases": [
