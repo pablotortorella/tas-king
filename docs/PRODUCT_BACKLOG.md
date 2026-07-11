@@ -71,6 +71,97 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟠 Alta prioridad
 
+### #10 Temas de color: paleta oficial + selector por tablero
+
+**Prioridad**: Alta, pero no en foco ahora — Pablo la retoma en una sesión futura. Documentado acá con detalle para no perder contexto.
+
+**Por qué**: feedback recurrente de que FUN TasKing! "se parece demasiado a Trello" — cierto: `--header-bg: #0079bf` (src/constants.js / index.html) es literalmente el azul de marca de Trello, hardcodeado. Sumado a que el modo oscuro actual (`#1d2125`, gris-azulado casi negro) se siente "pesado", no "fun". Ver sesión 2026-07-08 para las 4 propuestas visuales evaluadas (mini-tableros mockup, no se guardaron como archivo — quedan documentadas acá con sus valores hex).
+
+**Alcance funcional** (tal como lo pidió Pablo):
+
+- **Candy Pop es el tema oficial/default** de la app (violeta + menta sobre base lavanda/índigo).
+- **4 paletas para elegir**: Sunset Pop, Candy Pop (oficial), Citrus Fresh, y una 4ta nueva de tonos verdes — bautizada acá "Jungle Pop" (verde esmeralda + dorado sobre base verde-crema/verde-bosque). Cada una con su versión clara y oscura (8 combinaciones en total).
+- **Modal de bienvenida, una única vez por usuario** (no por tablero): mismo formato visual usado para mostrarle las opciones a Pablo (mini-tableros de preview por paleta). Botón para elegir una paleta, y botón cancelar/omitir.
+  - Si omite o cierra sin elegir → se aplica Candy Pop (oficial) al tablero, **si correspondiese** (si el tablero no tenía ya una paleta asignada).
+  - Si elige una paleta y cierra → esa paleta queda aplicada.
+  - Después de esa primera vez, el modal no vuelve a aparecer — el cambio de tema pasa a hacerse solo desde ⚙️.
+- **Selector permanente en ⚙️ (configuración del tablero)**: nueva pestaña (ej. "🎨 Tema"), separada de "👥 Miembros" y "🏷️ Etiquetas". Mismo patrón de permisos que columnas/etiquetas (solo dueño edita).
+- **La paleta es por tablero, no por usuario**: un mismo usuario puede tener paletas distintas en tableros distintos. El toggle claro/oscuro actual (global, en localStorage) se mantiene como preferencia personal — se combina con la paleta del tablero activo (paleta × claro/oscuro = 8 combinaciones posibles de variables CSS).
+- **El tema aplica también a paneles y modales del tablero** (modal de tarjeta, drawer de objetivos, drawer de métricas, modal ⚙️), no solo al Kanban — ya debería funcionar solo con generalizar las CSS variables, porque todo el frontend ya las usa.
+- **Actualizar `public/landing.html`, `public/terminos.html` y `public/releases.html`** (páginas públicas, sin auth, linkeadas desde el footer) con los colores oficiales (Candy Pop).
+
+**Decisiones a confirmar antes de implementar** (Pablo no las especificó, quedan abiertas):
+1. El modal de bienvenida es por usuario, pero la paleta se guarda por tablero — ¿a qué tablero se aplica la elección? Propuesta: al tablero que el usuario tiene abierto en ese momento (típicamente su tablero personal, el primero que ve tras loguearse).
+2. Tableros ya existentes al momento del deploy: ¿arrancan todos en Candy Pop (oficial) por default? Parece lo más consistente con "Candy Pop es el tema oficial".
+3. ¿Las páginas públicas (landing/términos/releases) también necesitan modo oscuro, o quedan fijas en el modo claro de Candy Pop?
+
+**Notas técnicas para implementación**:
+- Migración nueva: columna `boards.theme` (TEXT, default `'candy_pop'`).
+- Migración nueva: columna `users.theme_intro_seen` (INTEGER, default 0) — mismo patrón que `pending_access.seen`.
+- Nuevo token CSS `--success` (hoy no existe; los "done"/checkmarks usan verde hardcodeado suelto, ej. `#27ae60` en el panel admin) — necesario para que cada paleta tenga su propio color de "completado" distinto del accent.
+- `--danger` no varía por paleta (se mantiene el rojo actual `#c0392b` / `#ff7a7a` en las 4 — es semántico/utilitario, no de marca).
+- El mecanismo actual de `data-theme="dark"` (toggle global claro/oscuro) tiene que generalizarse: las variables CSS pasan a derivarse de `(paleta del tablero activo) × (preferencia claro/oscuro del usuario)`, y recalcularse al cambiar de tablero — hoy es un simple switch de dos estados, no una combinación.
+
+**Paletas propuestas** (valores hex, revisar contraste final al implementar):
+
+*Sunset Pop*
+
+| Variable | Claro | Oscuro |
+|---|---|---|
+| `--bg` | `#FFF9F2` | `#241A1D` |
+| `--col-bg` | `#FCEEE1` | `#34252A` |
+| `--card-bg` | `#FFFFFF` | `#3D2C31` |
+| `--text` | `#402A1F` | `#F5E6DE` |
+| `--muted` | `#8C7367` | `#C7A99C` |
+| `--border` | `#F0DCC9` | `#4A363B` |
+| `--header-bg` | `#D9432A` | `#7A2E22` |
+| `--accent` | `#F16A3D` | `#FF8563` |
+| `--success` (nuevo) | `#178C7B` | `#3FD6BC` |
+
+*Candy Pop (oficial)*
+
+| Variable | Claro | Oscuro |
+|---|---|---|
+| `--bg` | `#FBF7FF` | `#1E1329` |
+| `--col-bg` | `#F1E9FB` | `#281A38` |
+| `--card-bg` | `#FFFFFF` | `#332145` |
+| `--text` | `#362A4A` | `#F0E6FF` |
+| `--muted` | `#8577A3` | `#B9A8D9` |
+| `--border` | `#E4D6F5` | `#4A2F63` |
+| `--header-bg` | `#7C3AED` | `#4B2378` |
+| `--accent` | `#9B5DE5` | `#C084FC` |
+| `--success` (nuevo) | `#178F73` | `#4EEBC0` |
+
+*Citrus Fresh*
+
+| Variable | Claro | Oscuro |
+|---|---|---|
+| `--bg` | `#FAFBEF` | `#1E2213` |
+| `--col-bg` | `#EFF6D9` | `#262C18` |
+| `--card-bg` | `#FFFFFF` | `#303620` |
+| `--text` | `#2E3B1F` | `#EFF3DE` |
+| `--muted` | `#74805C` | `#B7C29A` |
+| `--border` | `#E3ECC7` | `#454C2E` |
+| `--header-bg` | `#CC6600` | `#7A4A0A` |
+| `--accent` | `#E8720C` | `#FFB020` |
+| `--success` (nuevo) | `#4C9A17` | `#9BE23D` |
+
+*Jungle Pop (4ta opción, verde — nueva)*
+
+| Variable | Claro | Oscuro |
+|---|---|---|
+| `--bg` | `#F7FBF3` | `#17231A` |
+| `--col-bg` | `#E9F5E0` | `#1F2E22` |
+| `--card-bg` | `#FFFFFF` | `#28392C` |
+| `--text` | `#1F3B24` | `#E8F3E6` |
+| `--muted` | `#6E8874` | `#A8C2AC` |
+| `--border` | `#DCEBD3` | `#3B4F3E` |
+| `--header-bg` | `#1F7A4D` | `#0F4A2E` |
+| `--accent` | `#2FA866` | `#45D686` |
+| `--success` (nuevo) | `#C98A1D` | `#FFC94D` |
+
+---
+
 - **Tab/Enter estándar en toda la interfaz de tarjetas**: navegación por teclado en el modal — Tab entre campos, Enter confirma, Esc cierra. Incluye checklists (Tab entre ítems, Enter agrega el siguiente, Backspace en ítem vacío lo borra). Criterios ya documentados en ADR-014; falta auditar que se cumplan en todos los campos.
 - **Onboarding para usuarios nuevos**: primer login → tablero vacío sin guía. Opciones: estado vacío con instrucciones ("Creá tu primera tarjeta con N"), tarjetas de ejemplo precargadas, o mini-tour de tooltips.
 
