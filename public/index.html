@@ -609,6 +609,17 @@
   .picker .color-opt { width: 30px; height: 30px; border-radius: 50%; }
   .profile-preview { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 
+  /* Selector de paleta de color por tablero (#10) */
+  .theme-picker { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .theme-opt {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    border: 2px solid var(--border); border-radius: 8px; cursor: pointer;
+    background: var(--bg); font-size: 13px; color: var(--text);
+  }
+  .theme-opt.sel { border-color: var(--accent); }
+  .theme-opt.disabled { cursor: default; opacity: .7; }
+  .theme-opt .theme-swatch { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+
   /* Lista de miembros */
   .member-row {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -1021,6 +1032,7 @@
     <div class="admin-tabs" style="margin-bottom:14px">
       <button class="tab-btn active" id="settingsTabMiembros">👥 Miembros</button>
       <button class="tab-btn" id="settingsTabEtiquetas">🏷️ Etiquetas</button>
+      <button class="tab-btn" id="settingsTabTema">🎨 Tema</button>
     </div>
     <div id="settingsMiembrosPanel">
       <div class="field" id="renameRow" style="margin-bottom:14px">
@@ -1058,11 +1070,29 @@
         <button class="btn btn-primary btn-small" id="boardCreateLabelBtn">Crear etiqueta</button>
       </div>
     </div>
+    <div id="settingsTemaPanel" style="display:none">
+      <div class="hint" style="margin-bottom:10px">La paleta es del tablero — la ven todos sus miembros, combinada con la preferencia claro/oscuro de cada uno.</div>
+      <div class="theme-picker" id="boardThemeGrid"></div>
+      <div id="themeOwnerHint" class="hint" style="display:none;margin-top:10px">Solo el dueño del tablero puede cambiar la paleta.</div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="deleteBoardBtn">Eliminar tablero</button>
       <div class="right">
         <button class="btn btn-ghost" id="membersCloseBtn">Cerrar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt de bienvenida: elegir paleta de color para este tablero (solo dueño, una vez) -->
+<div class="overlay" id="themePromptOverlay">
+  <div class="modal">
+    <h2>🎨 Elegí una paleta para este tablero</h2>
+    <p class="hint" style="margin-bottom:14px">Podés cambiarla cuando quieras desde ⚙️ → Tema. Si no elegís ahora, queda Candy Pop (la oficial).</p>
+    <div class="theme-picker" id="themePromptGrid"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="themePromptSkipBtn">Omitir (usar Candy Pop)</button>
+      <div class="right"></div>
     </div>
   </div>
 </div>
@@ -1302,6 +1332,19 @@
   document.getElementById("themeBtn").addEventListener("click", toggleTheme);
   syncThemeButton();
 
+  // ---------- Paleta de color por tablero (#10) ----------
+  const PALETTES = [
+    { key: "candy_pop", label: "Candy Pop (oficial)", swatch: "#7C3AED" },
+    { key: "sunset_pop", label: "Sunset Pop", swatch: "#D9432A" },
+    { key: "citrus_fresh", label: "Citrus Fresh", swatch: "#CC6600" },
+    { key: "jungle_pop", label: "Jungle Pop", swatch: "#1F7A4D" },
+  ];
+  // theme null/undefined (tablero sin paleta asignada todavía) se renderiza como candy_pop.
+  function applyBoardPalette(theme) {
+    const palette = PALETTES.some(p => p.key === theme) ? theme : "candy_pop";
+    document.documentElement.setAttribute("data-palette", palette);
+  }
+
   // ---------- Pulso WIP: "Dejar de empezar y empezar a terminar" ----------
   // Recorre las columnas en curso (ni la primera, ni las de cierre) de derecha a
   // izquierda con un pulso sutil, para invitar a terminar antes de empezar algo nuevo.
@@ -1455,6 +1498,7 @@
       renderBoardSelect();
       await loadMembers();
       await loadCards();
+      checkThemePrompt();
     } catch (e) {
       // sin sesión válida → mandar al login con Google
       if (e.status === 401) { window.location.href = "/landing.html"; return; }
@@ -1472,9 +1516,11 @@
     if (!currentBoardId) {
       state = { cards: [], columns: [] }; COLUMNS = [];
       boardLabels = []; boardGoals = [];
+      applyBoardPalette(null);
       populateColumnSelect(); render(); refreshGoalsUI(); return;
     }
     localStorage.setItem("tasKingBoardId", currentBoardId);
+    applyBoardPalette(currentBoard() && currentBoard().theme);
     state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
     COLUMNS = state.columns || [];
     lastKnownVersion = state.version || 0;
@@ -3117,6 +3163,7 @@
     else if (archiveOverlay.classList.contains("open")) archiveOverlay.classList.remove("open");
     else if (goalsDrawer.classList.contains("open")) closeGoalsDrawer();
     else if (metricsDrawer.classList.contains("open")) closeMetricsDrawer();
+    else if (themePromptOverlay.classList.contains("open")) skipThemePrompt();
   });
 
   // ---------- Exportar / Importar ----------
@@ -3399,6 +3446,7 @@
     updateBoardControls();
     await loadMembers();
     await loadCards();
+    checkThemePrompt();
     startPolling();
     startWipPulse();
   });
@@ -3432,12 +3480,76 @@
   function switchSettingsTab(tab) {
     document.getElementById("settingsMiembrosPanel").style.display  = tab === "miembros"  ? "" : "none";
     document.getElementById("settingsEtiquetasPanel").style.display = tab === "etiquetas" ? "" : "none";
+    document.getElementById("settingsTemaPanel").style.display      = tab === "tema"      ? "" : "none";
     document.getElementById("settingsTabMiembros").classList.toggle("active",  tab === "miembros");
     document.getElementById("settingsTabEtiquetas").classList.toggle("active", tab === "etiquetas");
+    document.getElementById("settingsTabTema").classList.toggle("active",      tab === "tema");
     if (tab === "etiquetas") renderBoardLabelsManager();
+    if (tab === "tema") renderBoardThemeManager();
   }
   document.getElementById("settingsTabMiembros").addEventListener("click",  () => switchSettingsTab("miembros"));
   document.getElementById("settingsTabEtiquetas").addEventListener("click", () => switchSettingsTab("etiquetas"));
+  document.getElementById("settingsTabTema").addEventListener("click",      () => switchSettingsTab("tema"));
+
+  // ---------- Selector de paleta del tablero (#10) ----------
+  function renderBoardThemeManager() {
+    const b = currentBoard();
+    const isOwner = b && b.role === "owner";
+    const current = (b && b.theme) || "candy_pop";
+    const grid = document.getElementById("boardThemeGrid");
+    grid.innerHTML = "";
+    PALETTES.forEach(p => {
+      const opt = document.createElement("div");
+      opt.className = "theme-opt" + (p.key === current ? " sel" : "") + (isOwner ? "" : " disabled");
+      opt.innerHTML = `<span class="theme-swatch" style="background:${p.swatch}"></span><span>${escapeHtml(p.label)}</span>`;
+      if (isOwner) {
+        opt.addEventListener("click", async () => {
+          if (p.key === current) return;
+          try {
+            await api("PATCH", "/api/boards/" + currentBoardId, { theme: p.key });
+            await loadBoard();
+            renderBoardThemeManager();
+          } catch (e) { alert("No se pudo cambiar la paleta: " + e.message); }
+        });
+      }
+      grid.appendChild(opt);
+    });
+    document.getElementById("themeOwnerHint").style.display = isOwner ? "none" : "";
+  }
+
+  // ---------- Prompt de bienvenida por tablero (#10) ----------
+  // Solo el dueño lo ve, y solo una vez por tablero (boards.theme_prompt_seen).
+  const themePromptOverlay = document.getElementById("themePromptOverlay");
+  function checkThemePrompt() {
+    const b = currentBoard();
+    if (!b || b.role !== "owner" || b.themePromptSeen) return;
+    const grid = document.getElementById("themePromptGrid");
+    grid.innerHTML = "";
+    PALETTES.forEach(p => {
+      const opt = document.createElement("div");
+      opt.className = "theme-opt";
+      opt.innerHTML = `<span class="theme-swatch" style="background:${p.swatch}"></span><span>${escapeHtml(p.label)}</span>`;
+      opt.addEventListener("click", async () => {
+        try {
+          await api("PATCH", "/api/boards/" + currentBoardId, { theme: p.key });
+          themePromptOverlay.classList.remove("open");
+          await loadBoard();
+        } catch (e) { alert("No se pudo guardar la paleta: " + e.message); }
+      });
+      grid.appendChild(opt);
+    });
+    themePromptOverlay.classList.add("open");
+  }
+  async function skipThemePrompt() {
+    if (!themePromptOverlay.classList.contains("open")) return;
+    try {
+      await api("PATCH", "/api/boards/" + currentBoardId, { themePromptSeen: true });
+      themePromptOverlay.classList.remove("open");
+      await loadBoard();
+    } catch (e) { alert("No se pudo guardar: " + e.message); }
+  }
+  document.getElementById("themePromptSkipBtn").addEventListener("click", skipThemePrompt);
+  themePromptOverlay.addEventListener("click", e => { if (e.target === themePromptOverlay) skipThemePrompt(); });
 
   // ---------- Gestión de etiquetas del tablero ----------
   function renderBoardLabelsManager() {
