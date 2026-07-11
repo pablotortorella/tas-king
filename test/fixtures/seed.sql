@@ -26,9 +26,11 @@ INSERT INTO users (id, email, name, is_admin, created_at)
 INSERT INTO allowed_emails (email, added_by, added_at)
   VALUES ('e2e-admin@test.local', 'seed', '2026-01-01');
 
--- Tablero principal E2E
-INSERT INTO boards (id, name, owner_email, is_personal, created_at)
-  VALUES ('board-e2e', 'Tablero E2E', 'e2e-admin@test.local', 1, 1000000000000);
+-- Tablero principal E2E. theme_prompt_seen=1 para que el prompt de bienvenida
+-- de #10 (dispara para el dueño en tableros sin paleta asignada) no interfiera
+-- con los tests existentes; e2e/board-theme.spec.js prueba ese flujo aparte.
+INSERT INTO boards (id, name, owner_email, is_personal, created_at, theme_prompt_seen)
+  VALUES ('board-e2e', 'Tablero E2E', 'e2e-admin@test.local', 1, 1000000000000, 1);
 INSERT INTO board_members (board_id, email, role, created_at)
   VALUES ('board-e2e', 'e2e-admin@test.local', 'owner', 1000000000000);
 
