@@ -293,9 +293,10 @@
     font-size: 14px;
     position: relative;
     touch-action: none; /* el arrastre táctil lo maneja JS (Pointer Events), no el scroll nativo */
+    user-select: none; /* evita selección de texto nativa del navegador al arrastrar con mouse */
   }
   .card:hover { background: var(--card-hover); }
-  .card.dragging { opacity: .4; user-select: none; }
+  .card.dragging { opacity: .4; }
   @keyframes celebrate {
     0%   { background: #fff; box-shadow: 0 0 0 0 rgba(255,215,0,0); }
     15%  { background: #fffde7; box-shadow: 0 0 12px 4px #ffd700; }
@@ -2145,6 +2146,7 @@
   function startCardDrag(e, el, card) {
     if (e.pointerType === "mouse" && e.button !== 0) return; // solo botón principal
     if (cardDrag) return;
+    e.preventDefault(); // el D&D nativo HTML5 prevenía la selección de texto solo; con Pointer Events hay que hacerlo a mano
     cardDrag = { el, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, active: false };
   }
 
