@@ -77,3 +77,61 @@ describe("PATCH /api/boards/:boardId", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("PATCH /api/boards/:boardId — theme", () => {
+  const themeOwner = "boards-theme-owner@test.local";
+  const themeOutsider = "boards-theme-outsider@test.local";
+  let boardId;
+
+  beforeAll(async () => {
+    boardId = (await me(themeOwner)).boards[0].id;
+    await me(themeOutsider);
+  });
+
+  it("GET /api/me expone theme null y themePromptSeen false para un tablero nuevo", async () => {
+    const board = (await me(themeOwner)).boards[0];
+    expect(board.theme).toBeNull();
+    expect(board.themePromptSeen).toBe(false);
+  });
+
+  it("permite marcar themePromptSeen sin elegir paleta (caso 'omitir')", async () => {
+    const res = await request(`/api/boards/${boardId}`, {
+      email: themeOwner, method: "PATCH", body: { themePromptSeen: true },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.themePromptSeen).toBe(true);
+    expect(body.theme).toBeNull();
+  });
+
+  it("rechaza paletas fuera del allow-list", async () => {
+    const res = await request(`/api/boards/${boardId}`, {
+      email: themeOwner, method: "PATCH", body: { theme: "trello_blue" },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("actualiza theme, lo persiste y mantiene themePromptSeen", async () => {
+    const res = await request(`/api/boards/${boardId}`, {
+      email: themeOwner, method: "PATCH", body: { theme: "sunset_pop" },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.theme).toBe("sunset_pop");
+    expect(body.themePromptSeen).toBe(true);
+
+    const board = (await me(themeOwner)).boards[0];
+    expect(board.theme).toBe("sunset_pop");
+    expect(board.themePromptSeen).toBe(true);
+  });
+
+  it("rechaza el cambio de theme si quien pide no es dueño", async () => {
+    await request(`/api/boards/${boardId}/members`, {
+      email: themeOwner, method: "POST", body: { email: themeOutsider },
+    });
+    const res = await request(`/api/boards/${boardId}`, {
+      email: themeOutsider, method: "PATCH", body: { theme: "jungle_pop" },
+    });
+    expect(res.status).toBe(403);
+  });
+});

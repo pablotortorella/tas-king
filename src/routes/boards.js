@@ -3,6 +3,7 @@
 import { membership, ensureUser } from "../db/helpers.js";
 import { getBoard, auditRowToJSON } from "../db/queries.js";
 import { createDefaultColumns } from "./columns.js";
+import { BOARD_THEMES } from "../constants.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -46,12 +47,23 @@ export function setupBoardRoutes(app) {
       }
       sets.push("due_soon_days = ?"); binds.push(days);
     }
+    if (b.theme !== undefined) {
+      if (!BOARD_THEMES.has(b.theme)) return c.json({ error: "Paleta de color inválida." }, 400);
+      // Elegir una paleta implica ya haber visto/resuelto el prompt de bienvenida.
+      sets.push("theme = ?", "theme_prompt_seen = 1"); binds.push(b.theme);
+    }
+    if (b.themePromptSeen !== undefined) {
+      sets.push("theme_prompt_seen = ?"); binds.push(b.themePromptSeen ? 1 : 0);
+    }
     if (!sets.length) return c.json({ error: "Nada para actualizar." }, 400);
 
     binds.push(boardId);
     await c.env.DB.prepare(`UPDATE boards SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
-    const row = await c.env.DB.prepare("SELECT name, due_soon_days FROM boards WHERE id = ?").bind(boardId).first();
-    return c.json({ id: boardId, name: row.name, dueSoonDays: row.due_soon_days });
+    const row = await c.env.DB.prepare("SELECT name, due_soon_days, theme, theme_prompt_seen FROM boards WHERE id = ?").bind(boardId).first();
+    return c.json({
+      id: boardId, name: row.name, dueSoonDays: row.due_soon_days,
+      theme: row.theme, themePromptSeen: !!row.theme_prompt_seen,
+    });
   });
 
   app.delete("/api/boards/:boardId", async c => {
