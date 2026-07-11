@@ -81,26 +81,30 @@ Ideas de evolución, en orden de qué falta:
 
 - **Candy Pop es el tema oficial/default** de la app (violeta + menta sobre base lavanda/índigo).
 - **4 paletas para elegir**: Sunset Pop, Candy Pop (oficial), Citrus Fresh, y una 4ta nueva de tonos verdes — bautizada acá "Jungle Pop" (verde esmeralda + dorado sobre base verde-crema/verde-bosque). Cada una con su versión clara y oscura (8 combinaciones en total).
-- **Modal de bienvenida, una única vez por usuario** (no por tablero): mismo formato visual usado para mostrarle las opciones a Pablo (mini-tableros de preview por paleta). Botón para elegir una paleta, y botón cancelar/omitir.
-  - Si omite o cierra sin elegir → se aplica Candy Pop (oficial) al tablero, **si correspondiese** (si el tablero no tenía ya una paleta asignada).
+- **Prompt de elección de paleta, por tablero, una única vez por (usuario, tablero)** — no es un modal global de bienvenida por usuario como se pensó originalmente. Mismo formato visual pensado para mostrarle las opciones a Pablo (mini-tableros de preview por paleta). Botón para elegir una paleta, y botón cancelar/omitir.
+  - **Solo le aparece al dueño del tablero**, la primera vez que abre un tablero que todavía no tiene paleta asignada — consistente con el permiso de ⚙️ (solo dueño edita el tema). Los demás miembros nunca ven este prompt.
+  - Si el dueño omite o cierra sin elegir → se aplica Candy Pop (oficial) al tablero.
   - Si elige una paleta y cierra → esa paleta queda aplicada.
-  - Después de esa primera vez, el modal no vuelve a aparecer — el cambio de tema pasa a hacerse solo desde ⚙️.
+  - Después de esa primera vez (por ese tablero), el prompt no vuelve a aparecer — el cambio de tema pasa a hacerse solo desde ⚙️.
+  - Miembros no-dueños que abren un tablero sin paleta asignada todavía (el dueño no lo abrió aún) ven Candy Pop por default, sin prompt.
+  - Aplica igual para tableros nuevos y para los ya existentes al momento del deploy: todos arrancan sin paleta asignada (`boards.theme IS NULL` o sentinel) hasta que el dueño abre el tablero y el prompt corre — no hay una migración de datos que fuerce Candy Pop de entrada, el prompt es el mecanismo que la asigna (con Candy Pop como resultado si el dueño omite).
 - **Selector permanente en ⚙️ (configuración del tablero)**: nueva pestaña (ej. "🎨 Tema"), separada de "👥 Miembros" y "🏷️ Etiquetas". Mismo patrón de permisos que columnas/etiquetas (solo dueño edita).
 - **La paleta es por tablero, no por usuario**: un mismo usuario puede tener paletas distintas en tableros distintos. El toggle claro/oscuro actual (global, en localStorage) se mantiene como preferencia personal — se combina con la paleta del tablero activo (paleta × claro/oscuro = 8 combinaciones posibles de variables CSS).
 - **El tema aplica también a paneles y modales del tablero** (modal de tarjeta, drawer de objetivos, drawer de métricas, modal ⚙️), no solo al Kanban — ya debería funcionar solo con generalizar las CSS variables, porque todo el frontend ya las usa.
-- **Actualizar `public/landing.html`, `public/terminos.html` y `public/releases.html`** (páginas públicas, sin auth, linkeadas desde el footer) con los colores oficiales (Candy Pop).
+- **Actualizar `public/landing.html`, `public/terminos.html` y `public/releases.html`** (páginas públicas, sin auth, linkeadas desde el footer) con los colores oficiales de Candy Pop, **y también deben soportar el toggle claro/oscuro** (mismo mecanismo `data-theme` que el resto de la app) — a diferencia del tablero, estas páginas no tienen concepto de "paleta por tablero", así que siempre usan Candy Pop × claro/oscuro (2 combinaciones, no 8).
 
-**Decisiones a confirmar antes de implementar** (Pablo no las especificó, quedan abiertas):
-1. El modal de bienvenida es por usuario, pero la paleta se guarda por tablero — ¿a qué tablero se aplica la elección? Propuesta: al tablero que el usuario tiene abierto en ese momento (típicamente su tablero personal, el primero que ve tras loguearse).
-2. Tableros ya existentes al momento del deploy: ¿arrancan todos en Candy Pop (oficial) por default? Parece lo más consistente con "Candy Pop es el tema oficial".
-3. ¿Las páginas públicas (landing/términos/releases) también necesitan modo oscuro, o quedan fijas en el modo claro de Candy Pop?
+**Decisiones confirmadas (sesión 2026-07-11)**:
+1. ~~¿A qué tablero se aplica la elección del modal?~~ → No hay modal global por usuario; el prompt es por tablero, solo visible para el dueño, la primera vez que abre ese tablero sin paleta asignada.
+2. ~~¿Tableros existentes arrancan en Candy Pop por default vía migración?~~ → No se fuerza por migración; quedan sin paleta hasta que el dueño los abre y corre el prompt (Candy Pop si omite). Mismo mecanismo para tableros nuevos y viejos, sin caso especial de migración de datos.
+3. ~~¿Páginas públicas necesitan modo oscuro?~~ → Sí, soportan el toggle claro/oscuro (Candy Pop únicamente, sin selector de paleta ahí).
 
 **Notas técnicas para implementación**:
-- Migración nueva: columna `boards.theme` (TEXT, default `'candy_pop'`).
-- Migración nueva: columna `users.theme_intro_seen` (INTEGER, default 0) — mismo patrón que `pending_access.seen`.
+- Migración nueva: columna `boards.theme` (TEXT, nullable, sin default — `NULL` = "sin paleta asignada todavía", dispara el prompt para el dueño).
+- Migración nueva: columna `boards.theme_prompt_seen` (INTEGER, default 0) — se marca en 1 apenas el dueño ve el prompt (elija o lo omita), para que no vuelva a aparecer. Va en `boards` (no en `board_members` ni `users`) porque es una única decisión por tablero, tomada solo por el dueño — no hace falta trackear por (usuario, tablero) ya que ningún otro miembro puede disparar el prompt.
 - Nuevo token CSS `--success` (hoy no existe; los "done"/checkmarks usan verde hardcodeado suelto, ej. `#27ae60` en el panel admin) — necesario para que cada paleta tenga su propio color de "completado" distinto del accent.
 - `--danger` no varía por paleta (se mantiene el rojo actual `#c0392b` / `#ff7a7a` en las 4 — es semántico/utilitario, no de marca).
-- El mecanismo actual de `data-theme="dark"` (toggle global claro/oscuro) tiene que generalizarse: las variables CSS pasan a derivarse de `(paleta del tablero activo) × (preferencia claro/oscuro del usuario)`, y recalcularse al cambiar de tablero — hoy es un simple switch de dos estados, no una combinación.
+- El mecanismo actual de `data-theme="dark"` (toggle global claro/oscuro) tiene que generalizarse: las variables CSS pasan a derivarse de `(paleta del tablero activo) × (preferencia claro/oscuro del usuario)`, y recalcularse al cambiar de tablero — hoy es un simple switch de dos estados, no una combinación. `boards.theme NULL` se trata como Candy Pop a efectos de render (mientras el prompt no corrió todavía para el dueño).
+- Páginas públicas (`landing.html`, `terminos.html`, `releases.html`): mismo script anti-flash + toggle que `index.html`, pero sin lógica de paleta — siempre Candy Pop.
 
 **Paletas propuestas** (valores hex, revisar contraste final al implementar):
 
