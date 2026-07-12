@@ -22,14 +22,23 @@ test("arrastrar una tarjeta con mouse no selecciona texto de la ventana", async 
 
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  // Movimiento lento en varios pasos, cruzando texto de columnas vecinas —
-  // así es como un usuario real dispara la selección nativa del navegador.
-  await page.mouse.move(box.x + box.width / 2 + 20, box.y + 5, { steps: 10 });
-  await page.mouse.move(box.x + 400, box.y + 20, { steps: 15 });
-  await page.mouse.move(box.x + 600, box.y + 60, { steps: 15 });
-
-  const selectionDuringDrag = await page.evaluate(() => window.getSelection().toString());
-  expect(selectionDuringDrag).toBe("");
+  // Movimiento lento en muchos pasos chicos, cruzando el header y varias tarjetas/columnas
+  // vecinas — así es como un usuario real dispara la selección nativa del navegador, y con
+  // pasos grandes/pocos algunos engines no llegan a intentarlo.
+  const points = [
+    [box.x + box.width / 2 + 20, box.y - 30],
+    [box.x + 200, box.y - 60],
+    [box.x + 400, box.y + 10],
+    [box.x + 600, box.y + 80],
+    [box.x + 750, box.y + 150],
+    [box.x + 600, box.y + 250],
+    [box.x + 300, box.y + 300],
+  ];
+  for (const [x, y] of points) {
+    await page.mouse.move(x, y, { steps: 20 });
+    const selection = await page.evaluate(() => window.getSelection().toString());
+    expect(selection).toBe("");
+  }
 
   await page.mouse.up();
   const selectionAfterDrag = await page.evaluate(() => window.getSelection().toString());

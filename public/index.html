@@ -206,6 +206,9 @@
     cursor: grab;
   }
   .board.panning { cursor: grabbing; user-select: none; }
+  /* Mientras se arrastra una tarjeta, ninguna parte de la página es seleccionable
+     (no solo la tarjeta) — evita selección de texto vecino, ver activateCardDrag(). */
+  body.dragging-active { user-select: none; }
   .app-footer {
     flex: 0 0 auto;
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
@@ -921,6 +924,8 @@
 
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta · <kbd>F1</kbd> ayuda</span>
+  <span class="dot">·</span>
+  <a href="/releases" target="_blank" rel="noopener" title="Ver novedades de esta versión">v2.1.1</a>
   <span class="dot">·</span>
   <a href="/releases" target="_blank" rel="noopener">Novedades</a>
   <a href="/terminos" target="_blank" rel="noopener">Términos</a>
@@ -2155,6 +2160,12 @@
     cardDrag.el._justDragged = true;
     cardDrag.el.classList.add("dragging");
     cardDrag.el.style.pointerEvents = "none"; // para que elementFromPoint "vea" lo que hay debajo
+    // Reparentar la tarjeta entre columnas mientras el navegador tiene una selección de
+    // texto "en vuelo" confunde su heurística de selección (nodos moviéndose de lugar) y
+    // termina seleccionando cosas por fuera de la tarjeta, incluso con preventDefault() en
+    // el pointerdown. user-select:none en toda la página durante el arrastre lo evita del todo.
+    document.body.classList.add("dragging-active");
+    window.getSelection()?.removeAllRanges();
     try { cardDrag.el.setPointerCapture(cardDrag.pointerId); } catch { /* no soportado, no es crítico */ }
   }
 
@@ -2163,6 +2174,7 @@
     const el = cardDrag.el;
     el.classList.remove("dragging");
     el.style.pointerEvents = "";
+    document.body.classList.remove("dragging-active");
     document.querySelectorAll(".cards.drag-over").forEach(c => c.classList.remove("drag-over"));
     cardDrag = null;
     return wasActive;
@@ -2176,6 +2188,9 @@
       activateCardDrag(e);
     }
     e.preventDefault();
+    // Defensa extra: si a pesar de todo el navegador arrancó una selección, la limpiamos
+    // en cada tick — nunca llega a verse (el próximo repaint ya está sin selección).
+    if (window.getSelection()?.toString()) window.getSelection().removeAllRanges();
     const target = document.elementFromPoint(e.clientX, e.clientY);
     const cardsEl = target && target.closest(".cards");
     document.querySelectorAll(".cards.drag-over").forEach(c => { if (c !== cardsEl) c.classList.remove("drag-over"); });
