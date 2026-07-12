@@ -48,6 +48,18 @@
   <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
 
   <div class="release">
+    <h2>v2.1.1 — Temas de color, backup automático operativo y fix de arrastre <span class="tag">Release 13</span></h2>
+    <div class="date">Julio de 2026</div>
+    <ul>
+      <li><b>Temas de color</b>: Candy Pop es la paleta oficial de toda la app (Kanban, modales y páginas públicas). Elegí entre 4 paletas (Sunset Pop, Candy Pop, Citrus Fresh, Jungle Pop) desde ⚙️ → 🎨 Tema — cada tablero tiene la suya, combinada con tu preferencia de claro/oscuro. Al dueño le aparece un aviso para elegir la primera vez que abre un tablero sin paleta asignada.</li>
+      <li><b>Backup automático y purga de logs, operativos en producción</b>: el cron que respalda la base y limpia el registro de rate-limiting cada 8h no se estaba registrando en el worker real — corregido.</li>
+      <li><b>Fix: arrastrar una tarjeta con mouse ya no selecciona texto de la ventana</b> — regresión del soporte de arrastre táctil en Firefox mobile (Release 12).</li>
+      <li><b>Número de versión en el pie de página</b> (junto a "Novedades") para saber siempre qué versión está corriendo.</li>
+      <li>121 pruebas unitarias y 44 pruebas E2E, todas en verde.</li>
+    </ul>
+  </div>
+
+  <div class="release">
     <h2>v2.1 — Modal en dos columnas, gestión de etiquetas e import completo <span class="tag">Release 12</span></h2>
     <div class="date">Julio de 2026</div>
     <ul>

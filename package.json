@@ -1,6 +1,6 @@
 {
   "name": "tas-king",
-  "version": "0.3.0",
+  "version": "2.1.1",
   "description": "Tablero de tareas minimalista — Iteración 2.5 (Cloudflare Workers + D1 + R2)",
   "private": true,
   "scripts": {
