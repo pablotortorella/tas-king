@@ -4,7 +4,7 @@
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
 
-**Versión actual**: v2.1 — **Tests**: 101 unitarios + 29 E2E ✅ Todos pasan  
+**Versión actual**: v2.1.2 — **Tests**: 121 unitarios + 45 E2E ✅ Todos pasan  
 **Rama**: `main` — producción actualizada ✅
 
 **Features completos**: Deep-link, Polling real-time, Celebración con confeti, Historial (#1),
@@ -12,10 +12,11 @@ Etiquetas (#2) con gestión desde ⚙️, Checklists (#3), Protección adjuntos 
 Modo oscuro (#6), Panel ¿Cómo vamos? / Métricas (#7 + #8), Objetivos (#8), Columnas de cierre
 múltiples (🏁 toggle isDone), Columnas customizables (crear/renombrar/eliminar/reordenar),
 Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta 2 columnas,
-CSP + Security headers, i18n landing, Panel admin, IO menu.
+CSP + Security headers, i18n landing, Panel admin, IO menu, Temas de color (#10),
+Fix arrastre sin selección de texto en Chrome.
 
-**Próximo**: #9 ¡Pilas con esto! como puerta de entrada inteligente (ver docs/PRODUCT_BACKLOG.md),
-o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
+**Próximo**: retomar #9 ¡Pilas con esto! como puerta de entrada inteligente (ver
+docs/PRODUCT_BACKLOG.md), o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
 
 ## 🎯 Objetivo siguiente sesión
 
@@ -166,7 +167,43 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
 - No borrar el tablero personal de un usuario (`is_personal=1`)
 
-## Último handoff (2026-07-01, UX teclado + import completo + documentación — Sonnet 4.6)
+## Último handoff (2026-09-07, Deploy v2.1.1 + fix tarjeta duplicada al arrastrar (v2.1.2) — Sonnet 5)
+
+### ✅ v2.1.2: fix de tarjeta duplicada momentáneamente al arrastrar
+Reportado por el usuario justo después de verificar en prod el fix de v2.1.1 (abajo). Causa
+raíz: el polling de fondo (cada 5s) puede caer a mitad de un arrastre — `loadCards()` tira y
+reconstruye todo el DOM del tablero mientras `cardDrag` sigue activo, dejando el nodo de la
+tarjeta arrastrada huérfano; el siguiente `pointermove` lo reinserta duplicado junto al nuevo
+nodo ya renderizado. Se autocorregía en el siguiente poll (de ahí el "un instante").
+- Fix de dos capas en `public/index.html` (mismo patrón que el fix de selección de texto):
+  `pollTick()` (antes un callback anónimo de `setInterval`, ahora nombrado y expuesto como
+  `window.pollTick` para tests) se salta el tick si `cardDrag.active`; y `rebuildOrderFromDom()`
+  deduplica por id como red de seguridad.
+- **Test E2E nuevo** `e2e/drag-no-duplicate.spec.js`: usa el hook `window.pollTick` para forzar
+  el tick a mitad de un arrastre real (Pointer Events). Confirmado que reproduce el bug
+  revirtiendo el fix temporalmente antes de aplicarlo — clave: el assert lee el conteo de
+  tarjetas dentro del mismo `page.evaluate`, no vía `expect(...).toHaveCount()` con reintentos
+  (que esperaría hasta 5s, el mismo intervalo del poll real, y dejaría que el bug se
+  autocorrigiera solo antes de fallar).
+- Revisado por el usuario en local y en staging antes de mergear/deployar.
+- **121 unit + 45 E2E ✅** → deployado a producción como **v2.1.2** (Version ID
+  `38cdfa2a-b046-4681-86f5-152c5d227fcd`) con release notes en `/releases`.
+
+### ✅ Deploy de v2.1.1 (fix mergeado el 12/07, pendiente de deploy hasta hoy)
+El fix de "arrastrar tarjeta selecciona texto en Chrome" (PR #31 + #32, ver `docs/STATUS.md`)
+estaba en `main` desde hace casi dos meses pero nunca se había deployado a producción —
+`AI_HANDOFF.md` decía "producción actualizada" de forma desactualizada. Detectado porque el
+usuario seguía viendo el bug en producción real; confirmado comparando el HTML servido en prod
+contra `main` (faltaba la clase `dragging-active`).
+- `npm run test:all` ✅ (121 unit + 44 E2E) → `npm run deploy` (backup prod + `wrangler deploy` +
+  migraciones remotas, sin migraciones pendientes) → verificado manualmente por el usuario en
+  Chrome real, resuelto.
+- Nota de entorno: la sesión de `wrangler` (OAuth) había expirado sin poder refrescarse sola;
+  hubo que correr `npx wrangler login` de nuevo desde una terminal interactiva.
+
+---
+
+## Handoff anterior (2026-07-01, UX teclado + import completo + documentación — Sonnet 4.6)
 
 ### ✅ Import JSON completo
 El endpoint `POST /api/boards/:boardId/import` ahora restaura la totalidad de los datos exportados:

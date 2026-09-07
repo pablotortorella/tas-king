@@ -110,9 +110,19 @@ git push origin feature/...
 2. Probar en staging ✅
 3. Usuario aprueba: "OK, mergea y deployá"
 4. Claude hace: npm run deploy
+5. Actualizar documentación (ver abajo)
 ```
 
 **Cambios multi-capa** (frontend + backend): Leer [docs/CAMBIOS-MULTICAPA.md](docs/CAMBIOS-MULTICAPA.md)
+
+### 📝 Documentación al deployar a producción (OBLIGATORIO)
+
+Todo deploy a producción va acompañado de estos dos updates, en el mismo momento del deploy:
+
+1. **`docs/STATUS.md`**: agregar la sesión (qué se hizo, causa raíz si fue un fix, tests, Version ID del deploy).
+2. **Si el cambio es relevante para quien usa la app** (nueva feature, fix de un bug visible, no algo puramente interno): agregar una entrada en las **release notes públicas** (`public/releases.html`, el link "Novedades" del pie de página) — copiar un bloque `.release` existente al principio, y bump del número de versión en `package.json` **y** en el pie de página de `public/index.html` (`<a href="/releases" ...>vX.Y.Z</a>`).
+
+`AI_HANDOFF.md` se actualiza solo cuando Pablo lo pide explícitamente (no es parte de este flujo obligatorio).
 
 ---
 

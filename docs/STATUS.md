@@ -1,7 +1,26 @@
-# Estado de Implementación — FUN TasKing! v2.1
+# Estado de Implementación — FUN TasKing! v2.1.2
 
-**Última actualización**: 2026-07-11  
-**Estado**: ✅ Tests completos (121 unit + 43 E2E) | main = staging = producción ✅ (deployado y verificado)
+**Última actualización**: 2026-09-07  
+**Estado**: ✅ Tests completos (121 unit + 45 E2E) | main = staging = producción ✅ (deployado y verificado)
+
+## 🎯 Cambios recientes (sesión 2026-09-07 — fix: tarjeta duplicada momentáneamente al arrastrar)
+
+- **Bug**: al mover una tarjeta de una columna a otra, quedaba visualmente duplicada por unos segundos y se "des-duplicaba" sola. Reportado por el usuario justo después de verificar en producción el fix de selección de texto (ver más abajo) — probablemente porque arrastraba lento y deliberado para probarlo, lo cual hizo más fácil pisar la ventana del bug.
+- **Causa raíz**: el polling de fondo (cada 5s) puede caer a mitad de un arrastre. `loadCards()` hace `board.innerHTML = ""` y reconstruye todas las tarjetas desde cero — si esto corre mientras `cardDrag` sigue activo, el nodo DOM de la tarjeta arrastrada queda huérfano (desprendido del árbol que se acaba de tirar), pero el siguiente `pointermove` lo reinserta igual junto al nuevo nodo ya renderizado por el poll. Resultado: dos elementos `.card` con el mismo id en pantalla. Al soltar, `rebuildOrderFromDom()` contaba la tarjeta dos veces (mismo objeto, agregado dos veces a `state.cards`), y `render()` la pintaba dos veces — hasta el siguiente poll, que reemplaza `state.cards` por completo y hace desaparecer sola la duplicada (de ahí que se autocorrigiera "esperando un instante").
+- **Fix** (`public/index.html`): dos capas, mismo patrón que el fix de selección de texto —
+  1. **Raíz**: el poll (`pollTick()`, ahora una función nombrada en vez de un callback anónimo de `setInterval`) se salta el tick por completo si `cardDrag.active` es `true`, postergando el refresh al siguiente ciclo.
+  2. **Defensiva**: `rebuildOrderFromDom()` ahora deduplica por `id` al reconstruir `state.cards` desde el DOM, por si algún otro trigger futuro (no solo el poll) vuelve a dejar un nodo huérfano.
+- **Test E2E nuevo** (`e2e/drag-no-duplicate.spec.js`): expone `window.pollTick` como hook de test, dispara un arrastre real con Pointer Events, fuerza el tick de polling a mitad de camino (con un cambio de versión real del tablero, vía una tarjeta creada por API directa) y verifica que no quede duplicada. Confirmado que reproduce el bug (falla) revirtiendo temporalmente ambos fixes, y que pasa con el fix aplicado. Ojo: el conteo se captura dentro del mismo `page.evaluate`, no con un `expect(...).toHaveCount()` con reintentos — ese esperaría hasta 5s (el mismo intervalo del poll real) y enmascararía el bug al dejarlo autocorregirse antes de fallar.
+- **121 unit + 45 E2E ✅ todos pasan**. Revisado en local y staging por el usuario, deployado a producción como v2.1.2 (Version ID `38cdfa2a-b046-4681-86f5-152c5d227fcd`), release notes en `/releases`. Verificado contra el HTML servido en prod.
+
+## 🎯 Cambios recientes (sesión 2026-09-07 — fix: selección de texto al arrastrar tarjetas)
+
+- **Bug**: en Chrome de escritorio, arrastrar una tarjeta con mouse seleccionaba el texto de tarjetas/columnas vecinas. Regresión del PR #21 (reemplazo del D&D nativo HTML5 por Pointer Events para soportar arrastre táctil en Firefox mobile) — el D&D nativo prevenía la selección de texto automáticamente, Pointer Events no.
+- **Primer intento** (PR #31, insuficiente): `preventDefault()` en el `pointerdown` + `user-select:none` permanente en `.card`. Probado en staging, seguía fallando en Chrome real.
+- **Fix definitivo** (PR #32): clase `body.dragging-active` con `user-select:none` heredado a toda la página mientras dura el drag (la tarjeta se reparenta a otra columna en cada `pointermove`, y mover nodos del DOM con una selección "en vuelo" hace que el navegador la extienda igual aunque el gesto original haya sido prevenido), más limpieza defensiva de `window.getSelection()` en cada `pointermove`.
+- **Detectado por el usuario en producción varias semanas después del merge**: el fix estaba en `main` desde el 12/07 pero nunca se había deployado — `AI_HANDOFF.md` decía "producción actualizada" de forma desactualizada. Verificado comparando el HTML servido en prod contra el de `main` (faltaba la clase `dragging-active`).
+- **Test E2E fortalecido** (`e2e/drag-no-text-selection.spec.js`): recorre más puntos (header, varias tarjetas/columnas) con pasos más chicos, verificando selección vacía en cada tramo del arrastre, no solo al final.
+- Deployado a producción (Version ID `f165088f-4ef8-48d9-b2c7-296eff90c4cf`) y verificado manualmente por el usuario en Chrome real. **121 unit + 44 E2E ✅**
 
 ## 🎯 Cambios recientes (sesión 2026-07-11 — fix: cron de producción no registrado)
 
