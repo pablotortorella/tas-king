@@ -1,10 +1,10 @@
 // ---------- Authentication ----------
 
-import { getCookie } from "hono/cookie";
-import { RATE_LIMITS, COOKIE_OPTS } from "../constants.js";
+import { getCookie, deleteCookie } from "hono/cookie";
+import { RATE_LIMITS, COOKIE_OPTS, ACCESS_REVOKED_MESSAGE } from "../constants.js";
 import { getClientIP, logger } from "./logging.js";
 import { checkRateLimit, trackRequest } from "./rateLimit.js";
-import { ensureUser, seedAdminIfNeeded } from "../db/helpers.js";
+import { ensureUser, seedAdminIfNeeded, isEmailAllowed } from "../db/helpers.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -55,15 +55,35 @@ export function isLocalRequest(url) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 }
 
-export async function resolveEmail(c) {
+// Email resuelto SOLO a partir de una cookie de sesión real (login con Google). A
+// diferencia de resolveEmail(), nunca cae al bypass de X-Dev-User/DEV_USER_EMAIL — sirve
+// para saber si conviene re-chequear la lista de acceso (ver checkAccessRevoked más abajo).
+export async function resolveSessionEmail(c) {
   const token = getCookie(c, "session");
-  if (token) {
-    const sess = await verifySession(token, c.env.SESSION_SECRET);
-    if (sess && sess.email) return sess.email.trim().toLowerCase();
-  }
+  if (!token) return null;
+  const sess = await verifySession(token, c.env.SESSION_SECRET);
+  return sess && sess.email ? sess.email.trim().toLowerCase() : null;
+}
+
+export async function resolveEmail(c) {
+  const sessionEmail = await resolveSessionEmail(c);
+  if (sessionEmail) return sessionEmail;
   if (!isLocalRequest(c.req.url)) return "";
   const dev = c.req.header("X-Dev-User") || c.env.DEV_USER_EMAIL;
   return dev ? dev.trim().toLowerCase() : "";
+}
+
+// Si el acceso de una sesión real fue revocado (removido de allowed_emails) después de
+// haber iniciado sesión, la cookie firmada seguía siendo válida hasta por 30 días — el
+// panel admin no cortaba el acceso de inmediato. Se re-chequea acá (no en el bypass de
+// dev/tests) y se borra la cookie para no dejar una sesión "zombie". Reutilizable desde
+// cualquier ruta que resuelva su propia autenticación (ver uploads.js).
+export async function checkAccessRevoked(c, sessionEmail) {
+  if (!sessionEmail) return null;
+  const allowed = await isEmailAllowed(c.env.DB, sessionEmail, c.env.ALLOWED_EMAILS);
+  if (allowed) return null;
+  deleteCookie(c, "session", { path: "/" });
+  return c.json({ error: ACCESS_REVOKED_MESSAGE, code: "access_revoked" }, 403);
 }
 
 export function createAuthMiddleware() {
@@ -77,6 +97,10 @@ export function createAuthMiddleware() {
       return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde." }, 429);
     }
     await trackRequest(c.env.DB, ip, endpoint, c.req.method);
+
+    const sessionEmail = await resolveSessionEmail(c);
+    const revoked = await checkAccessRevoked(c, sessionEmail);
+    if (revoked) return revoked;
 
     const email = await resolveEmail(c);
     if (!email) return c.json({ error: "No autenticado." }, 401);
