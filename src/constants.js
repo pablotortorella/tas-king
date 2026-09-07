@@ -37,6 +37,10 @@ export const RATE_LIMIT_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 export const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "Lax", path: "/" };
 
+export const ACCESS_REVOKED_MESSAGE =
+  "Tu acceso a este tablero fue revocado. Si creés que es un error, contactá al administrador. " +
+  "Tus tableros no se borraron: si te vuelven a habilitar el acceso, vas a encontrar todo igual.";
+
 export const ALLOWED_ORIGINS = [
   "https://tas-king.pablotortorella.workers.dev",
   "http://localhost:8787",

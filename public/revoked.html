@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso revocado · FUN TasKing!</title>
+<script>
+  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
+  (function () {
+    try {
+      var t = localStorage.getItem("tasking-theme");
+      if (t !== "dark" && t !== "light") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
+  })();
+</script>
+<style>
+  /* Candy Pop, la paleta oficial (#10) — páginas públicas no tienen selector de
+     paleta por tablero, solo claro/oscuro. */
+  :root { --bg:#FBF7FF; --text:#362A4A; --muted:#8577A3; --accent:#9B5DE5; --header-bg:#7C3AED; --border:#E4D6F5; --card-bg:#FFFFFF; }
+  html[data-theme="dark"] { --bg:#1E1329; --text:#F0E6FF; --muted:#B9A8D9; --accent:#C084FC; --header-bg:#4B2378; --border:#4A2F63; --card-bg:#332145; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; display:flex; align-items:center; justify-content:center; }
+  main { max-width:440px; margin:0 auto; padding:28px 20px 60px; }
+  .card { background:var(--card-bg); border:1px solid var(--border); border-radius:10px; padding:32px 28px; text-align:center; }
+  .icon { font-size:40px; margin-bottom:12px; }
+  h1 { font-size:20px; margin:0 0 14px; }
+  p { font-size:15px; color:var(--muted); margin:0 0 10px; }
+  a.cta { display:inline-block; margin-top:14px; background:var(--accent); color:#fff; text-decoration:none;
+    padding:9px 20px; border-radius:6px; font-weight:600; font-size:14px; }
+  a.cta:hover { opacity:.9; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="icon">🔒</div>
+    <h1>Acceso revocado</h1>
+    <p>Tu acceso a este tablero fue revocado. Si creés que es un error, contactá al administrador.</p>
+    <p>Tus tableros no se borraron: si te vuelven a habilitar el acceso, vas a encontrar todo igual.</p>
+    <a class="cta" href="/auth/login">Entrar con Google</a>
+  </div>
+</main>
+</body>
+</html>

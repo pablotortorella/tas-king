@@ -1,7 +1,7 @@
 // ---------- Routes: Uploads (File Serving) ----------
 
 import { membership, logEvent } from "../db/helpers.js";
-import { resolveEmail } from "../middleware/auth.js";
+import { resolveEmail, resolveSessionEmail, checkAccessRevoked } from "../middleware/auth.js";
 import { getClientIP } from "../middleware/logging.js";
 import { RATE_LIMITS, MAX_FILE_SIZE, MAX_ATTACHMENTS_PER_CARD, ALLOWED_MIME_TYPES } from "../constants.js";
 import { checkRateLimit, trackRequest } from "../middleware/rateLimit.js";
@@ -21,7 +21,10 @@ export function setupUploadRoutes(app) {
     }
     await trackRequest(c.env.DB, ip, "/uploads", c.req.method);
 
-    // Validar autenticación
+    // Validar autenticación. Esta ruta vive fuera de /api/* (createAuthMiddleware no
+    // aplica acá), así que re-chequea acceso revocado por su cuenta.
+    const revoked = await checkAccessRevoked(c, await resolveSessionEmail(c));
+    if (revoked) return revoked;
     const email = await resolveEmail(c);
     if (!email) return c.json({ error: "No autenticado." }, 401);
 

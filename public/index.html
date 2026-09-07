@@ -1482,7 +1482,16 @@
     });
     if (!res.ok) {
       let msg = res.statusText;
-      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+      let code;
+      try { const j = await res.json(); if (j && j.error) msg = j.error; if (j && j.code) code = j.code; } catch (e) {}
+      if (code === "access_revoked") {
+        // Puede llegar desde cualquier llamada (el poll de fondo incluido), no solo la
+        // carga inicial — se navega ya mismo y no se resuelve esta promesa, para que
+        // ningún catch de arriba llegue a mostrar un alert() con el error a mitad de la
+        // redirección.
+        window.location.href = "/revoked";
+        return new Promise(() => {});
+      }
       const err = new Error(msg);
       err.status = res.status;
       throw err;
