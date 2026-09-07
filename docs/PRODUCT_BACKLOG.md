@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-07-08
+**Última actualización**: 2026-09-07
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -47,6 +47,7 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 | — | 🎯 Pulso WIP "Dejar de empezar y empezar a terminar" | 2026-07-04 — ver detalle en `docs/STATUS.md` |
 | #10 | 🎨 Temas de color (paleta oficial + selector por tablero) | 2026-07-11 — Candy Pop es el default de toda la app (Kanban + páginas públicas); Sunset Pop/Citrus Fresh/Jungle Pop seleccionables por tablero desde ⚙️ → Tema; prompt de bienvenida para el dueño en tableros sin paleta. Ver detalle en `docs/STATUS.md` |
 | — | 🧹 Purga de `rate_limit_log` + backup automático operativo | 2026-07-11 — código de PR #19 (2026-07-07) ya estaba mergeado y testeado; el gap real era que el cron nunca se registraba en el worker de producción (`triggers.crons` vivía solo en `env.production`, no en el nivel raíz que usa `npm run deploy`). Fix + verificado en el log del deploy (`schedule: 0 */8 * * *`) |
+| — | 🔒 Revocación de acceso efectiva | 2026-09-07 — re-chequeo de `allowed_emails` en cada request autenticado por cookie real (no en el bypass de dev/tests) + página pública `/revoked` con mensaje diferencial. Ver `docs/ADRs/ADR-015-revocacion-acceso-sesion-cookie.md` y `docs/STATUS.md` |
 
 ---
 
@@ -67,7 +68,7 @@ Ideas de evolución, en orden de qué falta:
 
 **Por qué es clave**: FUN TasKing! se posiciona como una herramienta que no solo organiza tareas sino que empuja a terminarlas. "¡Pilas con esto!" es la manifestación más directa de esa filosofía: no acumular, no olvidar, cerrar el loop.
 
-> ⚠️ **Compiten en prioridad con #9**: los 3 hallazgos 🔴 del análisis técnico 2026-07-07 (backup no operativo, revocación de acceso, purga de `rate_limit_log`) — ver sección 🩺 más abajo. Los tres son de esfuerzo chico.
+> ✅ Los 3 hallazgos 🔴 del análisis técnico 2026-07-07 que competían en prioridad con #9 (backup no operativo, revocación de acceso, purga de `rate_limit_log`) ya están resueltos — ver ✅ Completado arriba. Quedan los hallazgos 🟠/🟡/🟢 de la sección 🩺 más abajo, ninguno crítico.
 
 ---
 
@@ -107,7 +108,7 @@ Resultado del análisis funcional y técnico completo (código, seguridad, opera
 
 ### 🔴 Crítico
 
-- **Revocación de acceso no efectiva** — 🟢 chico. El middleware de auth (`src/middleware/auth.js`) valida la cookie firmada (30 días) pero no re-chequea `allowed_emails`; `ensureUser` incluso recrea el usuario borrado. **Riesgo**: sacar a alguien desde el panel admin no le corta el acceso hasta que expire su sesión — hasta 30 días. Grave si la remoción es por un incidente. **Acción**: re-chequear `isEmailAllowed()` en el middleware (1 query extra por request; cacheable unos minutos si preocupa el costo).
+_Sin ítems pendientes — ver ✅ Completado._
 
 ### 🟠 Alto — bugs funcionales visibles
 

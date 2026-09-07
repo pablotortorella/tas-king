@@ -1,7 +1,19 @@
-# Estado de Implementación — FUN TasKing! v2.1.2
+# Estado de Implementación — FUN TasKing! v2.1.3
 
 **Última actualización**: 2026-09-07  
-**Estado**: ✅ Tests completos (121 unit + 45 E2E) | main = staging = producción ✅ (deployado y verificado)
+**Estado**: ✅ Tests completos (125 unit + 47 E2E) | main = staging = producción ✅ (deployado y verificado)
+
+## 🎯 Cambios recientes (sesión 2026-09-07 — fix crítico: revocación de acceso no efectiva)
+
+- **Bug de seguridad** (hallazgo 🔴 crítico del análisis técnico 2026-07-07, ver `docs/PRODUCT_BACKLOG.md`): sacar a alguien de `allowed_emails` desde ⚙ Admin no le cortaba el acceso — su cookie de sesión (firmada, válida hasta 30 días) seguía funcionando porque `createAuthMiddleware()` solo validaba la firma/expiración, sin re-chequear la lista de acceso.
+- **Fix**: `resolveSessionEmail()` (identidad SOLO desde cookie real, sin caer al bypass de dev/tests) + `checkAccessRevoked()` en `src/middleware/auth.js` — re-chequea `isEmailAllowed()` en cada request autenticado por cookie real; si ya no está permitido, borra la cookie y responde `403 { code: "access_revoked" }`. Aplicado también en `GET /uploads/:key` (vive fuera de `/api/*`, resolvía su propia auth por separado — sin esto quedaba como gap silencioso para descargar adjuntos).
+- **Frontend**: `api()` en `public/index.html` centraliza la reacción — cualquier llamada (el poll de fondo incluido) que reciba `code: "access_revoked"` navega a la nueva página pública `/revoked` sin resolver la promesa (evita un `alert()` con el error justo antes de redirigir).
+- **Mensaje** (`/revoked.html`, mismo patrón visual que `/landing`/`/releases`/`/terminos`): "Tu acceso a este tablero fue revocado. Si creés que es un error, contactá al administrador. Tus tableros no se borraron: si te vuelven a habilitar el acceso, vas a encontrar todo igual."
+- **Por qué no aplica al bypass de dev/tests** (`X-Dev-User`/`DEV_USER_EMAIL`): ya está gateado por `isLocalRequest()` (inerte en producción real); aplicarle el mismo chequeo hubiera roto los ~10 archivos de tests unitarios que autentican con emails sintéticos nunca dados de alta en `allowed_emails`, sin aportar seguridad real. Decisión completa en `docs/ADRs/ADR-015-revocacion-acceso-sesion-cookie.md`.
+- **Tests nuevos**: `test/access-revocation.test.js` (backend — firma una cookie de sesión real con `signSession()`/`SESSION_SECRET` del entorno de test, confirma 403+borrado de cookie tras remover el email, y que el bypass de dev no se ve afectado) + `e2e/access-revoked.spec.js` (frontend — redirección a `/revoked` interceptando la respuesta vía `page.route`, tanto en la carga inicial como desde `window.pollTick()`).
+- **Probado en staging con OAuth real**: se removió a Pablo de `allowed_emails` en staging con una sesión ya iniciada — confirmó la redirección a `/revoked` con el mensaje esperado. Al reintentar login, correctamente cae en el gate ya existente de `/auth/callback` (mensaje genérico "no autorizada", no `/revoked` — son casos distintos: sesión activa cortada vs. intento de login nuevo).
+- ⚠️ **Caveat descubierto durante la prueba**: si se borra la última fila de `allowed_emails`, la tabla queda vacía y `isEmailAllowed()` cae al fallback del Secret `ALLOWED_EMAILS` (pensado para "instalación nueva sin nadie configurado todavía") — revocar al único email de la lista no corta el acceso si ese email también está en el Secret. No aplica a producción real (tiene varios emails cargados), pero queda anotado como limitante conocida del fallback existente (no introducida por este fix).
+- **121 unit + 45 E2E** → con este fix, **125 unit + 47 E2E ✅ todos pasan**. Revisado en staging con OAuth real, deployado a producción como v2.1.3 (Version ID `6fd2ae28-beec-4f8a-9172-642a724a3f3a`), release notes en `/releases`.
 
 ## 🎯 Cambios recientes (sesión 2026-09-07 — fix: tarjeta duplicada momentáneamente al arrastrar)
 
