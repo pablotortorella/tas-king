@@ -1,7 +1,14 @@
-# Estado de Implementación — FUN TasKing! v2.1.3
+# Estado de Implementación — FUN TasKing! v2.1.4
 
-**Última actualización**: 2026-09-07  
+**Última actualización**: 2026-09-08  
 **Estado**: ✅ Tests completos (125 unit + 47 E2E) | main = staging = producción ✅ (deployado y verificado)
+
+## 🎯 Cambios recientes (sesión 2026-09-08 — favicon + nuevo acuerdo de workflow en CLAUDE.md)
+
+- **Favicon**: la app no tenía ícono de pestaña configurado. Se diseñó una corona a medida en SVG (`public/favicon.svg`), en la paleta violeta de la app. Se probaron 5 variantes con distinto tratamiento de contraste (halo blanco, placa de fondo, violeta claro + contorno, contorno blanco), cada una servida temporalmente en una página distinta (`/`, `/landing`, `/releases`, `/terminos`, `/revoked`) para comparar en pestañas reales del navegador en tema claro y oscuro. Se eligió la variante con **placa de fondo lavanda claro** (mejor legibilidad en ambos temas, incluso a 16px) y se aplicó como único favicon en las 5 páginas públicas.
+- **Cambio de workflow (CLAUDE.md)**: el default pasa de "siempre rama + PR" a **commit + push directo a `main`**. Rama + PR queda como excepción, solo para migraciones de DB o cambios grandes/multi-archivo.
+- **Limpieza de ramas obsoletas**: se identificaron 4 ramas (2 remotas-only, 2 con copia local) marcadas como "no mergeadas" por `git branch --no-merged` que en realidad ya estaban 100% incorporadas a `main` vía squash-merge (columnas customizables, modo oscuro, vincular objetivo al crear tarjeta) — se borraron local y remoto sin pérdida de trabajo. Se detectó al pasar que la convención de squash-merge nunca quedó documentada en `docs/DEPLOYMENT.md` (todavía dice `git merge --no-ff`), pendiente de corregir.
+- Deployado a producción como v2.1.4 (Version ID `37bca8ad-a242-41c4-a8b5-099518f77336`), release notes en `/releases`.
 
 ## 🎯 Cambios recientes (sesión 2026-09-07 — fix crítico: revocación de acceso no efectiva)
 
