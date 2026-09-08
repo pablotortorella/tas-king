@@ -50,6 +50,15 @@ Si escribís código, escribís tests.
   - ✅ `git add src/labels.js test/labels.spec.js`
   - ❌ `git add .` (todo junto)
 
+### Rama vs. commit directo a main
+**Default: commit + push directo a `main`.** Rama + PR es la excepción, no la regla.
+
+Usar rama + PR solo cuando el cambio es:
+- **Migración de DB** (cambio de esquema D1) — más riesgoso de revertir una vez aplicado en producción.
+- **Grande o multi-archivo** (una feature que toca muchos archivos, donde conviene revisar el diff completo antes de main).
+
+Cualquier otra cosa (fixes, cambios cosméticos, features chicas, docs) va directo a `main`. Ante la duda, o si Pablo lo pide explícitamente para un caso puntual, usar rama.
+
 ### Pruebas locales
 ```bash
 npm run dev                 # Ver cambios en tiempo real
@@ -98,7 +107,7 @@ src/
 npm run test:all           # Suite completa pasa (✅ obligatorio)
 git diff                   # Revisar cambios
 git log --oneline main..HEAD  # Revisar commits
-git push origin feature/...
+git push origin main       # Default. Si es migración de DB o cambio grande: rama + PR
 ```
 
 ## 🚀 Despliegue a producción (FLUJO OBLIGATORIO)
@@ -108,7 +117,7 @@ git push origin feature/...
 ```
 1. Tests pasan 100% ✅ (local)
 2. Probar en staging ✅
-3. Usuario aprueba: "OK, mergea y deployá"
+3. Usuario aprueba: "OK, deployá" (o "mergea y deployá" si el cambio está en una rama — migración de DB o cambio grande)
 4. Claude hace: npm run deploy
 5. Actualizar documentación (ver abajo)
 ```
@@ -144,7 +153,7 @@ Todo deploy a producción va acompañado de estos dos updates, en el mismo momen
 
 - ❌ Código sin tests
 - ❌ Commitear `.dev.vars` (contiene credenciales)
-- ❌ Pushear directamente a main (siempre rama + PR)
+- ❌ Migración de DB o cambio grande/multi-archivo directo a main (siempre rama + PR para esos casos — ver "Rama vs. commit directo a main")
 - ❌ `git push --force` a main
 - ❌ Hardcodear secrets, emails, URLs
 - ❌ Cambiar DB sin migración versionada
@@ -179,17 +188,17 @@ npm run db:reset:local        # Si la DB local está inconsistente
 npm run test:all
 ```
 
-**Mi rama divergió de main**:
+**Mi rama divergió de main** (para los casos que sí usan rama — migración de DB o cambio grande):
 ```bash
 git fetch origin
 git rebase origin/main
 ```
 
-**Committé en main por error**:
+**Empecé un cambio directo en main pero resultó ser grande/migración de DB**:
 ```bash
-git checkout -b feature/nueva-rama    # Guardar cambios
-git reset --hard origin/main          # Volver main a remoto
-git checkout feature/nueva-rama       # Ir a rama con cambios
+git checkout -b feature/nueva-rama    # Mover el trabajo a una rama
+git reset --hard origin/main          # Volver main local a lo que ya está en remoto
+git checkout feature/nueva-rama       # Seguir ahí, abrir PR cuando esté listo
 ```
 
 ---
