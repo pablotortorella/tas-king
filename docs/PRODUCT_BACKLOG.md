@@ -99,6 +99,10 @@ Ideas de evolución, en orden de qué falta:
 - **Papelera (soft-delete)**: recuperar tarjetas borradas (distinto del archivo actual, que ya permite restaurar tarjetas archivadas — evaluar si esto ya cubre la necesidad antes de construir algo nuevo).
 - **Rol "solo lectura"** en tableros compartidos.
 - **PWA instalable** + mejoras de mobile.
+- **Tips a medida basados en comportamiento** (explorado 2026-09-09, pensado junto con el tip diario de onboarding pero implementable por separado):
+  - *Enfoque decidido*: mirada **sistémica** (el estado del flujo del tablero) mostrando además **cómo el comportamiento concreto de la persona contribuye a ese estado**. Ni acusación individual ("moviste 6 tarjetas y no terminaste ninguna") ni estadística abstracta que no le habla a nadie. Fundamento Lean: el problema es el proceso, no la persona; la persona necesita ver su aporte al flujo, no ser juzgada.
+  - *Hallazgo técnico*: no requiere instrumentar nada nuevo. `audit_log` (migración 0005) ya registra `board_id | card_id | action | email | ts | details(JSON)` con 10 acciones (`card_created/moved/edited/archived/restored/deleted`, `column_created/renamed/moved/deleted`). Es un lector sobre un stream de eventos existente, no un feature de captura de datos.
+  - *Riesgo principal*: molestar o sonar vigilante. Necesita control de frecuencia explícito y un espacio de UI propio, distinto del tip diario.
 
 ---
 
