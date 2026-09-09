@@ -59,6 +59,13 @@ Usar rama + PR solo cuando el cambio es:
 
 Cualquier otra cosa (fixes, cambios cosméticos, features chicas, docs) va directo a `main`. Ante la duda, o si Pablo lo pide explícitamente para un caso puntual, usar rama.
 
+### Planificar antes de codear (OpenSpec)
+Para una **funcionalidad nueva**, el flujo es `/opsx:explore` → `/opsx:propose` → `/opsx:apply` → `/opsx:archive`.
+
+**`explore` va primero y no se saltea**: es una conversación para tomar decisiones de a una, con el código a la vista. Ir directo a `propose` genera artefactos que deciden por Pablo en vez de con Pablo. Ir despacio acá es la intención, no una demora.
+
+Detalles y estructura de carpetas: [QUICK_START.md § OpenSpec](QUICK_START.md).
+
 ### Pruebas locales
 ```bash
 npm run dev                 # Ver cambios en tiempo real
@@ -140,6 +147,7 @@ Todo deploy a producción va acompañado de estos dos updates, en el mismo momen
 | Necesito | Archivo | Notas |
 |---|---|---|
 | **Dónde estamos** | QUICK_START.md | ✅ Lectura obligatoria al inicio |
+| **Planificar una feature (SDD)** | QUICK_START.md § OpenSpec | `explore` → `propose` → `apply` → `archive` |
 | **Qué features existen** | docs/STATUS.md | Estado actual de cada feature |
 | **Por qué se decidió así** | docs/ADRs.md | Decisiones arquitectónicas |
 | **Flujo de trabajo** | docs/WORKFLOW.md | Detalles de proceso |

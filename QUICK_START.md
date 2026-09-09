@@ -17,33 +17,25 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ## 📍 Dónde estamos (Estado actual)
 
-**Última actualización**: 2026-06-30  
-**Versión**: 1.9 (Columnas customizables — rama lista, pendiente merge)
+**Última actualización**: 2026-09-09  
+**Versión**: 2.1.4 en producción — `main` = staging = producción ✅
 
-### ✅ Completado esta sesión
-- **Columnas customizables** (crear / renombrar / eliminar) en todos los tableros
-  - Migración `0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`
-  - Módulo `src/db/columns.js` (sin dependencias circulares): `createDefaultColumns`, `getDoneColumnId`, `columnToJSON`
-  - Backend `src/routes/columns.js`: GET / POST / PATCH / DELETE `/api/boards/:id/columns`
-  - Frontend: botones ✏ y ✕ por columna + widget `+ Columna` al final del tablero
-  - Tests: 10 unitarios (Vitest) + 4 E2E (Playwright) ✅ — **Total: 69 unit + 22 E2E**
-  - Rama: `claude/board-column-customization-jfqgmd` — PR por abrir
+### ✅ Completado en la última sesión (2026-09-08/09)
+- **Favicon** (v2.1.4, deployado): corona en SVG a medida (`public/favicon.svg`) en las 5 páginas públicas. Se compararon 5 variantes de contraste; ganó la de placa de fondo lavanda por legibilidad en tema claro y oscuro a 16px.
+- **Cambio de workflow**: commit + push directo a `main` es ahora el default. Rama + PR quedó como excepción para migraciones de DB y cambios grandes/multi-archivo. Ver CLAUDE.md → "Rama vs. commit directo a main".
+- **Limpieza de ramas**: se borraron 4 ramas obsoletas que `git branch --no-merged` marcaba como pendientes pero ya estaban incorporadas a `main` vía squash-merge. No quedan ramas con trabajo sin mergear.
+- **OpenSpec incorporado** (spec-driven development) — ver sección propia más abajo.
 
 ### 🔄 En vuelo
-- **Objetivos (#8)** — PR #9 abierto, **pendiente revisar en staging y mergear**
-- **Columnas** — rama `claude/board-column-customization-jfqgmd` pusheada, **pendiente abrir PR, revisar staging y mergear**
+- **`tip-diario`** — change de OpenSpec con los 4 artefactos completos y validados, **sin implementar**. Es planeamiento puro; no se tocó código de producto.
 
-### ⏭️ Próximo (una vez mergeados los dos PRs)
-- **#6 Modo oscuro** — CSS variables ya listas, falta toggle + localStorage
-- **Seguridad** — CSP headers, rate limiting granular
-- **#7 Lead time / tasa de completitud**
+### ⏭️ Próximo
+Para retomar `tip-diario`, tres caminos posibles:
+1. **Escribir el contenido de los tips** (tarea 1.1 de `tasks.md`) — es lo que más requiere a Pablo; conviene hacerlo conversando, tipo `/opsx:explore`.
+2. **Revisar/ajustar los artefactos** con `/opsx:update` (mantiene los cuatro coherentes entre sí).
+3. **Implementar** con `/opsx:apply`, que va tachando `tasks.md`.
 
-Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
-
-### ⚠️ Orden de merges recomendado
-1. Primero mergear PR #9 (Objetivos) — ya probado en sesiones anteriores
-2. Luego abrir PR para `claude/board-column-customization-jfqgmd`, revisar en staging, mergear
-3. Deploy a producción con ambas migraciones (`0010_goals.sql` + `0011_columns.sql`)
+Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).
 
 ---
 
@@ -56,6 +48,42 @@ Ver `docs/STATUS.md` sección "Features NO Implementados" para detalles.
 - **Documentar decisiones**: Si es arquitectónico, va en `docs/ADRs.md`
 
 **Detalles completos**: [Ver CLAUDE.md](CLAUDE.md)
+
+---
+
+## 📐 OpenSpec (Spec-Driven Development)
+
+Incorporado el 2026-09-09 para planificar funcionalidades antes de escribir código. CLI: `@fission-ai/openspec` (instalado global).
+
+**El ciclo**, en orden. El primer paso no es opcional:
+
+```
+/opsx:explore  -->  /opsx:propose  -->  /opsx:apply  -->  /opsx:archive
+   conversar         4 artefactos       implementar      mergear specs
+   y decidir         (planeamiento)     tasks.md         a openspec/specs/
+```
+
+- **`explore` primero, siempre.** Es una conversación, no un formulario: una decisión por vez, con el código a la vista. Saltearlo y pedir `propose` directo produce artefactos que suenan bien pero deciden por vos.
+- **Ir despacio.** El valor está en las decisiones, no en la velocidad de generar archivos.
+
+**Dónde vive cada cosa:**
+
+| Carpeta | Qué contiene |
+|---|---|
+| `openspec/specs/` | Specs vigentes. Permanentes. Fuente de verdad de qué hace el sistema. |
+| `openspec/changes/` | Trabajo **en vuelo**. Solo lo que se está por hacer. |
+| `openspec/changes/archive/` | Changes ya implementados, con fecha. |
+| `docs/PRODUCT_BACKLOG.md` | Ideas futuras. **No** van en `changes/` — llenarlo de ideas mata la señal de "qué hay en vuelo". |
+
+**Brownfield**: no hay que documentar retroactivamente lo ya construido. Las specs son *deltas* (ADDED/MODIFIED/REMOVED) y nacen recién cuando se toca esa parte. El código sin spec queda como está.
+
+**Ojo**: `.claude/` está en `.gitignore`, así que los comandos `/opsx:*` y sus skills **no se versionan** — viven solo en la máquina donde se corrió el init. En una máquina nueva: `openspec init --tools claude --language es`. Lo que sí se versiona es `openspec/`, que es lo que importa.
+
+```bash
+openspec list                    # changes activos
+openspec status --change <name>  # progreso de artefactos
+openspec validate <name> --strict
+```
 
 ---
 
