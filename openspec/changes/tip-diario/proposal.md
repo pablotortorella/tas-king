@@ -6,11 +6,12 @@ El objetivo no es sólo dar a conocer features: es que quien usa el tablero todo
 
 ## What Changes
 
-- Nueva capacidad **tip diario**: una línea discreta y permanente bajo el header del tablero, con un consejo por día sobre práctica Lean/Kanban.
+- Nueva capacidad **tip diario**: una franja discreta y permanente encima del footer, con un consejo por día sobre práctica de gestión del trabajo.
 - **Un tip por día, no una rotación**: el mismo consejo durante toda la jornada. Se lo puede mirar cuando uno quiera, sin que cambie mientras se trabaja.
 - **Progresión por persona**: cada persona avanza su propia secuencia. Quien recién llega empieza por el primer tip y recorre los fundamentos en orden; cuando termina la lista, vuelve a empezar.
 - **Realce discreto**: una vez por día, tras una interacción cualquiera con el tablero, la línea titila brevemente para que se la note. El titileo no depende de *qué* hizo la persona — sólo aprovecha un momento en que está mirando la pantalla.
-- **Contenido**: principio Lean/Kanban primero, afordancia concreta de la app después. La secuencia se ordena según las seis prácticas centrales del método Kanban, y luego continúa con tips de método puro antes de reiniciar el ciclo.
+- **Contenido en tres tramos**: (1) principio Kanban + afordancia concreta de la app, ordenado según las seis prácticas centrales del método; (2) práctica Kanban pura, sin referencias a funcionalidades; (3) otros métodos y prácticas de gestión del trabajo — GTD, Pomodoro, priorización cotidiana. Recién después de los tres, el ciclo vuelve a empezar. La progresión va de la herramienta al método que la fundamenta, y de ahí a otras escuelas.
+- **Voz**: los tips de coordinación y colaboración se escriben en plural, y donde aplique se suma la versión singular como tip adicional, no como reemplazo — quien trabaja solo y quien comparte tablero reciben cada uno lo suyo.
 - **Sin toggle de apagado en v1**: es una línea de texto quieta que no interrumpe; se evalúa agregar un control si la práctica muestra que molesta.
 
 ### Fuera de alcance (explícito)

@@ -68,15 +68,33 @@ El mecanismo SHALL ser plenamente funcional para quien tiene las animaciones red
 - **THEN** el tip del día se muestra igual, legible y completo, y el sistema omite el realce animado
 
 ### Requirement: Contenido como progresión de práctica
-La secuencia de tips SHALL estar ordenada como una progresión: primero tips que combinan un principio Lean/Kanban con la afordancia concreta de la app que permite aplicarlo, ordenados según las prácticas centrales del método Kanban; y a continuación tips de método puro, sin referencia a funcionalidades. Recién después de ambos tramos la secuencia vuelve a empezar.
+La secuencia de tips SHALL estar ordenada como una progresión de tres tramos: primero tips que combinan un principio Kanban con la afordancia concreta de la app que permite aplicarlo; luego tips de práctica Kanban pura, sin referencia a funcionalidades; y finalmente tips de otros métodos y prácticas de gestión del trabajo. Recién después de los tres tramos la secuencia vuelve a empezar.
 
-#### Scenario: Los primeros tips conectan práctica y herramienta
+#### Scenario: El primer tramo conecta práctica y herramienta
 - **WHEN** una persona recorre el primer tramo de la secuencia
 - **THEN** cada tip enuncia un principio de práctica y señala la funcionalidad de la app que permite llevarlo a cabo
 
-#### Scenario: El segundo tramo profundiza en el método
+#### Scenario: El segundo tramo profundiza en el método propio de la herramienta
 - **WHEN** una persona termina el primer tramo y continúa
-- **THEN** los tips siguientes tratan sobre práctica Lean/Kanban sin depender de funcionalidades específicas de la app
+- **THEN** los tips siguientes tratan sobre práctica Kanban sin depender de funcionalidades específicas de la app
+
+#### Scenario: El tercer tramo se abre a otros métodos
+- **WHEN** una persona termina el segundo tramo y continúa
+- **THEN** los tips siguientes tratan sobre otros métodos y prácticas de gestión del trabajo, sin referencia a funcionalidades de la app
+
+### Requirement: Textos legibles por completo
+Cada tip SHALL poder leerse entero en la pantalla más angosta soportada. El sistema SHALL NOT truncar el texto de un tip.
+
+#### Scenario: Lectura completa en mobile
+- **WHEN** una persona abre el tablero en una pantalla angosta
+- **THEN** el tip se muestra completo, ocupando las líneas que necesite, sin recortes ni puntos suspensivos
+
+### Requirement: Cada tip se entiende por sí solo
+Cada tip SHALL ser comprensible sin conocer el método que lo inspira, sin haber visto los tips anteriores y sin depender de ninguna etiqueta o rótulo que lo acompañe.
+
+#### Scenario: Primer día de uso
+- **WHEN** una persona ve su primer tip, sin conocer Kanban ni ningún otro método
+- **THEN** el texto se entiende por sí mismo y no requiere contexto externo para saber qué hacer
 
 ### Requirement: Sin persistencia en servidor
 El mecanismo completo —contenido, avance de la secuencia y control del realce diario— SHALL funcionar sin endpoints ni tablas nuevas. El avance es propio del navegador de cada persona.

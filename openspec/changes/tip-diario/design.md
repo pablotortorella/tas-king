@@ -25,7 +25,7 @@ La app además ya habla el idioma de esta capacidad: el toast del Pulso WIP dice
 
 - **Dos claves en `localStorage`, nada más**: el índice del tip actual y la fecha en que se mostró por última vez. Al abrir el tablero: si la fecha guardada no es hoy, avanzar el índice (con vuelta al inicio al llegar al final) y grabar la fecha de hoy; si es hoy, mostrar el índice tal cual. Eso solo ya cumple "un tip por día", "estable durante la jornada" y "no se pierde ninguno".
 
-- **Una lista plana, ordenada intencionalmente.** Los tips del primer tramo (principio + afordancia) y los del segundo (método puro) viven en el mismo array; la progresión está en el orden, no en el código. El puntero no necesita saber que hay tramos. *Alternativa descartada*: marcar los tramos con metadata y saltear el primero en la segunda vuelta — agrega estado ("ya completó una vuelta") para resolver una redundancia menor, y son prácticas que se re-aplican.
+- **Una lista plana, ordenada intencionalmente.** Los tres tramos —principio + afordancia, Kanban puro, y otros métodos— viven en el mismo array; la progresión está en el orden, no en el código. El puntero no necesita saber que hay tramos. *Alternativa descartada*: marcar los tramos con metadata y saltear el primero en la segunda vuelta — agrega estado ("ya completó una vuelta") para resolver una redundancia menor, y son prácticas que se re-aplican.
 
 - **Realce con tope diario propio, reutilizando el patrón de fecha.** Una tercera clave con la fecha del último realce, con la misma forma que `tasking-wip-msg-date`. Se dispara en el primer evento de interacción del día con el tablero; después queda inerte hasta el día siguiente.
 
@@ -33,12 +33,24 @@ La app además ya habla el idioma de esta capacidad: el toast del Pulso WIP dice
 
 - **Sin toggle de apagado en v1.** El header ya tiene cuatro controles (🎯, 🌙, perfil, Admin) y esto es una línea de texto quieta sin descarte. Se deja la puerta abierta: agregar un toggle después no invalida ningún requirement de este spec. *Alternativa considerada*: darle su propio toggle por simetría con el Pulso WIP — argumento legítimo, pero ese pulsa tarjetas y lanza un toast; esto no hace ruido comparable.
 
+- **Ubicación: franja propia justo encima del footer** (no bajo el header, no modal, no overlay). Verificado en el código: `body` es flex column con `height:100vh` y `overflow:hidden`, el único elemento que scrollea es el área del tablero (línea ~203), y `.app-footer` es `flex: 0 0 auto` — o sea que **el footer está permanentemente a la vista, igual que el header**, así que ubicar el tip ahí no le quita permanencia. Tres razones: (1) arriba los ~36px se le restan al área que scrollea, justo sobre el pliegue; abajo se suman a una franja que ya es permanente; (2) el footer ya reúne "cómo usar la app" —atajos, ayuda F1, versión, links—, y un consejo de práctica pertenece a esa familia más que al borde del tablero; (3) en mobile el footer ya mide 48px e incluye los atajos `F · U · N · F1`, inútiles sin teclado: ocultarlos en pantallas angostas deja el costo neto en aproximadamente cero.
+  - *Alternativa descartada — bajo el header*: se lee primero, pero cobra el espacio más caro de la pantalla. Costo aceptado de ir abajo: se lee menos; para eso está el realce diario.
+  - *Alternativa descartada — dentro de la fila del footer*: no costaría espacio nuevo, pero a 12px y en `--muted` el consejo quedaría como letra chica entre créditos y licencia. Si el tip es lo único que empuja la práctica, tiene que leerse como contenido y no como pie de página.
+  - *A tener en cuenta al implementar*: `.wip-toast` es `position: fixed` con `bottom: 24px`, así que al aparecer puede tapar la franja unos 5 segundos.
+
+- **Dos líneas en mobile, sin truncado, con techo editorial de ~110 caracteres.** Medición real: los 66 textos del catálogo renderizados con la tipografía de la app a 360px y 13px dan **cero tips de una línea** — 62 necesitan dos y 4 necesitan tres (P5, K7, G5, G3). El corte está en ~110 caracteres. Truncar a una línea recortaría el 100% de los tips, así que queda descartado y el spec pasa a exigir lectura completa; el techo de ~110 queda como regla editorial del catálogo.
+
 ## Risks / Trade-offs
 
 - **[Riesgo]** Un tip pasivo es fácil de ignorar; si nadie lo lee, no cambia ninguna práctica → **[Mitigación]** el realce diario existe justamente para eso, y está acotado a un momento en que la persona está mirando la pantalla. Si aun así no alcanza, la evidencia estará en el uso y se podrá revisar el realce sin tocar el resto.
 - **[Riesgo]** El avance vive en el navegador: cambiar de máquina o limpiar el almacenamiento reinicia la secuencia → **[Mitigación]** aceptado a conciencia; volver a empezar por los fundamentos es un daño menor y sincronizarlo costaría backend.
-- **[Riesgo]** El contenido envejece o se vuelve repetitivo en tableros de larga vida → **[Mitigación]** el segundo tramo alarga el ciclo, y ampliar la lista es agregar entradas a un array, sin cambios de spec.
-- **[Riesgo]** Ocupar espacio permanente bajo el header compite con el tablero en pantallas chicas → **[Mitigación]** verificar en mobile durante la implementación; el elemento es de una línea y debe poder truncar sin romper el layout.
+- **[Riesgo]** El contenido envejece o se vuelve repetitivo en tableros de larga vida → **[Mitigación]** los tramos segundo y tercero alargan el ciclo, y ampliar la lista es agregar entradas a un array, sin cambios de spec.
+- **[Riesgo]** La franja ocupa dos líneas permanentes y en pantallas chicas compite con el tablero → **[Mitigación]** ubicarla encima del footer (zona ya permanente) y ocultar los atajos de teclado en mobile, donde no sirven, para compensar el alto.
+- **[Riesgo]** Quien trabaja en un tablero personal se cruza con tips en plural, pensados para equipos → **[Mitigación]** decisión consciente de Pablo: los tips de coordinación conservan el plural y, donde aplique, se suma la versión singular como tip adicional. Hoy son 14 de 59, es decir una jornada de cada cuatro; sumar las hermanas singulares baja la proporción sin eliminarla.
+
+## Open Questions
+
+- **¿Se muestra una categoría visible en la franja?** (label o hashtag; y en ese caso, ¿categorías por tema o por método). **Sin resolver — Pablo no la cerró.** No es diferible indefinidamente: si se acepta, cambia el spec (la franja pasa a ser rótulo + texto) y baja el techo editorial de ~110 a ~95 caracteres, o suma una tercera línea permanente. Recomendación registrada del asistente: sin categoría en v1, con la procedencia dentro de la frase cuando importe (como ya hace P2-V2, "Cuando hagas un Pomodoro…"), porque el espacio es el recurso escaso en una franja permanente y agregarla más adelante no rompe nada. **Resolver antes de implementar la UI.**
 
 ## Migration Plan
 

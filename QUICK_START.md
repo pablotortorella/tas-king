@@ -27,13 +27,14 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 - **OpenSpec incorporado** (spec-driven development) — ver sección propia más abajo.
 
 ### 🔄 En vuelo
-- **`tip-diario`** — change de OpenSpec con los 4 artefactos completos y validados, **sin implementar**. Es planeamiento puro; no se tocó código de producto.
+- **`tip-diario`** — change de OpenSpec, artefactos completos y validados, **sin implementar**. Planeamiento puro; no se tocó código de producto.
+  - El catálogo de textos está en `openspec/changes/tip-diario/tips.md` (59 candidatos + 7 hermanas). Lo trabajó Pablo con Codex.
+  - Sesión 2026-09-10: se verificó que **todas** las referencias de UI que citan los tips existen y están bien nombradas, y se cerraron cuatro decisiones — tres tramos (Kanban+app → Kanban puro → otros métodos), el plural se conserva en prácticas de coordinación (la versión singular se suma como tip adicional), dos líneas en mobile sin truncado con techo de ~110 caracteres, y la franja va **encima del footer**, no bajo el header.
 
-### ⏭️ Próximo
-Para retomar `tip-diario`, tres caminos posibles:
-1. **Escribir el contenido de los tips** (tarea 1.1 de `tasks.md`) — es lo que más requiere a Pablo; conviene hacerlo conversando, tipo `/opsx:explore`.
-2. **Revisar/ajustar los artefactos** con `/opsx:update` (mantiene los cuatro coherentes entre sí).
-3. **Implementar** con `/opsx:apply`, que va tachando `tasks.md`.
+### ⏭️ Próximo — retomar `tip-diario`
+1. **Curar los textos con Pablo, tip por tip** (tarea 1.1). Es la parte larga y la decide él; se comenta por ID: «K3 queda», «G5 cambiar», «P2 afuera».
+2. **Cerrar la única decisión abierta**: si la franja muestra una categoría visible (tarea 3.0). Bloquea la UI, no la curación. Recomendación registrada: sin categoría en v1.
+3. Recién después, **implementar** con `/opsx:apply`.
 
 Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).
 

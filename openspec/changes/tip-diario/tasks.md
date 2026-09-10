@@ -1,8 +1,14 @@
 ## 1. Contenido
 
-- [ ] 1.1 Escribir el primer tramo de tips (principio Lean/Kanban + afordancia de la app), uno o dos por cada una de las seis prácticas centrales de Kanban — visualizar el trabajo, limitar el WIP, gestionar el flujo, hacer explícitas las políticas, implementar circuitos de retroalimentación, mejorar colaborativamente — y verificar con Pablo que la voz coincide con la del toast existente (`🎯 Dejar de empezar y empezar a terminar`), no con la de un manual
-- [ ] 1.2 Escribir el segundo tramo de tips de método puro (sin referencias a funcionalidades) y verificar que ningún tip del tramo menciona botones, íconos ni pantallas de la app
-- [ ] 1.3 Dejar ambos tramos como un único array ordenado `DAILY_TIPS` en `public/index.html` y verificar que el orden en el archivo es el orden pedagógico definido en el spec
+**Punto de partida para continuar con Claude:** leer [tips.md](tips.md), que reúne el catálogo para curar, los criterios conversados, las variantes y las decisiones pendientes. La voz fue aceptada, pero la colección completa y su orden todavía requieren curación con Pablo; este registro no da por completadas las tareas siguientes.
+
+- [ ] 1.1 **Curar el catálogo con Pablo, tip por tip** (es él quien decide; los IDs se mantienen estables al editar). Marcar cada candidato como Aprobado o Descartado en `tips.md` y elegir entre originales y hermanas singulares, hasta cerrar la colección
+- [ ] 1.2 Recortar los 4 tips que superan el techo editorial de ~110 caracteres — P5 (112), K7 (117), G5 (120), G3 (125) — y verificar que ningún texto aprobado excede ese largo
+- [ ] 1.3 Repartir los candidatos N1–N10 entre los tres tramos según su tema (hoy están agrupados aparte y mezclan temas de los tres) y verificar que cada tip quedó en el tramo que le corresponde
+- [ ] 1.4 Agregar las hermanas singulares que falten para los tips en plural donde aplique, sin reemplazar el original, y verificar que ambas versiones conviven con IDs propios
+- [ ] 1.5 Resolver los solapamientos ya detectados (K4/M1, K11/M6, O4/G4, T5/N7, T6/N4): conservarlos separados en la secuencia o reducirlos, y verificar que la decisión quedó registrada en `tips.md`
+- [ ] 1.6 Ajustar K5, que presenta «Quietas» como si estuviera directo en «¿Cómo vamos?» cuando está dentro de la sección «¡Pilas con esto! 🔥», y verificar la ruta contra la UI real
+- [ ] 1.7 Definir la secuencia final de los tres tramos y dejarla como un único array ordenado `DAILY_TIPS` en `public/index.html`, verificando que el orden del archivo es el orden pedagógico del spec
 
 ## 2. Selección del tip del día
 
@@ -11,8 +17,10 @@
 
 ## 3. Presencia en pantalla
 
-- [ ] 3.1 Agregar la línea de tip bajo el header, sin control de descarte, y verificar en tema claro y oscuro que no tapa ni desplaza el contenido del tablero
-- [ ] 3.2 Verificar en viewport mobile que la línea trunca correctamente y no rompe el layout del tablero
+- [ ] 3.0 Resolver primero la pregunta abierta de `design.md`: si la franja muestra una categoría visible. Cambia el markup y el techo editorial, así que se decide con Pablo antes de escribir la UI
+- [ ] 3.1 Agregar la franja de tip como elemento propio justo encima del `.app-footer`, sin control de descarte, y verificar en tema claro y oscuro que no tapa el tablero ni se confunde con el pie de página
+- [ ] 3.2 Verificar en viewport de 360px que el tip se lee completo en dos líneas, sin truncar, y que el layout del tablero no se rompe
+- [ ] 3.3 Ocultar los atajos de teclado (`F · U · N · F1`) del footer en pantallas angostas, donde no sirven, y verificar que el alto total del pie no crece respecto de hoy
 
 ## 4. Realce diario
 
