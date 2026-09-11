@@ -27,6 +27,8 @@ La app además ya habla el idioma de esta capacidad: el toast del Pulso WIP dice
 
 - **Una lista plana, ordenada intencionalmente.** Los tres tramos —principio + afordancia, Kanban puro, y otros métodos— viven en el mismo array; la progresión está en el orden, no en el código. El puntero no necesita saber que hay tramos. *Alternativa descartada*: marcar los tramos con metadata y saltear el primero en la segunda vuelta — agrega estado ("ya completó una vuelta") para resolver una redundancia menor, y son prácticas que se re-aplican.
 
+- **El catálogo vive en `public/tips.js`, no dentro de `index.html`** (decisión de Pablo, 2026-09-11, por modularidad). Se carga con `<script src="/tips.js">` antes del script principal y expone `globalThis.DAILY_TIPS`. Encaja sin fricción: `public/` ya se sirve por el binding `ASSETS` de Workers, el CSP ya autoriza `script-src 'self'` (`src/middleware/cors.js:41`) y no hace falta build step. Beneficio extra: los tests unitarios pueden importar el archivo real en lugar de copiar el contenido, que es lo que hoy hace `test/labels.spec.js` con la paleta de colores. Costo: una petición HTTP más, cacheable aparte de las 4.100 líneas de `index.html`.
+
 - **Realce con tope diario propio, reutilizando el patrón de fecha.** Una tercera clave con la fecha del último realce, con la misma forma que `tasking-wip-msg-date`. Se dispara en el primer evento de interacción del día con el tablero; después queda inerte hasta el día siguiente.
 
 - **El realce es refuerzo, no mecanismo.** Va dentro del mismo guard de `prefers-reduced-motion` que el pulso existente. Si no se ejecuta, el tip sigue visible y legible: el spec exige que la capacidad funcione sin animación.

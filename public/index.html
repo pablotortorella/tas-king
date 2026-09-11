@@ -1287,6 +1287,9 @@
   </div>
 </div>
 
+<!-- Catálogo de tips diarios: el orden del array es la progresión pedagógica -->
+<script src="/tips.js"></script>
+
 <script>
 (function () {
   "use strict";
@@ -1317,6 +1320,10 @@
   let boardGoals = [];         // objetivos del tablero actual (con progreso)
   let currentView = "tasks";   // "tasks" | "goals"
   let activeGoalFilter = null; // id de objetivo seleccionado en el panel (resalta sus tarjetas)
+  let pendingCardMutations = 0;
+  let cardMutationRevision = 0;
+  let boardLoadRevision = 0;
+  let boardRefreshPending = false;
 
   const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
@@ -1529,21 +1536,77 @@
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
+    const boardId = currentBoardId;
+    const mutationRevision = cardMutationRevision;
+    const loadRevision = ++boardLoadRevision;
+    const isCurrent = () => boardId === currentBoardId && mutationRevision === cardMutationRevision
+      && loadRevision === boardLoadRevision && !pendingCardMutations && !(cardDrag && cardDrag.active);
+    if (pendingCardMutations) { boardRefreshPending = true; return false; }
     if (!currentBoardId) {
       state = { cards: [], columns: [] }; COLUMNS = [];
       boardLabels = []; boardGoals = [];
       applyBoardPalette(null);
-      populateColumnSelect(); render(); refreshGoalsUI(); return;
+      populateColumnSelect(); render(); refreshGoalsUI(); return true;
     }
     localStorage.setItem("tasKingBoardId", currentBoardId);
     applyBoardPalette(currentBoard() && currentBoard().theme);
-    state = await api("GET", "/api/boards/" + currentBoardId + "/cards");
+    const nextState = await api("GET", "/api/boards/" + boardId + "/cards");
+    if (!isCurrent()) return false;
+    // Publicar las tarjetas al recibirlas: otros controles del modal leen state
+    // mientras se cargan los catálogos. Una respuesta anterior a un guardado se descarta.
+    state = nextState;
     COLUMNS = state.columns || [];
-    lastKnownVersion = state.version || 0;
     populateColumnSelect();
-    try { boardLabels = await api("GET", "/api/boards/" + currentBoardId + "/labels"); }
-    catch (e) { boardLabels = []; }
-    await loadGoals();
+    let nextLabels = [], nextGoals = [];
+    try { nextLabels = await api("GET", "/api/boards/" + boardId + "/labels"); }
+    catch (e) { /* el catálogo puede no estar disponible */ }
+    if (!isCurrent()) return false;
+    try { nextGoals = await api("GET", "/api/boards/" + boardId + "/goals"); }
+    catch (e) { /* los objetivos pueden no estar disponibles */ }
+    if (!isCurrent()) return false;
+    boardLabels = nextLabels;
+    boardGoals = nextGoals;
+    lastKnownVersion = state.version || 0;
+    render();
+    refreshGoalsUI();
+    return true;
+  }
+
+  async function withCardMutation(action) {
+    pendingCardMutations++;
+    cardMutationRevision++;
+    saveBtn.disabled = true;
+    try { return await action(); }
+    finally {
+      pendingCardMutations--;
+      cardMutationRevision++;
+      saveBtn.disabled = pendingCardMutations > 0;
+      // Si se cambió de tablero durante la escritura, atender esa carga pendiente.
+      if (!pendingCardMutations && boardRefreshPending) {
+        boardRefreshPending = false;
+        await loadCards().catch(e => console.error("No se pudo actualizar el tablero", e));
+      }
+    }
+  }
+
+  function applySavedCard(boardId, card) {
+    if (boardId !== currentBoardId) return;
+    const index = state.cards.findIndex(c => c.id === card.id);
+    if (index >= 0 && state.cards[index].column === card.column) state.cards[index] = card;
+    else {
+      // Las tarjetas nuevas o movidas se guardan al final de su columna.
+      state.cards = state.cards.filter(c => c.id !== card.id);
+      state.cards.push(card);
+    }
+    // Mismo criterio que goalsWithProgress() del servidor, usando los datos cargados.
+    const doneColumn = COLUMNS.find(c => c.isDone)?.id || "terminado";
+    boardGoals = boardGoals.map(goal => {
+      const linked = state.cards.filter(c => !c.archived && (c.goals || []).some(g => g.id === goal.id));
+      const done = linked.filter(c => c.column === doneColumn).length;
+      return { ...goal, total: linked.length, done, pct: linked.length ? Math.round(done / linked.length * 100) : 0 };
+    });
+    // No adelantar lastKnownVersion con una escritura individual: podría ocultar
+    // cambios de otras personas. El siguiente poll reconciliará el tablero completo.
     render();
     refreshGoalsUI();
   }
@@ -1556,27 +1619,32 @@
   // ---------- Polling de cambios en tiempo real ----------
   let lastKnownVersion = 0;
   let pollTimer = null;
+  let pollInFlight = false;
   const POLL_INTERVAL = 5000;
 
   async function pollTick() {
-    if (!currentBoardId || document.hidden) return;
+    if (!currentBoardId || document.hidden || pendingCardMutations || pollInFlight) return;
     // loadCards() hace board.innerHTML = "" y reconstruye todas las tarjetas: si corre
     // mientras hay un arrastre en curso, el nodo de la tarjeta arrastrada queda huérfano
     // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
     // mouse — el próximo pointermove lo reinserta junto al nuevo nodo ya renderizado,
     // duplicando la tarjeta en pantalla hasta el siguiente poll. Se posterga al próximo tick.
     if (cardDrag && cardDrag.active) return;
+    const boardId = currentBoardId;
+    const mutationRevision = cardMutationRevision;
+    pollInFlight = true;
     try {
-      const { version } = await api("GET", "/api/boards/" + currentBoardId + "/version");
+      const { version } = await api("GET", "/api/boards/" + boardId + "/version");
+      if (boardId !== currentBoardId || mutationRevision !== cardMutationRevision || pendingCardMutations) return;
       if (version > lastKnownVersion) {
-        lastKnownVersion = version;
         const doneColIds = getDoneColumnIds();
         const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
-        await loadCards();
+        if (!(await loadCards())) return;
         state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
           .forEach(c => celebrateCard(c.id));
       }
     } catch (e) { /* ignorar errores de red silenciosamente */ }
+    finally { pollInFlight = false; }
   }
   window.pollTick = pollTick; // hook manual / tests E2E
 
@@ -2912,20 +2980,35 @@
     fLabelsSection.appendChild(picker);
   }
 
-  async function assignLabel(labelId) {
+  const pendingLabelChanges = new Set();
+  async function changeCardLabel(cardId, boardId, labelId, assigned) {
+    if (!cardId) return;
+    const key = cardId + ":" + labelId;
+    if (pendingLabelChanges.has(key)) return;
+    pendingLabelChanges.add(key);
     try {
-      await api("POST", `/api/cards/${editingId}/labels/${labelId}`);
-      await loadCards();
-      renderLabels();
-    } catch (e) { alert("No se pudo asignar: " + e.message); }
+      await withCardMutation(async () => {
+        await api(assigned ? "POST" : "DELETE", `/api/cards/${cardId}/labels/${labelId}`);
+        if (boardId !== currentBoardId) return;
+        const card = state.cards.find(c => c.id === cardId);
+        if (!card) return;
+        const label = boardLabels.find(l => l.id === labelId);
+        const labels = (card.labels || []).filter(l => l.id !== labelId);
+        if (assigned && label) labels.push({ id: label.id, name: label.name, color: label.color });
+        labels.sort((a, b) => boardLabels.findIndex(l => l.id === a.id) - boardLabels.findIndex(l => l.id === b.id));
+        applySavedCard(boardId, { ...card, labels });
+        if (editingId === cardId) renderLabels();
+      });
+    } catch (e) { alert((assigned ? "No se pudo asignar: " : "No se pudo quitar: ") + e.message); }
+    finally { pendingLabelChanges.delete(key); }
   }
 
-  async function removeLabel(labelId) {
-    try {
-      await api("DELETE", `/api/cards/${editingId}/labels/${labelId}`);
-      await loadCards();
-      renderLabels();
-    } catch (e) { alert("No se pudo quitar: " + e.message); }
+  function assignLabel(labelId) {
+    return changeCardLabel(editingId, currentBoardId, labelId, true);
+  }
+
+  function removeLabel(labelId) {
+    return changeCardLabel(editingId, currentBoardId, labelId, false);
   }
 
   // ---------- Objetivos dentro del modal de tarjeta ----------
@@ -3066,12 +3149,16 @@
 
   async function createLabel(color) {
     if (!editingId || !currentBoardId) return;
+    const cardId = editingId, boardId = currentBoardId;
     const name = document.getElementById("newLabelName")?.value.trim();
     if (!name) return alert("Falta nombre de etiqueta");
     try {
-      const label = await api("POST", `/api/boards/${currentBoardId}/labels`, { name, color });
-      await assignLabel(label.id);
-      labelPickerVisible = false;
+      await withCardMutation(async () => {
+        const label = await api("POST", `/api/boards/${boardId}/labels`, { name, color });
+        if (boardId === currentBoardId) boardLabels.push(label);
+        await changeCardLabel(cardId, boardId, label.id, true);
+        labelPickerVisible = false;
+      });
     } catch (e) { alert("No se pudo crear: " + e.message); }
   }
 
@@ -3121,6 +3208,7 @@
   // Guardar / eliminar / cancelar
   const saveBtn = document.getElementById("saveBtn");
   saveBtn.addEventListener("click", async () => {
+    if (pendingCardMutations) return;
     const title = fTitle.value.trim();
     if (!title) { fTitle.focus(); fTitle.style.borderColor = "var(--danger)"; return; }
     fTitle.style.borderColor = "";
@@ -3133,53 +3221,61 @@
       assignee: fAssignee.value || null,
     };
 
-    saveBtn.disabled = true;
+    const boardId = currentBoardId, cardId = editingId;
+    const removedIds = [...removedAttachmentIds];
+    const nuevos = draftAttachments.filter(a => a._new);
+    const checklists = cardId ? [] : structuredClone(draftChecklists);
+    const goals = cardId ? [] : [...draftGoals];
     try {
-      // 1) crear o actualizar la tarjeta (campos + comentarios)
-      const card = editingId
-        ? await api("PUT", "/api/cards/" + editingId, payload)
-        : await api("POST", "/api/boards/" + currentBoardId + "/cards", payload);
+      await withCardMutation(async () => {
+        // 1) crear o actualizar la tarjeta (campos + comentarios)
+        let card = cardId
+          ? await api("PUT", "/api/cards/" + cardId, payload)
+          : await api("POST", "/api/boards/" + boardId + "/cards", payload);
 
-      // 2) borrar los adjuntos existentes que se quitaron
-      for (const aid of removedAttachmentIds) await api("DELETE", "/api/attachments/" + aid);
+        // 2) borrar los adjuntos existentes que se quitaron
+        for (const aid of removedIds) await api("DELETE", "/api/attachments/" + aid);
 
-      // 3) subir los adjuntos nuevos
-      const nuevos = draftAttachments.filter(a => a._new);
-      if (nuevos.length) {
-        const fd = new FormData();
-        nuevos.forEach(a => fd.append("files", a.file, a.originalName));
-        const res = await fetch("/api/cards/" + card.id + "/attachments", { method: "POST", body: fd });
-        if (!res.ok) {
-          let msg = res.statusText;
-          try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
-          throw new Error(msg);
-        }
-      }
-
-      // 4) persistir checklists del borrador (sólo en tarjetas nuevas)
-      if (!editingId && draftChecklists.length) {
-        for (const cl of draftChecklists) {
-          const savedCl = await api("POST", "/api/cards/" + card.id + "/checklists", { name: cl.name });
-          for (const item of cl.items.slice().sort((a, b) => a.position - b.position)) {
-            const savedItem = await api("POST", "/api/checklists/" + savedCl.id + "/items", { text: item.text });
-            if (item.checked) await api("PUT", "/api/checklist-items/" + savedItem.id, { checked: true });
+        // 3) subir los adjuntos nuevos
+        if (nuevos.length) {
+          const fd = new FormData();
+          nuevos.forEach(a => fd.append("files", a.file, a.originalName));
+          const res = await fetch("/api/cards/" + card.id + "/attachments", { method: "POST", body: fd });
+          if (!res.ok) {
+            let msg = res.statusText;
+            try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) {}
+            throw new Error(msg);
           }
         }
-      }
 
-      // 5) vincular objetivos del borrador (sólo en tarjetas nuevas)
-      if (!editingId && draftGoals.length) {
-        for (const goalId of draftGoals) {
-          await api("POST", `/api/cards/${card.id}/goals/${goalId}`);
+        // 4) persistir checklists del borrador (sólo en tarjetas nuevas)
+        if (checklists.length) {
+          for (const cl of checklists) {
+            const savedCl = await api("POST", "/api/cards/" + card.id + "/checklists", { name: cl.name });
+            for (const item of cl.items.slice().sort((a, b) => a.position - b.position)) {
+              const savedItem = await api("POST", "/api/checklists/" + savedCl.id + "/items", { text: item.text });
+              if (item.checked) await api("PUT", "/api/checklist-items/" + savedItem.id, { checked: true });
+            }
+          }
         }
-      }
 
-      await loadCards();
-      closeModal();
+        // 5) vincular objetivos del borrador (sólo en tarjetas nuevas)
+        if (goals.length) {
+          for (const goalId of goals) {
+            await api("POST", `/api/cards/${card.id}/goals/${goalId}`);
+          }
+        }
+
+        // Los recursos agregados después del POST/PUT no están en esa respuesta.
+        // En ese caso releer sólo esta tarjeta, nunca las tres colecciones del tablero.
+        if (removedIds.length || nuevos.length || checklists.length || goals.length) {
+          card = await api("GET", "/api/cards/" + card.id);
+        }
+        applySavedCard(boardId, card);
+        if (boardId === currentBoardId && editingId === cardId) closeModal();
+      });
     } catch (e) {
       alert("No se pudo guardar: " + e.message);
-    } finally {
-      saveBtn.disabled = false;
     }
   });
 

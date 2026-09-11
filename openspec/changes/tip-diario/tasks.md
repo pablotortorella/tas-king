@@ -8,7 +8,7 @@
 - [x] 1.4 Agregar las hermanas singulares que falten para los tips en plural donde aplique, sin reemplazar el original, y verificar que ambas versiones conviven con IDs propios — **resuelto 2026-09-11**: nueve hermanas nuevas aprobadas (K6, K8, K11, K12, O6, M5, M7, M9, M10) más la alineación de K7-V1; originales intactos y cada hermana con ID propio
 - [x] 1.5 Resolver los solapamientos ya detectados (K4/M1, K11/M6, O4/G4, T5/N7, T6/N4): conservarlos separados en la secuencia o reducirlos, y verificar que la decisión quedó registrada en `tips.md` — **resuelto 2026-09-11**: se conservan los cinco pares completos, separados en la secuencia; K4 queda como está y en el tramo 1
 - [x] 1.6 Ajustar K5, que presenta «Quietas» como si estuviera directo en «¿Cómo vamos?» cuando está dentro de la sección «¡Pilas con esto! 🔥», y verificar la ruta contra la UI real — **resuelto 2026-09-11**: ruta completa en el texto, verificada contra `public/index.html:915-919`
-- [ ] 1.7 Definir la secuencia final de los tres tramos y dejarla como un único array ordenado `DAILY_TIPS` en `public/index.html`, verificando que el orden del archivo es el orden pedagógico del spec
+- [x] 1.7 Definir la secuencia final de los tres tramos y dejarla como un único array ordenado `DAILY_TIPS` en `public/tips.js` (archivo propio por modularidad, decisión de Pablo del 2026-09-11; se carga desde `public/index.html`), verificando que el orden del archivo es el orden pedagógico del spec — **resuelto 2026-09-11**: 74 tips en orden (26 + 22 + 26), cada hermana a 8-13 días de su original
 
 ## 2. Selección del tip del día
 

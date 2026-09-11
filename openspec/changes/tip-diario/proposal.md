@@ -29,6 +29,6 @@ El objetivo no es sólo dar a conocer features: es que quien usa el tablero todo
 
 ## Impact
 
-- **Frontend** (`public/index.html`): la línea de tip bajo el header, la lista ordenada de tips, el puntero por persona y el realce diario. Reutiliza patrones ya presentes en el archivo (preferencias en `localStorage`, tope diario por fecha, animación con guard de `prefers-reduced-motion`).
+- **Frontend**: el catálogo ordenado vive en un archivo propio, `public/tips.js`, cargado como estático desde `public/index.html`; en `index.html` quedan la franja del tip, el puntero por persona y el realce diario. Reutiliza patrones ya presentes en el archivo (preferencias en `localStorage`, tope diario por fecha, animación con guard de `prefers-reduced-motion`).
 - **Backend**: sin cambios. No hay endpoints ni tablas nuevas; el contenido es estático y el estado es por navegador.
 - Cambio aditivo, sin impacto en datos, permisos ni autenticación.
