@@ -39,5 +39,5 @@
 ## 6. Cierre
 
 - [x] 6.1 Correr `npm run test:all` y verificar que pasa 100% (unit + E2E) antes de cualquier deploy — **hecho 2026-09-11**: 139 unitarios y 62 E2E en verde
-- [ ] 6.2 Abrir el PR de la rama `feature/tip-diario` (obligatorio por incluir migración de esquema) y esperar el OK de Pablo antes de mergear y deployar
-- [ ] 6.3 Documentar según el flujo obligatorio de CLAUDE.md al deployar a producción: sesión en `docs/STATUS.md`, entrada en `public/releases.html` y bump de versión en `package.json` y en el footer de `public/index.html`
+- [x] 6.2 Abrir el PR de la rama `feature/tip-diario` (obligatorio por incluir migración de esquema) y esperar el OK de Pablo antes de mergear y deployar — **hecho**: PR #35, mergeado a `main` el 2026-09-11 con la aprobación de Pablo
+- [x] 6.3 Documentar según el flujo obligatorio de CLAUDE.md al deployar a producción: sesión en `docs/STATUS.md`, entrada en `public/releases.html` y bump de versión en `package.json` y en el footer de `public/index.html` — **hecho**: sesión en `docs/STATUS.md`, release 17 en `public/releases.html`, versión v2.2.0 en `package.json` y en el pie de `index.html`
