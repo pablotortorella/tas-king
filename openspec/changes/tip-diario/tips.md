@@ -5,7 +5,7 @@ Registro de la exploración con Pablo del 9–10 de septiembre de 2026. Este doc
 ## Estado y alcance
 
 - El cambio activo es `tip-diario`; las referencias antiguas a `onboarding-tips` corresponden al nombre anterior.
-- Este es un catálogo editorial de trabajo, no una lista lista para implementar. Contiene 59 candidatos con ID más 7 hermanas singulares (66 textos en total).
+- Este es un catálogo editorial de trabajo, no una lista lista para implementar. Arrancó con 59 candidatos con ID más 7 variantes (66 textos). **Al 2026-09-11**: 74 textos vivos (20 aprobados, 54 todavía propuestos) y 1 descartado (P5), tras sumar las nueve hermanas singulares nuevas.
 - Pablo aprobó la voz de la primera muestra, pidió cambiar «cambie de etapa» por «cambie de estado», aceptó ampliar las temáticas y quiere muchos tips para curarlos personalmente.
 - La aceptación de la voz no equivale a la aprobación individual de todos los textos posteriores. Se conserva el estado de cada candidato para evitar esa confusión.
 - El orden de las tablas facilita la revisión; todavía no define el orden final de aparición.
@@ -90,6 +90,10 @@ Con esto, **ningún texto vivo del catálogo supera los 110 caracteres**.
 - Los pares separados por tramo quedan así: N4 (T2) frente a T6 (T3), y N9 (T2) frente a K7 (T1). **Pendiente para la secuencia final (tarea 1.7)**: T5 y N7 quedaron los dos en el tercer tramo, así que hay que separarlos a conciencia en el orden.
 
 Se corrigieron además los encabezados de GTD, Pomodoro y priorización, que seguían diciendo «Segundo tramo» de cuando había dos tramos: son los tres del tercero.
+
+**2026-09-11 — Lote 5: hermanas singulares.** Pablo aprobó **las diez**: las nueve hermanas nuevas (K6-V1, K8-V1, K11-V1, K12-V1, O6-V1, M5-V1, M7-V1, M9-V1, M10-V1) más la alineación de K7-V1, que ahora dice «Definí qué significa terminar: ¿qué debe cumplir una tarjeta para llegar a ✅?» (77), sin «una columna», igual que el K7 aprobado. Se aprobaron también las cuatro hermanas que ya existían (O2-V1, K9-V1, M4-V1, M6-V1).
+
+Quedó explícitamente descartada la recomendación del asistente de dejar afuera las cinco que solo cambian la conjugación (K11-V1, K12-V1, M7-V1, O6-V1, M10-V1): van todas. Consecuencia para la secuencia final (tarea 1.7): **cada hermana tiene que quedar lejos de su original**, porque en esos cinco casos la única diferencia es el verbo y verlas cerca se leería como un tip repetido.
 
 ## Cómo curar
 
@@ -198,15 +202,24 @@ Estos diez textos surgieron al explorar categorías por tema. Se les asignan IDs
 
 ## Hermanas singulares de tips en plural
 
-**Actualizado 2026-09-10**: estas ya **no** son reemplazos. Por decisión de Pablo, el original en plural se conserva y su versión singular se suma como tip adicional; las dos conviven en la secuencia. Falta escribir las hermanas que aún no existen (K6, K8, K11, K12, O6, M5, M7, M9, M10) donde tenga sentido, y darles ID propio al aprobarlas.
+**Actualizado 2026-09-11**: estas ya **no** son reemplazos — el original en plural se conserva y su versión singular se suma como tip adicional; las dos conviven en la secuencia. **La colección de hermanas está cerrada**: Pablo aprobó las cinco que ya existían y las nueve nuevas (K6, K8, K11, K12, O6, M5, M7, M9, M10), incluidas las que solo cambian la conjugación. K7-V1 se alineó con la redacción aprobada de K7.
 
 | ID | Hermana singular de | Texto | Estado |
 |---|---|---|---|
-| O2-V1 | O2 | Un objetivo necesita un resultado claro: usá su descripción para recordar qué se quiere lograr. | Propuesto |
-| K7-V1 | K7 | Definí qué significa terminar: ¿qué debe cumplir una tarjeta para llegar a una columna ✅? | Propuesto |
-| K9-V1 | K9 | Mirá «¿Cómo vamos?»: elegí una tarea que se demoró y revisá qué pasó. | Propuesto |
-| M4-V1 | M4 | Antes de sumar una urgencia, decidí qué trabajo va a esperar. | Propuesto |
-| M6-V1 | M6 | Una mejora pequeña también merece una revisión: ¿qué esperabas que cambiara y qué pasó? | Propuesto |
+| O2-V1 | O2 | Un objetivo necesita un resultado claro: usá su descripción para recordar qué se quiere lograr. | **Aprobado** (2026-09-11) |
+| K7-V1 | K7 | Definí qué significa terminar: ¿qué debe cumplir una tarjeta para llegar a ✅? | **Aprobado** (2026-09-11, alineada con K7, 77) |
+| K9-V1 | K9 | Mirá «¿Cómo vamos?»: elegí una tarea que se demoró y revisá qué pasó. | **Aprobado** (2026-09-11) |
+| M4-V1 | M4 | Antes de sumar una urgencia, decidí qué trabajo va a esperar. | **Aprobado** (2026-09-11) |
+| K6-V1 | K6 | Mirá la distribución en «¿Cómo vamos?»: si se acumulan tarjetas en una columna, preguntate qué pasa ahí. | **Aprobado** (2026-09-11, nueva, 104) |
+| K8-V1 | K8 | Una etiqueta sirve más cuando significa siempre lo mismo: definí qué quiere decir y cuándo usarla. | **Aprobado** (2026-09-11, nueva, 98) |
+| K11-V1 | K11 | Probá un cambio pequeño y volvé a «¿Cómo vamos?» para buscar señales de mejora. | **Aprobado** (2026-09-11, nueva, 79) |
+| K12-V1 | K12 | Si una confusión se repite, probá aclararla en la descripción o en una checklist de la tarjeta. | **Aprobado** (2026-09-11, nueva, 95) |
+| O6-V1 | O6 | Cuando cambien las prioridades, revisá los Objetivos y sus tarjetas: ¿qué sigue teniendo sentido? | **Aprobado** (2026-09-11, nueva, 97) |
+| M5-V1 | M5 | Si una tarea vuelve atrás seguido, revisá qué te falta definir antes de darla por lista. | **Aprobado** (2026-09-11, nueva, 88) |
+| M7-V1 | M7 | Cuando algo se demore, mirá también las esperas: ¿dónde pasa tiempo sin avanzar? | **Aprobado** (2026-09-11, nueva, 80) |
+| M9-V1 | M9 | Si una tarea depende de alguien más, definí cuándo vas a volver a preguntar por ella. | **Aprobado** (2026-09-11, nueva, 85) |
+| M10-V1 | M10 | Cuando algo salga bien, mirá también qué ayudó: ¿vale la pena repetirlo? | **Aprobado** (2026-09-11, nueva, 72) |
+| M6-V1 | M6 | Una mejora pequeña también merece una revisión: ¿qué esperabas que cambiara y qué pasó? | **Aprobado** (2026-09-11) |
 
 ## Variantes de foco y práctica explícita
 
