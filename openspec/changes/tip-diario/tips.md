@@ -56,7 +56,7 @@ Se comprobaron contra el código **todas** las referencias de interfaz que citan
 1. **Curar los textos**, tip por tip, y elegir entre originales y hermanas. Lo hace Pablo. No reemplazar automáticamente un original por la última sugerencia del asistente.
 2. ~~¿Se muestra categoría?~~ → **Resuelta el 2026-09-11: sin categoría visible en v1.** Decisión de Pablo. La franja muestra solo el texto; el techo editorial queda en ~110 caracteres y la procedencia va dentro de la frase cuando importa. Descartadas: categoría por tema y categoría por método. Ver `design.md` § Open Questions. **Consecuencia para la curación**: se cura contra ~110 caracteres, no contra ~95.
 3. Definir la secuencia final, el tamaño del catálogo inicial y qué repeticiones conservar. Los IDs son referencias editoriales estables, no posiciones de reproducción.
-4. Resolver los solapamientos detectados: K4/M1, K11/M6, O4/G4, T5/N7, T6/N4.
+4. ~~Resolver los solapamientos detectados: K4/M1, K11/M6, O4/G4, T5/N7, T6/N4.~~ → **Resuelto el 2026-09-11: los cinco pares se conservan completos**, separados en la secuencia. Ver el registro de la curación.
 
 ## Registro de la curación
 
@@ -68,6 +68,16 @@ Se comprobaron contra el código **todas** las referencias de interfaz que citan
 - **G3 — Aprobada la opción de 101 caracteres**: ««Resolver presupuesto» es demasiado grande. ¿La próxima acción es pedir un precio o llamar a alguien?». Dos ejemplos en vez de tres, y «es» en lugar de «puede ser».
 
 Con esto, **ningún texto vivo del catálogo supera los 110 caracteres**.
+
+**2026-09-11 — Lote 2: los cinco solapamientos.** Decisión de Pablo: **quedan los diez tips**, ningún par se reduce. Los pares se separan en la secuencia para que funcionen como refuerzo pedagógico y no como repetición:
+
+- **K4 / M1** — misma apertura, pedidos distintos: K4 pide mirar cuánto hay en curso, M1 pide ayudar a terminar algo ya empezado.
+- **K11 / M6** — el mismo consejo con y sin herramienta: K11 lo ancla en «¿Cómo vamos?», M6 enuncia el principio desnudo. Es el patrón que define los tramos 1 y 2.
+- **O4 / G4** — «resultado buscado + próxima acción», una vez sobre los Objetivos de la app (T1) y otra como principio de GTD (T3). Ya quedan a dos tramos de distancia.
+- **T5 / N7** — misma acción (dejar anotado por dónde seguir) con distinto disparador: fin del día y cualquier pausa.
+- **T6 / N4** — misma pregunta (¿esto todavía vale la pena?) con distinto disparador: perder el propósito y retomar una tarea.
+
+**K4 se conserva tal como está y permanece en el tramo 1**, decisión explícita de Pablo. Consecuencia registrada: K4 aplica un principio sobre el tablero sin nombrar una funcionalidad puntual de la app, a diferencia del resto del tramo 1.
 
 ## Cómo curar
 
