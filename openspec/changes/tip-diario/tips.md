@@ -81,6 +81,16 @@ Con esto, **ningún texto vivo del catálogo supera los 110 caracteres**.
 
 **2026-09-11 — Lote 3: K5, la única referencia a la UI que estaba mal.** Verificado contra `public/index.html` (líneas 915-919): «Quietas» no cuelga directo de «¿Cómo vamos?», sino de la sección «¡Pilas con esto! 🔥» que vive dentro de ese panel. Pablo eligió la redacción con la ruta completa: «Una tarea quieta merece una pregunta: en «¿Cómo vamos?» buscá «¡Pilas con esto! 🔥» y mirá las «Quietas».» (104). Ya no queda ninguna referencia de interfaz incorrecta en el catálogo.
 
+**2026-09-11 — Lote 4: reparto de los candidatos N1–N10 entre tramos.** Aprobado por Pablo tal como se propuso:
+
+- **Al segundo tramo (Kanban puro)**: N1 (claridad, hermana pura de K2), N4 (trabajo en curso), N5 (desbloqueo, acompaña a M2), N6 (colaboración, con M8/M9), N9 (qué significa terminar, hermana pura de K7) y N10 (mejora continua en positivo, versión individual de M10).
+- **Al tercer tramo (otros métodos)**: N2 (próxima acción, GTD), N3 (resultado buscado, GTD), N7 (retomar después de una pausa, Pomodoro) y N8 (revisar el plan, planificación general).
+- **Ninguno al primer tramo**: ninguno nombra una funcionalidad de la app, y mudarlo implicaría reescribirlo.
+- **N3 queda con el texto tal cual**, en el tercer tramo. Se señaló que dice «objetivo» y que en esta app Objetivo es el nombre de una función; Pablo decidió no tocarlo.
+- Los pares separados por tramo quedan así: N4 (T2) frente a T6 (T3), y N9 (T2) frente a K7 (T1). **Pendiente para la secuencia final (tarea 1.7)**: T5 y N7 quedaron los dos en el tercer tramo, así que hay que separarlos a conciencia en el orden.
+
+Se corrigieron además los encabezados de GTD, Pomodoro y priorización, que seguían diciendo «Segundo tramo» de cuando había dos tramos: son los tres del tercero.
+
 ## Cómo curar
 
 Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: **Propuesto**, **Aprobado**, **Descartado**. Las variantes tienen su propio ID y siguen propuestas hasta elegirlas. «Aprobado» en K1 y O1 refleja la aceptación explícita de esos modelos; la selección definitiva de la colección y su orden siguen pendientes. No hay descartes registrados.
@@ -128,7 +138,7 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 | M9 | Si una tarea depende de alguien más, acuerden cuándo volver a conversar sobre ella. | Propuesto |
 | M10 | Cuando algo salga bien, investiguen también: ¿qué ayudó y vale la pena repetir? | Propuesto |
 
-## Segundo tramo: GTD
+## Tercer tramo: GTD
 
 | ID | Texto | Estado |
 |---|---|---|
@@ -143,7 +153,7 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 
 Redacciones inspiradas en los [pasos de GTD](https://gettingthingsdone.com/what-is-gtd/) y los [criterios para elegir qué hacer](https://gettingthingsdone.com/2023/01/choosing-what-to-do/), consultados durante la exploración.
 
-## Segundo tramo: Pomodoro
+## Tercer tramo: Pomodoro
 
 | ID | Texto | Estado |
 |---|---|---|
@@ -156,7 +166,7 @@ Redacciones inspiradas en los [pasos de GTD](https://gettingthingsdone.com/what-
 
 Redacciones inspiradas en la [técnica Pomodoro](https://www.pomodorotechnique.com/) y su [programa oficial](https://www.pomodorotechnique.com/pomodoro-self-paced/), consultados durante la exploración. Revisar especialmente los supuestos de contexto en P1–P5; una categoría por sí sola no vuelve autosuficiente el texto.
 
-## Segundo tramo: priorización y planificación cotidiana
+## Tercer tramo: priorización y planificación cotidiana
 
 Consejos generales, sin atribución a un método específico.
 
@@ -169,22 +179,22 @@ Consejos generales, sin atribución a un método específico.
 | T5 | Antes de cerrar el día, dejá escrito por dónde retomar lo que quedó abierto. | Propuesto |
 | T6 | Si una tarea perdió su propósito, revisá si todavía vale la pena hacerla. | Propuesto |
 
-## Nuevos candidatos del segundo tramo
+## Nuevos candidatos N1–N10, repartidos entre el segundo y el tercer tramo
 
-Estos diez textos surgieron al explorar categorías por tema. Se les asignan IDs N1–N10 en este documento para facilitar la curación; antes no tenían ID.
+Estos diez textos surgieron al explorar categorías por tema. Se les asignan IDs N1–N10 en este documento para facilitar la curación; antes no tenían ID. **Reparto aprobado por Pablo el 2026-09-11**: seis al segundo tramo y cuatro al tercero. Ninguno va al primero, porque ninguno nombra una funcionalidad de la app.
 
-| ID | Tema propuesto | Texto | Estado |
-|---|---|---|---|
-| N1 | Claridad | Escribí la tarea de modo que mañana puedas entenderla sin reconstruir toda la historia. | Propuesto |
-| N2 | Próxima acción | Si no sabés por dónde empezar, anotá qué necesitás averiguar primero. | Propuesto |
-| N3 | Objetivos | ¿Cómo vas a reconocer que lograste el objetivo? Dejá esa señal por escrito. | Propuesto |
-| N4 | Trabajo en curso | Antes de retomar una tarea, revisá si sigue siendo necesario terminarla. | Propuesto |
-| N5 | Desbloqueo | Cuando pidas ayuda, contá qué intentaste y en qué punto te trabaste. | Propuesto |
-| N6 | Colaboración | Antes de dar por hecho un compromiso, confirmá que la otra persona lo entendió igual. | Propuesto |
-| N7 | Foco y pausas | Si te cuesta retomar después de una pausa, dejá anotado el próximo paso antes de parar. | Propuesto |
-| N8 | Planificación | Cuando una tarea lleve más de lo previsto, revisá el plan con lo que ahora sabés. | Propuesto |
-| N9 | Cierre | Antes de dar una tarea por terminada, comprobá que el resultado esté disponible para quien lo necesita. | Propuesto |
-| N10 | Aprendizaje | ¿Qué te facilitó el trabajo hoy? Pensá cómo volver a tener esa condición mañana. | Propuesto |
+| ID | Tramo | Tema | Texto | Estado |
+|---|---|---|---|---|
+| N1 | T2 | Claridad | Escribí la tarea de modo que mañana puedas entenderla sin reconstruir toda la historia. | Propuesto (tramo asignado 2026-09-11) |
+| N2 | T3 | Próxima acción | Si no sabés por dónde empezar, anotá qué necesitás averiguar primero. | Propuesto (tramo asignado 2026-09-11) |
+| N3 | T3 | Objetivos | ¿Cómo vas a reconocer que lograste el objetivo? Dejá esa señal por escrito. | Propuesto (tramo asignado 2026-09-11) |
+| N4 | T2 | Trabajo en curso | Antes de retomar una tarea, revisá si sigue siendo necesario terminarla. | Propuesto (tramo asignado 2026-09-11) |
+| N5 | T2 | Desbloqueo | Cuando pidas ayuda, contá qué intentaste y en qué punto te trabaste. | Propuesto (tramo asignado 2026-09-11) |
+| N6 | T2 | Colaboración | Antes de dar por hecho un compromiso, confirmá que la otra persona lo entendió igual. | Propuesto (tramo asignado 2026-09-11) |
+| N7 | T3 | Foco y pausas | Si te cuesta retomar después de una pausa, dejá anotado el próximo paso antes de parar. | Propuesto (tramo asignado 2026-09-11) |
+| N8 | T3 | Planificación | Cuando una tarea lleve más de lo previsto, revisá el plan con lo que ahora sabés. | Propuesto (tramo asignado 2026-09-11) |
+| N9 | T2 | Cierre | Antes de dar una tarea por terminada, comprobá que el resultado esté disponible para quien lo necesita. | Propuesto (tramo asignado 2026-09-11) |
+| N10 | T2 | Aprendizaje | ¿Qué te facilitó el trabajo hoy? Pensá cómo volver a tener esa condición mañana. | Propuesto (tramo asignado 2026-09-11) |
 
 ## Hermanas singulares de tips en plural
 
