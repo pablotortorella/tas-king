@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-07
+**Última actualización**: 2026-09-11
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -74,6 +74,7 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟠 Alta prioridad
 
+- **Etiquetas en tarjetas nuevas** (pedido de Pablo, 2026-09-11) — 🟢 esfuerzo chico. Hoy las etiquetas solo se pueden asignar reabriendo una tarjeta ya creada: el selector de etiquetas del modal hace `POST /api/cards/:id/labels/:labelId` al instante, y en una tarjeta nueva todavía no hay `:id`. Los objetivos ya resolvieron este mismo problema con un borrador en memoria (`draftGoals` en `public/index.html`): se acumulan los ids elegidos mientras se redacta y se vinculan después de crear la tarjeta (paso 5 del guardado). La salida esperada es la simétrica — un `draftLabels` con el mismo patrón, más el picker de etiquetas visible en modo borrador (hoy `renderCardLabels`/el picker asumen `editingId`). Sin cambios de backend ni de esquema.
 - **Tab/Enter estándar en toda la interfaz de tarjetas**: navegación por teclado en el modal — Tab entre campos, Enter confirma, Esc cierra. Incluye checklists (Tab entre ítems, Enter agrega el siguiente, Backspace en ítem vacío lo borra). Criterios ya documentados en ADR-014; falta auditar que se cumplan en todos los campos.
 - **Onboarding para usuarios nuevos**: primer login → tablero vacío sin guía. Opciones: estado vacío con instrucciones ("Creá tu primera tarjeta con N"), tarjetas de ejemplo precargadas, o mini-tour de tooltips.
 
