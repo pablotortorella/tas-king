@@ -18,7 +18,7 @@ Objetivo: **Funcional** + **Hermoso** + **Veloz** + **Seguro** + **Sostenible**
 **Checklist rápido** (2 min):
 
 ```bash
-git pull origin main
+git fetch origin --prune
 npm install
 npm run check:env             # Diagnóstico rápido del ambiente
 npm run test:all              # Debe pasar 100% — si falla, STOP
@@ -50,14 +50,27 @@ Si escribís código, escribís tests.
   - ✅ `git add src/labels.js test/labels.spec.js`
   - ❌ `git add .` (todo junto)
 
-### Rama vs. commit directo a main
-**Default: commit + push directo a `main`.** Rama + PR es la excepción, no la regla.
+### Ramas y trabajo paralelo
 
-Usar rama + PR solo cuando el cambio es:
-- **Migración de DB** (cambio de esquema D1) — más riesgoso de revertir una vez aplicado en producción.
-- **Grande o multi-archivo** (una feature que toca muchos archivos, donde conviene revisar el diff completo antes de main).
+**`main` es la rama de integración y producción. No se desarrolla ni se hacen commits directos en `main`.** Cada cambio, incluso documentación, vive en una rama propia y llega a `main` mediante una integración revisable.
 
-Cualquier otra cosa (fixes, cambios cosméticos, features chicas, docs) va directo a `main`. Ante la duda, o si Pablo lo pide explícitamente para un caso puntual, usar rama.
+Cuando hay más de un trabajo o agente activo, cada uno usa además su propio **worktree**. Dos agentes nunca editan la misma carpeta de trabajo: Git comparte los archivos sin commit de un checkout, aunque cada persona crea estar en una rama distinta.
+
+```bash
+# Desde el checkout principal, que se reserva para main limpio.
+git fetch origin --prune
+git worktree add ../tas-king-<tema> -b <tipo>/<tema> origin/main
+cd ../tas-king-<tema>
+
+# Ejemplos de nombres: feature/tip-diario, perf/card-mutations,
+# fix/drag-duplicate, docs/workflow.
+```
+
+- Una rama y un worktree por unidad de trabajo; no mezclar fixes, features y documentación ajena en el mismo commit.
+- Antes de empezar, comunicar rama, carpeta y archivos o zonas que se prevé tocar. Si dos tareas tocan el mismo archivo, se turnan o una integra primero.
+- Agregar archivos por nombre (`git add ruta/a ruta/b`), revisar `git diff --cached` y no usar `git add .`.
+- Cada agente mantiene su rama actualizada con `git fetch origin --prune` y `git rebase origin/main` antes de integrarla. Si el rebase altera el cambio probado, se vuelve a correr la validación necesaria.
+- El checkout principal se mantiene en `main`, limpio y sin experimentos. `git pull` solo se ejecuta ahí como `git pull --ff-only origin main`, después de confirmar que no hay cambios locales.
 
 ### Planificar antes de codear (OpenSpec)
 Para una **funcionalidad nueva**, el flujo es `/opsx:explore` → `/opsx:propose` → `/opsx:apply` → `/opsx:archive`.
@@ -71,7 +84,7 @@ Detalles y estructura de carpetas: [QUICK_START.md § OpenSpec](QUICK_START.md).
 npm run dev                 # Ver cambios en tiempo real
 npm run test:watch          # Tests re-ejecutan al guardar
 npm run test:all            # Suite completa antes de push
-npm run deploy:staging      # Probar en staging (URL real) antes de prod
+npm run deploy:staging      # Probar el commit actual en staging (URL real)
 ```
 
 ### Flujo de despliegue (Opción C: Hybrid)
@@ -108,25 +121,29 @@ src/
 
 ---
 
-## ✅ Antes de push/deploy
+## ✅ Antes de push e integración
 
 ```bash
 npm run test:all           # Suite completa pasa (✅ obligatorio)
 git diff                   # Revisar cambios
 git log --oneline main..HEAD  # Revisar commits
-git push origin main       # Default. Si es migración de DB o cambio grande: rama + PR
+git push -u origin <tipo>/<tema>
 ```
+
+Abrir un PR o preparar una integración explícita hacia `main`. Antes de mergear, actualizar la rama contra `origin/main`, resolver conflictos, volver a probar y revisar el diff final. El commit o merge resultante debe identificar exactamente qué se validará en staging.
 
 ## 🚀 Despliegue a producción (FLUJO OBLIGATORIO)
 
 **REGLA**: Nunca deployar a producción sin confirmación explícita del usuario.
 
 ```
-1. Tests pasan 100% ✅ (local)
-2. Probar en staging ✅
-3. Usuario aprueba: "OK, deployá" (o "mergea y deployá" si el cambio está en una rama — migración de DB o cambio grande)
-4. Claude hace: npm run deploy
-5. Actualizar documentación (ver abajo)
+1. Tests pasan 100% en la rama ✅
+2. Probar esa rama en staging e identificar el SHA desplegado ✅
+3. Integrar a `main`, actualizar `main` y repetir tests ✅
+4. Desplegar `main` a staging y verificar el SHA de integración ✅
+5. Usuario aprueba explícitamente: "OK, deployá" ✅
+6. Hacer `npm run deploy` desde `main` limpio
+7. Actualizar documentación (ver abajo)
 ```
 
 **Cambios multi-capa** (frontend + backend): Leer [docs/CAMBIOS-MULTICAPA.md](docs/CAMBIOS-MULTICAPA.md)
@@ -161,7 +178,9 @@ Todo deploy a producción va acompañado de estos dos updates, en el mismo momen
 
 - ❌ Código sin tests
 - ❌ Commitear `.dev.vars` (contiene credenciales)
-- ❌ Migración de DB o cambio grande/multi-archivo directo a main (siempre rama + PR para esos casos — ver "Rama vs. commit directo a main")
+- ❌ Desarrollar o hacer commits directos en `main`
+- ❌ Dos agentes editando el mismo checkout o worktree
+- ❌ Mezclar cambios de dos tareas en un commit
 - ❌ `git push --force` a main
 - ❌ Hardcodear secrets, emails, URLs
 - ❌ Cambiar DB sin migración versionada
@@ -196,17 +215,18 @@ npm run db:reset:local        # Si la DB local está inconsistente
 npm run test:all
 ```
 
-**Mi rama divergió de main** (para los casos que sí usan rama — migración de DB o cambio grande):
+**Mi rama divergió de main**:
 ```bash
 git fetch origin
 git rebase origin/main
 ```
 
-**Empecé un cambio directo en main pero resultó ser grande/migración de DB**:
+**Empecé un cambio en el checkout de `main`**:
 ```bash
-git checkout -b feature/nueva-rama    # Mover el trabajo a una rama
-git reset --hard origin/main          # Volver main local a lo que ya está en remoto
-git checkout feature/nueva-rama       # Seguir ahí, abrir PR cuando esté listo
+git switch -c <tipo>/<tema>            # Guardar el trabajo en una rama
+# Crear un worktree para esa rama y continuar allí. No resetear ni borrar
+# archivos hasta verificar que el cambio existe en la nueva carpeta.
+git worktree add ../tas-king-<tema> <tipo>/<tema>
 ```
 
 ---

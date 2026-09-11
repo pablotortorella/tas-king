@@ -1,6 +1,6 @@
 # 🚀 Guía de Deployment — tas-king
 
-**Flujo: Desarrollo Local → Staging → Producción**
+**Flujo: rama y worktree → local → staging de la rama → integración en `main` → staging de `main` → producción**
 
 ---
 
@@ -16,26 +16,32 @@
 
 ## 🎯 Flujo típico
 
-### 1️⃣ Desarrollo local (sin cambios)
+### 1️⃣ Crear una rama y worktree para la tarea
 
 ```bash
-git checkout -b feature/mi-feature
+git fetch origin --prune
+git worktree add ../tas-king-<tema> -b <tipo>/<tema> origin/main
+cd ../tas-king-<tema>
 npm run dev                    # http://localhost:8787
 # Editar, probar en navegador
 npm run test:all              # Tests locales pasan
 git commit -m "Feature: ..."
 ```
 
+`main` se reserva para integración y despliegue. Si hay más de un trabajo activo, cada uno ocupa otra carpeta; no se desarrollan dos tareas en el mismo checkout.
+
 ### 2️⃣ Crear PR en GitHub
 
 ```bash
-git push origin feature/mi-feature
-# Abrir PR en GitHub
+git push -u origin <tipo>/<tema>
+# Abrir PR hacia main en GitHub
 ```
 
-### 3️⃣ Deployar a Staging (para revisar antes de producción)
+### 3️⃣ Validar la rama en staging
 
 ```bash
+git status -sb               # limpio
+git rev-parse --short HEAD   # anotar rama y SHA
 npm run deploy:staging
 # → https://tas-king-staging.<subdominio>.workers.dev
 ```
@@ -43,7 +49,7 @@ npm run deploy:staging
 **En staging**:
 - Datos separados de producción (D1 staging ≠ D1 production)
 - Todos los secrets igual a producción (GOOGLE_CLIENT_ID, etc.)
-- Misma versión de código que vas a mergear
+- Es una única instancia: el siguiente deploy de staging reemplaza esta versión
 
 ### 4️⃣ Revisar en Staging
 
@@ -51,18 +57,27 @@ npm run deploy:staging
 - Verificar adjuntos suben correctamente a R2 staging
 - Verificar que no hay errores de CORS, auth, etc.
 
-### 5️⃣ Mergear a main
+### 5️⃣ Integrar a main y validar la integración
 
 ```bash
-# Una vez que el code review pasó y staging verificó OK
-git merge --no-ff feature/mi-feature
-git push origin main
+# Antes de mergear, rebasar la rama con el main actual y volver a probar.
+git fetch origin --prune
+git rebase origin/main
+npm run test:all
+
+# Integrar por PR. Después, desde el checkout principal de main limpio:
+git pull --ff-only origin main
+npm run test:all
+git rev-parse --short HEAD   # SHA de integración
+npm run deploy:staging
 ```
+
+El smoke test en este punto es sobre el SHA de `main`. Si staging se usó para otra tarea entre medio, no se reutiliza la aprobación anterior.
 
 ### 6️⃣ Deployar a Producción
 
 ```bash
-npm run deploy              # O: npm run deploy:production
+npm run deploy
 # → https://tas-king.pablotortorella.workers.dev
 ```
 
@@ -247,9 +262,16 @@ El token se obtiene en: Cloudflare Dashboard → My Profile → API Tokens → C
 npm run test:all              # ✅ Tests pasan localmente
 git diff                      # ✅ Revisar cambios
 git log --oneline main..HEAD  # ✅ Revisar commits
-npm run deploy:staging        # ✅ Test en staging
-# Revisar https://tas-king-staging.<subdominio>.workers.dev
-npm run deploy                # ✅ A producción
+# Desde la rama: registrar SHA y validar staging
+git rev-parse --short HEAD
+npm run deploy:staging
+# Integrar a main, actualizar checkout principal y repetir tests
+git pull --ff-only origin main
+npm run test:all
+# Desplegar y revisar en staging el SHA de main
+npm run deploy:staging
+# Tras aprobación explícita del usuario: producción
+npm run deploy
 ```
 
 ---

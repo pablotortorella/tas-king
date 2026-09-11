@@ -9,9 +9,10 @@ Este documento define cómo trabajamos en el proyecto: desde el setup local hast
 - **Tests first**: No mergeamos código sin tests pasando
 - **Documented decisions**: Cada decisión arquitectónica va en `docs/ADRs.md`
 - **Single source of truth**: `docs/STATUS.md` = estado actual del proyecto
-- **Feature branches**: Cada feature en su propia rama
-- **Protected main**: Solo PRs con tests + review mergean a main
-- **Staging before prod**: Cambios se prueban en staging antes de producción
+- **Rama por tarea**: Cada feature, fix o cambio de documentación tiene su propia rama
+- **`main` de integración**: No se desarrolla ni se commitea directamente en `main`; representa la integración candidata a producción
+- **Worktree por agente**: Si hay tareas paralelas, cada agente edita un worktree diferente
+- **Staging before prod**: Staging valida un SHA identificable; no es un entorno paralelo por rama
 
 ---
 
@@ -20,8 +21,8 @@ Este documento define cómo trabajamos en el proyecto: desde el setup local hast
 **Checklist obligatorio** (2-3 minutos):
 
 ```bash
-# 1. Actualizar desde remoto
-git pull origin main
+# 1. Actualizar referencias desde remoto
+git fetch origin --prune
 
 # 2. Revisar qué hay implementado
 cat docs/STATUS.md          # ¿Qué está listo? ¿Qué falta tests?
@@ -45,18 +46,26 @@ Si tests fallan, **NO** empezar a codar. Investigar por qué.
 
 ---
 
-## 🔀 Crear rama de feature
+## 🔀 Crear una tarea aislada
 
 ```bash
-git checkout -b feature/nombre-descriptivo
+# Desde el checkout principal, que se mantiene en main limpio.
+git fetch origin --prune
+git worktree add ../tas-king-<tema> -b <tipo>/<tema> origin/main
+cd ../tas-king-<tema>
 
 # Ejemplos:
-# git checkout -b feature/etiquetas-coloridas
-# git checkout -b feature/historial-actividad
-# git checkout -b feature/modo-oscuro
+# git worktree add ../tas-king-etiquetas -b feature/etiquetas-coloridas origin/main
+# git worktree add ../tas-king-perf -b perf/card-mutations origin/main
+# git worktree add ../tas-king-docs -b docs/workflow origin/main
 ```
 
-**Regla**: Una rama = una feature. Si necesitas hacer dos features, dos ramas.
+**Reglas**:
+
+- Una rama = una tarea. Si se hacen dos tareas, se crean dos ramas.
+- Dos agentes concurrentes usan dos worktrees distintos. No basta con dos ramas: el mismo checkout comparte los archivos no commiteados.
+- Antes de modificar archivos, registrar rama, carpeta y zonas que se tocarán. Si dos tareas coinciden en un archivo, se acuerda el orden de integración o una se pausa.
+- El checkout principal sólo se usa para actualizar `main`, integrar y desplegar; debe permanecer limpio.
 
 ---
 
@@ -113,6 +122,8 @@ git commit -m "Agregar endpoint de etiquetas: GET /api/labels"
 # ❌ MALO: "Fixed stuff" o "WIP"
 ```
 
+No usar `git add .`. Antes de confirmar, revisar `git diff --cached` y comprobar que cada archivo pertenece a la misma tarea.
+
 ### Tests
 
 **Regla de oro**: Si escribís código, escribís tests.
@@ -154,7 +165,7 @@ npm run verify-ready            # ✅ listo para push o ❌ falta algo
 
 ```bash
 # 1. Push tu rama
-git push origin feature/etiquetas-coloridas
+git push -u origin feature/etiquetas-coloridas
 
 # 2. En GitHub: abrir PR a main
 # - Título: describe qué hace (máx 70 chars)
@@ -196,9 +207,11 @@ git push origin feature/etiquetas-coloridas
 - [ ] Nuevo código tiene tests (>80% cobertura en líneas cambiadas)
 - [ ] Commits tienen mensajes claros
 - [ ] `docs/STATUS.md` está actualizado con la feature
-- [ ] `AI_HANDOFF.md` sección "Último handoff" tiene resumen
+- [ ] Si Pablo lo pidió explícitamente, `AI_HANDOFF.md` sección "Último handoff" tiene resumen
 - [ ] Si hay breaking changes, README está actualizado
 - [ ] Si hay secretos/credenciales en diff, STOP → revertir
+- [ ] La rama se actualizó con `git fetch origin --prune && git rebase origin/main`
+- [ ] Se volvieron a correr los checks afectados después del rebase
 
 **Review automático** (GitHub Actions):
 - Tests pasan ✅
@@ -213,40 +226,39 @@ git push origin feature/etiquetas-coloridas
 
 ## 🚀 Merge y Deploy
 
-### Mergear a main
+### Integrar a main
 
 ```bash
-# En GitHub: click "Merge Pull Request"
-# O en CLI:
-git checkout main
-git pull origin main
-git merge feature/etiquetas-coloridas
-git push origin main
+# Desde el worktree de la tarea, antes de abrir o actualizar el PR:
+git fetch origin --prune
+git rebase origin/main
+npm run test:all
+git push --force-with-lease  # Solo si el rebase reescribió la rama propia
+
+# La integración se hace por PR o desde el checkout principal limpio.
+# main nunca recibe cambios no revisados ni archivos sin commit.
 ```
 
-### Deploy a staging
+### Validar en staging
 
 ```bash
-# GitHub automáticamente deploya develop branch a staging
-# (Si exists develop branch con CI configurado)
-# Esperar a que CI termine
+# Desde el worktree de la rama a validar:
+git status -sb               # debe estar limpio
+git rev-parse --short HEAD   # anotar el SHA que se despliega
+npm run deploy:staging
 
 # Verificar staging: https://tas-king-staging.pablotortorella.workers.dev
-# Probar manualmente:
-# 1. Login con test user
-# 2. Crear tarjeta, agregar etiqueta
-# 3. Filtrar por etiqueta
-# 4. Ver en historial que se registró el evento
 ```
+
+Staging es único: el último deploy reemplaza al anterior. Antes de desplegar, anotar rama y SHA; no se despliegan dos tareas en paralelo. Si otra rama cambia `main` después de esta validación, rebasar, volver a probar y validar la integración resultante.
+
+Una vez integrada la rama, actualizar el checkout de `main`, ejecutar `npm run test:all`, desplegar **ese SHA de `main`** a staging y hacer el smoke test final. Así producción se promueve desde el mismo código que se revisó.
 
 ### Deploy a producción
 
 ```bash
-# Cuando changes en main están listos
+# Desde el checkout principal en main limpio y validado en staging
 npm run deploy
-
-# O:
-git push origin main:production   # Si tienen rama de production
 
 # Verificar: https://tas-king.pablotortorella.workers.dev
 # Smoke test:
@@ -265,15 +277,19 @@ git push origin main:production   # Si tienen rama de production
 # 1. Identifica el commit problemático
 git log --oneline main | head -10
 
-# 2. Revert el commit (crea un nuevo commit que lo deshace)
+# 2. Preparar un revert o hotfix en su propia rama y worktree
+git fetch origin --prune
+git worktree add ../tas-king-revert -b hotfix/revert-<tema> origin/main
+cd ../tas-king-revert
 git revert <commit-hash>
-git push origin main
+# ... tests pasar ...
+# PR → integrar → staging → aprobación → deploy
 
-# 3. Investigar en rama separada
-git checkout -b hotfix/investigar-bug
+# 3. Investigar el arreglo en otra rama si hace falta
+git worktree add ../tas-king-hotfix -b hotfix/investigar-bug origin/main
 # ... arreglar ...
 # ... tests pasar ...
-# PR → review → merge
+# PR → integración → staging → producción con aprobación
 
 # 🚫 NO hacer: git reset --hard, git push --force
 # (Eso pierde historia, rompe otros colaboradores)
@@ -284,14 +300,14 @@ git checkout -b hotfix/investigar-bug
 ## 📊 Estructura de branches
 
 ```
-main (protegida)
-├── feature/etiquetas-coloridas   (tu rama)
-├── feature/modo-oscuro           (otra rama)
-└── hotfix/fix-seguridad          (arreglo urgente)
-
-develop (si existe, = staging)
-└── auto-deploya a staging
+main (integración y producción)
+├── feature/etiquetas-coloridas   (worktree propio)
+├── perf/card-mutations           (worktree propio)
+├── fix/seguridad                  (worktree propio)
+└── docs/workflow                  (worktree propio)
 ```
+
+Las ramas siguen la forma `<tipo>/<tema>`: `feature/`, `fix/`, `perf/`, `docs/`, `chore/` u `hotfix/`. Se borran del remoto y se remueven sus worktrees después de que su integración esté en `main` y no haya una necesidad de conservarlas.
 
 ---
 
@@ -389,7 +405,7 @@ Cuando terminas una feature:
 **Estado**: **100% completo** — listo para producción.
 ```
 
-**2. Actualizar `AI_HANDOFF.md` sección "Último handoff"**
+**2. Si Pablo lo pidió explícitamente, actualizar `AI_HANDOFF.md` sección "Último handoff"**
 ```markdown
 **Sesión 2026-06-24 (Claude Sonnet)**:
 - Implementado #2 Etiquetas: tabla labels/card_labels, endpoints CRUD, UI completa
@@ -424,7 +440,9 @@ Cuando terminas una feature:
 ## 🆘 Troubleshooting
 
 **"Tests fallan localmente pero pasaban ayer"**
-- Actualizar repo: `git pull origin main`
+- Actualizar referencias: `git fetch origin --prune`
+- Si estás en una rama de tarea: `git rebase origin/main` y volver a correr los tests
+- Si estás en el checkout principal limpio: `git pull --ff-only origin main`
 - Limpiar caché: `rm -rf .wrangler/state`
 - Reinstalar: `npm install`
 - Correr de nuevo: `npm run test:all`
@@ -441,9 +459,9 @@ git rebase -i origin/main
 # (Editar commits, squash, reorder)
 ```
 
-**"Committé en main por error"**
+**"Empecé trabajo en el checkout de main"**
 ```bash
-git checkout -b feature/nueva-rama          # Guardar cambios en rama
-git reset --hard origin/main                # Volver main a remoto
-git checkout feature/nueva-rama             # Ir a rama con cambios
+git switch -c <tipo>/<tema>                 # Guardar el trabajo en una rama
+git worktree add ../tas-king-<tema> <tipo>/<tema>
+# Verificar el trabajo en el worktree nuevo antes de limpiar el checkout principal.
 ```

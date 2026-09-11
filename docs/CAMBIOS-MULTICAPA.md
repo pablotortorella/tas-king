@@ -11,10 +11,12 @@
 
 ## 📖 Proceso obligatorio
 
-### Paso 1: Cambiar AMBAS capas en la misma rama
+### Paso 1: Crear una rama y worktree para el cambio
 
 ```bash
-git checkout -b feature/colores-etiquetas
+git fetch origin --prune
+git worktree add ../tas-king-<tema> -b feature/<tema> origin/main
+cd ../tas-king-<tema>
 
 # Editar frontend
 # Editar backend
@@ -22,6 +24,8 @@ git checkout -b feature/colores-etiquetas
 
 npm run test:all  # ✅ Must pass
 ```
+
+El checkout principal se mantiene en `main` limpio. Si otro agente está activo, usa otro worktree; nunca compartir carpeta aunque las ramas sean diferentes.
 
 ### Paso 2: Verificar localmente ANTES de deployar
 
@@ -43,9 +47,11 @@ npm run dev
 
 **⚠️ Si algo falla en local**: FIX LOCAL primero, luego mergea y deployá.
 
-### Paso 3: Probar en Staging (UNA SOLA VEZ)
+### Paso 3: Probar la rama en Staging
 
 ```bash
+git status -sb
+git rev-parse --short HEAD  # registrar el SHA desplegado
 npm run deploy:staging
 # URL: https://tas-king-staging.pablotortorella.workers.dev
 ```
@@ -55,14 +61,20 @@ npm run deploy:staging
 - [ ] Feature principal funciona end-to-end
 - [ ] No hay errores de consola
 
-### Paso 4: **CONFIRMACIÓN EXPLÍCITA antes de producción**
+Staging tiene una sola versión activa. Si otro trabajo se despliega después, esta validación queda reemplazada; no se asume que dos ramas están verificadas a la vez.
+
+### Paso 4: Integrar y probar el SHA de `main`
+
+Antes del merge, rebasar la rama contra `origin/main`, resolver conflictos y volver a correr los tests afectados. Integrar por PR, actualizar el checkout principal de `main`, ejecutar `npm run test:all` y desplegar ese SHA a staging. El smoke test final es sobre esa integración, no sobre un deploy anterior de la rama.
+
+### Paso 5: **CONFIRMACIÓN EXPLÍCITA antes de producción**
 
 **Flujo correcto** (que NO seguimos):
 ```
-Pablo: "Claude, verificá todo en local y staging"
-Claude: "✅ Tests pasan, staging funciona, estoy listo"
-Pablo: "OK, mergea a main y deployá a producción"
-Claude: npm run deploy  ← SOLO después de aprobación explícita
+Pablo: "Verificá todo en local y staging"
+Agente: "✅ La rama y el SHA integrado en main pasaron tests y staging"
+Pablo: "OK, deployá"
+Agente: npm run deploy  ← SOLO después de aprobación explícita
 ```
 
 **Flujo incorrecto** (lo que pasó):
@@ -76,6 +88,7 @@ Claude: Tests pasan → deploy a prod sin preguntar ❌
 - [ ] Cambios en frontend ✅ y backend ✅ están en el mismo commit
 - [ ] Probé localmente (rm -rf .wrangler && npm run test:all)
 - [ ] Probé en staging y funciona
+- [ ] El SHA probado en staging corresponde al `main` que se va a desplegar
 - [ ] **USUARIO da OK explícito** para ir a producción
 
 ## 🚫 Qué NO hacer
