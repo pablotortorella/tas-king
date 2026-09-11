@@ -20,7 +20,9 @@ const revokedResponse = {
 // una llamada de fondo como el poll) haga que la app navegue a /revoked.html en vez de
 // mostrar el error genérico o quedarse trabada en un catch silencioso.
 test("una respuesta access_revoked en la carga inicial redirige a /revoked.html", async ({ page }) => {
-  await page.route("**/api/me", route => route.fulfill(revokedResponse));
+  // El glob lleva * al final porque la carga manda la fecha local en la query
+  // (/api/me?today=YYYY-MM-DD, para el tip diario): sin el *, la ruta no matchea.
+  await page.route("**/api/me*", route => route.fulfill(revokedResponse));
   await page.goto("/");
 
   await expect(page).toHaveURL(/\/revoked$/);

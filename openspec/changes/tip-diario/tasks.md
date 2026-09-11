@@ -23,18 +23,18 @@
 ## 3. Presencia en pantalla
 
 - [x] 3.0 Resolver primero la pregunta abierta de `design.md`: si la franja muestra una categoría visible. Cambia el markup y el techo editorial, así que se decide con Pablo antes de escribir la UI — **resuelto 2026-09-11: sin categoría en v1**, la franja muestra solo el texto y el techo queda en ~110 caracteres
-- [ ] 3.1 Agregar la franja de tip como elemento propio justo encima del `.app-footer`, sin control de descarte, y verificar en tema claro y oscuro que no tapa el tablero ni se confunde con el pie de página
-- [ ] 3.2 Verificar en viewport de 360px que el tip se lee completo en dos líneas, sin truncar, y que el layout del tablero no se rompe
-- [ ] 3.3 Ocultar los atajos de teclado (`F · U · N · F1`) del footer en pantallas angostas, donde no sirven, y verificar que el alto total del pie no crece respecto de hoy
+- [x] 3.1 Agregar la franja de tip como elemento propio justo encima del `.app-footer`, sin control de descarte, y verificar en tema claro y oscuro que no tapa el tablero ni se confunde con el pie de página — **hecho**: `.tip-daily` con `#tipDaily`/`#tipText` encima del `.app-footer`, verificado en claro y oscuro
+- [x] 3.2 Verificar en viewport de 360px que el tip se lee completo en dos líneas, sin truncar, y que el layout del tablero no se rompe — **hecho**: test E2E que mide desborde y cantidad de líneas a 360px
+- [x] 3.3 Ocultar los atajos de teclado (`F · U · N · F1`) del footer en pantallas angostas, donde no sirven, y verificar que el alto total del pie no crece respecto de hoy — **hecho**: `.app-footer .shortcuts` oculto en `max-width: 560px`, con su separador
 
 ## 4. Realce diario
 
-- [ ] 4.1 Agregar el keyframe del realce dentro del guard `@media (prefers-reduced-motion: no-preference)`, siguiendo el patrón de `wip-pulse`, y verificar que con movimiento reducido activado el tip se ve completo y sin animación
-- [ ] 4.2 Disparar el realce en la primera interacción del día con el tablero, con tope diario vía `tasking-tip-blink-date` (mismo patrón que `maybeShowWipToast()`), y verificar manualmente que titila una sola vez por jornada aunque se sigan creando y moviendo tarjetas
+- [x] 4.1 Agregar el keyframe del realce dentro del guard `@media (prefers-reduced-motion: no-preference)`, siguiendo el patrón de `wip-pulse`, y verificar que con movimiento reducido activado el tip se ve completo y sin animación — **hecho**: `@keyframes tip-blink` dentro del guard, con test E2E de movimiento reducido
+- [x] 4.2 Disparar el realce en la primera interacción del día con el tablero, con tope diario vía `tasking-tip-blink-date` (mismo patrón que `maybeShowWipToast()`), y verificar manualmente que titila una sola vez por jornada aunque se sigan creando y moviendo tarjetas — **hecho**: se arma una sola vez por carga y titila en el primer gesto del día
 
 ## 5. Tests E2E
 
-- [ ] 5.1 Escribir `e2e/tip-diario.spec.js` cubriendo: el tip aparece al abrir el tablero; el mismo tip persiste tras recargar el mismo día (ahora con el avance leído de la cuenta, no del navegador); el realce ocurre una sola vez por día — y verificar que corre en verde con `npm run test:e2e`
+- [x] 5.1 Escribir `e2e/tip-diario.spec.js` cubriendo: el tip aparece al abrir el tablero; el mismo tip persiste tras recargar el mismo día (ahora con el avance leído de la cuenta, no del navegador); el realce ocurre una sola vez por día — y verificar que corre en verde con `npm run test:e2e` — **hecho**: 6 tests E2E en verde
 
 ## 6. Cierre
 
