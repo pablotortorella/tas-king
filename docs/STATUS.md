@@ -17,7 +17,7 @@
 - **Regresión encontrada y corregida**: `e2e/access-revoked.spec.js` interceptaba `**/api/me` y dejó de matchear al sumarse la query `?today=`; el glob pasó a `**/api/me*`.
 - **Orden de deploy invertido a propósito**: `npm run deploy` corre `deploy && db:migrate:remote` en ese orden, lo que con este cambio dejaría una ventana con el worker nuevo consultando columnas inexistentes (`/api/me` en 500). Se aplicó la migración **antes** del deploy, en staging y en producción. La migración es aditiva, así que el código viejo convive con las columnas nuevas sin problema.
 - **Backlog**: se sumaron dos ítems detectados en la sesión — etiquetas asignables al crear una tarjeta nueva (hoy solo se pueden asignar editando una existente; los Objetivos ya lo resuelven con `draftGoals`) y Esc no cierra el modal de ayuda F1 (el código existe pero es inalcanzable: un `return` previo lo deja como código muerto).
-- Deployado a producción como v2.2.0 (Version ID `PENDIENTE`), release notes en `/releases`.
+- Deployado a producción como v2.2.0 (Version ID `7d8e4989-abca-4158-a966-006894972f3e`), release notes en `/releases`. Staging: `c98ca60f-45c3-4390-9637-1e885ae07d61`. Backup previo de la DB de producción: `backups/prod-20260911-160321.sql`.
 
 ## 🎯 Cambios recientes (sesión 2026-09-08 — favicon + nuevo acuerdo de workflow en CLAUDE.md)
 
