@@ -79,6 +79,8 @@ Con esto, **ningún texto vivo del catálogo supera los 110 caracteres**.
 
 **K4 se conserva tal como está y permanece en el tramo 1**, decisión explícita de Pablo. Consecuencia registrada: K4 aplica un principio sobre el tablero sin nombrar una funcionalidad puntual de la app, a diferencia del resto del tramo 1.
 
+**2026-09-11 — Lote 3: K5, la única referencia a la UI que estaba mal.** Verificado contra `public/index.html` (líneas 915-919): «Quietas» no cuelga directo de «¿Cómo vamos?», sino de la sección «¡Pilas con esto! 🔥» que vive dentro de ese panel. Pablo eligió la redacción con la ruta completa: «Una tarea quieta merece una pregunta: en «¿Cómo vamos?» buscá «¡Pilas con esto! 🔥» y mirá las «Quietas».» (104). Ya no queda ninguna referencia de interfaz incorrecta en el catálogo.
+
 ## Cómo curar
 
 Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: **Propuesto**, **Aprobado**, **Descartado**. Las variantes tienen su propio ID y siguen propuestas hasta elegirlas. «Aprobado» en K1 y O1 refleja la aceptación explícita de esos modelos; la selección definitiva de la colección y su orden siguen pendientes. No hay descartes registrados.
@@ -91,7 +93,7 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 | K2 | Visualizar | Hacé visible lo que falta saber: dejá el contexto de la tarea en su descripción. | Propuesto |
 | K3 | Limitar el WIP | Dejar de empezar y empezar a terminar: el Pulso 🎯 te recuerda mirar lo que ya está en marcha. | Propuesto |
 | K4 | Limitar el WIP | Antes de sumar otra tarea en curso, mirá cuántas tarjetas ya están esperando tu atención. | Propuesto |
-| K5 | Gestionar el flujo | Una tarea quieta merece una pregunta: mirá las «Quietas» en «¿Cómo vamos?» y averiguá qué necesitan. | Propuesto |
+| K5 | Gestionar el flujo | Una tarea quieta merece una pregunta: en «¿Cómo vamos?» buscá «¡Pilas con esto! 🔥» y mirá las «Quietas». | **Aprobado** (2026-09-11, ruta corregida, 104) |
 | K6 | Gestionar el flujo | Mirá la distribución en «¿Cómo vamos?»: si se acumulan tarjetas en una columna, conversen sobre qué pasa ahí. | Propuesto |
 | K7 | Explicitar políticas | Terminar debe significar lo mismo para todos: acuerden qué debe cumplir una tarjeta para llegar a ✅ | **Aprobado** (2026-09-11, redacción de Pablo, 99) |
 | K8 | Explicitar políticas | Una etiqueta sirve más cuando todos la entienden igual: acuerden qué significa y cuándo usarla. | Propuesto |

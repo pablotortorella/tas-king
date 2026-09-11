@@ -72,7 +72,7 @@ La secuencia de tips SHALL estar ordenada como una progresión de tres tramos: p
 
 #### Scenario: El primer tramo conecta práctica y herramienta
 - **WHEN** una persona recorre el primer tramo de la secuencia
-- **THEN** cada tip enuncia un principio de práctica y señala la funcionalidad de la app que permite llevarlo a cabo
+- **THEN** los tips enuncian un principio de práctica y muestran cómo aplicarlo sobre el tablero, señalando la funcionalidad de la app cuando hay una que lo sostiene
 
 #### Scenario: El segundo tramo profundiza en el método propio de la herramienta
 - **WHEN** una persona termina el primer tramo y continúa

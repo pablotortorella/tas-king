@@ -7,7 +7,7 @@
 - [ ] 1.3 Repartir los candidatos N1–N10 entre los tres tramos según su tema (hoy están agrupados aparte y mezclan temas de los tres) y verificar que cada tip quedó en el tramo que le corresponde
 - [ ] 1.4 Agregar las hermanas singulares que falten para los tips en plural donde aplique, sin reemplazar el original, y verificar que ambas versiones conviven con IDs propios
 - [x] 1.5 Resolver los solapamientos ya detectados (K4/M1, K11/M6, O4/G4, T5/N7, T6/N4): conservarlos separados en la secuencia o reducirlos, y verificar que la decisión quedó registrada en `tips.md` — **resuelto 2026-09-11**: se conservan los cinco pares completos, separados en la secuencia; K4 queda como está y en el tramo 1
-- [ ] 1.6 Ajustar K5, que presenta «Quietas» como si estuviera directo en «¿Cómo vamos?» cuando está dentro de la sección «¡Pilas con esto! 🔥», y verificar la ruta contra la UI real
+- [x] 1.6 Ajustar K5, que presenta «Quietas» como si estuviera directo en «¿Cómo vamos?» cuando está dentro de la sección «¡Pilas con esto! 🔥», y verificar la ruta contra la UI real — **resuelto 2026-09-11**: ruta completa en el texto, verificada contra `public/index.html:915-919`
 - [ ] 1.7 Definir la secuencia final de los tres tramos y dejarla como un único array ordenado `DAILY_TIPS` en `public/index.html`, verificando que el orden del archivo es el orden pedagógico del spec
 
 ## 2. Selección del tip del día
