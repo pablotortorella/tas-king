@@ -37,6 +37,8 @@ La app además ya habla el idioma de esta capacidad: el toast del Pulso WIP dice
 
 - **El tope del realce sí queda en `localStorage`**, con la clave `tasking-tip-blink-date` y la misma forma que `tasking-wip-msg-date`. Es lo correcto justamente porque el realce es por dispositivo: si alguien abre el tablero en el teléfono y más tarde en la compu, que titile una vez en cada pantalla es lo esperado — el tip es el mismo, y el realce solo sirve para que lo note ahí donde está mirando. Se dispara en el primer evento de interacción del día con el tablero; después queda inerte hasta el día siguiente.
 
+- **El titileo son tres ciclos cortos (0,6s cada uno), no un latido lento** (ajuste pedido por Pablo el 2026-09-11 al verlo en local): con un solo pulso largo el ojo no lo registra como una llamada de atención. Tres ciclos de 0,6s se leen como "algo titiló acá" y terminan en menos de dos segundos; después la franja queda fija el resto del día. El realce combina un anillo interior en `--accent` con un cambio de fondo, para que se note sin mover nada de lugar.
+
 - **El realce es refuerzo, no mecanismo.** Va dentro del mismo guard de `prefers-reduced-motion` que el pulso existente. Si no se ejecuta, el tip sigue visible y legible: el spec exige que la capacidad funcione sin animación.
 
 - **Sin toggle de apagado en v1.** El header ya tiene cuatro controles (🎯, 🌙, perfil, Admin) y esto es una línea de texto quieta sin descarte. Se deja la puerta abierta: agregar un toggle después no invalida ningún requirement de este spec. *Alternativa considerada*: darle su propio toggle por simetría con el Pulso WIP — argumento legítimo, pero ese pulsa tarjetas y lanza un toast; esto no hace ruido comparable.

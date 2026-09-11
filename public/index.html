@@ -227,10 +227,12 @@
      completo y legible, simplemente sin titileo (mismo guard que wip-pulse). */
   @media (prefers-reduced-motion: no-preference) {
     @keyframes tip-blink {
-      0%, 100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); }
-      50%      { box-shadow: inset 0 0 0 2px var(--accent); }
+      0%, 100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); background: var(--col-bg); }
+      50%      { box-shadow: inset 0 0 0 2px var(--accent); background: var(--card-bg); }
     }
-    .tip-daily.tip-blink { animation: tip-blink 1.4s ease-in-out 2; }
+    /* Tres ciclos cortos: se lee como un titileo que llama la atención, no como
+       un latido lento. Después queda fija el resto del día. */
+    .tip-daily.tip-blink { animation: tip-blink .6s ease-in-out 3; }
   }
   /* En pantallas angostas los atajos de teclado no sirven: ocultarlos compensa
      el alto que suma la franja del tip. */
