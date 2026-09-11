@@ -3,6 +3,15 @@
 **Última actualización**: 2026-09-11  
 **Estado**: ✅ Tests completos (139 unit + 62 E2E) | main = staging = producción ✅ (deployado y verificado)
 
+## 🎯 Performance de mutaciones — implementado, falta medición posterior
+
+- **Línea base de producción**: crear una tarjeta demoró aproximadamente 2,10 s y asignar una etiqueta 1,93–2,02 s. Las tres recargas globales posteriores a cada escritura explicaron alrededor de 1,4–1,5 s de cada secuencia. La CPU del Worker fue baja; la mayor parte del tiempo observado fue espera de I/O.
+- **Optimización incluida en v2.2.0**: crear/editar tarjetas y asignar/quitar etiquetas actualiza el estado local desde la respuesta confirmada, sin volver a descargar tarjetas, etiquetas y objetivos. Los guardados con recursos relacionados releen únicamente la tarjeta afectada. El polling queda serializado con las mutaciones y descarta respuestas anteriores.
+- **Cobertura**: `e2e/card-mutation-performance.spec.js` cubre ausencia de recargas globales, persistencia, errores y reintentos, recursos relacionados, doble clic, polling concurrente y cambio de tablero durante una escritura.
+- **Pendiente inmediato**: repetir en producción la misma secuencia con varias muestras y medir también desde el clic hasta la actualización visible. Después, instrumentar las etapas del middleware para decidir con datos si reducir consultas D1 de rate limiting, `ensureUser` y asignación de rol.
+- **Candidatos posteriores, solo si la medición muestra impacto**: render incremental para tableros grandes y agrupación de escrituras de adjuntos, checklists y objetivos. El polling que no detecta comentarios, checklists ni algunos borrados permanece como bug funcional de alta prioridad en `docs/PRODUCT_BACKLOG.md`.
+- Informe y valores completos: `docs/PERFORMANCE-2026-09-11.md`.
+
 ## 🎯 Cambios recientes (sesión 2026-09-11 — Tip diario)
 
 - **Tip diario (capacidad `tip-diario`, planificada con OpenSpec)**: franja permanente encima del pie con un consejo de práctica por día. No interrumpe, no tiene descarte y el tip no cambia durante la jornada. Cierra el ciclo `explore` → `propose` → `apply` que venía de las sesiones del 9 y 10 de septiembre.

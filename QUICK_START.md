@@ -22,12 +22,14 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ### ✅ Completado en la última sesión (2026-09-11)
 - **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
-- **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales; se mantienen protecciones ante polling y cambios concurrentes. Falta repetir la medición de producción posterior al cambio.
+- **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales, que en la línea base agregaban aproximadamente 1,4–1,5 s por acción. Se mantienen protecciones ante polling y cambios concurrentes. Falta medir el resultado ya desplegado.
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. Repetir la medición de performance en producción para comparar con la línea base.
-2. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.
+1. **Performance**: repetir en producción la misma secuencia de crear/editar tarjeta y asignar/quitar etiqueta, idealmente con cinco repeticiones por acción. Comparar con la línea base de 1,8–2,1 s y registrar también el tiempo desde el clic hasta la actualización visible.
+2. Si la escritura continúa alrededor de 400–600 ms, instrumentar por separado rate limiting, autenticación, `ensureUser`, rol y handler antes de reducir las consultas D1 repetidas.
+3. Mantener como mejoras condicionadas por evidencia el render incremental de tableros grandes y la agrupación de escrituras de adjuntos/checklists/objetivos. El plan completo vive en `docs/PRODUCT_BACKLOG.md` y la línea base en `docs/PERFORMANCE-2026-09-11.md`.
+4. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.
 
 Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).
 

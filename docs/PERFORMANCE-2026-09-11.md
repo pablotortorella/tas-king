@@ -60,7 +60,7 @@ La CPU del Worker fue baja. Esta captura no mide CPU del navegador, tamaño de r
 
 La captura se cerró al terminar. No se modificó código de producto ni se desplegaron cambios.
 
-## Primera mejora implementada localmente
+## Primera mejora implementada y desplegada
 
 Después de la medición se modificó el frontend para quitar las recargas de tarjetas, etiquetas y objetivos del flujo de guardado:
 
@@ -75,6 +75,16 @@ Después de la medición se modificó el frontend para quitar las recargas de ta
 
 Las pruebas de regresión están en `e2e/card-mutation-performance.spec.js`: verifican ausencia de recargas globales, persistencia, errores y reintentos, recursos relacionados, progreso, respuestas antiguas, doble clic, polling y cambio de tablero durante una escritura. La primera prueba falló antes del cambio al detectar las seis lecturas extra de crear y editar.
 
-La mejora esperada evita el tramo de aproximadamente 1,4–1,5 s observado en la medición original, pero todavía no es una medición posterior al cambio en producción. Pendiente desplegar y repetir la captura.
+La mejora se incluyó en v2.2.0 y está desplegada en producción. Por construcción elimina el tramo de tres lecturas que sumaba aproximadamente 1,4–1,5 s en la medición original, pero todavía falta medir el tiempo real posterior al cambio.
 
-Validación final: `npm run test:all` pasó con 125 pruebas de backend y 56 de navegador, incluidas nueve pruebas nuevas de regresión. `git diff --check` pasó. No se desplegó esta implementación durante esta sesión.
+Validación previa al deploy: `npm run test:all` pasó con 125 pruebas de backend y 56 de navegador, incluidas nueve pruebas nuevas de regresión. La versión final v2.2.0 pasó 139 pruebas de backend y 62 de navegador y fue desplegada y verificada.
+
+## Pendientes del siguiente ciclo
+
+1. Repetir la secuencia en producción con al menos cinco muestras por acción y confirmar que crear/editar tarjetas y asignar/quitar etiquetas ya no disparan las tres lecturas globales.
+2. Medir desde el clic hasta la actualización visible en el navegador. La captura original no incluyó red del cliente, CPU del navegador ni renderizado.
+3. Si las escrituras continúan alrededor de 400–600 ms, agregar tiempos por etapa para rate limiting, autenticación/revocación, `ensureUser`, `seedAdminIfNeeded` y handler. Optimizar solo después de localizar la espera D1.
+4. Medir tableros grandes antes de reemplazar el `render()` completo por actualizaciones incrementales.
+5. Medir por separado guardados con adjuntos, checklists y objetivos antes de agrupar sus escrituras o eliminar la relectura puntual de la tarjeta.
+
+El backlog canónico y la prioridad de estos pasos viven en `docs/PRODUCT_BACKLOG.md`.
