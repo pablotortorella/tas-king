@@ -50,7 +50,13 @@ La app además ya habla el idioma de esta capacidad: el toast del Pulso WIP dice
 
 ## Open Questions
 
-- **¿Se muestra una categoría visible en la franja?** (label o hashtag; y en ese caso, ¿categorías por tema o por método). **Sin resolver — Pablo no la cerró.** No es diferible indefinidamente: si se acepta, cambia el spec (la franja pasa a ser rótulo + texto) y baja el techo editorial de ~110 a ~95 caracteres, o suma una tercera línea permanente. Recomendación registrada del asistente: sin categoría en v1, con la procedencia dentro de la frase cuando importe (como ya hace P2-V2, "Cuando hagas un Pomodoro…"), porque el espacio es el recurso escaso en una franja permanente y agregarla más adelante no rompe nada. **Resolver antes de implementar la UI.**
+_Sin preguntas abiertas._
+
+### Resuelta el 2026-09-11: la franja no muestra categoría
+
+**Decisión de Pablo: sin categoría visible en v1.** La franja es rótulo-libre: solo el texto del tip. Se mantiene el techo editorial de ~110 caracteres y la franja de dos líneas, y la procedencia del consejo va dentro de la frase cuando importa (como ya hace P2-V2, «Cuando hagas un Pomodoro…»).
+
+Razón: en una franja permanente el espacio es el recurso escaso, y un rótulo cuesta ~10 de los ~110 caracteres o una tercera línea permanente. Además la asimetría de riesgo favorece esta opción: agregar la categoría más adelante no invalida ningún requirement ni obliga a reescribir textos; sacarla después sí obligaría a reescribir los que hubieran quedado apoyados en el rótulo. Alternativas descartadas: categoría por tema (Flujo, Próxima acción, Foco y pausas…) y categoría por método (Kanban, GTD, Pomodoro) — esta última además deja sin rótulo asignable a los tips de priorización general (T1–T6, N1–N10), que no provienen de una escuela con nombre.
 
 ## Migration Plan
 

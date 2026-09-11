@@ -54,7 +54,7 @@ Se comprobaron contra el código **todas** las referencias de interfaz que citan
 ## Decisiones pendientes
 
 1. **Curar los textos**, tip por tip, y elegir entre originales y hermanas. Lo hace Pablo. No reemplazar automáticamente un original por la última sugerencia del asistente.
-2. **¿Se muestra categoría?** Sigue abierta: Pablo la propuso (label o hashtag) y no la cerró. Si se acepta, hay que elegir además entre categorías por tema (Flujo, Próxima acción, Foco y pausas) o por método (Kanban, GTD, Pomodoro). Recomendación registrada del asistente: **sin categoría en v1**, con la procedencia dentro de la frase cuando importe —como ya hace P2-V2—, porque un rótulo cuesta ~10 de los ~110 caracteres o una tercera línea permanente. **Hay que resolverla antes de implementar la UI** (tarea 3.0).
+2. ~~¿Se muestra categoría?~~ → **Resuelta el 2026-09-11: sin categoría visible en v1.** Decisión de Pablo. La franja muestra solo el texto; el techo editorial queda en ~110 caracteres y la procedencia va dentro de la frase cuando importa. Descartadas: categoría por tema y categoría por método. Ver `design.md` § Open Questions. **Consecuencia para la curación**: se cura contra ~110 caracteres, no contra ~95.
 3. Definir la secuencia final, el tamaño del catálogo inicial y qué repeticiones conservar. Los IDs son referencias editoriales estables, no posiciones de reproducción.
 4. Resolver los solapamientos detectados: K4/M1, K11/M6, O4/G4, T5/N7, T6/N4.
 

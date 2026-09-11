@@ -17,7 +17,7 @@
 
 ## 3. Presencia en pantalla
 
-- [ ] 3.0 Resolver primero la pregunta abierta de `design.md`: si la franja muestra una categoría visible. Cambia el markup y el techo editorial, así que se decide con Pablo antes de escribir la UI
+- [x] 3.0 Resolver primero la pregunta abierta de `design.md`: si la franja muestra una categoría visible. Cambia el markup y el techo editorial, así que se decide con Pablo antes de escribir la UI — **resuelto 2026-09-11: sin categoría en v1**, la franja muestra solo el texto y el techo queda en ~110 caracteres
 - [ ] 3.1 Agregar la franja de tip como elemento propio justo encima del `.app-footer`, sin control de descarte, y verificar en tema claro y oscuro que no tapa el tablero ni se confunde con el pie de página
 - [ ] 3.2 Verificar en viewport de 360px que el tip se lee completo en dos líneas, sin truncar, y que el layout del tablero no se rompe
 - [ ] 3.3 Ocultar los atajos de teclado (`F · U · N · F1`) del footer en pantallas angostas, donde no sirven, y verificar que el alto total del pie no crece respecto de hoy
