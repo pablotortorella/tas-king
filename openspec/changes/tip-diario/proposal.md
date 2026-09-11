@@ -8,7 +8,7 @@ El objetivo no es sólo dar a conocer features: es que quien usa el tablero todo
 
 - Nueva capacidad **tip diario**: una franja discreta y permanente encima del footer, con un consejo por día sobre práctica de gestión del trabajo.
 - **Un tip por día, no una rotación**: el mismo consejo durante toda la jornada. Se lo puede mirar cuando uno quiera, sin que cambie mientras se trabaja.
-- **Progresión por persona**: cada persona avanza su propia secuencia. Quien recién llega empieza por el primer tip y recorre los fundamentos en orden; cuando termina la lista, vuelve a empezar.
+- **Progresión por persona, guardada en su cuenta**: cada persona avanza su propia secuencia. Quien recién llega empieza por el primer tip y recorre los fundamentos en orden; cuando termina la lista, vuelve a empezar. El avance vive en la cuenta y no en el navegador, así que la progresión es la misma desde el teléfono y desde la computadora, y no se reinicia al limpiar el almacenamiento.
 - **Realce discreto**: una vez por día, tras una interacción cualquiera con el tablero, la línea titila brevemente para que se la note. El titileo no depende de *qué* hizo la persona — sólo aprovecha un momento en que está mirando la pantalla.
 - **Contenido en tres tramos**: (1) principio Kanban + afordancia concreta de la app, ordenado según las seis prácticas centrales del método; (2) práctica Kanban pura, sin referencias a funcionalidades; (3) otros métodos y prácticas de gestión del trabajo — GTD, Pomodoro, priorización cotidiana. Recién después de los tres, el ciclo vuelve a empezar. La progresión va de la herramienta al método que la fundamenta, y de ahí a otras escuelas.
 - **Voz**: los tips de coordinación y colaboración se escriben en plural, y donde aplique se suma la versión singular como tip adicional, no como reemplazo — quien trabaja solo y quien comparte tablero reciben cada uno lo suyo.
@@ -30,5 +30,5 @@ El objetivo no es sólo dar a conocer features: es que quien usa el tablero todo
 ## Impact
 
 - **Frontend**: el catálogo ordenado vive en un archivo propio, `public/tips.js`, cargado como estático desde `public/index.html`; en `index.html` quedan la franja del tip, el puntero por persona y el realce diario. Reutiliza patrones ya presentes en el archivo (preferencias en `localStorage`, tope diario por fecha, animación con guard de `prefers-reduced-motion`).
-- **Backend**: sin cambios. No hay endpoints ni tablas nuevas; el contenido es estático y el estado es por navegador.
-- Cambio aditivo, sin impacto en datos, permisos ni autenticación.
+- **Backend**: migración `0014` que suma dos columnas a `users` (`tip_index`, `tip_date`) y un endpoint chico para avanzar. La lectura no cuesta queries nuevas: `/api/me` ya hace un `SELECT` sobre `users` en cada carga (`src/routes/users.js:15`) y las dos columnas viajan ahí. La escritura ocurre una vez por persona por día. El contenido de los tips sigue siendo estático, sin tabla.
+- Cambio aditivo en datos y sin impacto en permisos ni autenticación, pero **con migración de esquema**: por CLAUDE.md va en rama + PR, no directo a `main`.

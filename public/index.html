@@ -210,6 +210,36 @@
   /* Mientras se arrastra una tarjeta, ninguna parte de la página es seleccionable
      (no solo la tarjeta) — evita selección de texto vecino, ver activateCardDrag(). */
   body.dragging-active { user-select: none; }
+  /* Tip diario: franja permanente justo encima del pie. Es una línea quieta —
+     sin botón de descarte, sin superposición— con el consejo de práctica del día.
+     El texto envuelve las líneas que necesite: nunca se trunca (ver spec). */
+  .tip-daily {
+    flex: 0 0 auto;
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 16px; font-size: 13px; line-height: 1.35;
+    color: var(--text); background: var(--col-bg);
+    border-top: 1px solid var(--border);
+  }
+  .tip-daily[hidden] { display: none; }
+  .tip-daily .tip-icon { flex: 0 0 auto; }
+  .tip-daily .tip-text { min-width: 0; }
+  /* El realce es refuerzo, no mecanismo: quien reduce animaciones ve el tip
+     completo y legible, simplemente sin titileo (mismo guard que wip-pulse). */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes tip-blink {
+      0%, 100% { box-shadow: inset 0 0 0 0 rgba(0,0,0,0); background: var(--col-bg); }
+      50%      { box-shadow: inset 0 0 0 2px var(--accent); background: var(--card-bg); }
+    }
+    /* Tres ciclos cortos: se lee como un titileo que llama la atención, no como
+       un latido lento. Después queda fija el resto del día. */
+    .tip-daily.tip-blink { animation: tip-blink .6s ease-in-out 3; }
+  }
+  /* En pantallas angostas los atajos de teclado no sirven: ocultarlos compensa
+     el alto que suma la franja del tip. */
+  @media (max-width: 560px) {
+    .app-footer .shortcuts { display: none; }
+    .app-footer .shortcuts + .dot { display: none; }
+  }
   .app-footer {
     flex: 0 0 auto;
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
@@ -923,6 +953,11 @@
 
 <div class="wip-toast" id="wipToast">🎯 Dejar de empezar y empezar a terminar</div>
 
+<div class="tip-daily" id="tipDaily" hidden>
+  <span class="tip-icon" aria-hidden="true">💡</span>
+  <span class="tip-text" id="tipText"></span>
+</div>
+
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta · <kbd>F1</kbd> ayuda</span>
   <span class="dot">·</span>
@@ -1507,11 +1542,73 @@
     return res.status === 204 ? null : res.json();
   }
 
+  // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
+  // del tip cambie a la medianoche de la persona y no a la del servidor.
+  function fechaLocal(d = new Date()) {
+    const dos = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+  }
+
+  // El tip del día. El backend guarda un contador monótono de tips vistos; el
+  // ciclado se resuelve acá, junto al catálogo, para que agregar tips no toque
+  // el backend. Sin catálogo o sin avance, muestra el primero en vez de fallar.
+  function tipDelDia() {
+    const catalogo = globalThis.DAILY_TIPS;
+    if (!Array.isArray(catalogo) || !catalogo.length) return null;
+    const indice = Number.isInteger(me && me.tipIndex) ? me.tipIndex : 0;
+    return catalogo[indice % catalogo.length];
+  }
+
+  // La franja del tip: permanente, sin descarte. Si no hay catálogo o no hay
+  // avance, no se muestra nada — nunca se rompe la carga del tablero por un tip.
+  function renderTipDaily() {
+    const franja = document.getElementById("tipDaily");
+    if (!franja) return;
+    const texto = tipDelDia();
+    if (!texto) { franja.hidden = true; return; }
+    document.getElementById("tipText").textContent = texto;
+    franja.hidden = false;
+  }
+
+  // Realce diario: una vez por día, tras la primera interacción con el tablero,
+  // la franja titila para que se la note. El tope es por dispositivo a propósito
+  // (ver design.md): quien entra desde el teléfono y desde la compu lo ve en cada
+  // pantalla, porque el realce sirve ahí donde la persona está mirando.
+  function maybeBlinkTip() {
+    const franja = document.getElementById("tipDaily");
+    if (!franja || franja.hidden) return;
+    const hoy = fechaLocal();
+    try {
+      if (localStorage.getItem("tasking-tip-blink-date") === hoy) return;
+      localStorage.setItem("tasking-tip-blink-date", hoy);
+    } catch (e) { /* modo privado: realzar igual, sin recordar */ }
+    franja.classList.remove("tip-blink");
+    void franja.offsetWidth;                 // reinicia la animación si ya estaba puesta
+    franja.classList.add("tip-blink");
+  }
+  window.maybeBlinkTip = maybeBlinkTip;      // hook manual / tests E2E
+
+  let realceArmado = false;
+  function armarRealceDelTip() {
+    if (realceArmado) return;                // loadBoard() se llama muchas veces
+    realceArmado = true;
+    const tablero = document.getElementById("board");
+    const alPrimerGesto = () => {
+      tablero && tablero.removeEventListener("pointerdown", alPrimerGesto);
+      document.removeEventListener("keydown", alPrimerGesto);
+      maybeBlinkTip();
+    };
+    tablero && tablero.addEventListener("pointerdown", alPrimerGesto);
+    document.addEventListener("keydown", alPrimerGesto);
+  }
+
   // Carga el usuario, sus tableros y el tablero actual.
   async function loadBoard() {
     try {
-      me = await api("GET", "/api/me");
+      me = await api("GET", "/api/me?today=" + fechaLocal());
       renderMe();
+      renderTipDaily();
+      armarRealceDelTip();
       const saved = localStorage.getItem("tasKingBoardId");
       if (!me.boards.some(b => b.id === currentBoardId)) currentBoardId = null;
       if (!currentBoardId) {

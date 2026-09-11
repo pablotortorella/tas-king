@@ -96,13 +96,21 @@ Cada tip SHALL ser comprensible sin conocer el método que lo inspira, sin haber
 - **WHEN** una persona ve su primer tip, sin conocer Kanban ni ningún otro método
 - **THEN** el texto se entiende por sí mismo y no requiere contexto externo para saber qué hacer
 
-### Requirement: Sin persistencia en servidor
-El mecanismo completo —contenido, avance de la secuencia y control del realce diario— SHALL funcionar sin endpoints ni tablas nuevas. El avance es propio del navegador de cada persona.
+### Requirement: El avance se guarda en la cuenta de la persona
+El avance de la secuencia —el índice del tip y la fecha en que se mostró— SHALL guardarse en la cuenta de la persona y no en el navegador, de modo que la progresión sea la misma desde cualquier dispositivo en el que abra el tablero. El contenido de los tips SHALL seguir siendo estático, sin tabla propia ni administración desde la interfaz.
 
-#### Scenario: Sin migración de base de datos
-- **WHEN** se implementa esta capacidad
-- **THEN** no SHALL requerir una migración de esquema ni un endpoint nuevo
+#### Scenario: La progresión sigue a la persona entre dispositivos
+- **WHEN** una persona ve el tip del día en un dispositivo y más tarde abre el tablero en otro
+- **THEN** ve el mismo tip, y al día siguiente continúa por el que sigue, sin repetir ni saltear ninguno
 
-#### Scenario: El almacenamiento local puede fallar
-- **WHEN** el navegador impide guardar el avance (modo privado, almacenamiento bloqueado)
-- **THEN** el sistema SHALL seguir mostrando un tip sin arrojar errores, aun cuando no pueda recordar el avance entre sesiones
+#### Scenario: Limpiar el navegador no reinicia la secuencia
+- **WHEN** una persona borra los datos de su navegador o entra desde una sesión nueva
+- **THEN** su avance se conserva y la secuencia continúa donde había quedado
+
+#### Scenario: Guardar el avance puede fallar
+- **WHEN** el sistema no logra guardar el avance (error de red o de escritura)
+- **THEN** SHALL seguir mostrando un tip, sin arrojar errores ni bloquear el uso del tablero
+
+#### Scenario: El contenido no se administra desde la base
+- **WHEN** se agrega, se corrige o se reordena un tip
+- **THEN** el cambio SHALL hacerse en el catálogo estático del frontend, y no SHALL requerir escribir en la base de datos
