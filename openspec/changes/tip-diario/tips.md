@@ -95,6 +95,8 @@ Se corrigieron además los encabezados de GTD, Pomodoro y priorización, que seg
 
 Quedó explícitamente descartada la recomendación del asistente de dejar afuera las cinco que solo cambian la conjugación (K11-V1, K12-V1, M7-V1, O6-V1, M10-V1): van todas. Consecuencia para la secuencia final (tarea 1.7): **cada hermana tiene que quedar lejos de su original**, porque en esos cinco casos la única diferencia es el verbo y verlas cerca se leería como un tip repetido.
 
+**2026-09-11 — Lote 6: el resto del catálogo, aprobado en bloque.** Pablo aprobó de una vez los 54 textos que seguían en «Propuesto». Ninguno tenía observaciones pendientes: entran en el techo de ~110, sus referencias a la interfaz están verificadas contra el código y los solapamientos ya se habían resuelto. **La curación (tarea 1.1) queda cerrada**: 74 textos aprobados y 1 descartado (P5).
+
 ## Cómo curar
 
 Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: **Propuesto**, **Aprobado**, **Descartado**. Las variantes tienen su propio ID y siguen propuestas hasta elegirlas. «Aprobado» en K1 y O1 refleja la aceptación explícita de esos modelos; la selección definitiva de la colección y su orden siguen pendientes. No hay descartes registrados.
@@ -104,56 +106,56 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 | ID | Práctica | Texto | Estado |
 |---|---|---|---|
 | K1 | Visualizar | Que el tablero cuente lo que pasa: mové las tarjetas cuando el trabajo cambie de estado. | Aprobado |
-| K2 | Visualizar | Hacé visible lo que falta saber: dejá el contexto de la tarea en su descripción. | Propuesto |
-| K3 | Limitar el WIP | Dejar de empezar y empezar a terminar: el Pulso 🎯 te recuerda mirar lo que ya está en marcha. | Propuesto |
-| K4 | Limitar el WIP | Antes de sumar otra tarea en curso, mirá cuántas tarjetas ya están esperando tu atención. | Propuesto |
+| K2 | Visualizar | Hacé visible lo que falta saber: dejá el contexto de la tarea en su descripción. | **Aprobado** (2026-09-11, en bloque) |
+| K3 | Limitar el WIP | Dejar de empezar y empezar a terminar: el Pulso 🎯 te recuerda mirar lo que ya está en marcha. | **Aprobado** (2026-09-11, en bloque) |
+| K4 | Limitar el WIP | Antes de sumar otra tarea en curso, mirá cuántas tarjetas ya están esperando tu atención. | **Aprobado** (2026-09-11, en bloque) |
 | K5 | Gestionar el flujo | Una tarea quieta merece una pregunta: en «¿Cómo vamos?» buscá «¡Pilas con esto! 🔥» y mirá las «Quietas». | **Aprobado** (2026-09-11, ruta corregida, 104) |
-| K6 | Gestionar el flujo | Mirá la distribución en «¿Cómo vamos?»: si se acumulan tarjetas en una columna, conversen sobre qué pasa ahí. | Propuesto |
+| K6 | Gestionar el flujo | Mirá la distribución en «¿Cómo vamos?»: si se acumulan tarjetas en una columna, conversen sobre qué pasa ahí. | **Aprobado** (2026-09-11, en bloque) |
 | K7 | Explicitar políticas | Terminar debe significar lo mismo para todos: acuerden qué debe cumplir una tarjeta para llegar a ✅ | **Aprobado** (2026-09-11, redacción de Pablo, 99) |
-| K8 | Explicitar políticas | Una etiqueta sirve más cuando todos la entienden igual: acuerden qué significa y cuándo usarla. | Propuesto |
-| K9 | Retroalimentación | Miren juntos «¿Cómo vamos?»: elijan una tarea que se demoró y conversen sobre qué pasó. | Propuesto |
-| K10 | Retroalimentación | Que lo aprendido quede a mano: registrá en un comentario lo que ayudaría a resolver una tarea parecida. | Propuesto |
-| K11 | Mejorar colaborativamente | Prueben un cambio pequeño y vuelvan a «¿Cómo vamos?» para buscar señales de mejora. | Propuesto |
-| K12 | Mejorar colaborativamente | Si una confusión se repite, prueben aclararla en la descripción o en una checklist de la tarjeta. | Propuesto |
+| K8 | Explicitar políticas | Una etiqueta sirve más cuando todos la entienden igual: acuerden qué significa y cuándo usarla. | **Aprobado** (2026-09-11, en bloque) |
+| K9 | Retroalimentación | Miren juntos «¿Cómo vamos?»: elijan una tarea que se demoró y conversen sobre qué pasó. | **Aprobado** (2026-09-11, en bloque) |
+| K10 | Retroalimentación | Que lo aprendido quede a mano: registrá en un comentario lo que ayudaría a resolver una tarea parecida. | **Aprobado** (2026-09-11, en bloque) |
+| K11 | Mejorar colaborativamente | Prueben un cambio pequeño y vuelvan a «¿Cómo vamos?» para buscar señales de mejora. | **Aprobado** (2026-09-11, en bloque) |
+| K12 | Mejorar colaborativamente | Si una confusión se repite, prueben aclararla en la descripción o en una checklist de la tarjeta. | **Aprobado** (2026-09-11, en bloque) |
 
 ## Primer tramo: Gestión de Objetivos
 
 | ID | Texto | Estado |
 |---|---|---|
 | O1 | Antes de empezar, mirá para qué: tocá un Objetivo para resaltar las tarjetas que contribuyen a él. | Aprobado |
-| O2 | Un objetivo necesita un resultado claro: usá su descripción para contar qué quieren lograr. | Propuesto |
-| O3 | Conectá el trabajo con su propósito: vinculá la tarjeta con el Objetivo al que contribuye. | Propuesto |
-| O4 | Un objetivo sin próximos pasos puede quedarse en deseo: revisá sus tarjetas y acordá cuál sigue. | Propuesto |
-| O5 | Al cerrar una tarjeta vinculada a un Objetivo, revisá qué cambió gracias a ese trabajo. | Propuesto |
-| O6 | Cuando cambien las prioridades, revisen los Objetivos y las tarjetas vinculadas: ¿qué sigue teniendo sentido? | Propuesto |
+| O2 | Un objetivo necesita un resultado claro: usá su descripción para contar qué quieren lograr. | **Aprobado** (2026-09-11, en bloque) |
+| O3 | Conectá el trabajo con su propósito: vinculá la tarjeta con el Objetivo al que contribuye. | **Aprobado** (2026-09-11, en bloque) |
+| O4 | Un objetivo sin próximos pasos puede quedarse en deseo: revisá sus tarjetas y acordá cuál sigue. | **Aprobado** (2026-09-11, en bloque) |
+| O5 | Al cerrar una tarjeta vinculada a un Objetivo, revisá qué cambió gracias a ese trabajo. | **Aprobado** (2026-09-11, en bloque) |
+| O6 | Cuando cambien las prioridades, revisen los Objetivos y las tarjetas vinculadas: ¿qué sigue teniendo sentido? | **Aprobado** (2026-09-11, en bloque) |
 
 ## Segundo tramo: flujo, colaboración y mejora
 
 | ID | Texto | Estado |
 |---|---|---|
-| M1 | Antes de empezar otra tarea, ¿podés ayudar a terminar una que ya está en marcha? | Propuesto |
-| M2 | Una tarea bloqueada sigue siendo trabajo en curso. ¿Qué necesita para avanzar? | Propuesto |
-| M3 | ¿Esta tarea puede dividirse en una entrega más pequeña que ya le sirva a alguien? | Propuesto |
-| M4 | Antes de sumar una urgencia, acuerden qué trabajo va a esperar. | Propuesto |
-| M5 | Si una tarea vuelve atrás seguido, revisen qué falta acordar antes de pasarla. | Propuesto |
-| M6 | Una mejora pequeña también merece una revisión: ¿qué esperaban que cambiara y qué pasó? | Propuesto |
-| M7 | Cuando algo se demora, miren también las esperas: ¿dónde pasa tiempo sin avanzar? | Propuesto |
-| M8 | Antes de pasarle trabajo a otra persona, comprobá que tenga lo necesario para continuarlo. | Propuesto |
-| M9 | Si una tarea depende de alguien más, acuerden cuándo volver a conversar sobre ella. | Propuesto |
-| M10 | Cuando algo salga bien, investiguen también: ¿qué ayudó y vale la pena repetir? | Propuesto |
+| M1 | Antes de empezar otra tarea, ¿podés ayudar a terminar una que ya está en marcha? | **Aprobado** (2026-09-11, en bloque) |
+| M2 | Una tarea bloqueada sigue siendo trabajo en curso. ¿Qué necesita para avanzar? | **Aprobado** (2026-09-11, en bloque) |
+| M3 | ¿Esta tarea puede dividirse en una entrega más pequeña que ya le sirva a alguien? | **Aprobado** (2026-09-11, en bloque) |
+| M4 | Antes de sumar una urgencia, acuerden qué trabajo va a esperar. | **Aprobado** (2026-09-11, en bloque) |
+| M5 | Si una tarea vuelve atrás seguido, revisen qué falta acordar antes de pasarla. | **Aprobado** (2026-09-11, en bloque) |
+| M6 | Una mejora pequeña también merece una revisión: ¿qué esperaban que cambiara y qué pasó? | **Aprobado** (2026-09-11, en bloque) |
+| M7 | Cuando algo se demora, miren también las esperas: ¿dónde pasa tiempo sin avanzar? | **Aprobado** (2026-09-11, en bloque) |
+| M8 | Antes de pasarle trabajo a otra persona, comprobá que tenga lo necesario para continuarlo. | **Aprobado** (2026-09-11, en bloque) |
+| M9 | Si una tarea depende de alguien más, acuerden cuándo volver a conversar sobre ella. | **Aprobado** (2026-09-11, en bloque) |
+| M10 | Cuando algo salga bien, investiguen también: ¿qué ayudó y vale la pena repetir? | **Aprobado** (2026-09-11, en bloque) |
 
 ## Tercer tramo: GTD
 
 | ID | Texto | Estado |
 |---|---|---|
-| G1 | Si algo te ocupa la cabeza, anotalo en un lugar que después vayas a revisar. | Propuesto |
-| G2 | Anotar algo es el comienzo: volvé después para decidir qué significa y qué vas a hacer con eso. | Propuesto |
+| G1 | Si algo te ocupa la cabeza, anotalo en un lugar que después vayas a revisar. | **Aprobado** (2026-09-11, en bloque) |
+| G2 | Anotar algo es el comienzo: volvé después para decidir qué significa y qué vas a hacer con eso. | **Aprobado** (2026-09-11, en bloque) |
 | G3 | «Resolver presupuesto» es demasiado grande. ¿La próxima acción es pedir un precio o llamar a alguien? | **Aprobado** (2026-09-11, 101) |
-| G4 | Si algo necesita varios pasos, definí el resultado buscado y la próxima acción concreta. | Propuesto |
+| G4 | Si algo necesita varios pasos, definí el resultado buscado y la próxima acción concreta. | **Aprobado** (2026-09-11, en bloque) |
 | G5 | No todo lo que anotes necesita acción: puede ser una referencia, puede esperar o ya no hace falta. | **Aprobado** (2026-09-11, redacción de Pablo, 98) |
-| G6 | Si estás esperando una respuesta, anotá de quién y sobre qué: así podés retomar el seguimiento. | Propuesto |
-| G7 | Reservá un momento semanal para revisar compromisos, pendientes y próximos pasos. | Propuesto |
-| G8 | Para elegir qué hacer ahora, considerá también el tiempo, la energía y los recursos que tenés disponibles. | Propuesto |
+| G6 | Si estás esperando una respuesta, anotá de quién y sobre qué: así podés retomar el seguimiento. | **Aprobado** (2026-09-11, en bloque) |
+| G7 | Reservá un momento semanal para revisar compromisos, pendientes y próximos pasos. | **Aprobado** (2026-09-11, en bloque) |
+| G8 | Para elegir qué hacer ahora, considerá también el tiempo, la energía y los recursos que tenés disponibles. | **Aprobado** (2026-09-11, en bloque) |
 
 Redacciones inspiradas en los [pasos de GTD](https://gettingthingsdone.com/what-is-gtd/) y los [criterios para elegir qué hacer](https://gettingthingsdone.com/2023/01/choosing-what-to-do/), consultados durante la exploración.
 
@@ -161,12 +163,12 @@ Redacciones inspiradas en los [pasos de GTD](https://gettingthingsdone.com/what-
 
 | ID | Texto | Estado |
 |---|---|---|
-| P1 | Antes de iniciar un Pomodoro, elegí una tarea y definí qué parte vas a trabajar. | Propuesto |
-| P2 | Si aparece otra idea durante el foco, anotala para después y volvé a lo que estabas haciendo. | Propuesto |
-| P3 | La pausa también forma parte del trabajo: cuando llegue, dejá la tarea y descansá un momento. | Propuesto |
-| P4 | Si una interrupción puede esperar, acordá cuándo atenderla y protegé el rato de foco. | Propuesto |
+| P1 | Antes de iniciar un Pomodoro, elegí una tarea y definí qué parte vas a trabajar. | **Aprobado** (2026-09-11, en bloque) |
+| P2 | Si aparece otra idea durante el foco, anotala para después y volvé a lo que estabas haciendo. | **Aprobado** (2026-09-11, en bloque) |
+| P3 | La pausa también forma parte del trabajo: cuando llegue, dejá la tarea y descansá un momento. | **Aprobado** (2026-09-11, en bloque) |
+| P4 | Si una interrupción puede esperar, acordá cuándo atenderla y protegé el rato de foco. | **Aprobado** (2026-09-11, en bloque) |
 | P5 | ~~Compará los Pomodoros que imaginabas con los que necesitaste: usá esa diferencia para planificar la próxima vez.~~ | **Descartado** (2026-09-11) |
-| P6 | Si las interrupciones se repiten, observá de dónde vienen y acordá una forma de reducirlas. | Propuesto |
+| P6 | Si las interrupciones se repiten, observá de dónde vienen y acordá una forma de reducirlas. | **Aprobado** (2026-09-11, en bloque) |
 
 Redacciones inspiradas en la [técnica Pomodoro](https://www.pomodorotechnique.com/) y su [programa oficial](https://www.pomodorotechnique.com/pomodoro-self-paced/), consultados durante la exploración. Revisar especialmente los supuestos de contexto en P1–P5; una categoría por sí sola no vuelve autosuficiente el texto.
 
@@ -176,12 +178,12 @@ Consejos generales, sin atribución a un método específico.
 
 | ID | Texto | Estado |
 |---|---|---|
-| T1 | Antes de elegir lo más urgente, preguntate qué pasa si espera y qué trabajo importante desplaza. | Propuesto |
-| T2 | Dale un lugar en tu semana a lo importante que todavía no tiene urgencia. | Propuesto |
-| T3 | Antes de llenar el día de tareas, mirá cuánto tiempo ya está comprometido. | Propuesto |
-| T4 | Dejá espacio para imprevistos: lo inesperado también ocupa tiempo. | Propuesto |
-| T5 | Antes de cerrar el día, dejá escrito por dónde retomar lo que quedó abierto. | Propuesto |
-| T6 | Si una tarea perdió su propósito, revisá si todavía vale la pena hacerla. | Propuesto |
+| T1 | Antes de elegir lo más urgente, preguntate qué pasa si espera y qué trabajo importante desplaza. | **Aprobado** (2026-09-11, en bloque) |
+| T2 | Dale un lugar en tu semana a lo importante que todavía no tiene urgencia. | **Aprobado** (2026-09-11, en bloque) |
+| T3 | Antes de llenar el día de tareas, mirá cuánto tiempo ya está comprometido. | **Aprobado** (2026-09-11, en bloque) |
+| T4 | Dejá espacio para imprevistos: lo inesperado también ocupa tiempo. | **Aprobado** (2026-09-11, en bloque) |
+| T5 | Antes de cerrar el día, dejá escrito por dónde retomar lo que quedó abierto. | **Aprobado** (2026-09-11, en bloque) |
+| T6 | Si una tarea perdió su propósito, revisá si todavía vale la pena hacerla. | **Aprobado** (2026-09-11, en bloque) |
 
 ## Nuevos candidatos N1–N10, repartidos entre el segundo y el tercer tramo
 
@@ -189,16 +191,16 @@ Estos diez textos surgieron al explorar categorías por tema. Se les asignan IDs
 
 | ID | Tramo | Tema | Texto | Estado |
 |---|---|---|---|---|
-| N1 | T2 | Claridad | Escribí la tarea de modo que mañana puedas entenderla sin reconstruir toda la historia. | Propuesto (tramo asignado 2026-09-11) |
-| N2 | T3 | Próxima acción | Si no sabés por dónde empezar, anotá qué necesitás averiguar primero. | Propuesto (tramo asignado 2026-09-11) |
-| N3 | T3 | Objetivos | ¿Cómo vas a reconocer que lograste el objetivo? Dejá esa señal por escrito. | Propuesto (tramo asignado 2026-09-11) |
-| N4 | T2 | Trabajo en curso | Antes de retomar una tarea, revisá si sigue siendo necesario terminarla. | Propuesto (tramo asignado 2026-09-11) |
-| N5 | T2 | Desbloqueo | Cuando pidas ayuda, contá qué intentaste y en qué punto te trabaste. | Propuesto (tramo asignado 2026-09-11) |
-| N6 | T2 | Colaboración | Antes de dar por hecho un compromiso, confirmá que la otra persona lo entendió igual. | Propuesto (tramo asignado 2026-09-11) |
-| N7 | T3 | Foco y pausas | Si te cuesta retomar después de una pausa, dejá anotado el próximo paso antes de parar. | Propuesto (tramo asignado 2026-09-11) |
-| N8 | T3 | Planificación | Cuando una tarea lleve más de lo previsto, revisá el plan con lo que ahora sabés. | Propuesto (tramo asignado 2026-09-11) |
-| N9 | T2 | Cierre | Antes de dar una tarea por terminada, comprobá que el resultado esté disponible para quien lo necesita. | Propuesto (tramo asignado 2026-09-11) |
-| N10 | T2 | Aprendizaje | ¿Qué te facilitó el trabajo hoy? Pensá cómo volver a tener esa condición mañana. | Propuesto (tramo asignado 2026-09-11) |
+| N1 | T2 | Claridad | Escribí la tarea de modo que mañana puedas entenderla sin reconstruir toda la historia. | **Aprobado** (2026-09-11, en bloque) |
+| N2 | T3 | Próxima acción | Si no sabés por dónde empezar, anotá qué necesitás averiguar primero. | **Aprobado** (2026-09-11, en bloque) |
+| N3 | T3 | Objetivos | ¿Cómo vas a reconocer que lograste el objetivo? Dejá esa señal por escrito. | **Aprobado** (2026-09-11, en bloque) |
+| N4 | T2 | Trabajo en curso | Antes de retomar una tarea, revisá si sigue siendo necesario terminarla. | **Aprobado** (2026-09-11, en bloque) |
+| N5 | T2 | Desbloqueo | Cuando pidas ayuda, contá qué intentaste y en qué punto te trabaste. | **Aprobado** (2026-09-11, en bloque) |
+| N6 | T2 | Colaboración | Antes de dar por hecho un compromiso, confirmá que la otra persona lo entendió igual. | **Aprobado** (2026-09-11, en bloque) |
+| N7 | T3 | Foco y pausas | Si te cuesta retomar después de una pausa, dejá anotado el próximo paso antes de parar. | **Aprobado** (2026-09-11, en bloque) |
+| N8 | T3 | Planificación | Cuando una tarea lleve más de lo previsto, revisá el plan con lo que ahora sabés. | **Aprobado** (2026-09-11, en bloque) |
+| N9 | T2 | Cierre | Antes de dar una tarea por terminada, comprobá que el resultado esté disponible para quien lo necesita. | **Aprobado** (2026-09-11, en bloque) |
+| N10 | T2 | Aprendizaje | ¿Qué te facilitó el trabajo hoy? Pensá cómo volver a tener esa condición mañana. | **Aprobado** (2026-09-11, en bloque) |
 
 ## Hermanas singulares de tips en plural
 
@@ -225,9 +227,9 @@ Estos diez textos surgieron al explorar categorías por tema. Se les asignan IDs
 
 | ID | Relación | Texto | Estado |
 |---|---|---|---|
-| P2-V1 | Variante general de P2 | Si aparece otra idea mientras trabajás en una tarea, anotala para después y retomá lo que estabas haciendo. | Propuesto |
-| P2-V2 | Variante condicional de P2 | Cuando hagas un Pomodoro, anotá las ideas que aparezcan y revisalas al terminar el bloque. | Propuesto |
-| F1 | Invitación nueva, tema Foco y pausas | Elegí una tarea y reservá un rato para dedicarle atención. Antes de empezar, apartá lo que pueda esperar. | Propuesto |
+| P2-V1 | Variante general de P2 | Si aparece otra idea mientras trabajás en una tarea, anotala para después y retomá lo que estabas haciendo. | **Aprobado** (2026-09-11, en bloque) |
+| P2-V2 | Variante condicional de P2 | Cuando hagas un Pomodoro, anotá las ideas que aparezcan y revisalas al terminar el bloque. | **Aprobado** (2026-09-11, en bloque) |
+| F1 | Invitación nueva, tema Foco y pausas | Elegí una tarea y reservá un rato para dedicarle atención. Antes de empezar, apartá lo que pueda esperar. | **Aprobado** (2026-09-11, en bloque) |
 
 ## Notas para continuar con Claude
 
