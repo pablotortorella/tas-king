@@ -3,7 +3,7 @@
 **Punto de partida para continuar con Claude:** leer [tips.md](tips.md), que reúne el catálogo para curar, los criterios conversados, las variantes y las decisiones pendientes. La voz fue aceptada, pero la colección completa y su orden todavía requieren curación con Pablo; este registro no da por completadas las tareas siguientes.
 
 - [ ] 1.1 **Curar el catálogo con Pablo, tip por tip** (es él quien decide; los IDs se mantienen estables al editar). Marcar cada candidato como Aprobado o Descartado en `tips.md` y elegir entre originales y hermanas singulares, hasta cerrar la colección
-- [ ] 1.2 Recortar los 4 tips que superan el techo editorial de ~110 caracteres — P5 (112), K7 (117), G5 (120), G3 (125) — y verificar que ningún texto aprobado excede ese largo
+- [x] 1.2 Recortar los 4 tips que superan el techo editorial de ~110 caracteres — P5 (112), K7 (117), G5 (120), G3 (125) — y verificar que ningún texto aprobado excede ese largo — **resuelto 2026-09-11**: P5 descartado; K7 (99), G5 (98) y G3 (101) reescritos; verificado que ningún texto vivo del catálogo supera los 110
 - [ ] 1.3 Repartir los candidatos N1–N10 entre los tres tramos según su tema (hoy están agrupados aparte y mezclan temas de los tres) y verificar que cada tip quedó en el tramo que le corresponde
 - [ ] 1.4 Agregar las hermanas singulares que falten para los tips en plural donde aplique, sin reemplazar el original, y verificar que ambas versiones conviven con IDs propios
 - [ ] 1.5 Resolver los solapamientos ya detectados (K4/M1, K11/M6, O4/G4, T5/N7, T6/N4): conservarlos separados en la secuencia o reducirlos, y verificar que la decisión quedó registrada en `tips.md`

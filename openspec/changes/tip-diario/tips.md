@@ -58,6 +58,17 @@ Se comprobaron contra el código **todas** las referencias de interfaz que citan
 3. Definir la secuencia final, el tamaño del catálogo inicial y qué repeticiones conservar. Los IDs son referencias editoriales estables, no posiciones de reproducción.
 4. Resolver los solapamientos detectados: K4/M1, K11/M6, O4/G4, T5/N7, T6/N4.
 
+## Registro de la curación
+
+**2026-09-11 — Lote 1: los cuatro textos que superaban el techo de ~110 caracteres.** Decisiones de Pablo:
+
+- **P5 — Descartado.** El tip sale del catálogo, no se recorta.
+- **K7 — Aprobado con redacción propia de Pablo** (99): «Terminar debe significar lo mismo para todos: acuerden qué debe cumplir una tarjeta para llegar a ✅». Sin punto final y sin «una columna» antes del ✅.
+- **G5 — Aprobado con redacción propia de Pablo** (98): «No todo lo que anotes necesita acción: puede ser una referencia, puede esperar o ya no hace falta». Conserva los tres destinos de GTD (referencia / esperar / descartar). *Detalle pendiente de confirmar*: dice «anotes» donde el voseo del resto del catálogo pediría «anotés» — se dejó tal como Pablo lo escribió.
+- **G3 — Aprobada la opción de 101 caracteres**: ««Resolver presupuesto» es demasiado grande. ¿La próxima acción es pedir un precio o llamar a alguien?». Dos ejemplos en vez de tres, y «es» en lugar de «puede ser».
+
+Con esto, **ningún texto vivo del catálogo supera los 110 caracteres**.
+
 ## Cómo curar
 
 Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: **Propuesto**, **Aprobado**, **Descartado**. Las variantes tienen su propio ID y siguen propuestas hasta elegirlas. «Aprobado» en K1 y O1 refleja la aceptación explícita de esos modelos; la selección definitiva de la colección y su orden siguen pendientes. No hay descartes registrados.
@@ -72,7 +83,7 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 | K4 | Limitar el WIP | Antes de sumar otra tarea en curso, mirá cuántas tarjetas ya están esperando tu atención. | Propuesto |
 | K5 | Gestionar el flujo | Una tarea quieta merece una pregunta: mirá las «Quietas» en «¿Cómo vamos?» y averiguá qué necesitan. | Propuesto |
 | K6 | Gestionar el flujo | Mirá la distribución en «¿Cómo vamos?»: si se acumulan tarjetas en una columna, conversen sobre qué pasa ahí. | Propuesto |
-| K7 | Explicitar políticas | Terminar tiene que significar lo mismo para todos: acuerden qué debe cumplir una tarjeta para llegar a una columna ✅. | Propuesto |
+| K7 | Explicitar políticas | Terminar debe significar lo mismo para todos: acuerden qué debe cumplir una tarjeta para llegar a ✅ | **Aprobado** (2026-09-11, redacción de Pablo, 99) |
 | K8 | Explicitar políticas | Una etiqueta sirve más cuando todos la entienden igual: acuerden qué significa y cuándo usarla. | Propuesto |
 | K9 | Retroalimentación | Miren juntos «¿Cómo vamos?»: elijan una tarea que se demoró y conversen sobre qué pasó. | Propuesto |
 | K10 | Retroalimentación | Que lo aprendido quede a mano: registrá en un comentario lo que ayudaría a resolver una tarea parecida. | Propuesto |
@@ -111,9 +122,9 @@ Se puede comentar por ID: «K3 queda», «G5 cambiar», «P2 afuera». Estados: 
 |---|---|---|
 | G1 | Si algo te ocupa la cabeza, anotalo en un lugar que después vayas a revisar. | Propuesto |
 | G2 | Anotar algo es el comienzo: volvé después para decidir qué significa y qué vas a hacer con eso. | Propuesto |
-| G3 | «Resolver presupuesto» puede ser demasiado grande. ¿La próxima acción es pedir un precio, revisar un dato o llamar a alguien? | Propuesto |
+| G3 | «Resolver presupuesto» es demasiado grande. ¿La próxima acción es pedir un precio o llamar a alguien? | **Aprobado** (2026-09-11, 101) |
 | G4 | Si algo necesita varios pasos, definí el resultado buscado y la próxima acción concreta. | Propuesto |
-| G5 | No todo lo que anotás necesita una acción: algunas cosas son referencia, otras pueden esperar y otras ya no hacen falta. | Propuesto |
+| G5 | No todo lo que anotes necesita acción: puede ser una referencia, puede esperar o ya no hace falta. | **Aprobado** (2026-09-11, redacción de Pablo, 98) |
 | G6 | Si estás esperando una respuesta, anotá de quién y sobre qué: así podés retomar el seguimiento. | Propuesto |
 | G7 | Reservá un momento semanal para revisar compromisos, pendientes y próximos pasos. | Propuesto |
 | G8 | Para elegir qué hacer ahora, considerá también el tiempo, la energía y los recursos que tenés disponibles. | Propuesto |
@@ -128,7 +139,7 @@ Redacciones inspiradas en los [pasos de GTD](https://gettingthingsdone.com/what-
 | P2 | Si aparece otra idea durante el foco, anotala para después y volvé a lo que estabas haciendo. | Propuesto |
 | P3 | La pausa también forma parte del trabajo: cuando llegue, dejá la tarea y descansá un momento. | Propuesto |
 | P4 | Si una interrupción puede esperar, acordá cuándo atenderla y protegé el rato de foco. | Propuesto |
-| P5 | Compará los Pomodoros que imaginabas con los que necesitaste: usá esa diferencia para planificar la próxima vez. | Propuesto |
+| P5 | ~~Compará los Pomodoros que imaginabas con los que necesitaste: usá esa diferencia para planificar la próxima vez.~~ | **Descartado** (2026-09-11) |
 | P6 | Si las interrupciones se repiten, observá de dónde vienen y acordá una forma de reducirlas. | Propuesto |
 
 Redacciones inspiradas en la [técnica Pomodoro](https://www.pomodorotechnique.com/) y su [programa oficial](https://www.pomodorotechnique.com/pomodoro-self-paced/), consultados durante la exploración. Revisar especialmente los supuestos de contexto en P1–P5; una categoría por sí sola no vuelve autosuficiente el texto.
