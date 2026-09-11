@@ -1,7 +1,23 @@
-# Estado de Implementación — FUN TasKing! v2.1.4
+# Estado de Implementación — FUN TasKing! v2.2.0
 
-**Última actualización**: 2026-09-08  
-**Estado**: ✅ Tests completos (125 unit + 47 E2E) | main = staging = producción ✅ (deployado y verificado)
+**Última actualización**: 2026-09-11  
+**Estado**: ✅ Tests completos (139 unit + 62 E2E) | main = staging = producción ✅ (deployado y verificado)
+
+## 🎯 Cambios recientes (sesión 2026-09-11 — Tip diario)
+
+- **Tip diario (capacidad `tip-diario`, planificada con OpenSpec)**: franja permanente encima del pie con un consejo de práctica por día. No interrumpe, no tiene descarte y el tip no cambia durante la jornada. Cierra el ciclo `explore` → `propose` → `apply` que venía de las sesiones del 9 y 10 de septiembre.
+- **Catálogo curado con Pablo, tip por tip**: 74 textos aprobados y 1 descartado (P5), en tres tramos — (1) principio Kanban + la afordancia de la app que lo sostiene, (2) Kanban puro sin funciones, (3) otros métodos (GTD, Pomodoro, priorización). Vive en `public/tips.js`, archivo propio por modularidad, cargado como estático desde `index.html` (el CSP ya autorizaba `script-src 'self'`). Cada tip lleva su ID editorial como comentario para rastrearlo hasta `openspec/changes/tip-diario/tips.md`.
+- **Decisiones de contenido de la sesión**: sin categoría visible en v1 (techo editorial de ~110 caracteres, dos líneas a 360px); los cinco pares con solapamiento se conservan completos pero separados en la secuencia (8 a 13 días entre cada hermana y su original); las versiones singulares de los tips en plural se suman como tips propios, sin reemplazar al original; K5 se corrigió porque ubicaba «Quietas» directo en «¿Cómo vamos?» cuando vive dentro de «¡Pilas con esto! 🔥».
+- **El avance vive en la cuenta, no en el navegador** (cambio de plan decidido durante la implementación): migración `0014_tip_diario.sql` agrega `tip_index` y `tip_date` a `users`, ambas nullable y sin backfill. Motivo: la progresión tiene que ser la misma desde el teléfono y la computadora, y no reiniciarse al limpiar el almacenamiento. **Costo cero de queries**: `/api/me` ya hacía un `SELECT` sobre `users`, así que las columnas viajan ahí; el `UPDATE` ocurre a lo sumo una vez por persona por día y va en `try/catch` para no bloquear la carga. Se descartó `localStorage` (plan original) y se descartó también llevar el catálogo a una tabla (requeriría UI de administración; sin ella, editar un tip sería SQL en producción).
+- **Sin endpoint nuevo**: el avance se resuelve dentro de `GET /api/me`, que el frontend llama una sola vez al cargar y no en el polling. `tip_index` es un contador monótono, no una posición: el frontend resuelve `DAILY_TIPS[indice % DAILY_TIPS.length]`, así que el ciclado vive junto al catálogo y agregar tips no toca el backend.
+- **La fecha la pone el navegador** (`/api/me?today=YYYY-MM-DD`) para que el día cambie a la medianoche de la persona y no a la del servidor — con UTC, alguien en Argentina vería cambiar el tip a las 21:00. Si el parámetro falta o viene mal formado, cae a la fecha del servidor.
+- **Realce diario**: tras el primer gesto del día con el tablero, la franja titila **tres ciclos de 0,6s** (ajustado tras verlo en local: un pulso largo se leía como latido, no como llamada de atención). Tope diario con `tasking-tip-blink-date` en `localStorage`, a propósito por dispositivo. El keyframe vive dentro de `@media (prefers-reduced-motion: no-preference)`: con animaciones reducidas no titila y el tip se lee igual.
+- **En pantallas angostas** se ocultan los atajos `F · U · N · F1` del pie, que no sirven sin teclado, para compensar el alto de la franja.
+- **Tests**: `test/tip-diario.test.js` con 9 unitarios de la regla pura (primera vez, misma jornada, día siguiente, ausencia larga, contador más allá del catálogo, avance corrupto) + 5 de integración sobre `/api/me`; `e2e/tip-diario.spec.js` con 6 E2E (aparece, persiste al recargar, avanza al día siguiente, titila una sola vez por día, legible a 360px sin truncado, sin animación con movimiento reducido). Total: 139 unit + 62 E2E.
+- **Regresión encontrada y corregida**: `e2e/access-revoked.spec.js` interceptaba `**/api/me` y dejó de matchear al sumarse la query `?today=`; el glob pasó a `**/api/me*`.
+- **Orden de deploy invertido a propósito**: `npm run deploy` corre `deploy && db:migrate:remote` en ese orden, lo que con este cambio dejaría una ventana con el worker nuevo consultando columnas inexistentes (`/api/me` en 500). Se aplicó la migración **antes** del deploy, en staging y en producción. La migración es aditiva, así que el código viejo convive con las columnas nuevas sin problema.
+- **Backlog**: se sumaron dos ítems detectados en la sesión — etiquetas asignables al crear una tarjeta nueva (hoy solo se pueden asignar editando una existente; los Objetivos ya lo resuelven con `draftGoals`) y Esc no cierra el modal de ayuda F1 (el código existe pero es inalcanzable: un `return` previo lo deja como código muerto).
+- Deployado a producción como v2.2.0 (Version ID `PENDIENTE`), release notes en `/releases`.
 
 ## 🎯 Cambios recientes (sesión 2026-09-08 — favicon + nuevo acuerdo de workflow en CLAUDE.md)
 
