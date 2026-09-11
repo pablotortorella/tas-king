@@ -1507,10 +1507,27 @@
     return res.status === 204 ? null : res.json();
   }
 
+  // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
+  // del tip cambie a la medianoche de la persona y no a la del servidor.
+  function fechaLocal(d = new Date()) {
+    const dos = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+  }
+
+  // El tip del día. El backend guarda un contador monótono de tips vistos; el
+  // ciclado se resuelve acá, junto al catálogo, para que agregar tips no toque
+  // el backend. Sin catálogo o sin avance, muestra el primero en vez de fallar.
+  function tipDelDia() {
+    const catalogo = globalThis.DAILY_TIPS;
+    if (!Array.isArray(catalogo) || !catalogo.length) return null;
+    const indice = Number.isInteger(me && me.tipIndex) ? me.tipIndex : 0;
+    return catalogo[indice % catalogo.length];
+  }
+
   // Carga el usuario, sus tableros y el tablero actual.
   async function loadBoard() {
     try {
-      me = await api("GET", "/api/me");
+      me = await api("GET", "/api/me?today=" + fechaLocal());
       renderMe();
       const saved = localStorage.getItem("tasKingBoardId");
       if (!me.boards.some(b => b.id === currentBoardId)) currentBoardId = null;
