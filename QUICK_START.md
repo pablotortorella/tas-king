@@ -7,7 +7,7 @@
 ## ✅ Checklist: Setup (2 min)
 
 ```bash
-git pull origin main
+git fetch origin --prune
 npm install
 npm run check:env             # Diagnóstico rápido del ambiente
 npm run test:all              # Debe pasar 100% — si falla, STOP
@@ -17,24 +17,17 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ## 📍 Dónde estamos (Estado actual)
 
-**Última actualización**: 2026-09-09  
-**Versión**: 2.1.4 en producción — `main` = staging = producción ✅
+**Última actualización**: 2026-09-11
+**Versión**: 2.2.0 en producción — `main` coincide con producción ✅
 
-### ✅ Completado en la última sesión (2026-09-08/09)
-- **Favicon** (v2.1.4, deployado): corona en SVG a medida (`public/favicon.svg`) en las 5 páginas públicas. Se compararon 5 variantes de contraste; ganó la de placa de fondo lavanda por legibilidad en tema claro y oscuro a 16px.
-- **Cambio de workflow**: commit + push directo a `main` es ahora el default. Rama + PR quedó como excepción para migraciones de DB y cambios grandes/multi-archivo. Ver CLAUDE.md → "Rama vs. commit directo a main".
-- **Limpieza de ramas**: se borraron 4 ramas obsoletas que `git branch --no-merged` marcaba como pendientes pero ya estaban incorporadas a `main` vía squash-merge. No quedan ramas con trabajo sin mergear.
-- **OpenSpec incorporado** (spec-driven development) — ver sección propia más abajo.
+### ✅ Completado en la última sesión (2026-09-11)
+- **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
+- **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales; se mantienen protecciones ante polling y cambios concurrentes. Falta repetir la medición de producción posterior al cambio.
+- **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
-### 🔄 En vuelo
-- **`tip-diario`** — change de OpenSpec, artefactos completos y validados, **sin implementar**. Planeamiento puro; no se tocó código de producto.
-  - El catálogo de textos está en `openspec/changes/tip-diario/tips.md` (59 candidatos + 7 hermanas). Lo trabajó Pablo con Codex.
-  - Sesión 2026-09-10: se verificó que **todas** las referencias de UI que citan los tips existen y están bien nombradas, y se cerraron cuatro decisiones — tres tramos (Kanban+app → Kanban puro → otros métodos), el plural se conserva en prácticas de coordinación (la versión singular se suma como tip adicional), dos líneas en mobile sin truncado con techo de ~110 caracteres, y la franja va **encima del footer**, no bajo el header.
-
-### ⏭️ Próximo — retomar `tip-diario`
-1. **Curar los textos con Pablo, tip por tip** (tarea 1.1). Es la parte larga y la decide él; se comenta por ID: «K3 queda», «G5 cambiar», «P2 afuera».
-2. **Cerrar la única decisión abierta**: si la franja muestra una categoría visible (tarea 3.0). Bloquea la UI, no la curación. Recomendación registrada: sin categoría en v1.
-3. Recién después, **implementar** con `/opsx:apply`.
+### ⏭️ Próximo
+1. Repetir la medición de performance en producción para comparar con la línea base.
+2. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.
 
 Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).
 
@@ -47,8 +40,28 @@ Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del b
 - **Commits claros**: Mensaje describe QUÉ cambió, no por qué
 - **Estructura modular**: Código backend en `src/` — cada archivo ~100-150 líneas máximo
 - **Documentar decisiones**: Si es arquitectónico, va en `docs/ADRs.md`
+- **Rama por tarea**: no trabajar ni commitear directamente en `main`
+- **Worktree por agente cuando hay paralelismo**: no editar la misma carpeta desde dos agentes
 
 **Detalles completos**: [Ver CLAUDE.md](CLAUDE.md)
+
+---
+
+## 🌿 Trabajo en paralelo: ramas y worktrees
+
+El checkout principal se reserva para `main` limpio. Cada tarea se inicia desde `origin/main` en su propia rama; si hay dos agentes activos, también en su propia carpeta.
+
+```bash
+# Desde el checkout principal, sin cambios locales.
+git fetch origin --prune
+git worktree add ../tas-king-<tema> -b <tipo>/<tema> origin/main
+cd ../tas-king-<tema>
+
+# Ejemplo:
+# git worktree add ../tas-king-perf -b perf/card-mutations origin/main
+```
+
+Antes de integrar: `git fetch origin --prune`, `git rebase origin/main`, `npm run test:all` y revisar el diff. Agregar archivos por ruta, nunca con `git add .`. El detalle y el protocolo de staging están en [CLAUDE.md](CLAUDE.md) y [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
 ---
 
@@ -127,7 +140,7 @@ npm run setup:local           # Setup completo desde cero (primera vez o nueva m
 npm run operator              # Menú interactivo con todas las operaciones + ayuda contextual
 ```
 
-**Flujo recomendado**: Local (dev + tests) → Staging (URL real) → Producción
+**Flujo recomendado**: rama/worktree → local (dev + tests) → staging de la rama → integrar a `main` → staging de `main` → producción
 
 ---
 
@@ -168,8 +181,8 @@ git log --oneline main..HEAD
 # 3. Verificar commits
 git status
 
-# 4. Push
-git push origin feature/mi-feature
+# 4. Push de tu rama
+git push -u origin <tipo>/<tema>
 ```
 
 ---
