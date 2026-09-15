@@ -1,11 +1,11 @@
-# Estado de Implementación — FUN TasKing! v2.2.0
+# Estado de Implementación — FUN TasKing! v2.2.1
 
 **Última actualización**: 2026-09-14
-**Producción registrada**: v2.2.0, validada al desplegar con 139 pruebas de backend y 62 E2E.
+**Producción registrada**: v2.2.0. Release v2.2.1 preparada y autorizada; despliegue en curso.
 
-**Candidato backend**: 154 pruebas de backend y 62 E2E pasan; desplegado en staging para revisión, sin integrar ni desplegar a producción.
+**Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; SHA `0f307f8` validado en staging como Version ID `82e4bbd5-0222-4416-9578-deb02e00ee02`. Pablo aprobó staging y producción.
 
-## ⚡ Backend: menos llamadas y criterio de performance (en staging, revisión pendiente)
+## ⚡ Backend: menos llamadas y criterio de performance (integrado; producción autorizada)
 
 - Rama `perf/backend-roundtrips`: preparación de usuario existente y rol en un solo `db.batch()` (antes dos llamadas sin admin o tres con admin); creación de tablero/columnas solo cuando falta. El callback OAuth comparte esa preparación y aplica el rol después de insertar al usuario nuevo.
 - La autenticación reutiliza la identidad de la cookie verificada en la petición. Mantiene revocación en D1, membresía vigente y bypass limitado a localhost; no agrega caché entre peticiones.
@@ -14,7 +14,7 @@
 - [Criterio de performance](PERFORMANCE-PRACTICES.md) enlazado desde workflow e instrucciones de desarrollo: aplicar patrones evidentes con tests, medir cuando haga falta y evitar rondas manuales que no cambien la decisión.
 - **Staging de la rama desplegado el 14/09 a las 21:11 America/Bogota**: commit `8cadd4e4513a2f2839501b44eb803e5ebe9c8856`, Worker `tas-king-staging`, Version ID `01851ad0-7fcf-44f2-ac8c-b9c1e78a468b`, activo al 100 %. URL: https://tas-king-staging.pablotortorella.workers.dev.
 - `npm run deploy:staging` repitió 154 pruebas de backend y 62 E2E, publicó la rama y confirmó que no había migraciones pendientes. Verificación HTTP: HTML idéntico al checkout, API sin sesión devuelve 401 y login redirige a Google con callback de staging. Revisión autenticada de Pablo pendiente.
-- Producción sigue en v2.2.0. Después de revisar staging corresponde integrar el PR #38 y validar el SHA de integración en staging antes de un deploy de producción autorizado. El commit posterior que registra este despliegue solo cambia documentación.
+- PR #38 integrado en `main` como `0f307f8`; el SHA de integración pasó 154 pruebas de backend y 62 E2E y se desplegó en staging como Version ID `82e4bbd5-0222-4416-9578-deb02e00ee02`. Pablo aprobó la revisión y el despliegue a producción. La rama de release v2.2.1 agrega versión y notas públicas; el Version ID de producción se registra al terminar.
 
 ## 🎯 Performance de mutaciones — comprobación posterior de tres rondas
 
