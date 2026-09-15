@@ -160,9 +160,16 @@ export async function cardJSONById(db, id) {
   const labelsByCard = new Map([[id, labels.results.map(l => ({ id: l.id, name: l.name, color: l.color }))]]);
   const goalsByCard = new Map([[id, goals.results.map(g => ({ id: g.id, title: g.title }))]]);
   const itemsByChecklist = new Map();
-  for (const cl of cls.results) {
-    const its = await db.prepare("SELECT * FROM checklist_items WHERE checklist_id = ? ORDER BY position ASC").bind(cl.id).all();
-    itemsByChecklist.set(cl.id, its.results);
+  if (cls.results.length) {
+    // Una consulta para toda la tarjeta, sin viajes por cada checklist ni
+    // parámetros que crezcan con la colección. Sin listas, no leer ítems.
+    const items = await db.prepare(`SELECT i.* FROM checklist_items i
+      JOIN checklists cl ON cl.id = i.checklist_id
+      WHERE cl.card_id = ? ORDER BY i.position ASC`).bind(id).all();
+    for (const item of items.results) {
+      if (!itemsByChecklist.has(item.checklist_id)) itemsByChecklist.set(item.checklist_id, []);
+      itemsByChecklist.get(item.checklist_id).push(item);
+    }
   }
   const checklistsByCard = new Map([[id, cls.results.map(cl => checklistToJSON(cl, itemsByChecklist))]]);
   return cardToJSON(c, new Map([[id, comments.results]]), new Map([[id, atts.results]]), labelsByCard, checklistsByCard, goalsByCard);

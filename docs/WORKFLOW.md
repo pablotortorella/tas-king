@@ -7,6 +7,7 @@ Este documento define cómo trabajamos en el proyecto: desde el setup local hast
 ## 🎯 Principios
 
 - **Tests first**: No mergeamos código sin tests pasando
+- **Performance por diseño**: aplicar [el criterio de performance](PERFORMANCE-PRACTICES.md) y revisar presupuestos de llamadas antes de integrar; instrumentar cuando falte evidencia, sin exigir rondas manuales para eliminar trabajo redundante.
 - **Documented decisions**: Cada decisión arquitectónica va en `docs/ADRs.md`
 - **Single source of truth**: `docs/STATUS.md` = estado actual del proyecto
 - **Rama por tarea**: Cada feature, fix o cambio de documentación tiene su propia rama

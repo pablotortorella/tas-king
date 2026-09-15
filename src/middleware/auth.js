@@ -4,7 +4,7 @@ import { getCookie, deleteCookie } from "hono/cookie";
 import { RATE_LIMITS, COOKIE_OPTS, ACCESS_REVOKED_MESSAGE } from "../constants.js";
 import { getClientIP, logger } from "./logging.js";
 import { checkRateLimit, trackRequest } from "./rateLimit.js";
-import { ensureUser, seedAdminIfNeeded, isEmailAllowed } from "../db/helpers.js";
+import { ensureUser, isEmailAllowed } from "../db/helpers.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -65,12 +65,14 @@ export async function resolveSessionEmail(c) {
   return sess && sess.email ? sess.email.trim().toLowerCase() : null;
 }
 
-export async function resolveEmail(c) {
-  const sessionEmail = await resolveSessionEmail(c);
-  if (sessionEmail) return sessionEmail;
+function resolveDevEmail(c) {
   if (!isLocalRequest(c.req.url)) return "";
   const dev = c.req.header("X-Dev-User") || c.env.DEV_USER_EMAIL;
   return dev ? dev.trim().toLowerCase() : "";
+}
+
+export async function resolveEmail(c) {
+  return (await resolveSessionEmail(c)) || resolveDevEmail(c);
 }
 
 // Si el acceso de una sesión real fue revocado (removido de allowed_emails) después de
@@ -102,12 +104,13 @@ export function createAuthMiddleware() {
     const revoked = await checkAccessRevoked(c, sessionEmail);
     if (revoked) return revoked;
 
-    const email = await resolveEmail(c);
+    // La cookie ya fue verificada para comprobar revocación. Reutilizar la
+    // identidad solo en esta petición, sin cachear permisos entre peticiones.
+    const email = sessionEmail || resolveDevEmail(c);
     if (!email) return c.json({ error: "No autenticado." }, 401);
 
     // Ensure user exists y apply admin role if needed
-    await ensureUser(c.env.DB, email);
-    await seedAdminIfNeeded(c.env.DB, email, c.env.ADMIN_EMAILS);
+    await ensureUser(c.env.DB, email, c.env.ADMIN_EMAILS);
     c.set("email", email);
     await next();
   };
