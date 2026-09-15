@@ -18,7 +18,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 ## 📍 Dónde estamos (Estado actual)
 
 **Última actualización**: 2026-09-14
-**Última versión desplegada registrada**: 2.2.0. Release v2.2.1 integrada y autorizada para producción; despliegue en curso. Ver `docs/STATUS.md`.
+**Última versión desplegada registrada**: 2.2.1. `main` y producción contienen las mejoras de performance de backend; ver `docs/STATUS.md`.
 
 ### ✅ Completado en la última sesión (2026-09-11)
 - **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
@@ -26,7 +26,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **Performance**: completar y registrar el deploy de v2.2.1 a producción. PR #38 ya está integrado; el SHA `0f307f8` pasó 154 pruebas de backend y 62 E2E y fue validado en staging. Version IDs en `docs/STATUS.md`.
+1. **Performance**: v2.2.1 ya está en producción. Antes de otra optimización, comprobar brevemente el comportamiento real; instrumentar etapas del backend solo si persiste latencia relevante. Version IDs y evidencia en `docs/STATUS.md`.
 2. La comprobación de v2.2.0 se cerró con tres rondas y 12 escrituras correctas. Resultados y límites en `docs/PERFORMANCE-2026-09-14.md`; acción a cambio visible aún pendiente. No se requieren más rondas manuales para eliminar redundancias demostradas.
 3. Aplicar `docs/PERFORMANCE-PRACTICES.md`: patrones claros con presupuestos y tests; instrumentar latencia residual cuando haga falta. Render incremental y agrupación de guardados complejos siguen condicionados por evidencia. Backlog canónico en `docs/PRODUCT_BACKLOG.md`.
 4. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.
