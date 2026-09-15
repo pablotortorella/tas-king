@@ -1,9 +1,27 @@
 # Estado de Implementación — FUN TasKing! v2.2.1
 
-**Última actualización**: 2026-09-14
+**Última actualización**: 2026-09-15
 **Producción registrada**: v2.2.1, desplegada y verificada.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
+
+**Estado:** implementado, revisado y aprobado por Pablo en staging desde `fix/board-sync`; pendiente de integración. Producción sigue en v2.2.1.
+
+- **Causa:** `MAX(cards.updated_at)` no detectaba recursos relacionados, borrados que conservaban el máximo ni escrituras en el mismo milisegundo. El cliente solo reaccionaba a versiones mayores.
+- **Datos:** migración `0015_board_sync.sql`, con `boards.sync_version` y triggers transaccionales para tarjetas, comentarios, checklists e ítems. No añade llamadas al binding en las escrituras; agrega actualizaciones internas del contador. La revisión conserva la escala previa para clientes abiertos.
+- **Lectura:** `/version` consulta la fila del tablero; `getBoard()` lee revisión y colecciones en un único batch consistente. Se mantiene el presupuesto de seis llamadas D1 del polling autenticado.
+- **Interfaz:** compara revisiones por desigualdad; actualiza comentarios y checklists en el modal abierto sin reemplazar los demás campos. Difiere el checklist mientras contiene el foco y conserva el texto para agregar ítems de las listas que siguen existiendo. Mantiene las protecciones de arrastre y guardado de v2.2.1.
+- **Backup:** el dump automático incluye los triggers después de los datos para conservar la sincronización al restaurar.
+- **Pruebas:** `npm run test:all` pasó **172 backend + 67 E2E**. Diecisiete regresiones de API/backup y una de presupuesto D1 nuevas; cinco recorridos E2E con otra identidad, modal abierto, borradores, borrados y revisión menor. Doce casos de sincronización y el de backup fallaron antes de sus respectivos arreglos; también se reprodujo el fallo en navegador.
+- **Migración:** validada en D1 local y sobre esquema anterior con datos (compatibilidad con escrituras anteriores, preservación de versión y borrado de última tarjeta). **Aplicar 0015 antes del Worker nuevo** en cada entorno; ver [ADR-016](ADRs/ADR-016-board-sync-revision.md).
+- **Release preparada:** v2.2.2 en paquete, pie y Novedades (Release 19). No desplegada a producción todavía.
+- **Staging:** migración 0015 aplicada antes del Worker. Commit `7430319`, Version ID `8a670812-0f67-499f-9d57-b2f66fa0678d`, activo al 100 % en https://tas-king-staging.pablotortorella.workers.dev. El deploy repitió 172 pruebas de backend y 67 E2E. Verificación remota: HTML v2.2.2 responde 200, `/api/me` sin sesión responde 401, y D1 contiene `sync_version` más los 12 triggers. Pablo confirmó el funcionamiento autenticado el 15/09.
+
+## ✅ Performance confirmada en uso real — 2026-09-15
+
+Pablo confirmó que toda la interacción se siente más veloz con v2.2.1 en producción. Se cierra esta ronda de performance; no hacen falta más mediciones exploratorias salvo que se vuelvan a observar demoras relevantes. Backlog y arranque actualizados para no seguir presentando el deploy como pendiente.
 
 ## ⚡ Backend: menos llamadas y criterio de performance (v2.2.1 en producción)
 
@@ -24,7 +42,7 @@
 - **Optimización incluida en v2.2.0**: crear/editar tarjetas y asignar/quitar etiquetas actualiza el estado local desde la respuesta confirmada, sin volver a descargar tarjetas, etiquetas y objetivos. Los guardados con recursos relacionados releen únicamente la tarjeta afectada. El polling queda serializado con las mutaciones y descarta respuestas anteriores.
 - **Cobertura**: `e2e/card-mutation-performance.spec.js` cubre ausencia de recargas globales, persistencia, errores y reintentos, recursos relacionados, doble clic, polling concurrente y cambio de tablero durante una escritura.
 - **Comprobación del 14/09**: tres rondas, 12 escrituras HTTP 200; las lecturas globales ocurren por polling después del guardado. Medianas servidor: crear 665 ms, editar 639 ms, asignar etiqueta 488 ms y quitarla 399 ms. Acción a cambio visible sigue sin cuantificar; no bloquea la eliminación de trabajo redundante. [Informe y limitaciones](PERFORMANCE-2026-09-14.md).
-- **Candidatos posteriores, solo si la medición muestra impacto**: render incremental para tableros grandes y agrupación de escrituras de adjuntos, checklists y objetivos. El polling que no detecta comentarios, checklists ni algunos borrados permanece como bug funcional de alta prioridad en `docs/PRODUCT_BACKLOG.md`.
+- **Candidatos posteriores, solo si la medición muestra impacto**: render incremental para tableros grandes y agrupación de escrituras de adjuntos, checklists y objetivos. La corrección del polling de comentarios, checklists y borrados está implementada en `fix/board-sync`, pendiente de publicación; ver la sección de v2.2.2.
 - Informe y valores completos: `docs/PERFORMANCE-2026-09-11.md`.
 
 ## 🎯 Cambios recientes (sesión 2026-09-11 — Tip diario)

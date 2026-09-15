@@ -135,7 +135,10 @@ Obtiene todas las tarjetas del tablero.
 ---
 
 ### GET /api/boards/:boardId/version
-Devuelve versión (timestamp) del tablero. Útil para polling.
+Devuelve la revisión numérica del tablero. Es un valor opaco, no un timestamp.
+Incluye cambios en tarjetas, comentarios, checklists e ítems, también borrados.
+Comparar por desigualdad con la revisión de `GET /api/boards/:boardId/cards`; si
+difiere, recargar el tablero. Ambas respuestas usan `boards.sync_version`.
 
 **Autenticación**: Requerida + membresía  
 **Respuesta** (200):

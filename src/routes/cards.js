@@ -16,7 +16,7 @@ export function setupCardRoutes(app) {
     const boardId = c.req.param("boardId");
     if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
     const row = await c.env.DB.prepare(
-      "SELECT MAX(updated_at) AS v FROM cards WHERE board_id = ?"
+      "SELECT sync_version AS v FROM boards WHERE id = ?"
     ).bind(boardId).first();
     return c.json({ version: row ? (row.v || 0) : 0 });
   });

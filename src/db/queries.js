@@ -75,26 +75,28 @@ export function cardToJSON(c, commentsByCard, attsByCard, labelsByCard, checklis
 }
 
 export async function getBoard(db, boardId) {
-  const [columns, cards, comments, atts, labels, cls, items, goals] = await Promise.all([
-    db.prepare("SELECT id, name, position, is_done FROM columns WHERE board_id = ? ORDER BY position ASC").bind(boardId).all(),
-    db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId).all(),
+  // Una transacción de lectura: la revisión corresponde a los datos devueltos.
+  const [revision, columns, cards, comments, atts, labels, cls, items, goals] = await db.batch([
+    db.prepare("SELECT sync_version FROM boards WHERE id = ?").bind(boardId),
+    db.prepare("SELECT id, name, position, is_done FROM columns WHERE board_id = ? ORDER BY position ASC").bind(boardId),
+    db.prepare("SELECT * FROM cards WHERE board_id = ? ORDER BY column_id, position ASC").bind(boardId),
     db.prepare(`SELECT cm.id, cm.card_id, cm.text, cm.created_at, cm.author_email,
         u.name AS author_name, u.avatar_emoji AS author_emoji, u.avatar_color AS author_color
       FROM comments cm
       JOIN cards c ON c.id = cm.card_id
       LEFT JOIN users u ON u.email = cm.author_email
-      WHERE c.board_id = ? ORDER BY cm.created_at ASC`).bind(boardId).all(),
-    db.prepare("SELECT a.* FROM attachments a JOIN cards c ON c.id = a.card_id WHERE c.board_id = ? ORDER BY a.created_at ASC").bind(boardId).all(),
+      WHERE c.board_id = ? ORDER BY cm.created_at ASC`).bind(boardId),
+    db.prepare("SELECT a.* FROM attachments a JOIN cards c ON c.id = a.card_id WHERE c.board_id = ? ORDER BY a.created_at ASC").bind(boardId),
     db.prepare(`SELECT cl.card_id, l.id, l.name, l.color, l.position
       FROM card_labels cl
       JOIN labels l ON l.id = cl.label_id
-      WHERE l.board_id = ? ORDER BY l.position, l.name ASC`).bind(boardId).all(),
-    db.prepare(`SELECT ch.* FROM checklists ch JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ch.position ASC`).bind(boardId).all(),
-    db.prepare(`SELECT ci.* FROM checklist_items ci JOIN checklists ch ON ch.id = ci.checklist_id JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ci.position ASC`).bind(boardId).all(),
+      WHERE l.board_id = ? ORDER BY l.position, l.name ASC`).bind(boardId),
+    db.prepare(`SELECT ch.* FROM checklists ch JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ch.position ASC`).bind(boardId),
+    db.prepare(`SELECT ci.* FROM checklist_items ci JOIN checklists ch ON ch.id = ci.checklist_id JOIN cards c ON c.id = ch.card_id WHERE c.board_id = ? ORDER BY ci.position ASC`).bind(boardId),
     db.prepare(`SELECT cg.card_id, g.id, g.title, g.position
       FROM card_goals cg
       JOIN goals g ON g.id = cg.goal_id
-      WHERE g.board_id = ? ORDER BY g.position, g.title ASC`).bind(boardId).all(),
+      WHERE g.board_id = ? ORDER BY g.position, g.title ASC`).bind(boardId),
   ]);
   const commentsByCard = new Map();
   for (const r of comments.results) {
@@ -126,7 +128,7 @@ export async function getBoard(db, boardId) {
     if (!goalsByCard.has(r.card_id)) goalsByCard.set(r.card_id, []);
     goalsByCard.get(r.card_id).push({ id: r.id, title: r.title });
   }
-  const version = cards.results.reduce((max, c) => Math.max(max, c.updated_at || 0), 0);
+  const version = revision.results[0]?.sync_version || 0;
   return {
     version,
     columns: columns.results.map(columnToJSON),

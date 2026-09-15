@@ -76,6 +76,16 @@ async function generateSQLDump(db) {
     }
   }
 
+  // Los triggers desaparecen al recrear sus tablas. Restaurarlos después de los
+  // datos evita perder la sincronización y evita incrementar revisiones al importar.
+  const tableNames = new Set(tables.map(t => t.name));
+  const { results: triggers } = await db.prepare(
+    "SELECT tbl_name, sql FROM sqlite_master WHERE type = 'trigger' ORDER BY name"
+  ).all();
+  for (const trigger of triggers) {
+    if (tableNames.has(trigger.tbl_name)) sql += `${trigger.sql};\n`;
+  }
+
   sql += `COMMIT;\nPRAGMA foreign_keys = ON;\n`;
   return sql;
 }
