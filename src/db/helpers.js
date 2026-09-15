@@ -5,10 +5,20 @@ import { createDefaultColumns } from "./columns.js";
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
 
-export async function ensureUser(db, email) {
-  await db.prepare("INSERT OR IGNORE INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)")
-    .bind(uid(), email, email.split("@")[0], now()).run();
-  const personal = await db.prepare("SELECT id FROM boards WHERE owner_email = ? AND is_personal = 1").bind(email).first();
+export async function ensureUser(db, email, adminEmailsSecret) {
+  // El caso habitual necesita un solo viaje a D1. Las sentencias del batch
+  // se ejecutan en orden: crear usuario antes de aplicar el rol configurado.
+  const statements = [
+    db.prepare("INSERT OR IGNORE INTO users (id, email, name, created_at) VALUES (?, ?, ?, ?)")
+      .bind(uid(), email, email.split("@")[0], now()),
+    db.prepare("SELECT id FROM boards WHERE owner_email = ? AND is_personal = 1").bind(email),
+  ];
+  const admins = (adminEmailsSecret || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+  if (admins.includes(email)) {
+    statements.push(db.prepare("UPDATE users SET is_admin = 1 WHERE email = ? AND is_admin = 0").bind(email));
+  }
+  const [, personalResult] = await db.batch(statements);
+  const personal = personalResult.results[0];
   if (!personal) {
     const bid = uid();
     await db.batch([
@@ -35,14 +45,6 @@ export async function isEmailAllowed(db, email, legacySecret) {
     return list.includes(email);
   }
   return false;
-}
-
-export async function seedAdminIfNeeded(db, email, adminEmailsSecret) {
-  if (!adminEmailsSecret) return;
-  const admins = adminEmailsSecret.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
-  if (admins.includes(email)) {
-    await db.prepare("UPDATE users SET is_admin = 1 WHERE email = ? AND is_admin = 0").bind(email).run();
-  }
 }
 
 export async function logEvent(db, boardId, cardId, action, email, details = {}) {

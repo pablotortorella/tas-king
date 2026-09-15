@@ -17,18 +17,18 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ## 📍 Dónde estamos (Estado actual)
 
-**Última actualización**: 2026-09-11
-**Versión**: 2.2.0 en producción — `main` coincide con producción ✅
+**Última actualización**: 2026-09-14
+**Última versión desplegada registrada**: 2.2.0. Candidato de backend pendiente de integración y staging; ver `docs/STATUS.md`.
 
 ### ✅ Completado en la última sesión (2026-09-11)
 - **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
-- **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales, que en la línea base agregaban aproximadamente 1,4–1,5 s por acción. Se mantienen protecciones ante polling y cambios concurrentes. Falta medir el resultado ya desplegado.
+- **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales, que en la línea base agregaban aproximadamente 1,4–1,5 s por acción. Se mantienen protecciones ante polling y cambios concurrentes. Comprobación posterior de tres rondas en `docs/PERFORMANCE-2026-09-14.md`; acción a pantalla aún pendiente.
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **Performance**: repetir en producción la misma secuencia de crear/editar tarjeta y asignar/quitar etiqueta, idealmente con cinco repeticiones por acción. Comparar con la línea base de 1,8–2,1 s y registrar también el tiempo desde el clic hasta la actualización visible.
-2. Si la escritura continúa alrededor de 400–600 ms, instrumentar por separado rate limiting, autenticación, `ensureUser`, rol y handler antes de reducir las consultas D1 repetidas.
-3. Mantener como mejoras condicionadas por evidencia el render incremental de tableros grandes y la agrupación de escrituras de adjuntos/checklists/objetivos. El plan completo vive en `docs/PRODUCT_BACKLOG.md` y la línea base en `docs/PERFORMANCE-2026-09-11.md`.
+1. **Performance**: integrar y validar el set de mejoras de backend de `perf/backend-roundtrips` (batch de usuario/rol, una verificación de cookie, consulta de ítems sin N+1). Ver `docs/STATUS.md`. Producción sigue en v2.2.0.
+2. La comprobación de v2.2.0 se cerró con tres rondas y 12 escrituras correctas. Resultados y límites en `docs/PERFORMANCE-2026-09-14.md`; acción a cambio visible aún pendiente. No se requieren más rondas manuales para eliminar redundancias demostradas.
+3. Aplicar `docs/PERFORMANCE-PRACTICES.md`: patrones claros con presupuestos y tests; instrumentar latencia residual cuando haga falta. Render incremental y agrupación de guardados complejos siguen condicionados por evidencia. Backlog canónico en `docs/PRODUCT_BACKLOG.md`.
 4. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.
 
 Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).

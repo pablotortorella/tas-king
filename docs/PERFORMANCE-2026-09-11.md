@@ -79,7 +79,14 @@ La mejora se incluyó en v2.2.0 y está desplegada en producción. Por construcc
 
 Validación previa al deploy: `npm run test:all` pasó con 125 pruebas de backend y 56 de navegador, incluidas nueve pruebas nuevas de regresión. La versión final v2.2.0 pasó 139 pruebas de backend y 62 de navegador y fue desplegada y verificada.
 
-## Pendientes del siguiente ciclo
+## Seguimiento del 14 de septiembre
+
+Se completaron tres rondas en producción y se confirmó que las lecturas globales se ejecutan
+por polling fuera del guardado inmediato. Ver [resultados y limitaciones](PERFORMANCE-2026-09-14.md).
+La medición de clic a pantalla quedó pendiente. Se acordó aplicar primero patrones redundantes
+demostrados en código, con regresiones automáticas; no exigir más rondas para iniciar ese trabajo.
+
+## Pendientes registrados originalmente para el siguiente ciclo
 
 1. Repetir la secuencia en producción con al menos cinco muestras por acción y confirmar que crear/editar tarjetas y asignar/quitar etiquetas ya no disparan las tres lecturas globales.
 2. Medir desde el clic hasta la actualización visible en el navegador. La captura original no incluyó red del cliente, CPU del navegador ni renderizado.

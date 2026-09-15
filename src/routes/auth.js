@@ -8,7 +8,7 @@ import {
 import { createRateLimitMiddleware } from "../middleware/rateLimit.js";
 import { RATE_LIMITS } from "../constants.js";
 import { logger, getClientIP } from "../middleware/logging.js";
-import { isEmailAllowed, seedAdminIfNeeded, ensureUser } from "../db/helpers.js";
+import { isEmailAllowed, ensureUser } from "../db/helpers.js";
 
 const now = () => Date.now();
 const uid = () => crypto.randomUUID();
@@ -170,8 +170,7 @@ export function setupAuthRoutes(app) {
       return c.html(deniedPage(`La cuenta <b>${email}</b> no está autorizada para esta app. Tu solicitud fue registrada.`), 403);
     }
 
-    await seedAdminIfNeeded(c.env.DB, email, c.env.ADMIN_EMAILS);
-    await ensureUser(c.env.DB, email);
+    await ensureUser(c.env.DB, email, c.env.ADMIN_EMAILS);
 
     const session = await signSession({ email, exp: now() + 30 * 24 * 3600 * 1000 }, c.env.SESSION_SECRET);
     setCookie(c, "session", session, { ...COOKIE_OPTS, maxAge: 30 * 24 * 3600 });

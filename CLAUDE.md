@@ -42,6 +42,10 @@ Consultas específicas: [ver QUICK_START.md](QUICK_START.md) sección "📚 Cons
 
 Si escribís código, escribís tests.
 
+### Performance como criterio de calidad
+
+Aplicar [docs/PERFORMANCE-PRACTICES.md](docs/PERFORMANCE-PRACTICES.md) al diseñar y revisar cambios. Eliminar validaciones duplicadas, consultas N+1 y recargas innecesarias con regresiones automáticas; medir por etapas cuando la causa siga siendo incierta. Toda excepción a los presupuestos de llamadas debe justificarse.
+
 ### Commits claros y pequeños
 - **Mensaje**: describe QUÉ cambió, no por qué
   - ✅ "Agregar validación de email en signup"

@@ -48,6 +48,19 @@ D1, R2 ni secretos de producción.
 Los recorridos E2E verifican creación/edición/movimiento/eliminación de tarjetas, importación
 CSV aditiva, administración de acceso y comportamiento de atajos al escribir.
 
+## Regresiones de performance
+
+Aplicar [el criterio de performance](docs/PERFORMANCE-PRACTICES.md). En backend,
+`test/backend-performance.test.js` cuenta llamadas al binding sobre D1 real de tests y
+verificaciones criptográficas reales; comprueba que agregar checklists no agrega consultas.
+También cubre resultados, orden, aislamiento, roles y revocación. En frontend,
+`e2e/card-mutation-performance.spec.js` controla las peticiones del flujo inmediato.
+
+Los presupuestos estructurales son deterministas; no usar tiempos de localhost como límites
+de latencia de producción. Una mejora de milisegundos solo se anuncia con una medición
+comparable y sus condiciones. Las pruebas automatizadas evitan pedir rondas manuales repetidas
+para demostrar la eliminación de llamadas innecesarias.
+
 ## Cuándo agregar tests
 
 - Todo bug corregido debe sumar un test que falle antes de la corrección.
