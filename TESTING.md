@@ -23,7 +23,9 @@ Las migraciones reales se aplican a una D1 aislada y R2 se emula localmente. La 
 - aislamiento entre usuarios y permisos owner/member/admin;
 - rechazo de headers de identidad simulados fuera de localhost;
 - archivo, restauración, reordenamiento e importación aditiva;
-- operaciones reales sobre D1 y R2 emulados.
+- operaciones reales sobre D1 y R2 emulados;
+- revisión de sincronización ante comentarios, checklists, borrados, reloj fijo y rollback;
+- conservación de triggers en backups y restauración de su comportamiento.
 
 ### End-to-end
 
@@ -47,6 +49,8 @@ D1, R2 ni secretos de producción.
 
 Los recorridos E2E verifican creación/edición/movimiento/eliminación de tarjetas, importación
 CSV aditiva, administración de acceso y comportamiento de atajos al escribir.
+`e2e/board-sync.spec.js` verifica cambios de otro miembro mediante polling, incluyendo
+el modal abierto y la conservación de borradores; también reconcilia revisiones menores.
 
 ## Regresiones de performance
 

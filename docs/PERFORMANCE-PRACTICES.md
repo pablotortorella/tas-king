@@ -78,9 +78,14 @@ Estos son presupuestos estructurales, no promesas de milisegundos en producción
 | Preparar usuario existente, con o sin rol admin configurado | Una llamada D1 (`batch`) en `ensureUser`; no incluye rate limiting, revocación ni handler. |
 | Autenticar una petición con cookie | Una verificación de firma; revocación vigente comprobada. |
 | GET de versión con usuario/tablero existentes y cookie permitida | Seis llamadas D1 en total: límite, registro, revocación, preparación, membresía y versión. |
+| Leer tablero completo y revisión | Una llamada D1 (`batch`), nueve sentencias en una instantánea consistente. |
 | Obtener tarjeta sin checklists | Ninguna consulta de ítems. |
 | Obtener tarjeta con uno o varios checklists | Una consulta de ítems; llamadas independientes del número de checklists. |
 | Crear/editar tarjeta simple y cambiar etiqueta existente | Una escritura en el flujo inmediato, sin las tres lecturas globales. |
+
+La revisión de sincronización se incrementa mediante triggers dentro de las escrituras: agrega
+una actualización de la fila del tablero por fila afectada (incluidas cascadas), sin nuevas
+llamadas al binding. `/version` lee la fila del tablero por PK; no escanea las tarjetas.
 
 Los tests de backend están en `test/backend-performance.test.js` y los del navegador en
 `e2e/card-mutation-performance.spec.js`. Cambiar un presupuesto requiere explicar el costo

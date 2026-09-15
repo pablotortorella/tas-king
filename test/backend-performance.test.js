@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/index.js";
 import { ensureUser } from "../src/db/helpers.js";
-import { cardJSONById } from "../src/db/queries.js";
+import { cardJSONById, getBoard } from "../src/db/queries.js";
 import { resolveEmail, signSession } from "../src/middleware/auth.js";
 import { DEFAULT_COLUMNS } from "../src/db/columns.js";
 
@@ -34,6 +34,18 @@ const freshEmail = () => `perf-${crypto.randomUUID()}@test.local`;
 const personalBoard = email => env.DB.prepare("SELECT * FROM boards WHERE owner_email = ? AND is_personal = 1").bind(email).first();
 const userRow = email => env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
 afterEach(() => vi.restoreAllMocks());
+
+it("lee datos y revisión del tablero en una sola llamada transaccional", async () => {
+  const email = freshEmail();
+  await ensureUser(env.DB, email);
+  const board = await personalBoard(email);
+  const db = observeD1(env.DB);
+  const result = await getBoard(db, board.id);
+  expect(db.calls).toHaveLength(1);
+  expect(db.calls[0].method).toBe("batch");
+  expect(result).toMatchObject({ version: 0, cards: [] });
+  expect(result.columns).toHaveLength(DEFAULT_COLUMNS.length);
+});
 
 describe("presupuesto D1 de preparación de usuario", () => {
   it.each([false, true])("usuario existente: una llamada D1 (admin configurado: %s)", async admin => {

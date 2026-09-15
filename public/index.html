@@ -961,7 +961,7 @@
 <footer class="app-footer">
   <span class="shortcuts"><kbd>F</kbd> mis tareas · <kbd>U</kbd> urgentes · <kbd>N</kbd> nueva tarjeta · <kbd>F1</kbd> ayuda</span>
   <span class="dot">·</span>
-  <a href="/releases" target="_blank" rel="noopener" title="Ver novedades de esta versión">v2.2.1</a>
+  <a href="/releases" target="_blank" rel="noopener" title="Ver novedades de esta versión">v2.2.2</a>
   <span class="dot">·</span>
   <a href="/releases" target="_blank" rel="noopener">Novedades</a>
   <a href="/terminos" target="_blank" rel="noopener">Términos</a>
@@ -1717,6 +1717,7 @@
   let lastKnownVersion = 0;
   let pollTimer = null;
   let pollInFlight = false;
+  let checklistRefreshPending = false;
   const POLL_INTERVAL = 5000;
 
   async function pollTick() {
@@ -1733,17 +1734,39 @@
     try {
       const { version } = await api("GET", "/api/boards/" + boardId + "/version");
       if (boardId !== currentBoardId || mutationRevision !== cardMutationRevision || pendingCardMutations) return;
-      if (version > lastKnownVersion) {
+      if (version !== lastKnownVersion) {
         const doneColIds = getDoneColumnIds();
         const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
         if (!(await loadCards())) return;
+        if (editingId && overlay.classList.contains("open")) {
+          renderComments(); // El campo del comentario y los demás borradores no se tocan.
+          checklistRefreshPending = true;
+        }
         state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
           .forEach(c => celebrateCard(c.id));
       }
+      refreshSyncedChecklists();
     } catch (e) { /* ignorar errores de red silenciosamente */ }
     finally { pollInFlight = false; }
   }
   window.pollTick = pollTick; // hook manual / tests E2E
+
+  function refreshSyncedChecklists() {
+    if (!checklistRefreshPending) return;
+    if (!editingId || !overlay.classList.contains("open")) { checklistRefreshPending = false; return; }
+    const section = document.getElementById("fChecklistsSection");
+    // No reconstruir el campo que la persona está editando. El siguiente poll
+    // atiende lo pendiente aunque ya no haya otra revisión del tablero.
+    if (section.contains(document.activeElement)) return;
+    const drafts = new Map([...section.querySelectorAll(".checklist-section")].map(el =>
+      [el.dataset.checklistId, el.querySelector(".checklist-add input")?.value || ""]));
+    renderChecklists();
+    section.querySelectorAll(".checklist-section").forEach(el => {
+      const input = el.querySelector(".checklist-add input");
+      if (input && drafts.has(el.dataset.checklistId)) input.value = drafts.get(el.dataset.checklistId);
+    });
+    checklistRefreshPending = false;
+  }
 
   function startPolling() {
     stopPolling();
@@ -2593,6 +2616,7 @@
   }
 
   function openModal(id, defaultCol) {
+    checklistRefreshPending = false;
     editingId = id;
     const card = id ? state.cards.find(c => c.id === id) : null;
     document.getElementById("modalTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
@@ -2710,6 +2734,7 @@
     checklists.forEach(cl => {
       const wrap = document.createElement("div");
       wrap.className = "checklist-section";
+      wrap.dataset.checklistId = cl.id;
 
       // ── Header ──
       const header = document.createElement("div");

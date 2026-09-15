@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-11
+**Última actualización**: 2026-09-15
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -48,7 +48,14 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 | #10 | 🎨 Temas de color (paleta oficial + selector por tablero) | 2026-07-11 — Candy Pop es el default de toda la app (Kanban + páginas públicas); Sunset Pop/Citrus Fresh/Jungle Pop seleccionables por tablero desde ⚙️ → Tema; prompt de bienvenida para el dueño en tableros sin paleta. Ver detalle en `docs/STATUS.md` |
 | — | 🧹 Purga de `rate_limit_log` + backup automático operativo | 2026-07-11 — código de PR #19 (2026-07-07) ya estaba mergeado y testeado; el gap real era que el cron nunca se registraba en el worker de producción (`triggers.crons` vivía solo en `env.production`, no en el nivel raíz que usa `npm run deploy`). Fix + verificado en el log del deploy (`schedule: 0 */8 * * *`) |
 | — | 🔒 Revocación de acceso efectiva | 2026-09-07 — re-chequeo de `allowed_emails` en cada request autenticado por cookie real (no en el bypass de dev/tests) + página pública `/revoked` con mensaje diferencial. Ver `docs/ADRs/ADR-015-revocacion-acceso-sesion-cookie.md` y `docs/STATUS.md` |
-| — | ⚡ Mutaciones de tarjetas y etiquetas sin recargas globales | 2026-09-11 — incluida en v2.2.0. Crear/editar y asignar/quitar etiquetas actualiza el estado desde la respuesta confirmada; evita el tramo de tres lecturas que sumaba ~1,4–1,5 s en la línea base. Falta la medición posterior en producción. |
+| — | ⚡ Mutaciones de tarjetas y etiquetas sin recargas globales | 2026-09-11 — incluida en v2.2.0. Crear/editar y asignar/quitar etiquetas actualiza el estado desde la respuesta confirmada; evita el tramo de tres lecturas que sumaba ~1,4–1,5 s en la línea base. Comprobación del 14/09 documentada; Pablo confirmó el 15/09 que toda la interacción se siente más veloz. |
+| — | ⚡ Menos llamadas de backend (v2.2.1) | Producción 2026-09-14; mejora percibida confirmada por Pablo el 15/09. Ronda de performance cerrada; nuevas optimizaciones solo ante demoras observadas. |
+
+---
+
+## 🛠️ Implementado, pendiente de validar en staging y publicar
+
+- **Sincronización de comentarios, checklists y borrados** — 2026-09-15, rama `fix/board-sync`. Revisión persistente por tablero, lectura consistente y actualización del modal sin interrumpir borradores. Requiere migración 0015 antes del deploy. Ver `docs/STATUS.md` y ADR-016.
 
 ---
 
@@ -75,7 +82,6 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟠 Alta prioridad
 
-- **Performance: validar el set de mejoras de backend** — preparación de usuario/rol en un batch, una verificación de cookie y eliminación de consultas por checklist, en la rama `perf/backend-roundtrips`. Integrar y validar en staging antes de producción; después hacer una comprobación breve para cuantificar el resultado. La comprobación de v2.2.0 se cerró con tres rondas y 12 escrituras correctas ([informe](PERFORMANCE-2026-09-14.md)); tiempo de clic a cambio visible aún pendiente. No exigir más rondas manuales para eliminar trabajo redundante demostrado en código. Aplicar [el criterio de performance](PERFORMANCE-PRACTICES.md).
 - **Etiquetas en tarjetas nuevas** (pedido de Pablo, 2026-09-11) — 🟢 esfuerzo chico. Hoy las etiquetas solo se pueden asignar reabriendo una tarjeta ya creada: el selector de etiquetas del modal hace `POST /api/cards/:id/labels/:labelId` al instante, y en una tarjeta nueva todavía no hay `:id`. Los objetivos ya resolvieron este mismo problema con un borrador en memoria (`draftGoals` en `public/index.html`): se acumulan los ids elegidos mientras se redacta y se vinculan después de crear la tarjeta (paso 5 del guardado). La salida esperada es la simétrica — un `draftLabels` con el mismo patrón, más el picker de etiquetas visible en modo borrador (hoy `renderCardLabels`/el picker asumen `editingId`). Sin cambios de backend ni de esquema.
 - **Esc no cierra el modal de ayuda (F1)** (detectado por Pablo, 2026-09-11) — 🟢 esfuerzo chico, es un fix de dos líneas. **La intención ya está en el código pero es inalcanzable**: en `public/index.html` (~línea 4214) el handler global de teclas hace `const helpOpen = …; if (helpOpen) return;` y recién después viene `if (k === "escape" && helpOpen) { … }`, que por el return anterior nunca se ejecuta — código muerto con su comentario «Esc: cerrar ayuda» incluido. Además, el otro handler de Escape (~línea 3392), el que cierra en cadena tarjeta/perfil/import/miembros/archivo/objetivos/métricas/tema, no incluye `helpModal` en la lista. Salida: mover el chequeo de Escape antes del return, o sumar `helpModal` a esa cadena (preferible: deja un solo lugar donde se decide qué cierra Esc). Emparenta con el ítem de Tab/Enter de acá arriba: es la misma promesa de teclado consistente.
 - **Tab/Enter estándar en toda la interfaz de tarjetas**: navegación por teclado en el modal — Tab entre campos, Enter confirma, Esc cierra. Incluye checklists (Tab entre ítems, Enter agrega el siguiente, Backspace en ítem vacío lo borra). Criterios ya documentados en ADR-014; falta auditar que se cumplan en todos los campos.
@@ -123,7 +129,6 @@ _Sin ítems pendientes — ver ✅ Completado._
 
 ### 🟠 Alto — bugs funcionales visibles
 
-- **El polling no sincroniza comentarios, checklists ni borrados** — 🟡 medio. `/api/boards/:id/version` devuelve `MAX(updated_at)` de las tarjetas: agregar/borrar comentarios y toda operación de checklist no tocan `updated_at`, y el frontend solo refresca si la versión *sube* (borrar una tarjeta la baja o la deja igual). **Impacto**: en tableros compartidos, los demás no ven comentarios/checklists nuevos ni tarjetas borradas hasta que otra cosa cambie — rompe la promesa multiusuario "en tiempo real". Etiquetas y objetivos sí lo hacen bien (bumpean `updated_at`). **Acción**: bumpear `updated_at` en esas operaciones + refrescar por *desigualdad* de versión.
 - **Progreso de objetivos ignora columnas de cierre múltiples** — 🟢 chico. `goalsWithProgress` usa `getDoneColumnId` (una sola columna, `LIMIT 1`), mientras confeti/métricas/urgencia usan todas las `is_done=1` (`getDoneColumnIds`). **Impacto**: con 2+ columnas de cierre, el % de avance queda subestimado — el usuario ve datos incorrectos.
 - **Nadie valida que la columna exista** al crear/editar/importar tarjetas — 🟢 chico. El import usa default `por_conversar`, que puede no existir en tableros con columnas custom. **Impacto**: tarjetas huérfanas en columnas inexistentes, invisibles en la UI y sin error — se percibe como pérdida de datos.
 - **Docs de arranque desactualizadas** — 🟢 chico. `QUICK_START.md` (lectura obligatoria por sesión) congelado al 2026-06-30: menciona PRs "pendientes de merge" ya mergeados y deployados, y "69 unit + 22 E2E" (son 111+36). `STATUS.md`: la sección "Features NO Implementados" está llena de features implementadas, y dice "máx 20 etiquetas / paleta de 20 colores" cuando el código impone 10 y 10. **Impacto**: cada sesión (humana o IA) arranca con un mapa falso del proyecto.
