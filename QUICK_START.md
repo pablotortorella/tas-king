@@ -26,7 +26,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **Sincronización de comentarios, checklists y borrados**: PR #41 aprobado por Pablo en staging, pendiente de integración. Ver `docs/STATUS.md`. La migración **0015 debe aplicarse antes del Worker nuevo** también en producción.
+1. **Sincronización de comentarios, checklists y borrados**: PR #41 integrado y `main` validado nuevamente en staging. Producción sigue en v2.2.1, pendiente de aprobación final. La migración **0015 debe aplicarse antes del Worker nuevo** también en producción.
 2. **Performance cerrada**: v2.2.1 está en producción y Pablo confirmó el 15/09 que toda la interacción se siente más veloz. Instrumentar solo si se vuelven a observar demoras relevantes.
 3. Mantener los presupuestos y criterios de `docs/PERFORMANCE-PRACTICES.md` en los cambios siguientes.
 
