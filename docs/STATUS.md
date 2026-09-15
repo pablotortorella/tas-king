@@ -7,7 +7,7 @@
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 
-**Estado:** implementado, revisado y aprobado por Pablo en staging desde `fix/board-sync`; pendiente de integración. Producción sigue en v2.2.1.
+**Estado:** PR #41 integrado en `main` y validado nuevamente en staging. Producción sigue en v2.2.1, pendiente de aprobación final.
 
 - **Causa:** `MAX(cards.updated_at)` no detectaba recursos relacionados, borrados que conservaban el máximo ni escrituras en el mismo milisegundo. El cliente solo reaccionaba a versiones mayores.
 - **Datos:** migración `0015_board_sync.sql`, con `boards.sync_version` y triggers transaccionales para tarjetas, comentarios, checklists e ítems. No añade llamadas al binding en las escrituras; agrega actualizaciones internas del contador. La revisión conserva la escala previa para clientes abiertos.
@@ -18,6 +18,7 @@
 - **Migración:** validada en D1 local y sobre esquema anterior con datos (compatibilidad con escrituras anteriores, preservación de versión y borrado de última tarjeta). **Aplicar 0015 antes del Worker nuevo** en cada entorno; ver [ADR-016](ADRs/ADR-016-board-sync-revision.md).
 - **Release preparada:** v2.2.2 en paquete, pie y Novedades (Release 19). No desplegada a producción todavía.
 - **Staging:** migración 0015 aplicada antes del Worker. Commit `7430319`, Version ID `8a670812-0f67-499f-9d57-b2f66fa0678d`, activo al 100 % en https://tas-king-staging.pablotortorella.workers.dev. El deploy repitió 172 pruebas de backend y 67 E2E. Verificación remota: HTML v2.2.2 responde 200, `/api/me` sin sesión responde 401, y D1 contiene `sync_version` más los 12 triggers. Pablo confirmó el funcionamiento autenticado el 15/09.
+- **Integración:** PR #41 mergeado como `e1042a9`. Ese SHA pasó nuevamente 172 pruebas de backend y 67 E2E, y fue desplegado en staging como Version ID `a53d2184-29d4-4b6f-8436-b00f9ef790cc`. Smoke test final: HTML v2.2.2 responde 200, `/api/me` sin sesión responde 401 y D1 conserva la columna más los 12 triggers.
 
 ## ✅ Performance confirmada en uso real — 2026-09-15
 
