@@ -55,7 +55,7 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 ## 🛠️ Implementado, pendiente de revisar e integrar
 
-- **Sincronización de comentarios, checklists y borrados** — 2026-09-15, PR #41, desplegado en staging. Revisión persistente por tablero, lectura consistente y actualización del modal sin interrumpir borradores. Pendiente de revisión autenticada e integración; requiere migración 0015 antes del deploy a producción. Ver `docs/STATUS.md` y ADR-016.
+- **Sincronización de comentarios, checklists y borrados** — 2026-09-15, PR #41, aprobado por Pablo en staging. Revisión persistente por tablero, lectura consistente y actualización del modal sin interrumpir borradores. Pendiente de integración; requiere migración 0015 antes del deploy a producción. Ver `docs/STATUS.md` y ADR-016.
 
 ---
 

@@ -7,7 +7,7 @@
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 
-**Estado:** implementado, revisado y desplegado en staging desde `fix/board-sync`; pendiente de revisión autenticada e integración. Producción sigue en v2.2.1.
+**Estado:** implementado, revisado y aprobado por Pablo en staging desde `fix/board-sync`; pendiente de integración. Producción sigue en v2.2.1.
 
 - **Causa:** `MAX(cards.updated_at)` no detectaba recursos relacionados, borrados que conservaban el máximo ni escrituras en el mismo milisegundo. El cliente solo reaccionaba a versiones mayores.
 - **Datos:** migración `0015_board_sync.sql`, con `boards.sync_version` y triggers transaccionales para tarjetas, comentarios, checklists e ítems. No añade llamadas al binding en las escrituras; agrega actualizaciones internas del contador. La revisión conserva la escala previa para clientes abiertos.
@@ -17,7 +17,7 @@
 - **Pruebas:** `npm run test:all` pasó **172 backend + 67 E2E**. Diecisiete regresiones de API/backup y una de presupuesto D1 nuevas; cinco recorridos E2E con otra identidad, modal abierto, borradores, borrados y revisión menor. Doce casos de sincronización y el de backup fallaron antes de sus respectivos arreglos; también se reprodujo el fallo en navegador.
 - **Migración:** validada en D1 local y sobre esquema anterior con datos (compatibilidad con escrituras anteriores, preservación de versión y borrado de última tarjeta). **Aplicar 0015 antes del Worker nuevo** en cada entorno; ver [ADR-016](ADRs/ADR-016-board-sync-revision.md).
 - **Release preparada:** v2.2.2 en paquete, pie y Novedades (Release 19). No desplegada a producción todavía.
-- **Staging:** migración 0015 aplicada antes del Worker. Commit `7430319`, Version ID `8a670812-0f67-499f-9d57-b2f66fa0678d`, activo al 100 % en https://tas-king-staging.pablotortorella.workers.dev. El deploy repitió 172 pruebas de backend y 67 E2E. Verificación remota: HTML v2.2.2 responde 200, `/api/me` sin sesión responde 401, y D1 contiene `sync_version` más los 12 triggers. Revisión autenticada de Pablo pendiente.
+- **Staging:** migración 0015 aplicada antes del Worker. Commit `7430319`, Version ID `8a670812-0f67-499f-9d57-b2f66fa0678d`, activo al 100 % en https://tas-king-staging.pablotortorella.workers.dev. El deploy repitió 172 pruebas de backend y 67 E2E. Verificación remota: HTML v2.2.2 responde 200, `/api/me` sin sesión responde 401, y D1 contiene `sync_version` más los 12 triggers. Pablo confirmó el funcionamiento autenticado el 15/09.
 
 ## ✅ Performance confirmada en uso real — 2026-09-15
 
