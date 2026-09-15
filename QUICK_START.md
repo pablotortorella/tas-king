@@ -18,7 +18,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 ## 📍 Dónde estamos (Estado actual)
 
 **Última actualización**: 2026-09-14
-**Última versión desplegada registrada**: 2.2.0. Candidato de backend pendiente de integración y staging; ver `docs/STATUS.md`.
+**Última versión desplegada registrada**: 2.2.0. Candidato de backend en staging para revisión, pendiente de integración; ver `docs/STATUS.md`.
 
 ### ✅ Completado en la última sesión (2026-09-11)
 - **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
@@ -26,7 +26,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **Performance**: integrar y validar el set de mejoras de backend de `perf/backend-roundtrips` (batch de usuario/rol, una verificación de cookie, consulta de ítems sin N+1). Ver `docs/STATUS.md`. Producción sigue en v2.2.0.
+1. **Performance**: Pablo revisa en staging el commit `8cadd4e` de `perf/backend-roundtrips` (batch de usuario/rol, una verificación de cookie, consulta de ítems sin N+1). Después, integrar PR #38 y validar el SHA de main en staging. Version ID y comprobaciones en `docs/STATUS.md`. Producción sigue en v2.2.0.
 2. La comprobación de v2.2.0 se cerró con tres rondas y 12 escrituras correctas. Resultados y límites en `docs/PERFORMANCE-2026-09-14.md`; acción a cambio visible aún pendiente. No se requieren más rondas manuales para eliminar redundancias demostradas.
 3. Aplicar `docs/PERFORMANCE-PRACTICES.md`: patrones claros con presupuestos y tests; instrumentar latencia residual cuando haga falta. Render incremental y agrupación de guardados complejos siguen condicionados por evidencia. Backlog canónico en `docs/PRODUCT_BACKLOG.md`.
 4. Usar el nuevo flujo de ramas y worktrees para cualquier trabajo que avance en paralelo.

@@ -3,16 +3,18 @@
 **Última actualización**: 2026-09-14
 **Producción registrada**: v2.2.0, validada al desplegar con 139 pruebas de backend y 62 E2E.
 
-**Candidato backend**: 154 pruebas de backend y 62 E2E pasan; sin desplegar.
+**Candidato backend**: 154 pruebas de backend y 62 E2E pasan; desplegado en staging para revisión, sin integrar ni desplegar a producción.
 
-## ⚡ Backend: menos llamadas y criterio de performance (candidato, sin desplegar)
+## ⚡ Backend: menos llamadas y criterio de performance (en staging, revisión pendiente)
 
 - Rama `perf/backend-roundtrips`: preparación de usuario existente y rol en un solo `db.batch()` (antes dos llamadas sin admin o tres con admin); creación de tablero/columnas solo cuando falta. El callback OAuth comparte esa preparación y aplica el rol después de insertar al usuario nuevo.
 - La autenticación reutiliza la identidad de la cookie verificada en la petición. Mantiene revocación en D1, membresía vigente y bypass limitado a localhost; no agrega caché entre peticiones.
 - `cardJSONById` trae todos los ítems de checklists mediante una consulta filtrada por tarjeta. Conserva orden, estados, listas vacías y aislamiento. Sin checklists no consulta ítems. Con cinco listas, la lectura pasa de 11 a 7 llamadas D1.
 - Regresiones en `test/backend-performance.test.js`: presupuestos de llamadas, verificación de firma única, usuarios nuevos/existentes, roles, aislamiento y revocación. Validación completa: 154 pruebas de backend y 62 de navegador pasaron. Ocho regresiones nuevas fallaron sobre el código previo por las llamadas redundantes o el rol inicial; pasaron tras el cambio.
 - [Criterio de performance](PERFORMANCE-PRACTICES.md) enlazado desde workflow e instrucciones de desarrollo: aplicar patrones evidentes con tests, medir cuando haga falta y evitar rondas manuales que no cambien la decisión.
-- Producción sigue en v2.2.0. Estas optimizaciones requieren integración y validación en staging antes de un deploy autorizado.
+- **Staging de la rama desplegado el 14/09 a las 21:11 America/Bogota**: commit `8cadd4e4513a2f2839501b44eb803e5ebe9c8856`, Worker `tas-king-staging`, Version ID `01851ad0-7fcf-44f2-ac8c-b9c1e78a468b`, activo al 100 %. URL: https://tas-king-staging.pablotortorella.workers.dev.
+- `npm run deploy:staging` repitió 154 pruebas de backend y 62 E2E, publicó la rama y confirmó que no había migraciones pendientes. Verificación HTTP: HTML idéntico al checkout, API sin sesión devuelve 401 y login redirige a Google con callback de staging. Revisión autenticada de Pablo pendiente.
+- Producción sigue en v2.2.0. Después de revisar staging corresponde integrar el PR #38 y validar el SHA de integración en staging antes de un deploy de producción autorizado. El commit posterior que registra este despliegue solo cambia documentación.
 
 ## 🎯 Performance de mutaciones — comprobación posterior de tres rondas
 
