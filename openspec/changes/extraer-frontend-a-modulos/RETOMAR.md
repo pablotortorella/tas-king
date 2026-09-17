@@ -120,6 +120,13 @@ Cinco cosas que salieron mal en la última sesión y no conviene repetir:
    medir con la máquina tranquila cuando la carrera solo se pierde bajo carga.
 5. **Una corrida verde no prueba nada.** El flake se declaró cerrado con 3
    corridas limpias y falló a la siguiente.
+6. **Al cortar por rangos de texto, verificar qué secciones quedaron adentro.**
+   La herramienta de AST no sirve cuando el bloque incluye listeners (no son
+   declaraciones), y al cortar `io.js` por texto se coló la sección vecina
+   "Selector de tablero", que llamaba a funciones que el módulo no importaba.
+   No fallaba al cargar la página, solo al usar el selector. El chequeo que lo
+   evita cuesta un comando:
+   `grep -n "^// ---------- " public/js/NUEVO.js`
 
 Y la que funcionó: **un commit por unidad lógica**. Salvó el día dos veces.
 
