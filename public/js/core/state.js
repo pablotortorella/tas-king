@@ -38,4 +38,13 @@ export const estado = {
   activeLabelFilters: new Set(), // ids de etiquetas para filtro OR
   activeGoalFilter: null,        // id de objetivo seleccionado (resalta sus tarjetas)
   currentView: "tasks",          // "tasks" | "goals"
+
+  // ---------- Modal de tarjeta: lo que se está editando ----------
+  // Los borradores existen porque una tarjeta nueva todavía no tiene id: se
+  // acumulan en memoria mientras se redacta y se vinculan después de crearla.
+  editingId: null,            // id de la tarjeta abierta, o null si es nueva
+  draftAttachments: [],       // adjuntos en edición (existentes + nuevos pendientes)
+  removedAttachmentIds: [],   // adjuntos existentes marcados para borrar al guardar
+  draftChecklists: [],        // checklists de una tarjeta aún sin guardar
+  draftGoals: [],             // objetivos elegidos para una tarjeta aún sin guardar
 };

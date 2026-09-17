@@ -27,11 +27,6 @@ import { estado } from "./core/state.js";
   let me = null;               // usuario actual + sus tableros
   let currentBoardId = null;   // tablero seleccionado
   let members = [];            // miembros del tablero actual
-  let editingId = null;        // id de la tarjeta abierta, o null si es nueva
-  let draftAttachments = [];   // adjuntos en edición (existentes + nuevos pendientes)
-  let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
-  let draftChecklists = [];    // checklists en borrador para tarjetas nuevas (aún sin guardar)
-  let draftGoals = [];         // goal ids seleccionados para tarjetas nuevas (aún sin guardar)
   let boardLabels = [];        // etiquetas del tablero actual
   let boardGoals = [];         // objetivos del tablero actual (con progreso)
 
@@ -371,7 +366,7 @@ import { estado } from "./core/state.js";
         const doneColIds = getDoneColumnIds();
         const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
         if (!(await loadCards())) return;
-        if (editingId && overlay.classList.contains("open")) {
+        if (estado.editingId && overlay.classList.contains("open")) {
           renderComments(); // El campo del comentario y los demás borradores no se tocan.
           checklistRefreshPending = true;
         }
@@ -386,7 +381,7 @@ import { estado } from "./core/state.js";
 
   function refreshSyncedChecklists() {
     if (!checklistRefreshPending) return;
-    if (!editingId || !overlay.classList.contains("open")) { checklistRefreshPending = false; return; }
+    if (!estado.editingId || !overlay.classList.contains("open")) { checklistRefreshPending = false; return; }
     const section = document.getElementById("fChecklistsSection");
     // No reconstruir el campo que la persona está editando. El siguiente poll
     // atiende lo pendiente aunque ya no haya otra revisión del tablero.
@@ -1204,11 +1199,11 @@ import { estado } from "./core/state.js";
   async function renderHistory() {
     const field = document.getElementById("historyField");
     const list = document.getElementById("fHistory");
-    if (!editingId) { field.style.display = "none"; return; }
+    if (!estado.editingId) { field.style.display = "none"; return; }
     field.style.display = "";
     list.innerHTML = '<li class="history-empty">Cargando…</li>';
     try {
-      const { history } = await api("GET", "/api/cards/" + editingId + "/history");
+      const { history } = await api("GET", "/api/cards/" + estado.editingId + "/history");
       if (!history.length) {
         list.innerHTML = '<li class="history-empty">Sin historial aún.</li>';
         return;
@@ -1229,7 +1224,7 @@ import { estado } from "./core/state.js";
 
   function openModal(id, defaultCol) {
     checklistRefreshPending = false;
-    editingId = id;
+    estado.editingId = id;
     const card = id ? state.cards.find(c => c.id === id) : null;
     document.getElementById("modalTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
     fTitle.value = card ? card.title : "";
@@ -1237,10 +1232,10 @@ import { estado } from "./core/state.js";
     fDetails.value = card ? card.details : "";
     fDue.value = card ? (card.due || "") : "";
     populateAssignee(card ? card.assignee : "");
-    draftAttachments = card ? (card.attachments || []).map(a => ({ ...a })) : [];
-    removedAttachmentIds = [];
-    draftChecklists = [];
-    draftGoals = [];
+    estado.draftAttachments = card ? (card.attachments || []).map(a => ({ ...a })) : [];
+    estado.removedAttachmentIds = [];
+    estado.draftChecklists = [];
+    estado.draftGoals = [];
     document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
     document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
     renderDraftAttachments();
@@ -1257,13 +1252,13 @@ import { estado } from "./core/state.js";
   function closeModal() {
     overlay.classList.remove("open");
     history.replaceState(null, "", location.pathname);
-    editingId = null;
+    estado.editingId = null;
     // liberar las URLs temporales de los adjuntos nuevos no guardados
-    draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
-    draftAttachments = [];
-    removedAttachmentIds = [];
-    draftChecklists = [];
-    draftGoals = [];
+    estado.draftAttachments.forEach(a => { if (a._previewUrl) URL.revokeObjectURL(a._previewUrl); });
+    estado.draftAttachments = [];
+    estado.removedAttachmentIds = [];
+    estado.draftChecklists = [];
+    estado.draftGoals = [];
     document.getElementById("fCommentInput").value = "";
     document.getElementById("historyField").style.display = "none";
   }
@@ -1273,14 +1268,14 @@ import { estado } from "./core/state.js";
     fComments.innerHTML = "";
     const input = document.getElementById("fCommentInput");
     const addBtn = document.getElementById("addCommentBtn");
-    if (!editingId) {
+    if (!estado.editingId) {
       input.disabled = true; addBtn.disabled = true;
       input.placeholder = "Guardá la tarjeta para comentar";
       return;
     }
     input.disabled = false; addBtn.disabled = false;
     input.placeholder = "Escribir un comentario...";
-    const card = state.cards.find(c => c.id === editingId);
+    const card = state.cards.find(c => c.id === estado.editingId);
     (card ? card.comments || [] : []).forEach(cm => {
       const author = cm.author || { name: "—" };
       const li = document.createElement("li");
@@ -1301,13 +1296,13 @@ import { estado } from "./core/state.js";
     if (e.key === "Enter") { e.preventDefault(); addComment(); }
   });
   async function addComment() {
-    if (!editingId) return;
+    if (!estado.editingId) return;
     const input = document.getElementById("fCommentInput");
     const text = input.value.trim();
     if (!text) return;
     input.value = "";
     try {
-      await api("POST", "/api/cards/" + editingId + "/comments", { text });
+      await api("POST", "/api/cards/" + estado.editingId + "/comments", { text });
       await loadCards();        // actualiza el contador de la tarjeta
       renderComments();
     } catch (e) { alert("No se pudo comentar: " + e.message); }
@@ -1327,12 +1322,12 @@ import { estado } from "./core/state.js";
     const section = document.getElementById("fChecklistsSection");
     section.innerHTML = "";
 
-    const isDraft = !editingId;
+    const isDraft = !estado.editingId;
     let checklists;
     if (isDraft) {
-      checklists = draftChecklists;
+      checklists = estado.draftChecklists;
     } else {
-      const card = state.cards.find(c => c.id === editingId);
+      const card = state.cards.find(c => c.id === estado.editingId);
       checklists = card ? (card.checklists || []) : [];
     }
 
@@ -1381,7 +1376,7 @@ import { estado } from "./core/state.js";
       delBtn.addEventListener("click", async () => {
         if (!confirm("¿Eliminar esta lista y todas sus subtareas?")) return;
         if (isDraft) {
-          draftChecklists = draftChecklists.filter(x => x.id !== cl.id);
+          estado.draftChecklists = estado.draftChecklists.filter(x => x.id !== cl.id);
           renderChecklists();
         } else {
           try {
@@ -1430,7 +1425,7 @@ import { estado } from "./core/state.js";
                 item.checked = updated.checked;
                 textEl.classList.toggle("checked", item.checked);
                 await loadCards();
-                const c2 = state.cards.find(c => c.id === editingId);
+                const c2 = state.cards.find(c => c.id === estado.editingId);
                 const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
                 if (cl2) updateBar(cl2, bar, progressEl);
               } catch (e) { cb.checked = !cb.checked; alert("Error: " + e.message); }
@@ -1473,7 +1468,7 @@ import { estado } from "./core/state.js";
             else {
               await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
               await loadCards();
-              const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+              const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
               if (cl2) { cl.items = cl2.items; renderItems(); }
             }
           });
@@ -1492,7 +1487,7 @@ import { estado } from "./core/state.js";
             else {
               await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
               await loadCards();
-              const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+              const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
               if (cl2) { cl.items = cl2.items; renderItems(); }
             }
           });
@@ -1512,7 +1507,7 @@ import { estado } from "./core/state.js";
                 cl.items = cl.items.filter(x => x.id !== item.id);
                 await loadCards();
                 renderItems();
-                const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+                const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
                 if (cl2) updateBar(cl2, bar, progressEl);
               } catch (e) { alert("Error: " + e.message); }
             }
@@ -1553,7 +1548,7 @@ import { estado } from "./core/state.js";
             const newItem = await api("POST", "/api/checklists/" + cl.id + "/items", { text });
             cl.items.push(newItem);
             await loadCards();
-            const cl2 = (state.cards.find(c => c.id === editingId)?.checklists || []).find(x => x.id === cl.id);
+            const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
             if (cl2) { cl.items = cl2.items; }
             renderItems();
             updateBar(cl, bar, progressEl);
@@ -1576,11 +1571,11 @@ import { estado } from "./core/state.js";
     addClBtn.textContent = "☑ Agregar checklist";
     addClBtn.addEventListener("click", async () => {
       if (isDraft) {
-        draftChecklists.push({ id: crypto.randomUUID(), name: "Lista de tareas", items: [], position: draftChecklists.length });
+        estado.draftChecklists.push({ id: crypto.randomUUID(), name: "Lista de tareas", items: [], position: estado.draftChecklists.length });
         renderChecklists();
       } else {
         try {
-          await api("POST", "/api/cards/" + editingId + "/checklists", { name: "Lista de tareas" });
+          await api("POST", "/api/cards/" + estado.editingId + "/checklists", { name: "Lista de tareas" });
           await loadCards();
           renderChecklists();
         } catch (e) { alert("Error: " + e.message); }
@@ -1597,8 +1592,8 @@ import { estado } from "./core/state.js";
 
   function renderLabels() {
     fLabelsSection.innerHTML = "";
-    if (!editingId) return;
-    const card = state.cards.find(c => c.id === editingId);
+    if (!estado.editingId) return;
+    const card = state.cards.find(c => c.id === estado.editingId);
     const cardLabels = card ? (card.labels || []) : [];
 
     const section = document.createElement("div");
@@ -1634,7 +1629,7 @@ import { estado } from "./core/state.js";
     const existing = fLabelsSection.querySelector(".label-picker");
     if (existing) { existing.remove(); labelPickerVisible = false; return; }
 
-    const card = state.cards.find(c => c.id === editingId);
+    const card = state.cards.find(c => c.id === estado.editingId);
     const cardLabels = card ? (card.labels || []) : [];
     const assignedIds = new Set(cardLabels.map(l => l.id));
 
@@ -1731,32 +1726,32 @@ import { estado } from "./core/state.js";
         if (assigned && label) labels.push({ id: label.id, name: label.name, color: label.color });
         labels.sort((a, b) => boardLabels.findIndex(l => l.id === a.id) - boardLabels.findIndex(l => l.id === b.id));
         applySavedCard(boardId, { ...card, labels });
-        if (editingId === cardId) renderLabels();
+        if (estado.editingId === cardId) renderLabels();
       });
     } catch (e) { alert((assigned ? "No se pudo asignar: " : "No se pudo quitar: ") + e.message); }
     finally { pendingLabelChanges.delete(key); }
   }
 
   function assignLabel(labelId) {
-    return changeCardLabel(editingId, currentBoardId, labelId, true);
+    return changeCardLabel(estado.editingId, currentBoardId, labelId, true);
   }
 
   function removeLabel(labelId) {
-    return changeCardLabel(editingId, currentBoardId, labelId, false);
+    return changeCardLabel(estado.editingId, currentBoardId, labelId, false);
   }
 
   // ---------- Objetivos dentro del modal de tarjeta ----------
   function renderCardGoals() {
     fGoalsSection.innerHTML = "";
-    if (!boardGoals && !editingId) return;
+    if (!boardGoals && !estado.editingId) return;
 
     // En modo edición los goals vienen del state; en modo borrador de draftGoals
     let cardGoals;
-    if (editingId) {
-      const card = state.cards.find(c => c.id === editingId);
+    if (estado.editingId) {
+      const card = state.cards.find(c => c.id === estado.editingId);
       cardGoals = card ? (card.goals || []) : [];
     } else {
-      cardGoals = boardGoals.filter(g => draftGoals.includes(g.id));
+      cardGoals = boardGoals.filter(g => estado.draftGoals.includes(g.id));
     }
 
     const section = document.createElement("div");
@@ -1770,8 +1765,8 @@ import { estado } from "./core/state.js";
         chip.className = "goal-in-card";
         chip.innerHTML = `${escapeHtml(goal.title)}<span class="remove" title="Quitar del objetivo">✕</span>`;
         chip.querySelector(".remove").addEventListener("click", () => {
-          if (editingId) removeGoal(goal.id);
-          else { draftGoals = draftGoals.filter(id => id !== goal.id); renderCardGoals(); }
+          if (estado.editingId) removeGoal(goal.id);
+          else { estado.draftGoals = estado.draftGoals.filter(id => id !== goal.id); renderCardGoals(); }
         });
         listDiv.appendChild(chip);
       });
@@ -1791,9 +1786,9 @@ import { estado } from "./core/state.js";
     const existing = fGoalsSection.querySelector(".goal-picker");
     if (existing) { existing.remove(); return; }
 
-    const assignedIds = editingId
-      ? new Set((state.cards.find(c => c.id === editingId)?.goals || []).map(g => g.id))
-      : new Set(draftGoals);
+    const assignedIds = estado.editingId
+      ? new Set((state.cards.find(c => c.id === estado.editingId)?.goals || []).map(g => g.id))
+      : new Set(estado.draftGoals);
 
     const picker = document.createElement("div");
     picker.className = "goal-picker";
@@ -1821,11 +1816,11 @@ import { estado } from "./core/state.js";
       `;
       row.querySelector(`[data-goal-id="${goal.id}"]`)
         .addEventListener("click", () => {
-          if (editingId) {
+          if (estado.editingId) {
             assigned ? removeGoal(goal.id) : assignGoal(goal.id);
           } else {
-            if (assigned) draftGoals = draftGoals.filter(id => id !== goal.id);
-            else if (!draftGoals.includes(goal.id)) draftGoals.push(goal.id);
+            if (assigned) estado.draftGoals = estado.draftGoals.filter(id => id !== goal.id);
+            else if (!estado.draftGoals.includes(goal.id)) estado.draftGoals.push(goal.id);
             picker.remove();
             renderCardGoals();
           }
@@ -1847,12 +1842,12 @@ import { estado } from "./core/state.js";
       if (!title) { alert("Escribí un título."); return; }
       try {
         const goal = await api("POST", "/api/boards/" + currentBoardId + "/goals", { title });
-        if (editingId) {
-          await api("POST", `/api/cards/${editingId}/goals/${goal.id}`);
+        if (estado.editingId) {
+          await api("POST", `/api/cards/${estado.editingId}/goals/${goal.id}`);
           await loadCards();
         } else {
           await loadCards(); // refresca boardGoals con el nuevo objetivo
-          if (!draftGoals.includes(goal.id)) draftGoals.push(goal.id);
+          if (!estado.draftGoals.includes(goal.id)) estado.draftGoals.push(goal.id);
         }
         renderCardGoals();
       } catch (e) { alert("No se pudo crear: " + e.message); }
@@ -1867,7 +1862,7 @@ import { estado } from "./core/state.js";
 
   async function assignGoal(goalId) {
     try {
-      await api("POST", `/api/cards/${editingId}/goals/${goalId}`);
+      await api("POST", `/api/cards/${estado.editingId}/goals/${goalId}`);
       await loadCards();
       renderCardGoals();
     } catch (e) { alert("No se pudo vincular: " + e.message); }
@@ -1875,15 +1870,15 @@ import { estado } from "./core/state.js";
 
   async function removeGoal(goalId) {
     try {
-      await api("DELETE", `/api/cards/${editingId}/goals/${goalId}`);
+      await api("DELETE", `/api/cards/${estado.editingId}/goals/${goalId}`);
       await loadCards();
       renderCardGoals();
     } catch (e) { alert("No se pudo quitar: " + e.message); }
   }
 
   async function createLabel(color) {
-    if (!editingId || !currentBoardId) return;
-    const cardId = editingId, boardId = currentBoardId;
+    if (!estado.editingId || !currentBoardId) return;
+    const cardId = estado.editingId, boardId = currentBoardId;
     const name = document.getElementById("newLabelName")?.value.trim();
     if (!name) return alert("Falta nombre de etiqueta");
     try {
@@ -1900,7 +1895,7 @@ import { estado } from "./core/state.js";
   document.getElementById("fFile").addEventListener("change", e => {
     Array.from(e.target.files).forEach(file => {
       const isImage = file.type.startsWith("image/");
-      draftAttachments.push({
+      estado.draftAttachments.push({
         _new: true,
         file,
         originalName: file.name,
@@ -1914,7 +1909,7 @@ import { estado } from "./core/state.js";
 
   function renderDraftAttachments() {
     fAttachments.innerHTML = "";
-    draftAttachments.forEach((a, i) => {
+    estado.draftAttachments.forEach((a, i) => {
       const el = document.createElement("div");
       el.className = "attachment";
       const name = a.originalName || "archivo";
@@ -1930,9 +1925,9 @@ import { estado } from "./core/state.js";
         <div class="name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
       `;
       el.querySelector(".del").addEventListener("click", () => {
-        const removed = draftAttachments.splice(i, 1)[0];
+        const removed = estado.draftAttachments.splice(i, 1)[0];
         if (removed._new && removed._previewUrl) URL.revokeObjectURL(removed._previewUrl);
-        else if (removed.id) removedAttachmentIds.push(removed.id);  // borrar en el servidor al guardar
+        else if (removed.id) estado.removedAttachmentIds.push(removed.id);  // borrar en el servidor al guardar
         renderDraftAttachments();
       });
       fAttachments.appendChild(el);
@@ -1955,11 +1950,11 @@ import { estado } from "./core/state.js";
       assignee: fAssignee.value || null,
     };
 
-    const boardId = currentBoardId, cardId = editingId;
-    const removedIds = [...removedAttachmentIds];
-    const nuevos = draftAttachments.filter(a => a._new);
-    const checklists = cardId ? [] : structuredClone(draftChecklists);
-    const goals = cardId ? [] : [...draftGoals];
+    const boardId = currentBoardId, cardId = estado.editingId;
+    const removedIds = [...estado.removedAttachmentIds];
+    const nuevos = estado.draftAttachments.filter(a => a._new);
+    const checklists = cardId ? [] : structuredClone(estado.draftChecklists);
+    const goals = cardId ? [] : [...estado.draftGoals];
     try {
       await withCardMutation(async () => {
         // 1) crear o actualizar la tarjeta (campos + comentarios)
@@ -2006,7 +2001,7 @@ import { estado } from "./core/state.js";
           card = await api("GET", "/api/cards/" + card.id);
         }
         applySavedCard(boardId, card);
-        if (boardId === currentBoardId && editingId === cardId) closeModal();
+        if (boardId === currentBoardId && estado.editingId === cardId) closeModal();
       });
     } catch (e) {
       alert("No se pudo guardar: " + e.message);
@@ -2014,13 +2009,13 @@ import { estado } from "./core/state.js";
   });
 
   document.getElementById("deleteCardBtn").addEventListener("click", async () => {
-    if (!editingId) return;
-    if (await deleteCard(editingId)) closeModal();   // pide confirmación adentro
+    if (!estado.editingId) return;
+    if (await deleteCard(estado.editingId)) closeModal();   // pide confirmación adentro
   });
 
   document.getElementById("archiveCardBtn").addEventListener("click", async () => {
-    if (!editingId) return;
-    await archiveCard(editingId);
+    if (!estado.editingId) return;
+    await archiveCard(estado.editingId);
     closeModal();
   });
 
