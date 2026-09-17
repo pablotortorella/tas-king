@@ -61,6 +61,11 @@ export const estado = {
   // ---------- Sesión ----------
   me: null,             // usuario actual + sus tableros
   currentBoardId: null, // tablero seleccionado
+
+  // Arrastre en curso: { el, pointerId, startX, startY, active } o null.
+  // Parece local del arrastre pero no lo es: loadCards() y el polling lo
+  // consultan para no re-renderizar una tarjeta que se está moviendo.
+  cardDrag: null,
 };
 
 // ---------- Derivados ----------

@@ -10,6 +10,7 @@ import {
 } from "./core/dom.js";
 import { api } from "./core/api.js";
 import { currentBoard, estado, getDoneColumnIds } from "./core/state.js";
+import { emit, on } from "./core/bus.js";
 import { PALETTES, applyBoardPalette, initTheme } from "./theme.js";
 import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "./feedback.js";
 
@@ -17,6 +18,16 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   "use strict";
 
   initTheme();
+
+  // Cableado de los avisos del tablero. board.js no conoce a las features: emite
+  // y acá se decide quién atiende. Son avisos sin respuesta esperada; lo que se
+  // espera (loadCards, loadBoard, render) se sigue llamando directo.
+  on("sesion:cargada", () => { renderTipDaily(); armarRealceDelTip(); });
+  on("tablero:cargado", () => checkThemePrompt());
+  on("columnas:cambiaron", () => populateColumnSelect());
+  on("objetivos:cambiaron", () => refreshGoalsUI());
+  on("tarjeta:abrir", ({ id, columna }) => openModal(id, columna));
+  on("tarjeta:arrastre", ({ e, el, card }) => startCardDrag(e, el, card));
 
   initWipPulse();
   window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
@@ -114,8 +125,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     try {
       estado.me = await api("GET", "/api/me?today=" + fechaLocal());
       renderMe();
-      renderTipDaily();
-      armarRealceDelTip();
+      emit("sesion:cargada");
       const saved = localStorage.getItem("tasKingBoardId");
       if (!estado.me.boards.some(b => b.id === estado.currentBoardId)) estado.currentBoardId = null;
       if (!estado.currentBoardId) {
@@ -125,7 +135,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
       renderBoardSelect();
       await loadMembers();
       await loadCards();
-      checkThemePrompt();
+      emit("tablero:cargado");
     } catch (e) {
       // sin sesión válida → mandar al login con Google
       if (e.status === 401) { window.location.href = "/landing.html"; return; }
@@ -144,13 +154,13 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     const mutationRevision = estado.cardMutationRevision;
     const loadRevision = ++estado.boardLoadRevision;
     const isCurrent = () => boardId === estado.currentBoardId && mutationRevision === estado.cardMutationRevision
-      && loadRevision === estado.boardLoadRevision && !estado.pendingCardMutations && !(cardDrag && cardDrag.active);
+      && loadRevision === estado.boardLoadRevision && !estado.pendingCardMutations && !(estado.cardDrag && estado.cardDrag.active);
     if (estado.pendingCardMutations) { estado.boardRefreshPending = true; return false; }
     if (!estado.currentBoardId) {
       estado.state = { cards: [], columns: [] }; estado.COLUMNS = [];
       estado.boardLabels = []; estado.boardGoals = [];
       applyBoardPalette(null);
-      populateColumnSelect(); render(); refreshGoalsUI(); return true;
+      emit("columnas:cambiaron"); render(); emit("objetivos:cambiaron"); return true;
     }
     localStorage.setItem("tasKingBoardId", estado.currentBoardId);
     applyBoardPalette(currentBoard() && currentBoard().theme);
@@ -160,7 +170,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     // mientras se cargan los catálogos. Una respuesta anterior a un guardado se descarta.
     estado.state = nextState;
     estado.COLUMNS = estado.state.columns || [];
-    populateColumnSelect();
+    emit("columnas:cambiaron");
     let nextLabels = [], nextGoals = [];
     try { nextLabels = await api("GET", "/api/boards/" + boardId + "/labels"); }
     catch (e) { /* el catálogo puede no estar disponible */ }
@@ -172,7 +182,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     estado.boardGoals = nextGoals;
     estado.lastKnownVersion = estado.state.version || 0;
     render();
-    refreshGoalsUI();
+    emit("objetivos:cambiaron");
     return true;
   }
 
@@ -212,7 +222,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     // No adelantar lastKnownVersion con una escritura individual: podría ocultar
     // cambios de otras personas. El siguiente poll reconciliará el tablero completo.
     render();
-    refreshGoalsUI();
+    emit("objetivos:cambiaron");
   }
 
   async function loadGoals() {
@@ -233,7 +243,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
     // mouse — el próximo pointermove lo reinserta junto al nuevo nodo ya renderizado,
     // duplicando la tarjeta en pantalla hasta el siguiente poll. Se posterga al próximo tick.
-    if (cardDrag && cardDrag.active) return;
+    if (estado.cardDrag && estado.cardDrag.active) return;
     const boardId = estado.currentBoardId;
     const mutationRevision = estado.cardMutationRevision;
     pollInFlight = true;
@@ -715,7 +725,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
       // drag & drop de tarjetas: implementado con Pointer Events, ver startCardDrag() más abajo
       // (no usa HTML5 dragover/drop nativo porque no es confiable con touch en todos los navegadores)
 
-      colEl.querySelector(".add-card").addEventListener("click", () => openModal(null, col.id));
+      colEl.querySelector(".add-card").addEventListener("click", () => emit("tarjeta:abrir", { id: null, columna: col.id }));
       board.appendChild(colEl);
     });
 
@@ -842,9 +852,9 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     `;
     el.addEventListener("click", () => {
       if (el._justDragged) { el._justDragged = false; return; }
-      openModal(card.id);
+      emit("tarjeta:abrir", { id: card.id });
     });
-    el.addEventListener("pointerdown", e => startCardDrag(e, el, card));
+    el.addEventListener("pointerdown", e => emit("tarjeta:arrastre", { e, el, card }));
     return el;
   }
 
@@ -854,44 +864,43 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   // Android no, así que ahí tocar y arrastrar una tarjeta solo scrollea el tablero.
   // Con Pointer Events el mismo código maneja mouse y touch en cualquier navegador.
   const CARD_DRAG_THRESHOLD = 5; // px de movimiento antes de considerar que empezó un arrastre
-  let cardDrag = null; // { el, pointerId, startX, startY, active }
 
   function startCardDrag(e, el, card) {
     if (e.pointerType === "mouse" && e.button !== 0) return; // solo botón principal
-    if (cardDrag) return;
+    if (estado.cardDrag) return;
     e.preventDefault(); // el D&D nativo HTML5 prevenía la selección de texto solo; con Pointer Events hay que hacerlo a mano
-    cardDrag = { el, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, active: false };
+    estado.cardDrag = { el, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, active: false };
   }
 
   function activateCardDrag(e) {
-    cardDrag.active = true;
-    cardDrag.el._justDragged = true;
-    cardDrag.el.classList.add("dragging");
-    cardDrag.el.style.pointerEvents = "none"; // para que elementFromPoint "vea" lo que hay debajo
+    estado.cardDrag.active = true;
+    estado.cardDrag.el._justDragged = true;
+    estado.cardDrag.el.classList.add("dragging");
+    estado.cardDrag.el.style.pointerEvents = "none"; // para que elementFromPoint "vea" lo que hay debajo
     // Reparentar la tarjeta entre columnas mientras el navegador tiene una selección de
     // texto "en vuelo" confunde su heurística de selección (nodos moviéndose de lugar) y
     // termina seleccionando cosas por fuera de la tarjeta, incluso con preventDefault() en
     // el pointerdown. user-select:none en toda la página durante el arrastre lo evita del todo.
     document.body.classList.add("dragging-active");
     window.getSelection()?.removeAllRanges();
-    try { cardDrag.el.setPointerCapture(cardDrag.pointerId); } catch { /* no soportado, no es crítico */ }
+    try { estado.cardDrag.el.setPointerCapture(estado.cardDrag.pointerId); } catch { /* no soportado, no es crítico */ }
   }
 
   function endCardDrag() {
-    const wasActive = cardDrag.active;
-    const el = cardDrag.el;
+    const wasActive = estado.cardDrag.active;
+    const el = estado.cardDrag.el;
     el.classList.remove("dragging");
     el.style.pointerEvents = "";
     document.body.classList.remove("dragging-active");
     document.querySelectorAll(".cards.drag-over").forEach(c => c.classList.remove("drag-over"));
-    cardDrag = null;
+    estado.cardDrag = null;
     return wasActive;
   }
 
   window.addEventListener("pointermove", e => {
-    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
-    if (!cardDrag.active) {
-      const dist = Math.hypot(e.clientX - cardDrag.startX, e.clientY - cardDrag.startY);
+    if (!estado.cardDrag || e.pointerId !== estado.cardDrag.pointerId) return;
+    if (!estado.cardDrag.active) {
+      const dist = Math.hypot(e.clientX - estado.cardDrag.startX, e.clientY - estado.cardDrag.startY);
       if (dist < CARD_DRAG_THRESHOLD) return;
       activateCardDrag(e);
     }
@@ -905,12 +914,12 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
     if (!cardsEl) return;
     cardsEl.classList.add("drag-over");
     const afterEl = getDragAfterElement(cardsEl, e.clientY);
-    if (afterEl == null) cardsEl.appendChild(cardDrag.el);
-    else cardsEl.insertBefore(cardDrag.el, afterEl);
+    if (afterEl == null) cardsEl.appendChild(estado.cardDrag.el);
+    else cardsEl.insertBefore(estado.cardDrag.el, afterEl);
   });
 
   window.addEventListener("pointerup", async e => {
-    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
+    if (!estado.cardDrag || e.pointerId !== estado.cardDrag.pointerId) return;
     if (!endCardDrag()) return; // no hubo arrastre real: fue un tap/click normal
     const doneColIds = getDoneColumnIds();
     const prevCols = Object.fromEntries(estado.state.cards.map(c => [c.id, c.column]));
@@ -924,7 +933,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   });
 
   window.addEventListener("pointercancel", e => {
-    if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
+    if (!estado.cardDrag || e.pointerId !== estado.cardDrag.pointerId) return;
     endCardDrag();
   });
 
