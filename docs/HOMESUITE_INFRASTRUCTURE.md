@@ -372,6 +372,48 @@ npm run deploy:app
 El deploy de una unidad no debe publicar silenciosamente otra. Los cambios que
 afecten contratos compartidos sí deben ejecutar las pruebas de toda la suite.
 
+## Retoma después del refactor de TasKing
+
+Estado local al cerrar el 2026-09-17:
+
+- `docs/homesuite-foundation`: visión, MVP, infraestructura, DNSSEC y ADR-018;
+- `feature/homesuite-landing`: change OpenSpec `crear-landing-homesuite` y
+  `apps/site` implementado y probado;
+- ambos worktrees están bajo `/tmp`, pero el trabajo está commiteado en refs Git
+  locales y puede recrearse aunque desaparezcan esas carpetas;
+- no se hizo push, deploy, asociación de Custom Domains ni cambio de registros
+  de parking;
+- la suite base de TasKing mostró inestabilidad E2E antes de crear la landing. El
+  detalle está en `verification.md` dentro del change de la landing.
+
+Cuando el refactor quede integrado:
+
+1. actualizar `main` y confirmar que su suite completa vuelve a estar verde;
+2. rebasar `docs/homesuite-foundation` sobre el nuevo `main`, revisar enlaces e
+   integrar primero la documentación;
+3. rebasar `feature/homesuite-landing` sobre ese `main` ya documentado y resolver
+   únicamente conflictos reales —`apps/site` no debe mezclarse con `public/`,
+   `src/` ni el `wrangler.jsonc` de TasKing—;
+4. repetir:
+
+   ```text
+   openspec validate crear-landing-homesuite --strict
+   npx vitest run --config apps/site/vitest.config.mjs
+   npx playwright test --config apps/site/playwright.config.mjs
+   npx wrangler deploy --dry-run --config apps/site/wrangler.jsonc
+   npm run test:all
+   ```
+
+5. revisar el diff final, hacer push y abrir el PR correspondiente;
+6. con autorización explícita, desplegar primero el preview `workers.dev` y
+   revisarlo sin tocar el dominio;
+7. con una segunda aprobación, retirar los registros de parking incompatibles y
+   asociar `homesuite.info` y `www.homesuite.info` como Custom Domains;
+8. verificar HTTPS, redirección 308, cabeceras, CTA a TasKing y desaparición del
+   525; mantener HSTS desactivado;
+9. actualizar `docs/STATUS.md`, este documento y archivar el change OpenSpec una
+   vez que la landing esté efectivamente publicada.
+
 ## Cuándo separar repositorios o productos
 
 Reevaluar el monorepo solo si aparece una señal concreta:
