@@ -79,4 +79,7 @@ export const getDoneColumnIds = () => {
   return new Set(done.length > 0 ? done : [(estado.COLUMNS[estado.COLUMNS.length - 1] || {}).id || "terminado"]);
 };
 
+/** Perfil de un miembro del tablero actual, o undefined si no está. */
+export const memberByEmail = email => estado.members.find(m => m.email === email);
+
 export const currentBoard = () => estado.me && estado.me.boards.find(b => b.id === estado.currentBoardId);

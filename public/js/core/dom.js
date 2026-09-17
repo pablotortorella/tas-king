@@ -31,6 +31,18 @@ export function fmtDate(iso) {
   return d.toLocaleDateString("es", { day: "2-digit", month: "short" });
 }
 
+/**
+ * Fecha del día en zona local, como YYYY-MM-DD.
+ *
+ * No usa toISOString(): eso convierte a UTC y, al este de Greenwich después de
+ * las 21h o al oeste antes de las 3h, devuelve el día equivocado. El tip diario
+ * y el avance por cuenta dependen de que el día sea el de quien mira la pantalla.
+ */
+export function fechaLocal(d = new Date()) {
+  const dos = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+}
+
 export function relativeTime(ts) {
   const m = Math.floor((Date.now() - ts) / 60000);
   if (m < 1) return "ahora";

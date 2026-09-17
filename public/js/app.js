@@ -6,10 +6,10 @@
 
 import {
   AVATAR_COLORS, avatarHtml, defaultColor, escapeHtml,
-  fmtDate, relativeTime, shortName, uid,
+  fechaLocal, fmtDate, relativeTime, shortName, uid,
 } from "./core/dom.js";
 import { api } from "./core/api.js";
-import { currentBoard, estado, getDoneColumnIds } from "./core/state.js";
+import { currentBoard, estado, getDoneColumnIds, memberByEmail } from "./core/state.js";
 import { emit, on } from "./core/bus.js";
 import { PALETTES, applyBoardPalette, initTheme } from "./theme.js";
 import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "./feedback.js";
@@ -22,7 +22,7 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   // Cableado de los avisos del tablero. board.js no conoce a las features: emite
   // y acá se decide quién atiende. Son avisos sin respuesta esperada; lo que se
   // espera (loadCards, loadBoard, render) se sigue llamando directo.
-  on("sesion:cargada", () => { renderTipDaily(); armarRealceDelTip(); });
+  on("sesion:cargada", () => { renderMe(); renderTipDaily(); armarRealceDelTip(); });
   on("tablero:cargado", () => checkThemePrompt());
   on("columnas:cambiaron", () => populateColumnSelect());
   on("objetivos:cambiaron", () => refreshGoalsUI());
@@ -35,7 +35,6 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   // Paleta fija para avatares por defecto (derivada del email).
   // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
   // Busca el perfil de un miembro del tablero actual por email.
-  const memberByEmail = email => estado.members.find(m => m.email === email);
 
   // Perfil del usuario actual (con email) para pasarlo a avatarHtml.
   const meProfile = () => ({
@@ -62,10 +61,6 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
 
   // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
   // del tip cambie a la medianoche de la persona y no a la del servidor.
-  function fechaLocal(d = new Date()) {
-    const dos = n => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
-  }
 
   // El tip del día. El backend guarda un contador monótono de tips vistos; el
   // ciclado se resuelve acá, junto al catálogo, para que agregar tips no toque
@@ -124,7 +119,6 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   async function loadBoard() {
     try {
       estado.me = await api("GET", "/api/me?today=" + fechaLocal());
-      renderMe();
       emit("sesion:cargada");
       const saved = localStorage.getItem("tasKingBoardId");
       if (!estado.me.boards.some(b => b.id === estado.currentBoardId)) estado.currentBoardId = null;
@@ -189,12 +183,12 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
   async function withCardMutation(action) {
     estado.pendingCardMutations++;
     estado.cardMutationRevision++;
-    saveBtn.disabled = true;
+    emit("mutacion:inicio");
     try { return await action(); }
     finally {
       estado.pendingCardMutations--;
       estado.cardMutationRevision++;
-      saveBtn.disabled = estado.pendingCardMutations > 0;
+      emit("mutacion:fin");
       // Si se cambió de tablero durante la escritura, atender esa carga pendiente.
       if (!estado.pendingCardMutations && estado.boardRefreshPending) {
         estado.boardRefreshPending = false;
@@ -1823,6 +1817,11 @@ import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "
 
   // Guardar / eliminar / cancelar
   const saveBtn = document.getElementById("saveBtn");
+  // Mientras hay una escritura de tarjeta en vuelo, Guardar queda deshabilitado.
+  // El aviso lo emite withCardMutation, que lleva la cuenta; qué se hace con esa
+  // información es decisión del modal, que es quien tiene el botón.
+  on("mutacion:inicio", () => { saveBtn.disabled = true; });
+  on("mutacion:fin", () => { saveBtn.disabled = estado.pendingCardMutations > 0; });
   saveBtn.addEventListener("click", async () => {
     if (estado.pendingCardMutations) return;
     const title = fTitle.value.trim();
