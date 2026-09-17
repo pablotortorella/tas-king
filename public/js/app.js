@@ -12,7 +12,10 @@ import { api } from "./core/api.js";
 import { currentBoard, estado, getDoneColumnIds, memberByEmail } from "./core/state.js";
 import { emit, on } from "./core/bus.js";
 import { PALETTES, applyBoardPalette, initTheme } from "./theme.js";
-import { initWipPulse, runWipPulseSequence, startWipPulse, stopWipPulse } from "./feedback.js";
+import {
+  armarRealceDelTip, celebrateCard, initWipPulse, launchConfetti, maybeBlinkTip,
+  renderTipDaily, runWipPulseSequence, startWipPulse, stopWipPulse,
+} from "./feedback.js";
 import {
   applySavedCard, board, loadBoard, loadCards, loadGoals, loadMembers,
   render, updateBoardControls, withCardMutation,
@@ -35,6 +38,8 @@ import {
 
   initWipPulse();
   window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
+  window.maybeBlinkTip = maybeBlinkTip;            // hook manual / tests E2E
+  window.launchConfetti = launchConfetti;          // hook manual
 
   // Paleta fija para avatares por defecto (derivada del email).
   // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
@@ -66,60 +71,8 @@ import {
   // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
   // del tip cambie a la medianoche de la persona y no a la del servidor.
 
-  // El tip del día. El backend guarda un contador monótono de tips vistos; el
-  // ciclado se resuelve acá, junto al catálogo, para que agregar tips no toque
-  // el backend. Sin catálogo o sin avance, muestra el primero en vez de fallar.
-  function tipDelDia() {
-    const catalogo = globalThis.DAILY_TIPS;
-    if (!Array.isArray(catalogo) || !catalogo.length) return null;
-    const indice = Number.isInteger(estado.me && estado.me.tipIndex) ? estado.me.tipIndex : 0;
-    return catalogo[indice % catalogo.length];
-  }
 
-  // La franja del tip: permanente, sin descarte. Si no hay catálogo o no hay
-  // avance, no se muestra nada — nunca se rompe la carga del tablero por un tip.
-  function renderTipDaily() {
-    const franja = document.getElementById("tipDaily");
-    if (!franja) return;
-    const texto = tipDelDia();
-    if (!texto) { franja.hidden = true; return; }
-    document.getElementById("tipText").textContent = texto;
-    franja.hidden = false;
-  }
-
-  // Realce diario: una vez por día, tras la primera interacción con el tablero,
-  // la franja titila para que se la note. El tope es por dispositivo a propósito
-  // (ver design.md): quien entra desde el teléfono y desde la compu lo ve en cada
-  // pantalla, porque el realce sirve ahí donde la persona está mirando.
-  function maybeBlinkTip() {
-    const franja = document.getElementById("tipDaily");
-    if (!franja || franja.hidden) return;
-    const hoy = fechaLocal();
-    try {
-      if (localStorage.getItem("tasking-tip-blink-date") === hoy) return;
-      localStorage.setItem("tasking-tip-blink-date", hoy);
-    } catch (e) { /* modo privado: realzar igual, sin recordar */ }
-    franja.classList.remove("tip-blink");
-    void franja.offsetWidth;                 // reinicia la animación si ya estaba puesta
-    franja.classList.add("tip-blink");
-  }
-  window.maybeBlinkTip = maybeBlinkTip;      // hook manual / tests E2E
-
-  let realceArmado = false;
-  function armarRealceDelTip() {
-    if (realceArmado) return;                // loadBoard() se llama muchas veces
-    realceArmado = true;
-    const tablero = document.getElementById("board");
-    const alPrimerGesto = () => {
-      tablero && tablero.removeEventListener("pointerdown", alPrimerGesto);
-      document.removeEventListener("keydown", alPrimerGesto);
-      maybeBlinkTip();
-    };
-    tablero && tablero.addEventListener("pointerdown", alPrimerGesto);
-    document.addEventListener("keydown", alPrimerGesto);
-  }
-
-        // ---------- Polling de cambios en tiempo real ----------
+          // ---------- Polling de cambios en tiempo real ----------
   let pollTimer = null;
   let pollInFlight = false;
   let checklistRefreshPending = false;
@@ -1817,68 +1770,8 @@ import {
     }
   });
 
-  // ---------- Celebración: confeti + tarjeta titilante ----------
-  (function () {
-    const canvas = document.getElementById("confetti-canvas");
-    const ctx = canvas.getContext("2d");
-    const COLORS = ["#ffd700","#ff6b6b","#4ecdc4","#45b7d1","#96ceb4","#ff9ff3","#54a0ff","#5f27cd","#00d2d3","#ff9f43"];
-    let particles = [], rafId = null;
 
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    window.addEventListener("resize", resize);
-    resize();
-
-    function launch() {
-      particles = Array.from({ length: 160 }, () => ({
-        x: Math.random() * canvas.width,
-        y: -10 - Math.random() * 40,
-        r: 5 + Math.random() * 6,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.3,
-        vx: (Math.random() - 0.5) * 6,
-        vy: 3 + Math.random() * 5,
-        gravity: 0.18 + Math.random() * 0.1,
-        life: 1,
-        decay: 0.012 + Math.random() * 0.008,
-        shape: Math.random() > 0.5 ? "rect" : "circle",
-      }));
-      if (rafId) cancelAnimationFrame(rafId);
-      step();
-    }
-
-    function step() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles = particles.filter(p => p.life > 0);
-      for (const p of particles) {
-        ctx.save();
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle);
-        if (p.shape === "rect") ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
-        else { ctx.beginPath(); ctx.arc(0, 0, p.r / 2, 0, Math.PI * 2); ctx.fill(); }
-        ctx.restore();
-        p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
-        p.angle += p.spin; p.life -= p.decay;
-      }
-      if (particles.length) rafId = requestAnimationFrame(step);
-    }
-
-    window.launchConfetti = launch;
-  })();
-
-  function celebrateCard(cardId) {
-    window.launchConfetti();
-    const el = document.querySelector(`.card[data-id="${cardId}"]`);
-    if (!el) return;
-    el.classList.remove("celebrating");
-    void el.offsetWidth; // reflow para reiniciar la animación
-    el.classList.add("celebrating");
-    el.addEventListener("animationend", () => el.classList.remove("celebrating"), { once: true });
-  }
-
-  // ---------- Selector de tablero y nuevo tablero ----------
+    // ---------- Selector de tablero y nuevo tablero ----------
   document.getElementById("boardSelect").addEventListener("change", async e => {
     estado.currentBoardId = e.target.value;
     estado.assigneeFilter = "";
