@@ -1,21 +1,21 @@
 # HomeSuite Gastos — especificación funcional del MVP
 
-**Estado:** especificación de producto inicial; implementación no iniciada
+**Estado:** especificación de producto inicial actualizada; implementación no iniciada
 
-**Fecha:** 2026-09-16
+**Fecha:** 2026-09-17
 
 **Objetivo:** reemplazar Splitwise para familias, viajes, amigos y proyectos
 
 ## 1. Resultado buscado
 
-Una persona debe poder crear un grupo, incorporar participantes, registrar quién
-pagó y para quién, consultar balances confiables y registrar pagos para saldar.
-El grupo debe poder reconstruir y exportar la historia sin depender de HomeSuite.
+Una persona debe poder crear un grupo, incorporar participantes, registrar gastos,
+ingresos y transferencias, y consultar balances netos confiables. El grupo debe
+poder reconstruir y exportar la historia sin depender de HomeSuite.
 
 El MVP responde esta pregunta:
 
-> ¿Quién aportó dinero, a quién le correspondía el gasto y quién le debe cuánto a
-> quién, por moneda?
+> ¿Qué dinero pagó, recibió o entregó cada participante, cómo se repartió su efecto
+> y cuál es el saldo neto de cada persona, por moneda?
 
 No intenta responder todavía cuánto puede gastar el hogar, cómo evoluciona su flujo
 de caja o si una categoría excedió un presupuesto.
@@ -28,12 +28,14 @@ de caja o si una categoría excedió un presupuesto.
 - miembros con acceso y participantes sin cuenta;
 - invitación segura por email;
 - gastos con uno o varios pagadores;
-- reparto igual, exacto, porcentual o por partes;
-- moneda por operación y moneda predeterminada del libro;
+- ingresos compartidos con uno o varios receptores;
+- transferencias directas entre participantes, cualquiera sea su motivo;
+- reparto igual, exacto, porcentual o por partes para gastos e ingresos;
+- moneda por movimiento y moneda predeterminada del libro;
 - balances por participante y moneda;
-- pagos directos para saldar;
+- sugerencias de transferencias derivadas del saldo neto;
 - corrección y anulación con historial;
-- nota y comentarios básicos por operación;
+- nota y comentarios básicos por movimiento;
 - actividad del grupo;
 - exportación CSV y JSON;
 - archivo del grupo;
@@ -45,11 +47,14 @@ de caja o si una categoría excedió un presupuesto.
 - presupuesto, flujo de caja y patrimonio;
 - conexión con bancos o tarjetas;
 - ejecución real de pagos;
-- ingresos salariales y proyecciones;
+- importación de ingresos salariales, proyecciones y planificación financiera;
+- préstamos como contratos separados, con intereses, vencimientos o amortización;
+- obligaciones o deudas persistidas por movimiento;
+- fondos comunes y saldos de cuentas bancarias;
 - categorías analíticas avanzadas;
 - gastos recurrentes;
 - conversión automática o cotizaciones de moneda;
-- simplificación automática de deudas;
+- estrategias configurables o alternativas de optimización de transferencias;
 - OCR o escaneo inteligente de recibos;
 - notificaciones push o email de actividad;
 - adjuntos de comprobantes, salvo nueva evidencia de que son imprescindibles;
@@ -63,18 +68,24 @@ interfaz inicial ni introducir conceptos sin uso presente.
 
 - **Espacio:** contexto compartido de HomeSuite, por ejemplo “Familia” o “Viaje a
   Cartagena”. Puede contener recursos de varias herramientas.
-- **Libro:** recurso de Gastos que contiene participantes y operaciones. En la
+- **Libro:** recurso de Gastos que contiene participantes y movimientos. En la
   primera interfaz, crear un grupo crea un espacio y su primer libro.
 - **Miembro:** usuario autenticado con acceso al espacio.
 - **Participante:** persona incluida en pagos, repartos o balances. Puede no tener
   cuenta HomeSuite.
+- **Movimiento:** hecho financiero que afecta el saldo neto. Puede ser gasto,
+  ingreso o transferencia.
 - **Gasto:** operación donde determinados participantes aportaron dinero y el costo
   se asignó entre beneficiarios.
-- **Pago para saldar:** transferencia directa entre dos participantes que reduce la
-  deuda, sin cambiar el gasto histórico.
+- **Ingreso:** operación donde determinados participantes recibieron dinero cuyo
+  beneficio se asigna entre participantes.
+- **Transferencia:** dinero entregado directamente por un participante a otro. El
+  sistema no distingue si representa préstamo, adelanto, reintegro o pago parcial.
 - **Anulación:** operación compensatoria o estado explícito que invalida otra sin
   eliminar su rastro.
-- **Balance:** aporte menos parte asignada, calculado para un participante y moneda.
+- **Balance neto:** suma de los efectos de todos los movimientos vigentes de un
+  participante y moneda. Es la única posición financiera que expone el producto;
+  se deriva de movimientos y no convive con obligaciones separadas.
 
 ## 4. Roles y permisos
 
@@ -82,7 +93,7 @@ interfaz inicial ni introducir conceptos sin uso presente.
 
 - renombra y archiva el grupo;
 - administra roles y miembros;
-- crea, modifica y anula operaciones;
+- crea, modifica y anula movimientos;
 - administra participantes;
 - exporta toda la información;
 - transfiere la propiedad antes de abandonar el grupo.
@@ -90,18 +101,18 @@ interfaz inicial ni introducir conceptos sin uso presente.
 ### Miembro
 
 - consulta libro, participantes, balances y actividad;
-- crea gastos y pagos para saldar;
-- modifica o anula sus propias operaciones;
-- comenta operaciones;
+- crea gastos, ingresos y transferencias;
+- modifica o anula sus propios movimientos;
+- comenta movimientos;
 - exporta la información visible del libro.
 
 ### Participante sin cuenta
 
-- aparece en operaciones y balances;
+- aparece en movimientos y balances;
 - no tiene acceso ni permisos;
 - puede vincularse después a un usuario mediante invitación confirmada.
 
-La posibilidad de que un miembro edite operaciones ajenas queda limitada al
+La posibilidad de que un miembro edite movimientos ajenos queda limitada al
 propietario en el MVP. Toda corrección conserva autor, fecha y versión anterior.
 
 ## 5. Recorridos principales
@@ -112,7 +123,7 @@ propietario en el MVP. Toda corrección conserva autor, fecha y versión anterio
 2. Ingresa nombre, propósito opcional y moneda predeterminada.
 3. HomeSuite crea espacio, membresía de propietario, libro y participante vinculado
    al propietario en una única operación lógica.
-4. Se abre el estado vacío con acciones para agregar gasto o participantes.
+4. Se abre el estado vacío con acciones para agregar participantes o un movimiento.
 
 ### 5.2 Incorporar personas
 
@@ -129,7 +140,18 @@ participantes distintos de forma implícita.
 Los enlaces abiertos y reutilizables no forman parte del MVP; se evaluarán después
 con controles de aprobación y abuso.
 
-### 5.3 Registrar un gasto
+### 5.3 Elegir el tipo de movimiento
+
+La acción principal es “Agregar movimiento” y ofrece:
+
+- **Gasto:** alguien pagó algo que correspondía a una o más personas.
+- **Ingreso:** alguien recibió dinero que correspondía a una o más personas.
+- **Transferencia:** una persona le entregó dinero a otra.
+
+“Préstamo”, “adelanto”, “reintegro” y “pago parcial” no son tipos adicionales. Si
+resulta útil, se escriben en la descripción de una transferencia.
+
+### 5.4 Registrar un gasto
 
 Datos mínimos:
 
@@ -144,7 +166,35 @@ Datos mínimos:
 El flujo debe optimizar el caso frecuente: un pagador, todos participan y división
 igual. Las opciones avanzadas no deben estorbar ese recorrido.
 
-### 5.4 Corregir un gasto
+### 5.5 Registrar un ingreso
+
+Datos mínimos:
+
+- descripción;
+- fecha, con valor predeterminado de hoy;
+- importe positivo;
+- moneda, con valor predeterminado del libro;
+- uno o más receptores y los importes recibidos;
+- beneficiarios y método de reparto;
+- fuente externa y nota opcionales.
+
+El flujo frecuente asume un receptor, todos participan y división igual, pero cada
+supuesto es visible y modificable. Un alquiler recibido por una persona y compartido
+entre varias debe poder registrarse sin usar un gasto negativo.
+
+### 5.6 Registrar una transferencia
+
+1. El usuario elige origen y destino.
+2. Selecciona moneda e importe positivo.
+3. Agrega descripción o nota opcional.
+4. HomeSuite muestra el efecto esperado sobre el saldo neto cuando sea útil.
+5. Al confirmar, la transferencia queda en la cronología y modifica los balances.
+
+La transferencia no se vincula a un gasto, ingreso, deuda o préstamo. Puede reducir
+un saldo existente, aumentarlo o invertir su dirección. El cálculo es el mismo en
+todos los casos.
+
+### 5.7 Corregir un movimiento
 
 1. Un usuario autorizado abre la operación.
 2. Modifica datos y confirma.
@@ -155,43 +205,40 @@ igual. Las opciones avanzadas no deben estorbar ese recorrido.
 La interfaz debe mostrar quién realizó la última modificación y permitir consultar
 al menos el resumen de cambios. No se sobrescribe silenciosamente la historia.
 
-### 5.5 Anular un gasto
+### 5.8 Anular un movimiento
 
-La acción exige confirmación y motivo opcional. El gasto deja de afectar balances,
-pero permanece visible como anulado en actividad e historial. No existe borrado
-físico desde la interfaz normal.
+La acción exige confirmación y motivo opcional. El movimiento deja de afectar
+balances, pero permanece visible como anulado en actividad e historial. No existe
+borrado físico desde la interfaz normal.
 
-### 5.6 Saldar
-
-1. El usuario elige quién pagó a quién.
-2. Selecciona moneda e importe positivo.
-3. Puede usar como sugerencia el saldo actual entre ambos.
-4. HomeSuite registra una transferencia; no marca gastos individuales como pagados.
-5. Los balances se recalculan y la transferencia queda en la actividad.
-
-### 5.7 Consultar balances
+### 5.9 Consultar balances
 
 El grupo muestra:
 
 - saldo neto de cada participante por moneda;
-- detalle entre pares derivado del libro;
-- operaciones que explican el saldo;
-- sugerencias simples de pago, sin afirmar que son la única forma válida de saldar.
+- movimientos que explican el saldo;
+- sugerencias deterministas de transferencias para quedar a mano.
+
+La sugerencia es una proyección recalculable desde los saldos, no una obligación
+persistida entre pares ni la única forma válida de quedar a mano.
 
 Nunca se suman monedas distintas ni se presenta un total convertido sin tasa,
 fecha y consentimiento explícitos.
 
-### 5.8 Exportar y archivar
+### 5.10 Exportar y archivar
 
 - JSON preserva entidades, ids, monedas, revisiones y auditoría necesaria para una
   restauración portable.
-- CSV prioriza lectura y análisis: operaciones, pagadores, repartos y pagos pueden
-  exportarse en archivos separados o en una estructura documentada.
+- CSV prioriza lectura y análisis: movimientos, aportes, importes recibidos y
+  repartos pueden exportarse en archivos separados o en una estructura documentada.
 - Archivar vuelve el grupo de solo lectura por defecto y permite restaurarlo.
 - El propietario no puede eliminar definitivamente un libro con historia desde el
   flujo habitual.
 
 ## 6. Métodos de reparto
+
+Los mismos métodos se aplican a la parte asignada de un gasto y a la parte que
+corresponde de un ingreso. Cambia el sentido económico, no la mecánica de reparto.
 
 ### Igual
 
@@ -216,11 +263,12 @@ proporcional y conserva exactamente el importe original después de redondear.
 ## 7. Monedas
 
 - Cada libro tiene una moneda predeterminada, no exclusiva.
-- Cada operación usa una única moneda ISO 4217.
-- Todos sus pagos y repartos usan esa misma moneda.
+- Cada movimiento usa una única moneda ISO 4217.
+- Todos sus aportes, importes recibidos, transferencias y repartos usan esa moneda.
 - Los importes se guardan como enteros en la unidad menor definida para la moneda.
-- Balances, deudas y pagos para saldar se mantienen separados por moneda.
-- Cambiar la moneda predeterminada no convierte operaciones anteriores.
+- Los balances netos y las sugerencias de transferencia se mantienen separados por
+  moneda.
+- Cambiar la moneda predeterminada no convierte movimientos anteriores.
 - Monedas con cero o tres decimales deben contemplarse en el modelo aunque la
   primera experiencia se valide principalmente con COP, USD y EUR.
 
@@ -238,13 +286,16 @@ suma(asignaciones de beneficiarios) = importe
 moneda(aportes) = moneda(asignaciones) = moneda(gasto)
 ```
 
-Para cada moneda dentro de un libro:
+Para todo ingreso vigente:
 
 ```text
-suma(balance de todos los participantes) = 0
+importe > 0
+suma(importes recibidos) = importe
+suma(asignaciones de beneficiarios) = importe
+moneda(importes recibidos) = moneda(asignaciones) = moneda(ingreso)
 ```
 
-Para todo pago para saldar:
+Para toda transferencia vigente:
 
 ```text
 importe > 0
@@ -252,14 +303,33 @@ origen != destino
 origen y destino pertenecen al libro
 ```
 
+El efecto sobre el balance de un participante se calcula así:
+
+```text
+gasto        = importe pagado - parte asignada del gasto
+ingreso      = parte asignada del ingreso - importe recibido
+transferencia para origen  = +importe
+transferencia para destino = -importe
+saldo neto   = suma de efectos de movimientos vigentes
+```
+
+Un saldo positivo significa que al participante le corresponde recibir; uno
+negativo significa que debe aportar para quedar a mano.
+
+Para cada moneda dentro de un libro:
+
+```text
+suma(saldo neto de todos los participantes) = 0
+```
+
 Además:
 
-- una operación no referencia participantes de otro libro;
+- un movimiento no referencia participantes de otro libro;
 - un participante con historia no se elimina: se desactiva;
 - aceptar dos veces la misma escritura idempotente produce un único resultado;
 - una escritura parcial no puede quedar persistida;
-- anular o revisar una operación produce una nueva revisión auditable;
-- los balances se derivan de operaciones vigentes y no se editan directamente.
+- anular o revisar un movimiento produce una nueva revisión auditable;
+- los balances se derivan de movimientos vigentes y no se editan directamente.
 
 ## 9. Modelo conceptual de datos
 
@@ -277,8 +347,8 @@ Gastos
   expense_ledgers
   ledger_participants
   ledger_entries
-  entry_payers
-  entry_shares
+  entry_cash_parties
+  entry_allocations
   entry_revisions
   entry_comments
   ledger_events
@@ -289,14 +359,19 @@ Relaciones principales:
 
 - un libro pertenece a un espacio;
 - un participante pertenece a un libro y puede vincularse a un usuario;
-- una operación pertenece a un libro;
-- pagadores y beneficiarios son participantes del mismo libro;
+- un movimiento pertenece a un libro y tiene tipo gasto, ingreso o transferencia;
+- pagadores, receptores, orígenes, destinos y beneficiarios son participantes del
+  mismo libro;
 - revisiones y eventos son inmutables;
-- el estado vigente de una operación se puede reconstruir y auditar.
+- el estado vigente de un movimiento se puede reconstruir y auditar;
+- los saldos se derivan de movimientos vigentes y no constituyen obligaciones
+  separadas.
 
-Los pagos para saldar pueden representarse como un tipo de `ledger_entry` con
-origen y destino, siempre que sus invariantes no queden diluidas en condicionales
-ambiguos. El diseño físico deberá privilegiar claridad y constraints comprobables.
+El esquema físico de las partes de efectivo y asignaciones se decidirá durante
+OpenSpec. Debe permitir expresar simétricamente quién pagó un gasto, quién recibió
+un ingreso y cómo se asignó su efecto. No se crearán entidades de préstamo, deuda,
+obligación o repago. El diseño deberá privilegiar claridad y constraints
+comprobables.
 
 ## 10. API conceptual
 
@@ -328,7 +403,7 @@ libro para que el frontend actualice su estado sin recargar todas las coleccione
 - El servidor es la fuente de verdad de validaciones y balances.
 - El libro usa una revisión monotónica para detectar cambios.
 - El MVP puede comenzar con polling eficiente; WebSockets no son requisito.
-- Una reconexión no debe duplicar operaciones gracias a idempotencia.
+- Una reconexión no debe duplicar movimientos gracias a idempotencia.
 - Conflictos de edición muestran que existe una versión más reciente; no se aplica
   last-write-wins silencioso sobre información financiera.
 
@@ -342,8 +417,7 @@ Registrar como mínimo:
 - creación y archivo de grupo;
 - invitación, aceptación, revocación y cambio de rol;
 - alta, vinculación, renombre y desactivación de participante;
-- creación, revisión y anulación de gasto;
-- pago para saldar;
+- creación, revisión y anulación de gastos, ingresos y transferencias;
 - exportación administrativa si se decide auditarla.
 
 Cada evento contiene actor, instante, recurso, acción y datos mínimos para explicar
@@ -362,14 +436,16 @@ el cambio sin duplicar información sensible innecesaria.
 
 ### Rendimiento
 
-- abrir un libro no debe producir consultas N+1 por participante u operación;
-- crear un gasto usa una escritura transaccional y devuelve su estado confirmado;
+- abrir un libro no debe producir consultas N+1 por participante o movimiento;
+- crear cualquier movimiento usa una escritura transaccional y devuelve su estado
+  confirmado;
 - balances se calculan mediante consultas indexadas o una proyección verificable;
 - cualquier cache de balance es derivada y reconstruible, nunca fuente única.
 
 ### Accesibilidad y móvil
 
-- el flujo frecuente de gasto debe poder completarse con una mano;
+- los flujos frecuentes de gasto, ingreso y transferencia deben poder completarse
+  con una mano;
 - controles táctiles adecuados y teclado numérico para importes;
 - navegación completa por teclado;
 - etiquetas, errores y foco accesibles;
@@ -383,8 +459,10 @@ el cambio sin duplicar información sensible innecesaria.
 - monedas con 0, 2 y 3 decimales;
 - la suma de balances por moneda siempre es cero;
 - revisiones y anulaciones preservan historia;
-- pagos para saldar modifican balances como corresponde;
-- generación aleatoria de gastos válidos para comprobar invariantes.
+- gastos, ingresos y transferencias producen los efectos de balance definidos;
+- una transferencia obtiene el mismo resultado aunque su descripción diga
+  “préstamo”, “adelanto” o “pago parcial”;
+- generación aleatoria de movimientos válidos para comprobar invariantes.
 
 ### API e integración
 
@@ -393,7 +471,7 @@ el cambio sin duplicar información sensible innecesaria.
 - batch completo revierte ante cualquier fallo;
 - misma clave idempotente no duplica;
 - conflicto de revisión devuelve respuesta explícita;
-- exportación reproduce las operaciones vigentes y su moneda;
+- exportación reproduce los movimientos vigentes y su moneda;
 - restauración genera los mismos balances.
 
 ### E2E
@@ -401,9 +479,12 @@ el cambio sin duplicar información sensible innecesaria.
 - crear grupo, invitar, aceptar y ver el libro;
 - gasto igual entre varias personas;
 - gasto exacto con varios pagadores;
+- ingreso de alquiler recibido por una persona y repartido entre varias;
+- transferencia que reduce un saldo existente;
+- transferencia que aumenta o invierte un saldo existente;
+- adelanto seguido de un gasto que deja balances en cero;
 - edición concurrente o versión desactualizada;
 - anulación visible en actividad;
-- saldar una deuda;
 - uso móvil del recorrido frecuente;
 - aislamiento entre dos grupos bajo identidades distintas.
 
@@ -411,10 +492,11 @@ el cambio sin duplicar información sensible innecesaria.
 
 El MVP está listo para sustituir el uso cotidiano de Splitwise cuando:
 
-1. Un grupo real completa al menos un ciclo de creación, gastos y saldos.
+1. Un grupo real completa al menos un ciclo de creación, gastos, ingresos,
+   transferencias y consulta de saldos.
 2. Todas las invariantes se validan tanto en tests como en servidor.
-3. Dos personas pueden operar concurrentemente sin duplicar ni perder gastos.
-4. Cada saldo se puede explicar desde el detalle de operaciones.
+3. Dos personas pueden operar concurrentemente sin duplicar ni perder movimientos.
+4. Cada saldo se puede explicar desde el detalle de movimientos.
 5. Una corrección o anulación deja rastro visible.
 6. Los datos completos se pueden exportar y restaurar.
 7. La revocación de un miembro corta acceso sin borrar su participación histórica.
@@ -427,27 +509,29 @@ El MVP está listo para sustituir el uso cotidiano de Splitwise cuando:
 
 Orden orientativo, condicionado por uso real:
 
-1. simplificación de deudas como proyección reversible;
-2. adjuntos y comprobantes;
-3. gastos recurrentes y recordatorios;
-4. categorías y resúmenes simples;
-5. borrador de gasto desde HomeSuite Compras;
-6. devoluciones complejas y reembolsos vinculados;
-7. importadores de otras plataformas;
-8. presupuesto familiar;
-9. ingresos y fondos comunes;
-10. flujo de caja y proyecciones.
+1. adjuntos y comprobantes;
+2. movimientos recurrentes y recordatorios;
+3. categorías y resúmenes simples;
+4. borrador de gasto desde HomeSuite Compras;
+5. importadores de otras plataformas;
+6. cuentas o fondos comunes;
+7. presupuesto familiar;
+8. flujo de caja y proyecciones.
 
-Presupuesto y flujo deberán construirse como lecturas y reglas sobre operaciones
-financieras explícitas. No se convertirán los balances de deuda en una contabilidad
+Presupuesto y flujo deberán construirse como lecturas y reglas sobre movimientos
+financieros explícitos. No se convertirá el balance neto en una contabilidad
 doméstica implícita.
 
 ## 17. Decisiones pendientes para la fase OpenSpec
 
 Estas preguntas no bloquean la visión, pero deben resolverse antes de implementar:
 
-- ¿la simplificación de deudas se mantiene fuera del MVP o resulta indispensable
-  después de validar los primeros grupos reales?
+- ¿qué algoritmo determinista convierte saldos en transferencias sugeridas sin
+  persistir obligaciones entre pares?
+- ¿la primera interfaz necesita varios receptores para un ingreso o basta uno si el
+  modelo queda preparado para ampliarse?
+- ¿la fuente externa de un ingreso merece un campo propio o alcanza con la
+  descripción?
 - ¿comentarios serán conversación en hilo o una única nota editable?
 - ¿qué ventana de edición tendrá un miembro sobre su propia operación?
 - ¿cómo se presenta el redondeo cuando el residuo no se divide exactamente?
@@ -456,6 +540,7 @@ Estas preguntas no bloquean la visión, pero deben resolverse antes de implement
 
 ## Documentos relacionados
 
+- [Brief de exploración y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)

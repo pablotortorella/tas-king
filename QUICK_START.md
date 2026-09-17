@@ -154,6 +154,7 @@ npm run operator              # Menú interactivo con todas las operaciones + ay
 | ¿Hacia dónde evoluciona la suite? | `docs/HOMESUITE_VISION.md` | Visión, plataforma y secuencia |
 | ¿Cómo se organizan dominio, Workers y repo? | `docs/HOMESUITE_INFRASTRUCTURE.md` | DNS, ambientes y migración |
 | ¿Qué incluye el reemplazo de Splitwise? | `docs/HOMESUITE_GASTOS_MVP.md` | Alcance, reglas e invariantes |
+| ¿Qué ya se decidió para explorar Gastos? | `docs/HOMESUITE_GASTOS_EXPLORACION.md` | Tricount, saldo neto, ejemplos y preguntas abiertas |
 | ¿Cuál es el flujo de trabajo? | `docs/WORKFLOW.md` | Todo el documento |
 | ¿Qué pasó en la última sesión? | `AI_HANDOFF.md` | Sección "Último handoff" |
 | ¿Reglas y estándares? | `CLAUDE.md` | Todo el documento |

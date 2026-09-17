@@ -28,9 +28,10 @@ uso real en más de un producto.
   no significa una única interfaz con conceptos mezclados.
 - La primera herramienta nueva será **HomeSuite Gastos**. Su objetivo inicial es
   reemplazar Splitwise, no administrar el presupuesto completo del hogar.
-- La arquitectura de Gastos no debe impedir incorporar después categorías,
-  recurrencias, presupuestos, ingresos y flujo de caja, pero esas capacidades no
-  forman parte del MVP.
+- Gastos incluye desde el MVP ingresos compartidos que afectan el saldo neto. La
+  arquitectura no debe impedir incorporar después categorías, recurrencias,
+  presupuestos, análisis de ingresos y flujo de caja, pero esas capacidades
+  posteriores no forman parte del primer reemplazo de Splitwise.
 - HomeSuite Compras se diseñará después sobre la misma identidad, espacios e
   invitaciones. Las integraciones entre productos serán explícitas y confirmadas
   por la persona usuaria; no habrá automatismos sorpresivos.
@@ -272,5 +273,6 @@ HomeSuite habrá validado su primera etapa cuando:
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [Especificación del MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
+- [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
 - [Backlog del producto](PRODUCT_BACKLOG.md)
 - [ADRs históricos de TasKing](ADRs.md)

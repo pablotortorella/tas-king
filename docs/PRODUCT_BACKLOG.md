@@ -39,16 +39,18 @@ Orden estratégico inicial:
 3. migración gradual de TasKing a `/tareas`, sin big bang;
 4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
 
-Presupuesto, ingresos del hogar y flujo de caja son una evolución prevista, no
-parte del primer producto financiero. Antes de implementar cada etapa se seguirá
-el ciclo OpenSpec completo y se incorporarán sus tareas concretas a las prioridades
-de este backlog.
+Los ingresos compartidos que afectan el saldo neto sí forman parte del MVP.
+Presupuesto, análisis global de ingresos del hogar y flujo de caja son una evolución
+prevista, no parte del primer producto financiero. Antes de implementar cada etapa
+se seguirá el ciclo OpenSpec completo y se incorporarán sus tareas concretas a las
+prioridades de este backlog.
 
 Documentación fuente:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
+- [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
 ---
