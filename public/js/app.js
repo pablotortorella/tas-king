@@ -9,6 +9,7 @@ import {
   fmtDate, relativeTime, shortName, uid,
 } from "./core/dom.js";
 import { api } from "./core/api.js";
+import { estado } from "./core/state.js";
 
 (function () {
   "use strict";
@@ -39,10 +40,6 @@ import { api } from "./core/api.js";
   let boardGoals = [];         // objetivos del tablero actual (con progreso)
   let currentView = "tasks";   // "tasks" | "goals"
   let activeGoalFilter = null; // id de objetivo seleccionado en el panel (resalta sus tarjetas)
-  let pendingCardMutations = 0;
-  let cardMutationRevision = 0;
-  let boardLoadRevision = 0;
-  let boardRefreshPending = false;
 
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
@@ -277,11 +274,11 @@ import { api } from "./core/api.js";
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
     const boardId = currentBoardId;
-    const mutationRevision = cardMutationRevision;
-    const loadRevision = ++boardLoadRevision;
-    const isCurrent = () => boardId === currentBoardId && mutationRevision === cardMutationRevision
-      && loadRevision === boardLoadRevision && !pendingCardMutations && !(cardDrag && cardDrag.active);
-    if (pendingCardMutations) { boardRefreshPending = true; return false; }
+    const mutationRevision = estado.cardMutationRevision;
+    const loadRevision = ++estado.boardLoadRevision;
+    const isCurrent = () => boardId === currentBoardId && mutationRevision === estado.cardMutationRevision
+      && loadRevision === estado.boardLoadRevision && !estado.pendingCardMutations && !(cardDrag && cardDrag.active);
+    if (estado.pendingCardMutations) { estado.boardRefreshPending = true; return false; }
     if (!currentBoardId) {
       state = { cards: [], columns: [] }; COLUMNS = [];
       boardLabels = []; boardGoals = [];
@@ -306,24 +303,24 @@ import { api } from "./core/api.js";
     if (!isCurrent()) return false;
     boardLabels = nextLabels;
     boardGoals = nextGoals;
-    lastKnownVersion = state.version || 0;
+    estado.lastKnownVersion = state.version || 0;
     render();
     refreshGoalsUI();
     return true;
   }
 
   async function withCardMutation(action) {
-    pendingCardMutations++;
-    cardMutationRevision++;
+    estado.pendingCardMutations++;
+    estado.cardMutationRevision++;
     saveBtn.disabled = true;
     try { return await action(); }
     finally {
-      pendingCardMutations--;
-      cardMutationRevision++;
-      saveBtn.disabled = pendingCardMutations > 0;
+      estado.pendingCardMutations--;
+      estado.cardMutationRevision++;
+      saveBtn.disabled = estado.pendingCardMutations > 0;
       // Si se cambió de tablero durante la escritura, atender esa carga pendiente.
-      if (!pendingCardMutations && boardRefreshPending) {
-        boardRefreshPending = false;
+      if (!estado.pendingCardMutations && estado.boardRefreshPending) {
+        estado.boardRefreshPending = false;
         await loadCards().catch(e => console.error("No se pudo actualizar el tablero", e));
       }
     }
@@ -357,14 +354,13 @@ import { api } from "./core/api.js";
   }
 
   // ---------- Polling de cambios en tiempo real ----------
-  let lastKnownVersion = 0;
   let pollTimer = null;
   let pollInFlight = false;
   let checklistRefreshPending = false;
   const POLL_INTERVAL = 5000;
 
   async function pollTick() {
-    if (!currentBoardId || document.hidden || pendingCardMutations || pollInFlight) return;
+    if (!currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
     // loadCards() hace board.innerHTML = "" y reconstruye todas las tarjetas: si corre
     // mientras hay un arrastre en curso, el nodo de la tarjeta arrastrada queda huérfano
     // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
@@ -372,12 +368,12 @@ import { api } from "./core/api.js";
     // duplicando la tarjeta en pantalla hasta el siguiente poll. Se posterga al próximo tick.
     if (cardDrag && cardDrag.active) return;
     const boardId = currentBoardId;
-    const mutationRevision = cardMutationRevision;
+    const mutationRevision = estado.cardMutationRevision;
     pollInFlight = true;
     try {
       const { version } = await api("GET", "/api/boards/" + boardId + "/version");
-      if (boardId !== currentBoardId || mutationRevision !== cardMutationRevision || pendingCardMutations) return;
-      if (version !== lastKnownVersion) {
+      if (boardId !== currentBoardId || mutationRevision !== estado.cardMutationRevision || estado.pendingCardMutations) return;
+      if (version !== estado.lastKnownVersion) {
         const doneColIds = getDoneColumnIds();
         const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
         if (!(await loadCards())) return;
@@ -1952,7 +1948,7 @@ import { api } from "./core/api.js";
   // Guardar / eliminar / cancelar
   const saveBtn = document.getElementById("saveBtn");
   saveBtn.addEventListener("click", async () => {
-    if (pendingCardMutations) return;
+    if (estado.pendingCardMutations) return;
     const title = fTitle.value.trim();
     if (!title) { fTitle.focus(); fTitle.style.borderColor = "var(--danger)"; return; }
     fTitle.style.borderColor = "";
