@@ -1,8 +1,8 @@
 # HomeSuite — infraestructura, dominios y repositorio
 
-**Estado:** arquitectura acordada; dominio delegado a Cloudflare, DNSSEC pendiente
+**Estado:** dominio, Universal SSL y DNSSEC activos; landing local lista para preview
 
-**Fecha:** 2026-09-16
+**Fecha:** 2026-09-17
 
 ## Objetivo
 
@@ -21,7 +21,7 @@ autenticada modular.
 
 ## Estado comprobado del dominio
 
-Snapshot del 2026-09-16:
+Snapshot del 2026-09-17:
 
 - `homesuite.info` está registrado en GoDaddy hasta el 2029-09-16.
 - La zona fue incorporada a la cuenta Cloudflare que ya opera TasKing.
@@ -34,9 +34,11 @@ Snapshot del 2026-09-16:
 
 - GoDaddy recibió el cambio desde `ns43/ns44.domaincontrol.com` y resolvers
   públicos ya devolvían `irma` y `mack` al cerrar esta revisión.
-- Ambos nameservers de Cloudflare ya respondían autoritativamente por la zona.
-- DNSSEC todavía no está habilitado; esto es intencional hasta que Cloudflare
-  marque la zona como activa.
+- La zona figura activa y ambos nameservers de Cloudflare responden
+  autoritativamente.
+- Universal SSL figura activo y cubre `homesuite.info` y `*.homesuite.info`.
+- DNSSEC está activo. El DS publicado en `.info` usa etiqueta `2371`, algoritmo
+  `13` y digest SHA-256 (`2`); `1.1.1.1` devuelve la respuesta con bandera `ad`.
 - Los registros importados corresponden al parking de GoDaddy:
   - dos registros `A` en el apex;
   - `www` como CNAME al apex;
@@ -46,6 +48,11 @@ Snapshot del 2026-09-16:
 - `app.homesuite.info` y `staging.homesuite.info` todavía no tienen contenido.
 - Wrangler quedó autenticado en la cuenta Cloudflare correcta para operaciones
   posteriores de Workers.
+- La rama local `feature/homesuite-landing` contiene `apps/site`, su change
+  OpenSpec y pruebas aisladas en verde. Todavía no fue pusheada ni desplegada.
+- El apex devuelve temporalmente error 525 porque los registros de parking de
+  GoDaddy siguen proxificados. Se reemplazarán al asociar el Custom Domain; no se
+  habilitó HSTS ni se aplicó una solución insegura como el modo Flexible.
 
 Este snapshot no es una fuente dinámica. Antes de cualquier modificación se debe
 volver a comprobar DNS y estado de la zona.
@@ -276,7 +283,7 @@ Worker por `workers.dev`, luego se cambia el DNS o se asocia el Custom Domain.
 
 ### DNSSEC
 
-DNSSEC se habilita solamente después de que la zona esté activa:
+DNSSEC se habilitó después de que la zona quedó activa, siguiendo este orden:
 
 1. activar DNSSEC en Cloudflare;
 2. copiar exactamente el registro DS generado;
@@ -286,6 +293,13 @@ DNSSEC se habilita solamente después de que la zona esté activa:
 
 Un DS incorrecto vuelve irresoluble el dominio; no se improvisa ni se activa en
 ambos lados fuera de este orden.
+
+Registro confirmado públicamente el 2026-09-17:
+
+```text
+homesuite.info. 3600 IN DS 2371 13 2
+C97FB65EB7352A4B8C668FE46406A921A0FAFAA113EBC44A54C4C3E90F3B4233
+```
 
 ### TLS y HSTS
 
@@ -321,8 +335,9 @@ flujo de invitaciones, no a la activación básica del dominio.
 
 ## Secuencia de migración
 
-1. Completar activación de la zona y DNSSEC.
-2. Crear `apps/site` y desplegar una landing mínima en `workers.dev`.
+1. ✅ Completar activación de la zona, Universal SSL y DNSSEC.
+2. 🟡 Crear `apps/site` y desplegar una landing mínima en `workers.dev`: código y
+   pruebas locales completos; preview remoto pendiente de autorización.
 3. Asociar apex y `www` a `homesuite-site`; verificar HTTPS y redirección.
 4. Crear el esqueleto de `apps/app` sin mover todavía TasKing.
 5. Crear `homesuite-app-staging` y asociar `staging.homesuite.info`.
@@ -401,7 +416,7 @@ La base de dominio estará resuelta cuando:
 ## Referencias
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
-- [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+- [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
 - [Cloudflare: configuración DNS primaria](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/)
 - [Cloudflare: Custom Domains de Workers](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)

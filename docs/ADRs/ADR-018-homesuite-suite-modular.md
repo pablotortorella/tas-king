@@ -1,4 +1,4 @@
-# ADR-017: HomeSuite como suite modular bajo un origen autenticado
+# ADR-018: HomeSuite como suite modular bajo un origen autenticado
 
 **Fecha:** 2026-09-16
 

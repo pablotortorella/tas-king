@@ -22,9 +22,9 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 ## 🏠 Horizonte de producto: HomeSuite
 
-**Estado:** visión y MVP documentados; implementación no iniciada. No reemplaza
-automáticamente el foco vigente de TasKing ni constituye un change activo de
-OpenSpec.
+**Estado:** visión y MVP documentados; dominio base activo y primera landing
+implementada localmente en un change OpenSpec aislado. No reemplaza
+automáticamente el foco vigente de TasKing.
 
 HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
 compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
@@ -49,7 +49,7 @@ Documentación fuente:
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
-- [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+- [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
 ---
 

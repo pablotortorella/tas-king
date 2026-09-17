@@ -1,8 +1,8 @@
 # HomeSuite — visión de producto y plataforma
 
-**Estado:** dirección acordada; implementación no iniciada
+**Estado:** dirección acordada; dominio base activo y landing implementada localmente
 
-**Fecha:** 2026-09-16
+**Fecha:** 2026-09-17
 
 **Dominio adquirido:** `homesuite.info`
 
@@ -269,7 +269,7 @@ HomeSuite habrá validado su primera etapa cuando:
 
 ## Documentos relacionados
 
-- [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+- [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [Especificación del MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
 - [Backlog del producto](PRODUCT_BACKLOG.md)

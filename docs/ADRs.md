@@ -9,7 +9,7 @@ Formato: [ADR0001](https://adr.github.io/) adaptado.
 - [ADR-014: estándares de interacción por teclado](ADRs/ADR-014-keyboard-ux-standards.md)
 - [ADR-015: revocación de acceso efectiva](ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
 - [ADR-016: revisión persistente para sincronización](ADRs/ADR-016-board-sync-revision.md)
-- [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+- [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
 ---
 
