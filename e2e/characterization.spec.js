@@ -200,3 +200,30 @@ test("el script anti-flash sigue siendo clásico y bloqueante en el head", async
   expect(attrs.type).toBeNull();
   expect(attrs.antesDelCss).toBe(true);
 });
+
+// ---------- Actividad del tablero: el render de una entrada ----------
+
+test("la actividad del admin renderiza entradas con avatar del autor", async ({ page }) => {
+  // Este test existe por un bug concreto: al extraer admin.js, renderActivity
+  // quedó usando avatarHtml sin importarlo. La suite siguió en verde porque
+  // ningún test llegaba a esa rama — solo se ejecuta cuando HAY actividad, y
+  // los tests que abrían el tab no garantizaban que la hubiera.
+  //
+  // Por eso acá se genera actividad primero y se afirma el contenido de una
+  // entrada, no solo que el panel esté visible.
+  const titulo = `E2E actividad ${Date.now().toString(36)}`;
+  await page.locator('.add-card[data-col="pendiente"]').click();
+  await page.locator("#fTitle").fill(titulo);
+  await page.locator("#saveBtn").click();
+  await expect(page.locator("#overlay")).not.toHaveClass(/open/);
+
+  await page.locator("#adminBtn").click();
+  await expect(page.locator("#adminTabActividad")).toHaveClass(/active/);
+
+  const entradas = page.locator("#adminActivityList .activity-entry");
+  await expect(entradas.first()).toBeVisible();
+
+  // El avatar del autor: es lo que rompía sin el import.
+  await expect(entradas.first().locator(".avatar")).toBeVisible();
+  await expect(page.locator("#adminActivityList")).toContainText(titulo);
+});

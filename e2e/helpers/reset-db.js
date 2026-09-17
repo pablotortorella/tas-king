@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import { resolve } from "path";
+import { esBaseBloqueada } from "./sqlite-busy.js";
 
 const root = resolve(process.cwd());
 
@@ -23,10 +24,6 @@ function esperar(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
-function estaOcupada(e) {
-  const salida = `${e.stdout ?? ""}${e.stderr ?? ""}${e.message ?? ""}`;
-  return /SQLITE_BUSY|database is locked/i.test(salida);
-}
 
 export function resetDb() {
   for (let intento = 1; intento <= INTENTOS; intento++) {
@@ -34,7 +31,7 @@ export function resetDb() {
       execSync(COMANDO, { cwd: root, stdio: "pipe" });
       return;
     } catch (e) {
-      if (!estaOcupada(e) || intento === INTENTOS) throw e;
+      if (!esBaseBloqueada(e) || intento === INTENTOS) throw e;
       const espera = ESPERA_BASE_MS * 2 ** (intento - 1);
       console.warn(`[reset-db] base bloqueada, reintento ${intento}/${INTENTOS - 1} en ${espera}ms`);
       esperar(espera);
