@@ -151,6 +151,8 @@ npm run operator              # Menú interactivo con todas las operaciones + ay
 |---|---|---|
 | ¿Qué features existen? | `docs/STATUS.md` | Features Implementados/NO Implementados |
 | ¿Por qué se decidió así? | `docs/ADRs.md` | Decisiones arquitectónicas |
+| ¿Hacia dónde evoluciona la suite? | `docs/HOMESUITE_VISION.md` | Visión, plataforma y secuencia |
+| ¿Qué incluye el reemplazo de Splitwise? | `docs/HOMESUITE_GASTOS_MVP.md` | Alcance, reglas e invariantes |
 | ¿Cuál es el flujo de trabajo? | `docs/WORKFLOW.md` | Todo el documento |
 | ¿Qué pasó en la última sesión? | `AI_HANDOFF.md` | Sección "Último handoff" |
 | ¿Reglas y estándares? | `CLAUDE.md` | Todo el documento |

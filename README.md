@@ -5,6 +5,20 @@ API, **D1** (SQLite) para los datos y **R2** para los archivos. El frontend es u
 `public/index.html` sin build. Cada persona entra con su cuenta de Google (OAuth directo
 en el Worker), tiene su tablero personal y puede crear tableros compartidos.
 
+## Evolución hacia HomeSuite
+
+TasKing seguirá operativo mientras evoluciona gradualmente para formar parte de
+**HomeSuite**, una suite de herramientas compartidas bajo `homesuite.info`. La
+dirección acordada incorpora primero un reemplazo propio de Splitwise y después una
+mejor experiencia de listas de compras, reutilizando identidad e infraestructura sin
+mezclar sus dominios.
+
+Esta evolución está documentada, pero todavía no implementada:
+
+- [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
+- [MVP de HomeSuite Gastos](docs/HOMESUITE_GASTOS_MVP.md)
+- [ADR-017: arquitectura modular](docs/ADRs/ADR-017-homesuite-suite-modular.md)
+
 ## Requisitos
 
 - Node.js 18+

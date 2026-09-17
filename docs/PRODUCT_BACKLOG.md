@@ -20,6 +20,37 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 ---
 
+## 🏠 Horizonte de producto: HomeSuite
+
+**Estado:** visión y MVP documentados; implementación no iniciada. No reemplaza
+automáticamente el foco vigente de TasKing ni constituye un change activo de
+OpenSpec.
+
+HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
+compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
+operación mediante un monolito modular, manteniendo separados los dominios de
+Tareas, Gastos y Compras.
+
+Orden estratégico inicial:
+
+1. plataforma mínima: identidad estable, sesión, espacios e invitaciones;
+2. **HomeSuite Gastos**, con el objetivo concreto de reemplazar Splitwise;
+3. migración gradual de TasKing a `/tareas`, sin big bang;
+4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
+
+Presupuesto, ingresos del hogar y flujo de caja son una evolución prevista, no
+parte del primer producto financiero. Antes de implementar cada etapa se seguirá
+el ciclo OpenSpec completo y se incorporarán sus tareas concretas a las prioridades
+de este backlog.
+
+Documentación fuente:
+
+- [Visión de HomeSuite](HOMESUITE_VISION.md)
+- [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
+- [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+
+---
+
 ## ✅ Completado
 
 | # | Feature | Notas |
