@@ -3,6 +3,7 @@ import { createCorsMiddleware } from "./middleware/cors.js";
 import { createLoggingMiddleware, logger, getClientIP } from "./middleware/logging.js";
 import { createAuthMiddleware, requireAdmin } from "./middleware/auth.js";
 import { setupAuthRoutes } from "./routes/auth.js";
+import { setupDocumentRoutes } from "./routes/documents.js";
 import { setupUserRoutes } from "./routes/users.js";
 import { setupBoardRoutes } from "./routes/boards.js";
 import { setupCardRoutes } from "./routes/cards.js";
@@ -43,6 +44,10 @@ app.onError((err, c) => {
     method: c.req.method,
   }, 500);
 });
+
+// ---------- Public Routes (Documentos HTML) ----------
+// Antes de /api/*: estas rutas no llevan auth (ver routes/documents.js).
+setupDocumentRoutes(app);
 
 // ---------- Public Routes (Auth) ----------
 setupAuthRoutes(app);
