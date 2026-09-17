@@ -4,7 +4,21 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 2 : 0,
+  // Un reintento en local, no para tapar fallas sino para que la suite siga
+  // siendo utilizable como red de seguridad del refactor.
+  //
+  // Lo que se sabe: cada tanto (~1 de cada 4 corridas completas) el beforeEach de
+  // card-mutation-performance se cuelga en page.goto. La traza muestra que el
+  // documento y los primeros assets responden, y que dos subrecursos quedan sin
+  // completarse nunca — por eso el evento `load` no dispara y no alcanza con
+  // agrandar el timeout. Solo pasa dentro de una corrida completa: no se reproduce
+  // con 200 requests en paralelo ni con seis resets de base simultáneos.
+  //
+  // Lo que NO se sabe: la causa. Playwright reporta aparte los tests que pasaron
+  // en reintento, con la etiqueta "flaky", así que esto no esconde el problema:
+  // lo deja contado. Si ese contador deja de ser cero de forma persistente, o
+  // aparece en otros specs, hay que volver acá.
+  retries: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? "github" : "list",
   globalSetup: "./test/global-setup.mjs",
   use: {
