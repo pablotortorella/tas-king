@@ -331,3 +331,44 @@ function renderCard(card) {
   el.addEventListener("pointerdown", e => emit("tarjeta:arrastre", { e, el, card }));
   return el;
 }
+
+// Texto legible de un evento del log de auditoría.
+//
+// Vive acá y no con el modal porque lo usan dos features —el historial de una
+// tarjeta y la actividad del tablero en el panel de administración— y lee las
+// columnas del tablero. Una feature puede importar del tablero; de otra feature, no.
+export function actionLabel(action, details) {
+  const d = details || {};
+  // Prefiere el nombre guardado en el evento; cae en el nombre actual como fallback para eventos viejos.
+  const colName = (id, saved) => saved || (estado.COLUMNS.find(c => c.id === id) || { name: id }).name;
+  switch (action) {
+    case "card_created":
+      return d.column ? `Creó la tarjeta en "${colName(d.column, d.columnName)}"` : "Creó la tarjeta";
+    case "card_deleted":   return "Eliminó la tarjeta";
+    case "card_archived":  return "Archivó la tarjeta";
+    case "card_restored":  return "Restauró la tarjeta";
+    case "comment_added":  return "Comentó";
+    case "attachment_added":
+      return d.files && d.files.length ? `Adjuntó: ${d.files.join(", ")}` : "Subió un adjunto";
+    case "card_moved":
+      return d.column ? `Movió a "${colName(d.column.to, d.column.toName)}"` : "Movió la tarjeta";
+    case "card_edited": {
+      const parts = [];
+      if (d.title)    parts.push("cambió el título");
+      if (d.column)   parts.push(`movió a "${colName(d.column.to, d.column.toName)}"`);
+      if (d.details)  parts.push("editó la descripción");
+      if (d.due)      parts.push(d.due.to ? `fecha: ${d.due.to}` : "quitó la fecha");
+      if (d.assignee) parts.push(d.assignee.to ? `asignó a ${shortName(d.assignee.to)}` : "quitó el responsable");
+      return parts.length ? `Editó: ${parts.join(", ")}` : "Editó la tarjeta";
+    }
+    case "column_renamed":
+      return d.from && d.to ? `Renombró columna "${d.from}" → "${d.to}"` : "Renombró una columna";
+    case "column_created":
+      return d.name ? `Creó la columna "${d.name}"` : "Creó una columna";
+    case "column_deleted":
+      return d.name ? `Eliminó la columna "${d.name}"` : "Eliminó una columna";
+    case "column_moved":
+      return d.name ? `Movió "${d.name}" hacia la ${d.direction === "left" ? "izquierda" : "derecha"}` : "Reordenó columnas";
+    default: return action;
+  }
+}
