@@ -28,4 +28,14 @@ export const estado = {
   boardLoadRevision: 0,
   boardRefreshPending: false,
   lastKnownVersion: 0,
+
+  // ---------- Filtros y vista ----------
+  // Qué subconjunto de tarjetas se está mirando. Nada de esto se persiste: son
+  // decisiones de la sesión en curso.
+  searchQuery: "",               // texto del buscador (minúsculas)
+  assigneeFilter: "",            // email del responsable filtrado, o "" = todos
+  urgentFilter: false,           // solo tareas urgentes (vencen hoy/mañana)
+  activeLabelFilters: new Set(), // ids de etiquetas para filtro OR
+  activeGoalFilter: null,        // id de objetivo seleccionado (resalta sus tarjetas)
+  currentView: "tasks",          // "tasks" | "goals"
 };

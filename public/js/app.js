@@ -32,14 +32,8 @@ import { estado } from "./core/state.js";
   let removedAttachmentIds = []; // ids de adjuntos existentes marcados para borrar al guardar
   let draftChecklists = [];    // checklists en borrador para tarjetas nuevas (aún sin guardar)
   let draftGoals = [];         // goal ids seleccionados para tarjetas nuevas (aún sin guardar)
-  let searchQuery = "";        // texto del buscador (minúsculas)
-  let assigneeFilter = "";     // email del responsable filtrado, o "" = todos
-  let urgentFilter = false;    // solo tareas urgentes (vencen hoy/mañana)
-  let activeLabelFilters = new Set(); // ids de etiquetas para filtro OR
   let boardLabels = [];        // etiquetas del tablero actual
   let boardGoals = [];         // objetivos del tablero actual (con progreso)
-  let currentView = "tasks";   // "tasks" | "goals"
-  let activeGoalFilter = null; // id de objetivo seleccionado en el panel (resalta sus tarjetas)
 
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
@@ -448,7 +442,7 @@ import { estado } from "./core/state.js";
 
   function renderAssigneeFilter() {
     const sel = document.getElementById("assigneeFilter");
-    const prev = assigneeFilter;
+    const prev = estado.assigneeFilter;
     sel.innerHTML = '<option value="">👤 Todos</option>';
     members.forEach(m => {
       const o = document.createElement("option");
@@ -456,7 +450,7 @@ import { estado } from "./core/state.js";
       sel.appendChild(o);
     });
     if (members.some(m => m.email === prev)) sel.value = prev;
-    else { assigneeFilter = ""; sel.value = ""; }
+    else { estado.assigneeFilter = ""; sel.value = ""; }
   }
 
 
@@ -484,7 +478,7 @@ import { estado } from "./core/state.js";
   const goalsDrawerList = document.getElementById("goalsDrawerList");
 
   function showView(view) {
-    currentView = view;
+    estado.currentView = view;
     const isGoals = view === "goals";
     board.style.display = isGoals ? "none" : "";
     goalsBoard.style.display = isGoals ? "" : "none";
@@ -495,7 +489,7 @@ import { estado } from "./core/state.js";
   // las tarjetas vinculadas en el tablero (atenúa el resto).
   function buildGoalCard(goal, selectable) {
     const card = document.createElement("div");
-    card.className = "goal-card" + (selectable && activeGoalFilter === goal.id ? " selected" : "");
+    card.className = "goal-card" + (selectable && estado.activeGoalFilter === goal.id ? " selected" : "");
     const doneClass = goal.total > 0 && goal.done === goal.total ? " done" : "";
     card.innerHTML = `
       <div class="goal-head">
@@ -577,19 +571,19 @@ import { estado } from "./core/state.js";
   function closeGoalsDrawer() {
     goalsDrawer.classList.remove("open");
     document.body.classList.remove("drawer-open");
-    if (activeGoalFilter) { activeGoalFilter = null; render(); } // limpia el resaltado
+    if (estado.activeGoalFilter) { estado.activeGoalFilter = null; render(); } // limpia el resaltado
   }
 
   function toggleGoalsDrawer() {
     if (goalsDrawer.classList.contains("open")) { closeGoalsDrawer(); return; }
-    if (currentView === "goals") showView("tasks"); // el panel trabaja sobre el tablero
+    if (estado.currentView === "goals") showView("tasks"); // el panel trabaja sobre el tablero
     openGoalsDrawer();
   }
 
   // Selecciona/deselecciona un objetivo para resaltar sus tarjetas en el tablero.
   function toggleGoalFilter(goalId) {
-    activeGoalFilter = activeGoalFilter === goalId ? null : goalId;
-    if (currentView === "goals") showView("tasks"); // el resaltado se ve en el tablero
+    estado.activeGoalFilter = estado.activeGoalFilter === goalId ? null : goalId;
+    if (estado.currentView === "goals") showView("tasks"); // el resaltado se ve en el tablero
     render();
     refreshGoalsUI();
   }
@@ -623,7 +617,7 @@ import { estado } from "./core/state.js";
     if (!confirm(`¿Eliminar el objetivo “${goal.title}”?\n\nLas tarjetas no se borran, solo se desvinculan.`)) return;
     try {
       await api("DELETE", "/api/boards/" + currentBoardId + "/goals/" + goal.id);
-      if (activeGoalFilter === goal.id) activeGoalFilter = null;
+      if (estado.activeGoalFilter === goal.id) estado.activeGoalFilter = null;
       await loadCards(); // refresca también las tarjetas (perdieron el vínculo)
     } catch (e) { alert("No se pudo eliminar el objetivo: " + e.message); }
   }
@@ -792,22 +786,22 @@ import { estado } from "./core/state.js";
 
   // ¿La tarjeta coincide con el texto buscado? (título, detalles y comentarios)
   function matchesSearch(card) {
-    if (!searchQuery) return true;
+    if (!estado.searchQuery) return true;
     const haystack = [
       card.title,
       card.details,
       ...(card.comments || []).map(c => c.text),
     ].join(" ").toLowerCase();
-    return haystack.includes(searchQuery);
+    return haystack.includes(estado.searchQuery);
   }
 
   function matchesAssignee(card) {
-    return !assigneeFilter || card.assignee === assigneeFilter;
+    return !estado.assigneeFilter || card.assignee === estado.assigneeFilter;
   }
 
   function matchesLabels(card) {
-    if (activeLabelFilters.size === 0) return true;
-    return (card.labels || []).some(l => activeLabelFilters.has(l.id));
+    if (estado.activeLabelFilters.size === 0) return true;
+    return (card.labels || []).some(l => estado.activeLabelFilters.has(l.id));
   }
 
   function isOwner() {
@@ -820,7 +814,7 @@ import { estado } from "./core/state.js";
     board.innerHTML = "";
     const owner = isOwner();
     COLUMNS.forEach((col, colIdx) => {
-      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!urgentFilter || isUrgent(c)));
+      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!estado.urgentFilter || isUrgent(c)));
       const activeCards = state.cards.filter(c => c.column === col.id && !c.archived).length;
       const colEl = document.createElement("div");
       colEl.className = "column";
@@ -943,8 +937,8 @@ import { estado } from "./core/state.js";
     el.dataset.id = card.id;
 
     // Resaltado por objetivo seleccionado: las vinculadas se marcan, el resto se atenúa.
-    if (activeGoalFilter) {
-      if ((card.goals || []).some(g => g.id === activeGoalFilter)) el.classList.add("card-goal-match");
+    if (estado.activeGoalFilter) {
+      if ((card.goals || []).some(g => g.id === estado.activeGoalFilter)) el.classList.add("card-goal-match");
       else el.classList.add("card-dimmed");
     }
 
@@ -2226,11 +2220,11 @@ import { estado } from "./core/state.js";
 
   // ---------- Buscador y filtro por responsable ----------
   document.getElementById("searchInput").addEventListener("input", e => {
-    searchQuery = e.target.value.trim().toLowerCase();
+    estado.searchQuery = e.target.value.trim().toLowerCase();
     render();
   });
   document.getElementById("assigneeFilter").addEventListener("change", e => {
-    assigneeFilter = e.target.value;
+    estado.assigneeFilter = e.target.value;
     render();
   });
 
@@ -2317,8 +2311,8 @@ import { estado } from "./core/state.js";
   // ---------- Selector de tablero y nuevo tablero ----------
   document.getElementById("boardSelect").addEventListener("change", async e => {
     currentBoardId = e.target.value;
-    assigneeFilter = "";
-    activeGoalFilter = null;
+    estado.assigneeFilter = "";
+    estado.activeGoalFilter = null;
     closeGoalsDrawer();
     showView("tasks");
     updateBoardControls();
@@ -2822,17 +2816,17 @@ import { estado } from "./core/state.js";
   // F: alterna el filtro entre "mis tareas" (asignadas a mí) y "todos".
   function toggleMyTasks() {
     if (!me) return;
-    assigneeFilter = (assigneeFilter === me.email) ? "" : me.email;
+    estado.assigneeFilter = (estado.assigneeFilter === me.email) ? "" : me.email;
     const sel = document.getElementById("assigneeFilter");
-    sel.value = [...sel.options].some(o => o.value === assigneeFilter) ? assigneeFilter : "";
-    if (sel.value !== assigneeFilter) assigneeFilter = sel.value;  // por si no soy opción del filtro
+    sel.value = [...sel.options].some(o => o.value === estado.assigneeFilter) ? estado.assigneeFilter : "";
+    if (sel.value !== estado.assigneeFilter) estado.assigneeFilter = sel.value;  // por si no soy opción del filtro
     render();
   }
 
   // U: alterna el filtro de urgentes (vencen hoy/mañana).
   function toggleUrgent() {
-    urgentFilter = !urgentFilter;
-    document.getElementById("urgentBtn").classList.toggle("urgent-on", urgentFilter);
+    estado.urgentFilter = !estado.urgentFilter;
+    document.getElementById("urgentBtn").classList.toggle("urgent-on", estado.urgentFilter);
     render();
   }
   document.getElementById("urgentBtn").addEventListener("click", toggleUrgent);
@@ -2867,17 +2861,17 @@ import { estado } from "./core/state.js";
     else if (k === "u") { e.preventDefault(); toggleUrgent(); }
     else if (k === "n") { e.preventDefault(); newCardUnderMouse(); }
     else if (k === "p") { e.preventDefault(); runWipPulseSequence({ alwaysShowMessage: true }); }
-    else if (k === "0") { e.preventDefault(); activeLabelFilters.clear(); render(); }
+    else if (k === "0") { e.preventDefault(); estado.activeLabelFilters.clear(); render(); }
     else if (k >= "1" && k <= "9") {
       const idx = parseInt(k) - 1;
       const label = boardLabels[idx];
       if (label) {
         e.preventDefault();
-        if (activeLabelFilters.has(label.id)) {
-          activeLabelFilters.delete(label.id);
+        if (estado.activeLabelFilters.has(label.id)) {
+          estado.activeLabelFilters.delete(label.id);
         } else {
-          activeLabelFilters.clear();
-          activeLabelFilters.add(label.id);
+          estado.activeLabelFilters.clear();
+          estado.activeLabelFilters.add(label.id);
         }
         render();
       }
