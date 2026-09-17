@@ -217,14 +217,15 @@ h1 {
 
 .roof {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   top: 0;
   left: 50%;
-  width: 210px;
-  height: 210px;
-  border-radius: 20px 7px 14px 7px;
+  width: 270px;
+  height: 130px;
   background: var(--coral);
-  transform: translateX(-50%) rotate(45deg);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 8px 0 rgba(111, 62, 47, .08));
+  transform: translateX(-50%);
 }
 
 .wall {

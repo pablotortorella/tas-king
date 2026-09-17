@@ -64,7 +64,8 @@ describe("homesuite-site", () => {
       "utf8",
     );
 
-    expect(html).toContain("Bienvenido a casa");
+    expect(html).toContain("Te damos la bienvenida a casa");
+    expect(html).toContain("Conocé las herramientas");
     expect(html).toContain("Abrir Fun TasKing");
     expect(html).toContain("https://tas-king.pablotortorella.workers.dev");
     expect(html).toContain("Gastos");

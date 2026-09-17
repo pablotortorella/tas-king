@@ -10,6 +10,7 @@ test("presenta HomeSuite y permite entrar a Fun TasKing", async ({ page }) => {
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
   await expect(page.getByText("Gastos", { exact: true })).toBeVisible();
   await expect(page.getByText("Compras", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Conocé las herramientas" })).toBeVisible();
 
   const taskingLink = page.getByRole("link", { name: "Abrir Fun TasKing" });
   await expect(taskingLink).toHaveAttribute(
