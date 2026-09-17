@@ -62,11 +62,11 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 5.10 `drag.js`: arrastre de tarjetas con Pointer Events + paneo del tablero
 - [ ] 5.11 `card-modal.js`: apertura/cierre, comentarios, historial, adjuntos
 - [ ] 5.12 `checklists.js`
-- [ ] 5.13 `goals.js`: vista de objetivos, panel lateral y objetivos dentro del modal
-- [ ] 5.14 `metrics.js`: burn-up, WIP, «¡Pilas con esto!», quietas y por vencer
+- [x] 5.13 `goals.js`: vista de objetivos, panel lateral y objetivos dentro del modal
+- [x] 5.14 `metrics.js`: burn-up, WIP, «¡Pilas con esto!», quietas y por vencer
 - [ ] 5.15 `labels.js`: etiquetas en tarjeta + administrador de etiquetas del tablero
-- [ ] 5.16 `columns.js`: crear, renombrar, mover y eliminar columnas
-- [ ] 5.17 `boards.js`: selector de tablero, miembros, tabs de configuración, perfil, renombrar y borrar
+- [x] 5.16 `columns.js`: crear, renombrar, mover y eliminar columnas
+- [x] 5.17 `boards.js`: selector de tablero, miembros, tabs de configuración, perfil, renombrar y borrar
 - [x] 5.18 `io.js`: exportar/importar JSON y CSV, vista previa de importación
 - [x] 5.19 `admin.js`: panel de administración, stats, actividad, pendientes
 - [ ] 5.20 `keyboard.js`: atajos, cadena de Escape, modal de ayuda, deep-link
