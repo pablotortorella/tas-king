@@ -504,6 +504,9 @@
 <!-- Catálogo de tips diarios: el orden del array es la progresión pedagógica -->
 <script src="/tips.js"></script>
 
-<script src="/js/app.js"></script>
+<!-- Modulo ES: ejecucion diferida (despues del parseo). tips.js queda como
+     script clasico y corre antes, que es lo que garantiza que globalThis.DAILY_TIPS
+     ya exista cuando arranca app.js. Ver ADR-017. -->
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>
