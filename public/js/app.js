@@ -4,6 +4,11 @@
 // comportamiento: este paso es solo la extraccion. La division en modulos ES por
 // dominio viene despues, en commits propios. Ver ADR-017.
 
+import {
+  AVATAR_COLORS, avatarHtml, defaultColor, escapeHtml,
+  fmtDate, relativeTime, shortName, uid,
+} from "./core/dom.js";
+
 (function () {
   "use strict";
 
@@ -38,7 +43,6 @@
   let boardLoadRevision = 0;
   let boardRefreshPending = false;
 
-  const shortName = email => (email || "").split("@")[0];
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
   // ---------- Tema claro/oscuro ----------
@@ -153,23 +157,7 @@
   }
 
   // Paleta fija para avatares por defecto (derivada del email).
-  const AVATAR_COLORS = ["#0079bf", "#519839", "#b04632", "#89609e", "#cd5a91", "#4bbf6b", "#00aecc", "#838c91", "#d29034"];
-  function defaultColor(email) {
-    let h = 0;
-    for (const ch of (email || "")) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    return AVATAR_COLORS[h % AVATAR_COLORS.length];
-  }
   // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
-  function avatarHtml(p, size) {
-    p = p || {};
-    const email = p.email || "";
-    const name = p.name || shortName(email) || "?";
-    const color = p.avatarColor || defaultColor(email || name);
-    const inner = p.avatarEmoji ? p.avatarEmoji : (name[0] || "?").toUpperCase();
-    const px = size || 22;
-    return `<span class="avatar" style="background:${color};width:${px}px;height:${px}px;font-size:${Math.round(px * 0.5)}px"
-      title="${escapeHtml(name)}">${escapeHtml(inner)}</span>`;
-  }
   // Busca el perfil de un miembro del tablero actual por email.
   const memberByEmail = email => members.find(m => m.email === email);
 
@@ -498,19 +486,8 @@
     else { assigneeFilter = ""; sel.value = ""; }
   }
 
-  function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
 
-  function escapeHtml(s) {
-    return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  }
 
-  function fmtDate(iso) {
-    if (!iso) return "";
-    const d = new Date(iso + "T00:00:00");
-    return d.toLocaleDateString("es", { day: "2-digit", month: "short" });
-  }
 
   function isOverdue(card) {
     if (!card.due || getDoneColumnIds().has(card.column)) return false;
@@ -1220,16 +1197,6 @@
     fAssignee.value = selected || "";
   }
 
-  function relativeTime(ts) {
-    const m = Math.floor((Date.now() - ts) / 60000);
-    if (m < 1) return "ahora";
-    if (m < 60) return `hace ${m} min`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `hace ${h}h`;
-    const d = Math.floor(h / 24);
-    if (d < 30) return `hace ${d}d`;
-    return new Date(ts).toLocaleDateString("es");
-  }
 
   function actionLabel(action, details) {
     const d = details || {};
