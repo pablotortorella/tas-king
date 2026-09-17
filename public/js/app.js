@@ -8,6 +8,7 @@ import {
   AVATAR_COLORS, avatarHtml, defaultColor, escapeHtml,
   fmtDate, relativeTime, shortName, uid,
 } from "./core/dom.js";
+import { api } from "./core/api.js";
 
 (function () {
   "use strict";
@@ -183,30 +184,6 @@ import {
   }
 
   // Capa de datos: API REST contra el backend (Worker + D1).
-  async function api(method, path, body) {
-    const res = await fetch(path, {
-      method,
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    if (!res.ok) {
-      let msg = res.statusText;
-      let code;
-      try { const j = await res.json(); if (j && j.error) msg = j.error; if (j && j.code) code = j.code; } catch (e) {}
-      if (code === "access_revoked") {
-        // Puede llegar desde cualquier llamada (el poll de fondo incluido), no solo la
-        // carga inicial — se navega ya mismo y no se resuelve esta promesa, para que
-        // ningún catch de arriba llegue a mostrar un alert() con el error a mitad de la
-        // redirección.
-        window.location.href = "/revoked";
-        return new Promise(() => {});
-      }
-      const err = new Error(msg);
-      err.status = res.status;
-      throw err;
-    }
-    return res.status === 204 ? null : res.json();
-  }
 
   // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
   // del tip cambie a la medianoche de la persona y no a la del servidor.
