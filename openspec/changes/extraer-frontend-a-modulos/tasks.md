@@ -12,7 +12,7 @@ Desplegable y valiosa por sí sola: cierra el clickjacking sin tocar `index.html
 - [x] 1.8 Test de que `/api/*` conserva el juego completo de cabeceras que ya tenía
 - [x] 1.9 Verificar que `/uploads/:key`, `/favicon.svg` y los adjuntos siguen sirviéndose correctamente con el ruteo nuevo
 - [x] 1.10 Medir `GET /` antes y después contra los presupuestos de `docs/PERFORMANCE-PRACTICES.md` y registrar el resultado
-- [ ] 1.11 `npm run test:all` en verde, desplegar a staging y verificar las cabeceras con `curl -sI` sobre la URL real (no solo local)
+- [x] 1.11 `npm run test:all` en verde, desplegar a staging y verificar las cabeceras con `curl -sI` sobre la URL real (no solo local) — desplegado 2026-09-16, Version ID `f73d81aa-1e0e-4ffa-83ef-094efe4f16ff`; cabeceras verificadas en los 5 documentos, assets estáticos fuera del Worker, 304 condicional OK, cero violaciones de CSP en navegador real
 
 ## 2. F0 — Red de seguridad antes de tocar el frontend
 
