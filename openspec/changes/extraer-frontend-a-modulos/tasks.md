@@ -45,11 +45,13 @@ Movimientos mecánicos, verificables por diff.
 
 ## 5. F5 — Modularización
 
+- [x] 5.0 Alcance agregado y aprobado: hacer confiable la red de seguridad antes de extraer módulos. `resetDb` reintenta ante `SQLITE_BUSY`; queda documentada una segunda falla intermitente sin causa identificada (dos subrecursos que nunca completan en `page.goto`), mitigada con un reintento local que Playwright reporta como "flaky"
+
 Un módulo por commit, con la suite en verde entre cada uno. El orden va de núcleo a features, y dentro de features de menos a más acoplado.
 
-- [ ] 5.1 `core/bus.js`: `on`/`emit`, con test unitario propio
-- [ ] 5.2 `core/dom.js`: `escapeHtml`, `uid`, `fmtDate`, `relativeTime`, `isOverdue`, `isUrgent`, `avatarHtml`, `defaultColor` — funciones puras, con tests unitarios
-- [ ] 5.3 `core/api.js`: `api()` y manejo de errores de red
+- [x] 5.1 `core/bus.js`: `on`/`emit`, con test unitario propio
+- [x] 5.2 `core/dom.js`: `escapeHtml`, `uid`, `fmtDate`, `relativeTime`, `isOverdue`, `isUrgent`, `avatarHtml`, `defaultColor` — funciones puras, con tests unitarios
+- [x] 5.3 `core/api.js`: `api()` y manejo de errores de red
 - [ ] 5.4 `core/state.js`: mudar las 34 variables compartidas del tope del IIFE, expuestas por función y no como binding mutable exportado
 - [ ] 5.5 Verificar que los contadores de concurrencia (`pendingCardMutations`, `cardMutationRevision`, `boardLoadRevision`, `boardRefreshPending`, `lastKnownVersion`) se mudaron juntos y **sin cambios de lógica**; `e2e/drag-no-duplicate.spec.js`, `e2e/board-sync.spec.js` y `e2e/card-mutation-performance.spec.js` en verde
 - [ ] 5.6 `theme.js`: tema claro/oscuro, paleta por tablero, prompt de bienvenida
