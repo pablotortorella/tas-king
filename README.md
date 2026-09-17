@@ -16,6 +16,7 @@ mezclar sus dominios.
 Esta evolución está documentada, pero todavía no implementada:
 
 - [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
+- [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de HomeSuite Gastos](docs/HOMESUITE_GASTOS_MVP.md)
 - [ADR-017: arquitectura modular](docs/ADRs/ADR-017-homesuite-suite-modular.md)
 

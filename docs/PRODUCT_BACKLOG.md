@@ -28,8 +28,9 @@ OpenSpec.
 
 HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
 compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
-operación mediante un monolito modular, manteniendo separados los dominios de
-Tareas, Gastos y Compras.
+operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
+sesión; la aplicación autenticada será un monolito modular con staging aislado,
+manteniendo separados los dominios de Tareas, Gastos y Compras.
 
 Orden estratégico inicial:
 
@@ -46,6 +47,7 @@ de este backlog.
 Documentación fuente:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
+- [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
 - [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
 

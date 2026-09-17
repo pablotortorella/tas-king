@@ -457,6 +457,7 @@ Estas preguntas no bloquean la visión, pero deben resolverse antes de implement
 ## Documentos relacionados
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
+- [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
 - [Prácticas de rendimiento](PERFORMANCE-PRACTICES.md)
 - [Estrategia de testing actual](../TESTING.md)

@@ -112,10 +112,13 @@ persona a la herramienta que lo inició, sin permitir redirecciones externas.
 
 ## Arquitectura técnica objetivo
 
-La primera etapa será un **monolito modular**:
+HomeSuite vivirá en un **monorepo**, pero tendrá dos superficies desplegables:
 
 ```text
-Worker Hono
+homesuite-site
+└── sitio público sin sesión, D1 ni secretos de la app
+
+homesuite-app / homesuite-app-staging
 ├── platform       identidad, sesión, espacios e invitaciones
 ├── tasks          dominio actual de TasKing
 ├── expenses       grupos, transacciones, repartos y balances
@@ -132,9 +135,15 @@ API prevista:
 ```
 
 Se conservarán Cloudflare Workers, Hono, D1, R2, Wrangler y los entornos local,
-staging y producción. Al comienzo puede usarse un único Worker y una única D1,
-con tablas y módulos separados por dominio. Esto conserva transacciones locales,
-reduce operación y evita resolver consistencia entre bases antes de necesitarla.
+staging y producción. El sitio público tendrá un Worker de assets separado. La
+aplicación autenticada será un **monolito modular** y usará inicialmente una D1
+por entorno, con tablas y módulos separados por dominio. Esto conserva
+transacciones locales, reduce operación y evita resolver consistencia entre bases
+antes de necesitarla.
+
+Staging tendrá Worker, OAuth, D1, R2 y backups propios. Separar despliegues no
+significa separar repositorios: sitio, app, módulos, tests y documentación
+permanecen versionados juntos.
 
 Un producto podrá extraerse a otro Worker o D1 cuando exista una razón observable:
 
@@ -216,15 +225,18 @@ al libro.
 
 ## Secuencia de evolución
 
-1. Documentar y validar la visión, arquitectura y MVP de Gastos.
-2. Configurar `homesuite.info` y `app.homesuite.info` con entornos separados.
-3. Extraer identidad estable, sesión, espacios, miembros e invitaciones.
-4. Separar el frontend en superficies mantenibles sin detener TasKing.
-5. Implementar y validar HomeSuite Gastos.
-6. Mantener TasKing en su URL actual hasta completar una migración probada a
+1. Documentar y validar la visión, arquitectura, infraestructura y MVP de Gastos.
+2. Activar la zona Cloudflare y DNSSEC para `homesuite.info`.
+3. Crear el sitio público y asociar apex y `www`.
+4. Preparar aplicación y recursos aislados de staging.
+5. Separar el frontend en superficies mantenibles sin detener TasKing.
+6. Extraer identidad estable, sesión, espacios, miembros e invitaciones.
+7. Preparar aplicación y recursos de producción.
+8. Implementar y validar HomeSuite Gastos.
+9. Mantener TasKing en su URL actual hasta completar una migración probada a
    `/tareas`.
-7. Diseñar e implementar HomeSuite Compras sobre la plataforma compartida.
-8. Integrar productos únicamente a partir de recorridos reales.
+10. Diseñar e implementar HomeSuite Compras sobre la plataforma compartida.
+11. Integrar productos únicamente a partir de recorridos reales.
 
 Cada etapa de implementación deberá recorrer OpenSpec: `explore` → `propose` →
 `apply` → `archive`. Este documento expresa dirección de producto; no reemplaza
@@ -236,8 +248,9 @@ las especificaciones incrementales ni autoriza un despliegue.
   afectar varios productos.
 - **Seguridad same-origin:** una vulnerabilidad de frontend puede operar contra
   otras APIs autenticadas; CSP, validación y aislamiento modular son obligatorios.
-- **Despliegues acoplados:** aceptados inicialmente; se separarán si el costo se
-  vuelve observable.
+- **Despliegues de producto acoplados:** Tareas, Gastos y Compras se publican
+  juntos inicialmente; se separarán si el costo se vuelve observable. Sitio y
+  aplicación sí tienen deploy independiente desde el principio.
 - **Sobre-generalización:** espacios y membresías deben resolver casos presentes,
   no convertirse en un framework abstracto.
 - **Confianza financiera:** Gastos necesita más auditoría e invariantes que una
@@ -257,6 +270,7 @@ HomeSuite habrá validado su primera etapa cuando:
 ## Documentos relacionados
 
 - [ADR-017: HomeSuite como suite modular](ADRs/ADR-017-homesuite-suite-modular.md)
+- [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [Especificación del MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
 - [Backlog del producto](PRODUCT_BACKLOG.md)
 - [ADRs históricos de TasKing](ADRs.md)
