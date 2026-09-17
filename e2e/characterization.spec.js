@@ -175,3 +175,28 @@ test("arrastrar el fondo del tablero lo desplaza", async ({ page }) => {
   const posicionFinal = await board.evaluate((el) => el.scrollLeft);
   expect(posicionFinal).not.toBe(posicionInicial);
 });
+
+// ---------- Arranque del tema (anti-flash) ----------
+
+test("el script anti-flash sigue siendo clásico y bloqueante en el head", async ({ page }) => {
+  // El parpadeo claro->oscuro vuelve si este script pasa a `defer`, `async` o
+  // `type="module"`: en cualquiera de esos casos corre después del parseo, o sea
+  // después del primer pintado. Esta regresión existe para que el refactor a
+  // módulos ES no se lo lleve puesto por uniformidad. Ver ADR-017.
+  const boot = page.locator('head script[src="/js/theme-boot.js"]');
+  await expect(boot).toHaveCount(1);
+
+  const attrs = await boot.evaluate((el) => ({
+    defer: el.defer,
+    async: el.async,
+    type: el.getAttribute("type"),
+    // ¿Viene antes de la hoja de estilos?
+    antesDelCss: !!(el.compareDocumentPosition(document.querySelector('link[rel="stylesheet"]'))
+      & Node.DOCUMENT_POSITION_FOLLOWING),
+  }));
+
+  expect(attrs.defer).toBe(false);
+  expect(attrs.async).toBe(false);
+  expect(attrs.type).toBeNull();
+  expect(attrs.antesDelCss).toBe(true);
+});
