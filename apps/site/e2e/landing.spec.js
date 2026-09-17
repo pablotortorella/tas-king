@@ -5,7 +5,7 @@ test("presenta HomeSuite y permite entrar a Fun TasKing", async ({ page }) => {
 
   await expect(page.getByRole("heading", {
     level: 1,
-    name: "La vida compartida merece herramientas más simples.",
+    name: "Organizarnos puede ser más simple.",
   })).toBeVisible();
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
   await expect(page.getByText("Gastos", { exact: true })).toBeVisible();
