@@ -69,7 +69,22 @@ Consecuencia que hay que respetar: **los módulos se ejecutan diferidos**, despu
 
 `tips.js` declara `const DAILY_TIPS` en el scope global y `e2e/tip-diario.spec.js` lo lee como `window.DAILY_TIPS`. Se mantiene como script clásico para no romper ese contrato; convertirlo a módulo exigiría tocar el test, que es justamente la red de seguridad.
 
-### D3. Capas con dirección de dependencia única, y un bus para las vueltas atrás
+### D3. Tres capas con dirección de dependencia única
+
+**Corregido durante la implementación (2026-09-17).** La primera versión de esta
+decisión decía que los módulos de feature nunca se importan entre sí y que toda
+arista de vuelta pasa por `bus.js`. **Era incorrecta**, y recién se vio al tener el
+núcleo extraído y medir el código real:
+
+- 18 secciones distintas llaman a `render()`, `loadCards()` o `loadBoard()`: 66 sitios.
+- **44 de esas llamadas son `await`**, y al menos una usa el valor de retorno
+  (`if (!(await loadCards())) return;`).
+
+`emit()` devuelve `undefined` y además atrapa las excepciones de sus oyentes. No
+puede reemplazar a una llamada que se espera y cuyo resultado se usa. El bus sirve
+para avisos sin respuesta, no para eso.
+
+La corrección es agregar una capa en vez de forzar el bus:
 
 ```
    +---------------------------------------------------------------+
@@ -78,9 +93,16 @@ Consecuencia que hay que respetar: **los módulos se ejecutan diferidos**, despu
                                |
                                v
    +---------------------------------------------------------------+
-   |  MODULOS DE FEATURE                                            |
-   |  board  card-modal  checklists  goals  metrics  labels         |
-   |  columns  boards  io  admin  keyboard  drag  theme  feedback   |
+   |  FEATURES                                                      |
+   |  card-modal  checklists  goals  metrics  labels  columns       |
+   |  boards  io  admin  keyboard  drag  theme  feedback            |
+   +---------------------------------------------------------------+
+                               |
+                               v
+   +---------------------------------------------------------------+
+   |  TABLERO:  board.js                                            |
+   |  render()  renderCard()  loadBoard()  loadCards()  loadGoals() |
+   |  withCardMutation()  y los filtros de visibilidad              |
    +---------------------------------------------------------------+
                                |
                                v
@@ -88,15 +110,23 @@ Consecuencia que hay que respetar: **los módulos se ejecutan diferidos**, despu
    |  NUCLEO:  state.js   api.js   dom.js   bus.js                  |
    +---------------------------------------------------------------+
 
-   Las flechas van siempre hacia abajo.
-   Cuando un modulo de feature necesita avisarle a otro
-   (guarde una tarjeta -> hay que re-renderizar el tablero),
-   emite por bus.js en vez de importarlo. Eso corta los ciclos.
+   Las flechas siguen yendo solo hacia abajo. Lo que cambia es que
+   ahora hay tres niveles y no dos, y que `await loadCards()` sigue
+   escribiendose `await loadCards()` en los 66 sitios.
 ```
 
-**Por qué un bus y no imports cruzados**: los módulos ES toleran ciclos cuando las referencias se usan en tiempo de llamada y no de evaluación, que es el caso acá porque todo corre después de `DOMContentLoaded`. Pero apoyarse en eso es apoyarse en una sutileza del cargador. Un `bus.js` de ~20 líneas (`on`/`emit`) hace explícitas las pocas aristas de vuelta y las vuelve rastreables. La regla de diseño que queda: **si un módulo de feature necesita importar a otro, o la frontera está mal trazada o el destinatario real es el bus**.
+**La regla que queda**: una feature puede importar del tablero y del núcleo, nunca
+de otra feature. El tablero puede importar del núcleo, nunca de una feature. Cuando
+el tablero necesita avisar algo hacia arriba —y no esperar respuesta— usa `bus.js`.
 
-**Por qué no un framework ni un store con reactividad**: sería reemplazar un problema de organización por una dependencia nueva y un modelo mental nuevo, en un producto que hoy anda. La meta es que el código diga la verdad sobre sus dependencias, no cambiar de paradigma.
+**Por qué no inyección de dependencias por `init()`**: mantendría las features
+aisladas entre sí, pero cada módulo necesitaría su propia plomería y las llamadas
+dejarían de leerse como llamadas. Más ceremonia para la misma dirección de
+dependencias que ya da la capa.
+
+**Por qué no un framework ni un store con reactividad**: sería reemplazar un problema
+de organización por una dependencia nueva y un modelo mental nuevo, en un producto
+que hoy anda. La meta es que el código diga la verdad sobre sus dependencias.
 
 ### D4. `state.js` es el único dueño del estado compartido
 

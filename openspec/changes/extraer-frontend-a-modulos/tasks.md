@@ -54,8 +54,8 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 5.3 `core/api.js`: `api()` y manejo de errores de red
 - [x] 5.4 `core/state.js`: mudar las 34 variables compartidas del tope del IIFE, expuestas por función y no como binding mutable exportado
 - [x] 5.5 Verificar que los contadores de concurrencia (`pendingCardMutations`, `cardMutationRevision`, `boardLoadRevision`, `boardRefreshPending`, `lastKnownVersion`) se mudaron juntos y **sin cambios de lógica**; `e2e/drag-no-duplicate.spec.js`, `e2e/board-sync.spec.js` y `e2e/card-mutation-performance.spec.js` en verde
-- [ ] 5.6 `theme.js`: tema claro/oscuro, paleta por tablero, prompt de bienvenida
-- [ ] 5.7 `feedback.js`: pulso WIP, confeti, tip diario
+- [x] 5.6 `theme.js`: tema claro/oscuro, paleta por tablero, prompt de bienvenida
+- [~] 5.7 `feedback.js`: pulso WIP, confeti, tip diario
 - [ ] 5.8 `polling.js`: `pollTick`, `startPolling`, refresco de checklists sincronizadas
 - [ ] 5.9 `board.js`: `loadBoard`, `loadCards`, `render`, `renderCard` y los filtros de búsqueda/responsable/etiqueta
 - [ ] 5.10 `drag.js`: arrastre de tarjetas con Pointer Events + paneo del tablero
