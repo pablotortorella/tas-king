@@ -55,11 +55,11 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 5.4 `core/state.js`: mudar las 34 variables compartidas del tope del IIFE, expuestas por función y no como binding mutable exportado
 - [x] 5.5 Verificar que los contadores de concurrencia (`pendingCardMutations`, `cardMutationRevision`, `boardLoadRevision`, `boardRefreshPending`, `lastKnownVersion`) se mudaron juntos y **sin cambios de lógica**; `e2e/drag-no-duplicate.spec.js`, `e2e/board-sync.spec.js` y `e2e/card-mutation-performance.spec.js` en verde
 - [x] 5.6 `theme.js`: tema claro/oscuro, paleta por tablero, prompt de bienvenida
-- [~] 5.7 `feedback.js`: pulso WIP, confeti, tip diario
+- [x] 5.7 `feedback.js`: pulso WIP, confeti, tip diario
 - [x] 5.A Verificación intermedia en staging del núcleo modular (2026-09-17, Version ID `27b02022-c022-4902-8a15-646cba5c2c3e`): los 9 archivos de `js/` y `css/` se sirven con el Content-Type correcto y fuera del Worker, la cadena de imports ES resuelve en el navegador (10 assets en 200, incluidos los transitivos), los 5 documentos conservan sus cabeceras y el camino de error de `api()` redirige al login ante un 401
 - [ ] 5.8 `polling.js`: `pollTick`, `startPolling`, refresco de checklists sincronizadas
 - [x] 5.9 `board.js`: `loadBoard`, `loadCards`, `render`, `renderCard` y los filtros de búsqueda/responsable/etiqueta — 18 funciones, 8 exportadas. Antes hubo que romper cuatro acoplamientos: `fechaLocal` a `core/dom.js`, `memberByEmail` a `core/state.js`, `renderMe` pasa a atender `sesion:cargada`, y `saveBtn` sale de `withCardMutation` a los eventos `mutacion:inicio`/`mutacion:fin` que atiende el modal
-- [ ] 5.10 `drag.js`: arrastre de tarjetas con Pointer Events + paneo del tablero
+- [x] 5.10 `drag.js`: arrastre de tarjetas con Pointer Events + paneo del tablero
 - [ ] 5.11 `card-modal.js`: apertura/cierre, comentarios, historial, adjuntos
 - [ ] 5.12 `checklists.js`
 - [ ] 5.13 `goals.js`: vista de objetivos, panel lateral y objetivos dentro del modal
