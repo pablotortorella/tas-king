@@ -1,6 +1,6 @@
 # Retomar este change
 
-**Última sesión: 2026-09-17.** Todo lo hecho está commiteado y pusheado: si esta
+**Última actualización: 2026-09-17.** Todo lo hecho está commiteado y pusheado: si esta
 máquina se apaga, no se pierde nada del trabajo.
 
 ---
@@ -30,33 +30,38 @@ npm run test:all                     # debe dar 206 unitarios + 84 E2E
 
 ## 3. Estado actual
 
-**Verificado**: 206 unitarios + 84 E2E en verde, y el núcleo modular probado
-contra Cloudflare real (no solo `wrangler dev`).
+**Verificado**: 212 unitarios + 85 E2E en verde. El núcleo modular se probó
+además contra Cloudflare real, no solo `wrangler dev`.
 
 ```
 public/index.html   512 lineas de markup   (era 4.545)
-public/js/
-  app.js        2.462   <- lo que falta repartir
-  board.js        333   capa del tablero
-  feedback.js     209   pulso WIP + tip diario + confeti
-  drag.js         171   arrastre + paneo
-  theme.js         44   tema y paleta (no importa nada: va debajo de board)
-  theme-boot.js    14   anti-flash, script clasico bloqueante
-  core/  state 85 · dom 73 · bus 56 · api 38
 public/css/app.css  809
+public/js/
+  app.js      1.240   <- lo que falta repartir (era 3.220)
+  boards.js     400   configuracion del tablero (⚙️) + perfil
+  board.js      374   CAPA DEL TABLERO: render, loadBoard, loadCards, actionLabel
+  goals.js      335   objetivos + metricas (los dos cajones laterales)
+  admin.js      256   panel de administracion
+  io.js         214   exportar/importar + menu de datos
+  feedback.js   209   pulso WIP + tip diario + confeti
+  drag.js       171   arrastre de tarjetas + paneo
+  columns.js     75   gestion de columnas
+  theme.js       44   tema y paleta (no importa nada: va debajo de board)
+  theme-boot.js  14   anti-flash, script clasico bloqueante
+  core/  state 88 · dom 81 · bus 56 · api 38
 ```
 
 **Fases cerradas**: F1 (cabeceras al documento), F0 (tests de caracterización),
-F2 (CSS fuera), F3/F4 (JS fuera y como módulo ES), y el núcleo + 4 features.
+F2 (CSS fuera), F3/F4 (JS fuera y como módulo ES), el núcleo completo y 9 features.
 
 **Arquitectura vigente** (corregida durante la implementación, ver D3 en `design.md`):
 
 ```
 app.js            composition root: arranca, cablea, registra hooks de window
    |
-FEATURES          feedback  drag  (faltan: modal, checklists, goals, metrics,
-   |                                labels, columns, boards, io, admin, keyboard, polling)
-BOARD             board.js — render, loadBoard, loadCards, withCardMutation
+FEATURES          boards  goals  admin  io  feedback  drag  columns
+   |              (faltan: modal, checklists+etiquetas, teclado, polling)
+BOARD             board.js — render, loadBoard, loadCards, withCardMutation, actionLabel
    |
 NUCLEO + THEME    state  api  dom  bus  |  theme (no importa nada)
 ```
@@ -66,32 +71,58 @@ Cuando hay que avisar hacia arriba y no se espera respuesta, se emite por el bus
 Lo que se espera (`await loadCards()`) se llama directo: el bus devuelve
 `undefined` y atrapa excepciones, así que no puede reemplazar un `await`.
 
+**Avisos del bus en uso**: `sesion:cargada`, `tablero:cargado`,
+`columnas:cambiaron`, `objetivos:cambiaron`, `tarjeta:abrir`, `tarjeta:arrastre`,
+`tarjeta:celebrar`, `mutacion:inicio`, `mutacion:fin`. Todos se suscriben en
+`app.js`, que es el único lugar donde se decide quién atiende qué.
+
 ## 4. El próximo paso concreto
 
-Quedan 11 secciones en `app.js`. El orden no importa mucho; sí el método:
+Quedan **4 bloques** en `app.js`:
+
+| Bloque | Tamaño aprox. | Nota |
+|---|---|---|
+| Archivar / Eliminar / Restaurar + overlay de archivadas | ~65 líneas | chico, buen calentamiento |
+| **Modal de tarjeta** | ~585 líneas | el más grande; incluye comentarios, historial y adjuntos |
+| Objetivos dentro del modal + etiquetas de tarjeta | ~300 líneas | ojo: `renderLabels` y `createLabel` están bajo títulos que no les corresponden |
+| Buscador, selector de tablero, teclado y arranque | ~160 líneas | **el teclado va último** |
+
+**Por qué el teclado va último**: su cadena de Escape referencia los overlays de
+*todos* los demás módulos (`overlay`, `profileOverlay`, `importOverlay`,
+`membersOverlay`, `archiveOverlay`, `goalsDrawer`, `metricsDrawer`,
+`themePromptOverlay`). Hasta que existan, no se puede mover. Ahí también vive el
+bug conocido de que **Esc no cierra la ayuda (F1)**: hay código muerto para eso
+en `app.js` y `helpModal` no está en la cadena. Cuando se llegue, el fix va con
+su test en rojo primero.
+
+### El método, paso a paso
 
 ```bash
-# 1. Ver qué grupos están cerrados
+# 1. ¿El grupo está cerrado? (solo sirve para funciones, no para listeners)
 node openspec/changes/extraer-frontend-a-modulos/tools/analizar-dependencias.mjs '["fnA","fnB"]'
 
-# 2. Extraer (aborta solo si el grupo no está cerrado o usa variables de afuera)
+# 2a. Si el bloque son solo declaraciones: extraer con el AST
 node openspec/changes/extraer-frontend-a-modulos/tools/extraer-modulo.mjs '{
-  "destino":"public/js/NOMBRE.js",
-  "grupo":["..."], "publicas":["..."],
-  "cabecera":"// comentario del modulo", "importa":"import ... "}'
+  "destino":"public/js/NOMBRE.js", "grupo":["..."], "publicas":["..."],
+  "cabecera":"// comentario del modulo", "importa":"import ..."}'
 
-# 3. Verificar SIEMPRE, en este orden
+# 2b. Si el bloque incluye listeners: cortar por rangos de texto, y DESPUÉS
+grep -n "^// ---------- " public/js/NOMBRE.js     # ¿se coló una seccion vecina?
+
+# 3. SIEMPRE, sea cual sea el camino
+node openspec/changes/extraer-frontend-a-modulos/tools/verificar-modulo.mjs public/js/NOMBRE.js
+node openspec/changes/extraer-frontend-a-modulos/tools/verificar-modulo.mjs public/js/app.js
 cp public/js/NOMBRE.js /tmp/s.mjs && node --check /tmp/s.mjs
-npx playwright test --reporter=line
-npm test
 
-# 4. Un commit por módulo
+# 4. Suite completa, y recién ahí un commit por módulo
+npx playwright test --reporter=line && npm test
 ```
 
 **Ojo con los títulos de sección**: los comentarios `// ---------- X ----------`
-derivaron del código. `renderLabels` vive bajo "Checklists" y `createLabel` bajo
-"Objetivos dentro del modal". Agrupar por lo que dice el grafo, no por el título.
-Por eso algunos módulos no van a coincidir con los nombres de `tasks.md`.
+derivaron del código. `renderLabels` vive bajo "Checklists", `createLabel` bajo
+"Objetivos dentro del modal", y los atajos de teclado del modal de tarjeta
+estaban bajo "Modal de perfil". Agrupar por lo que dice el grafo, no por el
+título. Ya se coló código ajeno **tres veces** por confiar en ellos.
 
 Después de los módulos quedan **5.21-5.23** (composition root, los cuatro hooks
 de `window` juntos, verificación), el **grupo 6** (sacar `'unsafe-inline'`) y el
@@ -104,11 +135,23 @@ extraen también, o la política de contenido se diferencia por ruta.
 
 ## 5. Herramientas y trampas
 
-Las dos herramientas en `tools/` son andamiaje de este change y se archivan con
+Las tres herramientas de `tools/` son andamiaje de este change y se archivan con
 él. Requieren `acorn`, instalado con `--no-save` a propósito: no es dependencia
 del producto.
 
-Cinco cosas que salieron mal en la última sesión y no conviene repetir:
+| Herramienta | Qué red tiende |
+|---|---|
+| `analizar-dependencias.mjs` | si el grupo de funciones está cerrado |
+| `extraer-modulo.mjs` | mueve por AST; aborta si hay fugas o variables libres |
+| `verificar-modulo.mjs` | identificadores que un módulo usa sin declarar ni importar |
+
+La tercera es la más valiosa y la más tardía: se escribió después de que dos
+extracciones por texto fallaran. Al correrla sobre los módulos ya hechos
+encontró un bug **que estaba commiteado y con la suite en verde** — `admin.js`
+usaba `avatarHtml` sin importarlo, en una rama que ningún test alcanzaba.
+Conviene correrla sobre todos los módulos, no solo el recién creado.
+
+### Lo que salió mal, para no repetirlo
 
 1. **No editar archivos con la suite corriendo.** El dev server recarga en
    caliente: invalida la corrida y, peor, las mediciones.
@@ -121,24 +164,33 @@ Cinco cosas que salieron mal en la última sesión y no conviene repetir:
 5. **Una corrida verde no prueba nada.** El flake se declaró cerrado con 3
    corridas limpias y falló a la siguiente.
 6. **Al cortar por rangos de texto, verificar qué secciones quedaron adentro.**
-   La herramienta de AST no sirve cuando el bloque incluye listeners (no son
-   declaraciones), y al cortar `io.js` por texto se coló la sección vecina
-   "Selector de tablero", que llamaba a funciones que el módulo no importaba.
-   No fallaba al cargar la página, solo al usar el selector. El chequeo que lo
-   evita cuesta un comando:
+   Pasó tres veces: `io.js` se llevó "Selector de tablero", `boards.js` se llevó
+   los atajos de teclado del modal de tarjeta. Cuesta un comando:
    `grep -n "^// ---------- " public/js/NUEVO.js`
+7. **Un bug arreglado sin test no está arreglado.** Dos se corrigieron sin
+   prueba: el import faltante de `avatarHtml` y el reintento ante `SQLITE_BUSY`.
+   Los dos tienen ahora su test, verificado en rojo antes y verde después. Para
+   cada bug que aparezca: escribir el test, **verlo fallar**, arreglar, verlo pasar.
+8. **El bus atrapa las excepciones de sus oyentes.** Un `ReferenceError` en una
+   función invocada por el bus falla en silencio. No alcanza con mirar la
+   consola: confiar en `verificar-modulo.mjs`.
 
-Y la que funcionó: **un commit por unidad lógica**. Salvó el día dos veces.
+Y la que funcionó: **un commit por unidad lógica**. Salvó el día dos veces —
+cuando una herramienta propia corrompió `app.js` y cuando una tanda entera tuvo
+que revertirse.
 
 ## 6. Pendientes conocidos (ninguno bloquea)
 
-- **El bus atrapa las excepciones de sus oyentes.** Un fallo en un aviso se
-  registra en consola en vez de cortar. Ya escondió un `ReferenceError` una vez.
-  Al mover un módulo, confiar en el chequeo de variables libres, no en la consola.
 - **Flake sin causa identificada**: cada tanto el `beforeEach` de
   `card-mutation-performance` se cuelga en `page.goto` porque dos subrecursos
   nunca completan. Mitigado con `retries: 1` en local; Playwright lo cuenta
-  aparte como "flaky". Cinco hipótesis medidas y descartadas.
+  aparte como "flaky". Cinco hipótesis medidas y descartadas. Si el contador
+  deja de ser cero de forma persistente, o aparece en otros specs, volver ahí.
+- **Overlays exportados por sus features** (`profileOverlay`, `membersOverlay`,
+  `themePromptOverlay`, `importOverlay`, `goalsDrawer`, `metricsDrawer`): la
+  cadena de Escape vive en `app.js` y necesita saber cuál está abierto. Es deuda
+  consciente. Cuando se extraiga `keyboard.js`, evaluar si conviene que cada
+  módulo registre "qué cierro y con qué prioridad" en vez de exportar el elemento.
 - **9 referencias viejas a `public/index.html`** en docs y comentarios
   (`src/constants.js:3`, `test/labels.spec.js:4`, `docs/CAMBIOS-MULTICAPA.md:110`,
   `docs/WORKFLOW.md:372`, ADR-014, ADR-015, `docs/ADRs.md:19` y dos ítems del
@@ -147,5 +199,11 @@ Y la que funcionó: **un commit por unidad lógica**. Salvó el día dos veces.
   `test/**/*.test.js` y hay dos archivos `.spec.js`. Uno falla de verdad
   (`/uploads/:key` devuelve 500 en vez de 401). **Preexistente y fuera del
   alcance de este change** — no mezclarlo acá.
+- **Esc no cierra la ayuda (F1)**: bug conocido del backlog, con código muerto en
+  `app.js`. El lugar natural para arreglarlo es al extraer `keyboard.js`, con su
+  test en rojo primero.
 - **`estado.state.cards`** se lee mal. Renombrar era cambio semántico; quedó como
   deuda deliberada.
+- **Staging tiene el núcleo modular** (Version ID `27b02022`), pero **no** los
+  módulos posteriores a esa verificación. Conviene re-desplegar antes de dar por
+  buena la fase.
