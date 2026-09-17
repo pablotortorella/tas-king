@@ -47,4 +47,14 @@ export const estado = {
   removedAttachmentIds: [],   // adjuntos existentes marcados para borrar al guardar
   draftChecklists: [],        // checklists de una tarjeta aún sin guardar
   draftGoals: [],             // objetivos elegidos para una tarjeta aún sin guardar
+
+  // ---------- Datos del tablero actual ----------
+  // Se recargan al cambiar de tablero y con cada poll que detecta una revisión
+  // nueva. `state` conserva su nombre original: renombrarlo sería un cambio
+  // semántico y esta migración no toca comportamiento.
+  COLUMNS: [],        // columnas del tablero actual
+  state: { cards: [] },
+  boardLabels: [],    // etiquetas del tablero actual
+  boardGoals: [],     // objetivos del tablero actual (con progreso)
+  members: [],        // miembros del tablero actual
 };

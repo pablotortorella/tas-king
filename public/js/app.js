@@ -15,20 +15,15 @@ import { estado } from "./core/state.js";
   "use strict";
 
   // Columnas del tablero actual — se actualiza en loadCards()
-  let COLUMNS = [];
   // Columnas de cierre: las marcadas con is_done=1; fallback a la última por posición.
   const getDoneColumnIds = () => {
-    const done = COLUMNS.filter(c => c.isDone).map(c => c.id);
-    return new Set(done.length > 0 ? done : [(COLUMNS[COLUMNS.length - 1] || {}).id || "terminado"]);
+    const done = estado.COLUMNS.filter(c => c.isDone).map(c => c.id);
+    return new Set(done.length > 0 ? done : [(estado.COLUMNS[estado.COLUMNS.length - 1] || {}).id || "terminado"]);
   };
 
   /** @type {{cards: Array}} */
-  let state = { cards: [] };
   let me = null;               // usuario actual + sus tableros
   let currentBoardId = null;   // tablero seleccionado
-  let members = [];            // miembros del tablero actual
-  let boardLabels = [];        // etiquetas del tablero actual
-  let boardGoals = [];         // objetivos del tablero actual (con progreso)
 
   const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
@@ -88,9 +83,9 @@ import { estado } from "./core/state.js";
   // Columnas "en curso": todas menos la primera (sin empezar) y las de cierre,
   // ordenadas de la más cercana a terminar (derecha) a la más lejos (izquierda).
   function wipColumnsRightToLeft() {
-    if (COLUMNS.length < 2) return [];
+    if (estado.COLUMNS.length < 2) return [];
     const doneIds = getDoneColumnIds();
-    const sorted = [...COLUMNS].sort((a, b) => a.position - b.position);
+    const sorted = [...estado.COLUMNS].sort((a, b) => a.position - b.position);
     const firstId = sorted[0].id;
     return sorted
       .filter(c => c.id !== firstId && !doneIds.has(c.id))
@@ -146,7 +141,7 @@ import { estado } from "./core/state.js";
   // Paleta fija para avatares por defecto (derivada del email).
   // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
   // Busca el perfil de un miembro del tablero actual por email.
-  const memberByEmail = email => members.find(m => m.email === email);
+  const memberByEmail = email => estado.members.find(m => m.email === email);
 
   // Perfil del usuario actual (con email) para pasarlo a avatarHtml.
   const meProfile = () => ({
@@ -269,8 +264,8 @@ import { estado } from "./core/state.js";
       && loadRevision === estado.boardLoadRevision && !estado.pendingCardMutations && !(cardDrag && cardDrag.active);
     if (estado.pendingCardMutations) { estado.boardRefreshPending = true; return false; }
     if (!currentBoardId) {
-      state = { cards: [], columns: [] }; COLUMNS = [];
-      boardLabels = []; boardGoals = [];
+      estado.state = { cards: [], columns: [] }; estado.COLUMNS = [];
+      estado.boardLabels = []; estado.boardGoals = [];
       applyBoardPalette(null);
       populateColumnSelect(); render(); refreshGoalsUI(); return true;
     }
@@ -280,8 +275,8 @@ import { estado } from "./core/state.js";
     if (!isCurrent()) return false;
     // Publicar las tarjetas al recibirlas: otros controles del modal leen state
     // mientras se cargan los catálogos. Una respuesta anterior a un guardado se descarta.
-    state = nextState;
-    COLUMNS = state.columns || [];
+    estado.state = nextState;
+    estado.COLUMNS = estado.state.columns || [];
     populateColumnSelect();
     let nextLabels = [], nextGoals = [];
     try { nextLabels = await api("GET", "/api/boards/" + boardId + "/labels"); }
@@ -290,9 +285,9 @@ import { estado } from "./core/state.js";
     try { nextGoals = await api("GET", "/api/boards/" + boardId + "/goals"); }
     catch (e) { /* los objetivos pueden no estar disponibles */ }
     if (!isCurrent()) return false;
-    boardLabels = nextLabels;
-    boardGoals = nextGoals;
-    estado.lastKnownVersion = state.version || 0;
+    estado.boardLabels = nextLabels;
+    estado.boardGoals = nextGoals;
+    estado.lastKnownVersion = estado.state.version || 0;
     render();
     refreshGoalsUI();
     return true;
@@ -317,17 +312,17 @@ import { estado } from "./core/state.js";
 
   function applySavedCard(boardId, card) {
     if (boardId !== currentBoardId) return;
-    const index = state.cards.findIndex(c => c.id === card.id);
-    if (index >= 0 && state.cards[index].column === card.column) state.cards[index] = card;
+    const index = estado.state.cards.findIndex(c => c.id === card.id);
+    if (index >= 0 && estado.state.cards[index].column === card.column) estado.state.cards[index] = card;
     else {
       // Las tarjetas nuevas o movidas se guardan al final de su columna.
-      state.cards = state.cards.filter(c => c.id !== card.id);
-      state.cards.push(card);
+      estado.state.cards = estado.state.cards.filter(c => c.id !== card.id);
+      estado.state.cards.push(card);
     }
     // Mismo criterio que goalsWithProgress() del servidor, usando los datos cargados.
-    const doneColumn = COLUMNS.find(c => c.isDone)?.id || "terminado";
-    boardGoals = boardGoals.map(goal => {
-      const linked = state.cards.filter(c => !c.archived && (c.goals || []).some(g => g.id === goal.id));
+    const doneColumn = estado.COLUMNS.find(c => c.isDone)?.id || "terminado";
+    estado.boardGoals = estado.boardGoals.map(goal => {
+      const linked = estado.state.cards.filter(c => !c.archived && (c.goals || []).some(g => g.id === goal.id));
       const done = linked.filter(c => c.column === doneColumn).length;
       return { ...goal, total: linked.length, done, pct: linked.length ? Math.round(done / linked.length * 100) : 0 };
     });
@@ -338,8 +333,8 @@ import { estado } from "./core/state.js";
   }
 
   async function loadGoals() {
-    try { boardGoals = await api("GET", "/api/boards/" + currentBoardId + "/goals"); }
-    catch (e) { boardGoals = []; }
+    try { estado.boardGoals = await api("GET", "/api/boards/" + currentBoardId + "/goals"); }
+    catch (e) { estado.boardGoals = []; }
   }
 
   // ---------- Polling de cambios en tiempo real ----------
@@ -364,13 +359,13 @@ import { estado } from "./core/state.js";
       if (boardId !== currentBoardId || mutationRevision !== estado.cardMutationRevision || estado.pendingCardMutations) return;
       if (version !== estado.lastKnownVersion) {
         const doneColIds = getDoneColumnIds();
-        const prevTerminados = new Set(state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
+        const prevTerminados = new Set(estado.state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
         if (!(await loadCards())) return;
         if (estado.editingId && overlay.classList.contains("open")) {
           renderComments(); // El campo del comentario y los demás borradores no se tocan.
           checklistRefreshPending = true;
         }
-        state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
+        estado.state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
           .forEach(c => celebrateCard(c.id));
       }
       refreshSyncedChecklists();
@@ -406,9 +401,9 @@ import { estado } from "./core/state.js";
   }
 
   async function loadMembers() {
-    if (!currentBoardId) { members = []; renderAssigneeFilter(); return; }
-    try { members = (await api("GET", "/api/boards/" + currentBoardId + "/members")).members; }
-    catch (e) { members = []; }
+    if (!currentBoardId) { estado.members = []; renderAssigneeFilter(); return; }
+    try { estado.members = (await api("GET", "/api/boards/" + currentBoardId + "/members")).members; }
+    catch (e) { estado.members = []; }
     renderAssigneeFilter();
   }
 
@@ -439,12 +434,12 @@ import { estado } from "./core/state.js";
     const sel = document.getElementById("assigneeFilter");
     const prev = estado.assigneeFilter;
     sel.innerHTML = '<option value="">👤 Todos</option>';
-    members.forEach(m => {
+    estado.members.forEach(m => {
       const o = document.createElement("option");
       o.value = m.email; o.textContent = (m.avatarEmoji ? m.avatarEmoji + " " : "") + (m.name || shortName(m.email));
       sel.appendChild(o);
     });
-    if (members.some(m => m.email === prev)) sel.value = prev;
+    if (estado.members.some(m => m.email === prev)) sel.value = prev;
     else { estado.assigneeFilter = ""; sel.value = ""; }
   }
 
@@ -523,9 +518,9 @@ import { estado } from "./core/state.js";
       container.appendChild(head);
     }
 
-    boardGoals.forEach(goal => container.appendChild(buildGoalCard(goal, selectable)));
+    estado.boardGoals.forEach(goal => container.appendChild(buildGoalCard(goal, selectable)));
 
-    if (!boardGoals.length) {
+    if (!estado.boardGoals.length) {
       const empty = document.createElement("div");
       empty.className = "goals-empty";
       empty.textContent = "Todavía no hay objetivos. Creá uno para agrupar tus tarjetas y medir el avance.";
@@ -808,14 +803,14 @@ import { estado } from "./core/state.js";
   function render() {
     board.innerHTML = "";
     const owner = isOwner();
-    COLUMNS.forEach((col, colIdx) => {
-      const cards = state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!estado.urgentFilter || isUrgent(c)));
-      const activeCards = state.cards.filter(c => c.column === col.id && !c.archived).length;
+    estado.COLUMNS.forEach((col, colIdx) => {
+      const cards = estado.state.cards.filter(c => c.column === col.id && !c.archived && matchesSearch(c) && matchesAssignee(c) && matchesLabels(c) && (!estado.urgentFilter || isUrgent(c)));
+      const activeCards = estado.state.cards.filter(c => c.column === col.id && !c.archived).length;
       const colEl = document.createElement("div");
       colEl.className = "column";
       const doneMarker = col.isDone ? ' <span title="Columna de cierre">✅</span>' : "";
       const isFirst = colIdx === 0;
-      const isLast  = colIdx === COLUMNS.length - 1;
+      const isLast  = colIdx === estado.COLUMNS.length - 1;
       colEl.innerHTML = `
         <div class="column-header">
           <span class="col-name-text">${escapeHtml(col.name)}${doneMarker}</span>
@@ -905,21 +900,21 @@ import { estado } from "./core/state.js";
         // el render acaba de crear — mismo id, dos elementos. Sin este guard, la tarjeta
         // quedaría duplicada en state.cards (y por lo tanto en pantalla) hasta el próximo poll.
         if (seenIds.has(el.dataset.id)) return;
-        const card = state.cards.find(c => c.id === el.dataset.id);
+        const card = estado.state.cards.find(c => c.id === el.dataset.id);
         if (card) { seenIds.add(card.id); card.column = colId; newOrder.push(card); }
       });
     });
     // por seguridad, conservar cualquier tarjeta que no haya quedado en el DOM
-    state.cards.forEach(c => { if (!newOrder.includes(c)) newOrder.push(c); });
-    state.cards = newOrder;
+    estado.state.cards.forEach(c => { if (!newOrder.includes(c)) newOrder.push(c); });
+    estado.state.cards = newOrder;
   }
 
   // Envía al backend la columna y posición de cada tarjeta según el orden actual.
   function persistOrder() {
     const items = [];
-    COLUMNS.forEach(col => {
+    estado.COLUMNS.forEach(col => {
       let pos = 0;
-      state.cards.filter(c => c.column === col.id).forEach(c => {
+      estado.state.cards.filter(c => c.column === col.id).forEach(c => {
         items.push({ id: c.id, column: col.id, position: ++pos });
       });
     });
@@ -1035,11 +1030,11 @@ import { estado } from "./core/state.js";
     if (!cardDrag || e.pointerId !== cardDrag.pointerId) return;
     if (!endCardDrag()) return; // no hubo arrastre real: fue un tap/click normal
     const doneColIds = getDoneColumnIds();
-    const prevCols = Object.fromEntries(state.cards.map(c => [c.id, c.column]));
+    const prevCols = Object.fromEntries(estado.state.cards.map(c => [c.id, c.column]));
     rebuildOrderFromDom();
     render();                 // refleja el nuevo orden de inmediato
     // celebrar tarjetas que acaban de llegar a cualquier columna de cierre
-    state.cards.filter(c => doneColIds.has(c.column) && !doneColIds.has(prevCols[c.id]))
+    estado.state.cards.filter(c => doneColIds.has(c.column) && !doneColIds.has(prevCols[c.id]))
       .forEach(c => celebrateCard(c.id));
     try { await persistOrder(); }
     catch (err) { alert("No se pudo guardar el orden: " + err.message); loadBoard(); }
@@ -1063,7 +1058,7 @@ import { estado } from "./core/state.js";
 
   // Devuelve true si la tarjeta fue eliminada.
   async function deleteCard(id) {
-    const card = state.cards.find(c => c.id === id);
+    const card = estado.state.cards.find(c => c.id === id);
     if (!card) return false;
     const name = card.title ? `“${card.title}”` : "esta tarjeta";
     if (!confirm(`¿Eliminar ${name} de forma permanente?\n\nEsta acción no se puede deshacer.`)) return false;
@@ -1078,10 +1073,10 @@ import { estado } from "./core/state.js";
   // ---------- Overlay de archivadas ----------
   const archiveOverlay = document.getElementById("archiveOverlay");
   const archiveList = document.getElementById("archiveList");
-  const colName = id => (COLUMNS.find(c => c.id === id) || {}).name || id;
+  const colName = id => (estado.COLUMNS.find(c => c.id === id) || {}).name || id;
 
   function renderArchiveList() {
-    const archived = state.cards
+    const archived = estado.state.cards
       .filter(c => c.archived)
       .sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0));
     archiveList.innerHTML = "";
@@ -1132,26 +1127,26 @@ import { estado } from "./core/state.js";
   function populateColumnSelect() {
     const prev = fColumn.value;
     fColumn.innerHTML = "";
-    COLUMNS.forEach(c => {
+    estado.COLUMNS.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.id; opt.textContent = c.name;
       fColumn.appendChild(opt);
     });
     // restaurar selección previa si sigue siendo válida
-    if (prev && COLUMNS.some(c => c.id === prev)) fColumn.value = prev;
+    if (prev && estado.COLUMNS.some(c => c.id === prev)) fColumn.value = prev;
   }
 
   // pobla el selector de responsable con los miembros del tablero actual
   function populateAssignee(selected) {
     const label = m => (m.avatarEmoji ? m.avatarEmoji + " " : "") + (m.name || shortName(m.email));
     fAssignee.innerHTML = '<option value="">— Sin asignar —</option>';
-    members.forEach(m => {
+    estado.members.forEach(m => {
       const o = document.createElement("option");
       o.value = m.email; o.textContent = label(m);
       fAssignee.appendChild(o);
     });
     // si el responsable actual ya no es miembro, igual lo mostramos para no perderlo
-    if (selected && !members.some(m => m.email === selected)) {
+    if (selected && !estado.members.some(m => m.email === selected)) {
       const o = document.createElement("option");
       o.value = selected; o.textContent = shortName(selected) + " (no miembro)";
       fAssignee.appendChild(o);
@@ -1163,7 +1158,7 @@ import { estado } from "./core/state.js";
   function actionLabel(action, details) {
     const d = details || {};
     // Prefiere el nombre guardado en el evento; cae en el nombre actual como fallback para eventos viejos.
-    const colName = (id, saved) => saved || (COLUMNS.find(c => c.id === id) || { name: id }).name;
+    const colName = (id, saved) => saved || (estado.COLUMNS.find(c => c.id === id) || { name: id }).name;
     switch (action) {
       case "card_created":
         return d.column ? `Creó la tarjeta en "${colName(d.column, d.columnName)}"` : "Creó la tarjeta";
@@ -1225,10 +1220,10 @@ import { estado } from "./core/state.js";
   function openModal(id, defaultCol) {
     checklistRefreshPending = false;
     estado.editingId = id;
-    const card = id ? state.cards.find(c => c.id === id) : null;
+    const card = id ? estado.state.cards.find(c => c.id === id) : null;
     document.getElementById("modalTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
     fTitle.value = card ? card.title : "";
-    fColumn.value = card ? card.column : (defaultCol || (COLUMNS[0] || {}).id || "");
+    fColumn.value = card ? card.column : (defaultCol || (estado.COLUMNS[0] || {}).id || "");
     fDetails.value = card ? card.details : "";
     fDue.value = card ? (card.due || "") : "";
     populateAssignee(card ? card.assignee : "");
@@ -1275,7 +1270,7 @@ import { estado } from "./core/state.js";
     }
     input.disabled = false; addBtn.disabled = false;
     input.placeholder = "Escribir un comentario...";
-    const card = state.cards.find(c => c.id === estado.editingId);
+    const card = estado.state.cards.find(c => c.id === estado.editingId);
     (card ? card.comments || [] : []).forEach(cm => {
       const author = cm.author || { name: "—" };
       const li = document.createElement("li");
@@ -1327,7 +1322,7 @@ import { estado } from "./core/state.js";
     if (isDraft) {
       checklists = estado.draftChecklists;
     } else {
-      const card = state.cards.find(c => c.id === estado.editingId);
+      const card = estado.state.cards.find(c => c.id === estado.editingId);
       checklists = card ? (card.checklists || []) : [];
     }
 
@@ -1425,7 +1420,7 @@ import { estado } from "./core/state.js";
                 item.checked = updated.checked;
                 textEl.classList.toggle("checked", item.checked);
                 await loadCards();
-                const c2 = state.cards.find(c => c.id === estado.editingId);
+                const c2 = estado.state.cards.find(c => c.id === estado.editingId);
                 const cl2 = c2 && (c2.checklists || []).find(x => x.id === cl.id);
                 if (cl2) updateBar(cl2, bar, progressEl);
               } catch (e) { cb.checked = !cb.checked; alert("Error: " + e.message); }
@@ -1468,7 +1463,7 @@ import { estado } from "./core/state.js";
             else {
               await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
               await loadCards();
-              const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
+              const cl2 = (estado.state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
               if (cl2) { cl.items = cl2.items; renderItems(); }
             }
           });
@@ -1487,7 +1482,7 @@ import { estado } from "./core/state.js";
             else {
               await api("POST", "/api/checklists/" + cl.id + "/reorder", sorted.map(it => ({ id: it.id, position: it.position })));
               await loadCards();
-              const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
+              const cl2 = (estado.state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
               if (cl2) { cl.items = cl2.items; renderItems(); }
             }
           });
@@ -1507,7 +1502,7 @@ import { estado } from "./core/state.js";
                 cl.items = cl.items.filter(x => x.id !== item.id);
                 await loadCards();
                 renderItems();
-                const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
+                const cl2 = (estado.state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
                 if (cl2) updateBar(cl2, bar, progressEl);
               } catch (e) { alert("Error: " + e.message); }
             }
@@ -1548,7 +1543,7 @@ import { estado } from "./core/state.js";
             const newItem = await api("POST", "/api/checklists/" + cl.id + "/items", { text });
             cl.items.push(newItem);
             await loadCards();
-            const cl2 = (state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
+            const cl2 = (estado.state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
             if (cl2) { cl.items = cl2.items; }
             renderItems();
             updateBar(cl, bar, progressEl);
@@ -1593,7 +1588,7 @@ import { estado } from "./core/state.js";
   function renderLabels() {
     fLabelsSection.innerHTML = "";
     if (!estado.editingId) return;
-    const card = state.cards.find(c => c.id === estado.editingId);
+    const card = estado.state.cards.find(c => c.id === estado.editingId);
     const cardLabels = card ? (card.labels || []) : [];
 
     const section = document.createElement("div");
@@ -1629,7 +1624,7 @@ import { estado } from "./core/state.js";
     const existing = fLabelsSection.querySelector(".label-picker");
     if (existing) { existing.remove(); labelPickerVisible = false; return; }
 
-    const card = state.cards.find(c => c.id === estado.editingId);
+    const card = estado.state.cards.find(c => c.id === estado.editingId);
     const cardLabels = card ? (card.labels || []) : [];
     const assignedIds = new Set(cardLabels.map(l => l.id));
 
@@ -1641,7 +1636,7 @@ import { estado } from "./core/state.js";
     existingDiv.className = "existing-labels";
     existingDiv.innerHTML = '<h4 style="margin:0 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Etiquetas del tablero:</h4>';
 
-    boardLabels.forEach(label => {
+    estado.boardLabels.forEach(label => {
       const row = document.createElement("div");
       row.className = "existing-label";
       row.style.backgroundColor = assignedIds.has(label.id) ? label.color + "22" : "";
@@ -1719,12 +1714,12 @@ import { estado } from "./core/state.js";
       await withCardMutation(async () => {
         await api(assigned ? "POST" : "DELETE", `/api/cards/${cardId}/labels/${labelId}`);
         if (boardId !== currentBoardId) return;
-        const card = state.cards.find(c => c.id === cardId);
+        const card = estado.state.cards.find(c => c.id === cardId);
         if (!card) return;
-        const label = boardLabels.find(l => l.id === labelId);
+        const label = estado.boardLabels.find(l => l.id === labelId);
         const labels = (card.labels || []).filter(l => l.id !== labelId);
         if (assigned && label) labels.push({ id: label.id, name: label.name, color: label.color });
-        labels.sort((a, b) => boardLabels.findIndex(l => l.id === a.id) - boardLabels.findIndex(l => l.id === b.id));
+        labels.sort((a, b) => estado.boardLabels.findIndex(l => l.id === a.id) - estado.boardLabels.findIndex(l => l.id === b.id));
         applySavedCard(boardId, { ...card, labels });
         if (estado.editingId === cardId) renderLabels();
       });
@@ -1743,15 +1738,15 @@ import { estado } from "./core/state.js";
   // ---------- Objetivos dentro del modal de tarjeta ----------
   function renderCardGoals() {
     fGoalsSection.innerHTML = "";
-    if (!boardGoals && !estado.editingId) return;
+    if (!estado.boardGoals && !estado.editingId) return;
 
     // En modo edición los goals vienen del state; en modo borrador de draftGoals
     let cardGoals;
     if (estado.editingId) {
-      const card = state.cards.find(c => c.id === estado.editingId);
+      const card = estado.state.cards.find(c => c.id === estado.editingId);
       cardGoals = card ? (card.goals || []) : [];
     } else {
-      cardGoals = boardGoals.filter(g => estado.draftGoals.includes(g.id));
+      cardGoals = estado.boardGoals.filter(g => estado.draftGoals.includes(g.id));
     }
 
     const section = document.createElement("div");
@@ -1787,7 +1782,7 @@ import { estado } from "./core/state.js";
     if (existing) { existing.remove(); return; }
 
     const assignedIds = estado.editingId
-      ? new Set((state.cards.find(c => c.id === estado.editingId)?.goals || []).map(g => g.id))
+      ? new Set((estado.state.cards.find(c => c.id === estado.editingId)?.goals || []).map(g => g.id))
       : new Set(estado.draftGoals);
 
     const picker = document.createElement("div");
@@ -1796,14 +1791,14 @@ import { estado } from "./core/state.js";
     const existingDiv = document.createElement("div");
     existingDiv.innerHTML = '<h4 style="margin:0 0 6px;font-size:11px;font-weight:600;color:var(--muted)">Objetivos del tablero:</h4>';
 
-    if (!boardGoals.length) {
+    if (!estado.boardGoals.length) {
       const none = document.createElement("div");
       none.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:6px";
       none.textContent = "No hay objetivos todavía. Creá uno abajo.";
       existingDiv.appendChild(none);
     }
 
-    boardGoals.forEach(goal => {
+    estado.boardGoals.forEach(goal => {
       const row = document.createElement("div");
       row.className = "existing-goal";
       const assigned = assignedIds.has(goal.id);
@@ -1884,7 +1879,7 @@ import { estado } from "./core/state.js";
     try {
       await withCardMutation(async () => {
         const label = await api("POST", `/api/boards/${boardId}/labels`, { name, color });
-        if (boardId === currentBoardId) boardLabels.push(label);
+        if (boardId === currentBoardId) estado.boardLabels.push(label);
         await changeCardLabel(cardId, boardId, label.id, true);
         labelPickerVisible = false;
       });
@@ -2054,7 +2049,7 @@ import { estado } from "./core/state.js";
 
   function toCSV() {
     const rows = [CSV_HEADER];
-    state.cards.forEach(c => {
+    estado.state.cards.forEach(c => {
       rows.push([
         c.title || "",
         colName(c.column),
@@ -2107,7 +2102,7 @@ import { estado } from "./core/state.js";
     if (iTitle === -1) throw new Error('Falta la columna "Name" (título).');
 
     const statusToCol = {};
-    COLUMNS.forEach(c => { statusToCol[c.name.toLowerCase()] = c.id; });
+    estado.COLUMNS.forEach(c => { statusToCol[c.name.toLowerCase()] = c.id; });
 
     const cards = [];
     for (let i = 1; i < rows.length; i++) {
@@ -2118,7 +2113,7 @@ import { estado } from "./core/state.js";
       cards.push({
         id: uid(),
         title: get(iTitle),
-        column: statusToCol[statusText] || COLUMNS[0].id,
+        column: statusToCol[statusText] || estado.COLUMNS[0].id,
         details: get(iDetails),
         due: /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : "",
         comments: get(iComments).split("\n").map(s => s.trim()).filter(Boolean).map(t => ({ text: t, ts: Date.now() })),
@@ -2134,7 +2129,7 @@ import { estado } from "./core/state.js";
     downloadFile(toCSV(), "tablero-" + stamp() + ".csv", "text/csv;charset=utf-8");
   });
   document.getElementById("exportBtn").addEventListener("click", () => {
-    downloadFile(JSON.stringify(state, null, 2), "tablero-" + stamp() + ".json", "application/json");
+    downloadFile(JSON.stringify(estado.state, null, 2), "tablero-" + stamp() + ".json", "application/json");
   });
 
   document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
@@ -2170,7 +2165,7 @@ import { estado } from "./core/state.js";
     const conResponsable = cards.filter(c => c.assignee).length;
 
     // conteo por columna (en el orden del tablero), solo de las no archivadas
-    const porColumna = COLUMNS.map(col => {
+    const porColumna = estado.COLUMNS.map(col => {
       const n = cards.filter(c => !c.archived && (c.column || "por_conversar") === col.id).length;
       return n ? `<li><span>${escapeHtml(col.name)}</span><b>${n}</b></li>` : "";
     }).join("");
@@ -2203,7 +2198,7 @@ import { estado } from "./core/state.js";
     const btn = document.getElementById("importConfirmBtn");
     btn.disabled = true;
     try {
-      state = await api("POST", "/api/boards/" + currentBoardId + "/import", { cards: pendingImport });
+      estado.state = await api("POST", "/api/boards/" + currentBoardId + "/import", { cards: pendingImport });
       render();
       closeImportPreview();
     } catch (err) {
@@ -2422,11 +2417,11 @@ import { estado } from "./core/state.js";
   function renderBoardLabelsManager() {
     const list = document.getElementById("boardLabelsList");
     list.innerHTML = "";
-    if (!boardLabels.length) {
+    if (!estado.boardLabels.length) {
       list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:6px 0">Sin etiquetas en este tablero.</div>';
       return;
     }
-    boardLabels.forEach(label => {
+    estado.boardLabels.forEach(label => {
       const row = document.createElement("div");
       row.className = "board-label-row";
       row.dataset.id = label.id;
@@ -2446,7 +2441,7 @@ import { estado } from "./core/state.js";
     });
     list.querySelectorAll(".board-label-del-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const label = boardLabels.find(l => l.id === btn.dataset.id);
+        const label = estado.boardLabels.find(l => l.id === btn.dataset.id);
         if (!label || !confirm(`¿Eliminar la etiqueta "${label.name}"? Se quitará de todas las tarjetas.`)) return;
         try {
           await api("DELETE", `/api/boards/${currentBoardId}/labels/${btn.dataset.id}`);
@@ -2458,7 +2453,7 @@ import { estado } from "./core/state.js";
   }
 
   function startEditBoardLabel(labelId) {
-    const label = boardLabels.find(l => l.id === labelId);
+    const label = estado.boardLabels.find(l => l.id === labelId);
     if (!label) return;
     const list = document.getElementById("boardLabelsList");
     const row = list.querySelector(`[data-id="${labelId}"]`);
@@ -2550,8 +2545,8 @@ import { estado } from "./core/state.js";
     delBtn.style.display = (isOwner && b && !b.isPersonal) ? "" : "none";
 
     const list = document.getElementById("membersList");
-    list.innerHTML = members.length ? "" : '<div class="members-empty">Sin miembros.</div>';
-    members.forEach(m => {
+    list.innerHTML = estado.members.length ? "" : '<div class="members-empty">Sin miembros.</div>';
+    estado.members.forEach(m => {
       const row = document.createElement("div");
       row.className = "member-row";
       const canRemove = isOwner && m.role !== "owner";
@@ -2769,7 +2764,7 @@ import { estado } from "./core/state.js";
     if (e.target.closest(".col-rename-btn")) {
       const btn = e.target.closest(".col-rename-btn");
       const colId = btn.dataset.col;
-      const col = COLUMNS.find(c => c.id === colId);
+      const col = estado.COLUMNS.find(c => c.id === colId);
       if (!col) return;
       const header = btn.closest(".column-header");
       const nameSpan = header.querySelector(".col-name-text");
@@ -2795,7 +2790,7 @@ import { estado } from "./core/state.js";
     if (e.target.closest(".col-delete-btn")) {
       const btn = e.target.closest(".col-delete-btn");
       const colId = btn.dataset.col;
-      const col = COLUMNS.find(c => c.id === colId);
+      const col = estado.COLUMNS.find(c => c.id === colId);
       if (!confirm(`¿Eliminar la columna "${col?.name || colId}"?`)) return;
       try {
         await api("DELETE", "/api/boards/" + currentBoardId + "/columns/" + colId);
@@ -2831,7 +2826,7 @@ import { estado } from "./core/state.js";
     const el = document.elementFromPoint(mouseX, mouseY);
     const col = el && el.closest ? el.closest(".column") : null;
     const cardsEl = col && col.querySelector(".cards");
-    openModal(null, cardsEl ? cardsEl.dataset.col : COLUMNS[0].id);
+    openModal(null, cardsEl ? cardsEl.dataset.col : estado.COLUMNS[0].id);
   }
 
   document.addEventListener("keydown", e => {
@@ -2859,7 +2854,7 @@ import { estado } from "./core/state.js";
     else if (k === "0") { e.preventDefault(); estado.activeLabelFilters.clear(); render(); }
     else if (k >= "1" && k <= "9") {
       const idx = parseInt(k) - 1;
-      const label = boardLabels[idx];
+      const label = estado.boardLabels[idx];
       if (label) {
         e.preventDefault();
         if (estado.activeLabelFilters.has(label.id)) {
@@ -2974,7 +2969,7 @@ import { estado } from "./core/state.js";
     const sel = document.getElementById("activityUserFilter");
     if (sel.options.length <= 1) {
       sel.innerHTML = '<option value="">Todos los usuarios</option>'
-        + members.map(m => `<option value="${escapeHtml(m.email)}">${escapeHtml(m.name || m.email)}</option>`).join("");
+        + estado.members.map(m => `<option value="${escapeHtml(m.email)}">${escapeHtml(m.name || m.email)}</option>`).join("");
     }
 
     actList.innerHTML = '<div class="activity-empty">Cargando…</div>';
@@ -3126,7 +3121,7 @@ import { estado } from "./core/state.js";
   async function checkDeepLink() {
     const cardId = new URLSearchParams(location.search).get("card");
     if (!cardId) return;
-    if (state.cards.find(c => c.id === cardId)) { openModal(cardId); return; }
+    if (estado.state.cards.find(c => c.id === cardId)) { openModal(cardId); return; }
     try {
       const data = await api("GET", "/api/cards/" + cardId);
       if (data.boardId !== currentBoardId) {
