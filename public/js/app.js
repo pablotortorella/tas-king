@@ -9,23 +9,10 @@ import {
   fmtDate, relativeTime, shortName, uid,
 } from "./core/dom.js";
 import { api } from "./core/api.js";
-import { estado } from "./core/state.js";
+import { currentBoard, estado, getDoneColumnIds } from "./core/state.js";
 
 (function () {
   "use strict";
-
-  // Columnas del tablero actual — se actualiza en loadCards()
-  // Columnas de cierre: las marcadas con is_done=1; fallback a la última por posición.
-  const getDoneColumnIds = () => {
-    const done = estado.COLUMNS.filter(c => c.isDone).map(c => c.id);
-    return new Set(done.length > 0 ? done : [(estado.COLUMNS[estado.COLUMNS.length - 1] || {}).id || "terminado"]);
-  };
-
-  /** @type {{cards: Array}} */
-  let me = null;               // usuario actual + sus tableros
-  let currentBoardId = null;   // tablero seleccionado
-
-  const currentBoard = () => me && me.boards.find(b => b.id === currentBoardId);
 
   // ---------- Tema claro/oscuro ----------
   // El tema ya se aplicó en <head> (anti-flash); acá solo manejamos el toggle.
@@ -130,7 +117,7 @@ import { estado } from "./core/state.js";
   function startWipPulse() {
     stopWipPulse();
     wipPulseTimer = setInterval(() => {
-      if (!currentBoardId || document.hidden || !wipPulseEnabled()) return;
+      if (!estado.currentBoardId || document.hidden || !wipPulseEnabled()) return;
       runWipPulseSequence();
     }, WIP_PULSE_INTERVAL);
   }
@@ -145,20 +132,20 @@ import { estado } from "./core/state.js";
 
   // Perfil del usuario actual (con email) para pasarlo a avatarHtml.
   const meProfile = () => ({
-    email: me.email,
-    name: me.profile.name,
-    avatarEmoji: me.profile.avatarEmoji,
-    avatarColor: me.profile.avatarColor,
+    email: estado.me.email,
+    name: estado.me.profile.name,
+    avatarEmoji: estado.me.profile.avatarEmoji,
+    avatarColor: estado.me.profile.avatarColor,
   });
   function renderMe() {
     document.getElementById("profileBtn").innerHTML =
-      avatarHtml(meProfile(), 22) + "<span>" + escapeHtml(me.profile.name) + "</span>";
+      avatarHtml(meProfile(), 22) + "<span>" + escapeHtml(estado.me.profile.name) + "</span>";
     const adminBtn = document.getElementById("adminBtn");
     const adminBadge = document.getElementById("adminBadge");
-    adminBtn.style.display = me.isAdmin ? "inline-block" : "none";
-    if (me.isAdmin && me.pendingCount > 0) {
+    adminBtn.style.display = estado.me.isAdmin ? "inline-block" : "none";
+    if (estado.me.isAdmin && estado.me.pendingCount > 0) {
       adminBadge.style.display = "block";
-      adminBadge.textContent = me.pendingCount;
+      adminBadge.textContent = estado.me.pendingCount;
     } else {
       adminBadge.style.display = "none";
     }
@@ -179,7 +166,7 @@ import { estado } from "./core/state.js";
   function tipDelDia() {
     const catalogo = globalThis.DAILY_TIPS;
     if (!Array.isArray(catalogo) || !catalogo.length) return null;
-    const indice = Number.isInteger(me && me.tipIndex) ? me.tipIndex : 0;
+    const indice = Number.isInteger(estado.me && estado.me.tipIndex) ? estado.me.tipIndex : 0;
     return catalogo[indice % catalogo.length];
   }
 
@@ -229,15 +216,15 @@ import { estado } from "./core/state.js";
   // Carga el usuario, sus tableros y el tablero actual.
   async function loadBoard() {
     try {
-      me = await api("GET", "/api/me?today=" + fechaLocal());
+      estado.me = await api("GET", "/api/me?today=" + fechaLocal());
       renderMe();
       renderTipDaily();
       armarRealceDelTip();
       const saved = localStorage.getItem("tasKingBoardId");
-      if (!me.boards.some(b => b.id === currentBoardId)) currentBoardId = null;
-      if (!currentBoardId) {
-        currentBoardId = (saved && me.boards.some(b => b.id === saved)) ? saved
-          : (me.boards[0] && me.boards[0].id) || null;
+      if (!estado.me.boards.some(b => b.id === estado.currentBoardId)) estado.currentBoardId = null;
+      if (!estado.currentBoardId) {
+        estado.currentBoardId = (saved && estado.me.boards.some(b => b.id === saved)) ? saved
+          : (estado.me.boards[0] && estado.me.boards[0].id) || null;
       }
       renderBoardSelect();
       await loadMembers();
@@ -257,19 +244,19 @@ import { estado } from "./core/state.js";
 
   // Trae las tarjetas del tablero actual y re-renderiza.
   async function loadCards() {
-    const boardId = currentBoardId;
+    const boardId = estado.currentBoardId;
     const mutationRevision = estado.cardMutationRevision;
     const loadRevision = ++estado.boardLoadRevision;
-    const isCurrent = () => boardId === currentBoardId && mutationRevision === estado.cardMutationRevision
+    const isCurrent = () => boardId === estado.currentBoardId && mutationRevision === estado.cardMutationRevision
       && loadRevision === estado.boardLoadRevision && !estado.pendingCardMutations && !(cardDrag && cardDrag.active);
     if (estado.pendingCardMutations) { estado.boardRefreshPending = true; return false; }
-    if (!currentBoardId) {
+    if (!estado.currentBoardId) {
       estado.state = { cards: [], columns: [] }; estado.COLUMNS = [];
       estado.boardLabels = []; estado.boardGoals = [];
       applyBoardPalette(null);
       populateColumnSelect(); render(); refreshGoalsUI(); return true;
     }
-    localStorage.setItem("tasKingBoardId", currentBoardId);
+    localStorage.setItem("tasKingBoardId", estado.currentBoardId);
     applyBoardPalette(currentBoard() && currentBoard().theme);
     const nextState = await api("GET", "/api/boards/" + boardId + "/cards");
     if (!isCurrent()) return false;
@@ -311,7 +298,7 @@ import { estado } from "./core/state.js";
   }
 
   function applySavedCard(boardId, card) {
-    if (boardId !== currentBoardId) return;
+    if (boardId !== estado.currentBoardId) return;
     const index = estado.state.cards.findIndex(c => c.id === card.id);
     if (index >= 0 && estado.state.cards[index].column === card.column) estado.state.cards[index] = card;
     else {
@@ -333,7 +320,7 @@ import { estado } from "./core/state.js";
   }
 
   async function loadGoals() {
-    try { estado.boardGoals = await api("GET", "/api/boards/" + currentBoardId + "/goals"); }
+    try { estado.boardGoals = await api("GET", "/api/boards/" + estado.currentBoardId + "/goals"); }
     catch (e) { estado.boardGoals = []; }
   }
 
@@ -344,19 +331,19 @@ import { estado } from "./core/state.js";
   const POLL_INTERVAL = 5000;
 
   async function pollTick() {
-    if (!currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
+    if (!estado.currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
     // loadCards() hace board.innerHTML = "" y reconstruye todas las tarjetas: si corre
     // mientras hay un arrastre en curso, el nodo de la tarjeta arrastrada queda huérfano
     // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
     // mouse — el próximo pointermove lo reinserta junto al nuevo nodo ya renderizado,
     // duplicando la tarjeta en pantalla hasta el siguiente poll. Se posterga al próximo tick.
     if (cardDrag && cardDrag.active) return;
-    const boardId = currentBoardId;
+    const boardId = estado.currentBoardId;
     const mutationRevision = estado.cardMutationRevision;
     pollInFlight = true;
     try {
       const { version } = await api("GET", "/api/boards/" + boardId + "/version");
-      if (boardId !== currentBoardId || mutationRevision !== estado.cardMutationRevision || estado.pendingCardMutations) return;
+      if (boardId !== estado.currentBoardId || mutationRevision !== estado.cardMutationRevision || estado.pendingCardMutations) return;
       if (version !== estado.lastKnownVersion) {
         const doneColIds = getDoneColumnIds();
         const prevTerminados = new Set(estado.state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
@@ -401,8 +388,8 @@ import { estado } from "./core/state.js";
   }
 
   async function loadMembers() {
-    if (!currentBoardId) { estado.members = []; renderAssigneeFilter(); return; }
-    try { estado.members = (await api("GET", "/api/boards/" + currentBoardId + "/members")).members; }
+    if (!estado.currentBoardId) { estado.members = []; renderAssigneeFilter(); return; }
+    try { estado.members = (await api("GET", "/api/boards/" + estado.currentBoardId + "/members")).members; }
     catch (e) { estado.members = []; }
     renderAssigneeFilter();
   }
@@ -410,13 +397,13 @@ import { estado } from "./core/state.js";
   function renderBoardSelect() {
     const sel = document.getElementById("boardSelect");
     sel.innerHTML = "";
-    me.boards.forEach(b => {
+    estado.me.boards.forEach(b => {
       const o = document.createElement("option");
       o.value = b.id;
       o.textContent = (b.isPersonal ? "👤 " : "👥 ") + b.name;
       sel.appendChild(o);
     });
-    sel.value = currentBoardId;
+    sel.value = estado.currentBoardId;
     updateBoardControls();
   }
 
@@ -583,7 +570,7 @@ import { estado } from "./core/state.js";
     const description = (container.querySelector(".new-goal-desc").value || "").trim();
     if (!title) { alert("Escribí un título para el objetivo."); return; }
     try {
-      await api("POST", "/api/boards/" + currentBoardId + "/goals", { title, description });
+      await api("POST", "/api/boards/" + estado.currentBoardId + "/goals", { title, description });
       await loadGoals();
       refreshGoalsUI();
     } catch (e) { alert("No se pudo crear el objetivo: " + e.message); }
@@ -596,7 +583,7 @@ import { estado } from "./core/state.js";
     const description = prompt("Descripción (opcional):", goal.description || "");
     if (description === null) return;
     try {
-      await api("PUT", "/api/boards/" + currentBoardId + "/goals/" + goal.id,
+      await api("PUT", "/api/boards/" + estado.currentBoardId + "/goals/" + goal.id,
         { title: title.trim(), description: description.trim() });
       await loadGoals();
       refreshGoalsUI();
@@ -606,7 +593,7 @@ import { estado } from "./core/state.js";
   async function deleteGoal(goal) {
     if (!confirm(`¿Eliminar el objetivo “${goal.title}”?\n\nLas tarjetas no se borran, solo se desvinculan.`)) return;
     try {
-      await api("DELETE", "/api/boards/" + currentBoardId + "/goals/" + goal.id);
+      await api("DELETE", "/api/boards/" + estado.currentBoardId + "/goals/" + goal.id);
       if (estado.activeGoalFilter === goal.id) estado.activeGoalFilter = null;
       await loadCards(); // refresca también las tarjetas (perdieron el vínculo)
     } catch (e) { alert("No se pudo eliminar el objetivo: " + e.message); }
@@ -635,9 +622,9 @@ import { estado } from "./core/state.js";
   }
 
   async function loadMetrics() {
-    if (!currentBoardId) return;
+    if (!estado.currentBoardId) return;
     try {
-      const m = await api("GET", "/api/boards/" + currentBoardId + "/metrics");
+      const m = await api("GET", "/api/boards/" + estado.currentBoardId + "/metrics");
       document.getElementById("mToday").textContent = m.completedByPeriod.today;
       document.getElementById("mWeek").textContent  = m.completedByPeriod.thisWeek;
       document.getElementById("mMonth").textContent = m.completedByPeriod.thisMonth;
@@ -795,8 +782,8 @@ import { estado } from "./core/state.js";
   }
 
   function isOwner() {
-    if (!me || !me.boards) return false;
-    const b = me.boards.find(b => b.id === currentBoardId);
+    if (!estado.me || !estado.me.boards) return false;
+    const b = estado.me.boards.find(b => b.id === estado.currentBoardId);
     return b && b.role === "owner";
   }
 
@@ -837,7 +824,7 @@ import { estado } from "./core/state.js";
     });
 
     // Botón "+ Columna" al final (solo owner)
-    if (owner && currentBoardId) {
+    if (owner && estado.currentBoardId) {
       const addColEl = document.createElement("div");
       addColEl.className = "add-column";
       addColEl.innerHTML = `
@@ -862,7 +849,7 @@ import { estado } from "./core/state.js";
         const name = input.value.trim();
         if (!name) return;
         try {
-          await api("POST", "/api/boards/" + currentBoardId + "/columns", { name });
+          await api("POST", "/api/boards/" + estado.currentBoardId + "/columns", { name });
           await loadCards();
         } catch (err) { alert(err.message || "Error al crear columna"); await loadCards(); }
       };
@@ -918,7 +905,7 @@ import { estado } from "./core/state.js";
         items.push({ id: c.id, column: col.id, position: ++pos });
       });
     });
-    return api("POST", "/api/boards/" + currentBoardId + "/reorder", items);
+    return api("POST", "/api/boards/" + estado.currentBoardId + "/reorder", items);
   }
 
   function renderCard(card) {
@@ -1660,7 +1647,7 @@ import { estado } from "./core/state.js";
       delBtn.addEventListener("click", async () => {
         if (confirm("¿Eliminar esta etiqueta?")) {
           try {
-            await api("DELETE", `/api/boards/${currentBoardId}/labels/${label.id}`);
+            await api("DELETE", `/api/boards/${estado.currentBoardId}/labels/${label.id}`);
             await loadCards();
             labelPickerVisible = false;
             renderLabels();
@@ -1713,7 +1700,7 @@ import { estado } from "./core/state.js";
     try {
       await withCardMutation(async () => {
         await api(assigned ? "POST" : "DELETE", `/api/cards/${cardId}/labels/${labelId}`);
-        if (boardId !== currentBoardId) return;
+        if (boardId !== estado.currentBoardId) return;
         const card = estado.state.cards.find(c => c.id === cardId);
         if (!card) return;
         const label = estado.boardLabels.find(l => l.id === labelId);
@@ -1728,11 +1715,11 @@ import { estado } from "./core/state.js";
   }
 
   function assignLabel(labelId) {
-    return changeCardLabel(estado.editingId, currentBoardId, labelId, true);
+    return changeCardLabel(estado.editingId, estado.currentBoardId, labelId, true);
   }
 
   function removeLabel(labelId) {
-    return changeCardLabel(estado.editingId, currentBoardId, labelId, false);
+    return changeCardLabel(estado.editingId, estado.currentBoardId, labelId, false);
   }
 
   // ---------- Objetivos dentro del modal de tarjeta ----------
@@ -1836,7 +1823,7 @@ import { estado } from "./core/state.js";
       const title = (picker.querySelector("#newGoalInline").value || "").trim();
       if (!title) { alert("Escribí un título."); return; }
       try {
-        const goal = await api("POST", "/api/boards/" + currentBoardId + "/goals", { title });
+        const goal = await api("POST", "/api/boards/" + estado.currentBoardId + "/goals", { title });
         if (estado.editingId) {
           await api("POST", `/api/cards/${estado.editingId}/goals/${goal.id}`);
           await loadCards();
@@ -1872,14 +1859,14 @@ import { estado } from "./core/state.js";
   }
 
   async function createLabel(color) {
-    if (!estado.editingId || !currentBoardId) return;
-    const cardId = estado.editingId, boardId = currentBoardId;
+    if (!estado.editingId || !estado.currentBoardId) return;
+    const cardId = estado.editingId, boardId = estado.currentBoardId;
     const name = document.getElementById("newLabelName")?.value.trim();
     if (!name) return alert("Falta nombre de etiqueta");
     try {
       await withCardMutation(async () => {
         const label = await api("POST", `/api/boards/${boardId}/labels`, { name, color });
-        if (boardId === currentBoardId) estado.boardLabels.push(label);
+        if (boardId === estado.currentBoardId) estado.boardLabels.push(label);
         await changeCardLabel(cardId, boardId, label.id, true);
         labelPickerVisible = false;
       });
@@ -1945,7 +1932,7 @@ import { estado } from "./core/state.js";
       assignee: fAssignee.value || null,
     };
 
-    const boardId = currentBoardId, cardId = estado.editingId;
+    const boardId = estado.currentBoardId, cardId = estado.editingId;
     const removedIds = [...estado.removedAttachmentIds];
     const nuevos = estado.draftAttachments.filter(a => a._new);
     const checklists = cardId ? [] : structuredClone(estado.draftChecklists);
@@ -1996,7 +1983,7 @@ import { estado } from "./core/state.js";
           card = await api("GET", "/api/cards/" + card.id);
         }
         applySavedCard(boardId, card);
-        if (boardId === currentBoardId && estado.editingId === cardId) closeModal();
+        if (boardId === estado.currentBoardId && estado.editingId === cardId) closeModal();
       });
     } catch (e) {
       alert("No se pudo guardar: " + e.message);
@@ -2198,7 +2185,7 @@ import { estado } from "./core/state.js";
     const btn = document.getElementById("importConfirmBtn");
     btn.disabled = true;
     try {
-      estado.state = await api("POST", "/api/boards/" + currentBoardId + "/import", { cards: pendingImport });
+      estado.state = await api("POST", "/api/boards/" + estado.currentBoardId + "/import", { cards: pendingImport });
       render();
       closeImportPreview();
     } catch (err) {
@@ -2300,7 +2287,7 @@ import { estado } from "./core/state.js";
 
   // ---------- Selector de tablero y nuevo tablero ----------
   document.getElementById("boardSelect").addEventListener("change", async e => {
-    currentBoardId = e.target.value;
+    estado.currentBoardId = e.target.value;
     estado.assigneeFilter = "";
     estado.activeGoalFilter = null;
     closeGoalsDrawer();
@@ -2320,7 +2307,7 @@ import { estado } from "./core/state.js";
     const name = prompt("Nuevo nombre del tablero:", b.name);
     if (!name || !name.trim() || name.trim() === b.name) return;
     try {
-      await api("PATCH", "/api/boards/" + currentBoardId, { name: name.trim() });
+      await api("PATCH", "/api/boards/" + estado.currentBoardId, { name: name.trim() });
       await loadBoard();
     } catch (e) { alert("No se pudo renombrar: " + e.message); }
   });
@@ -2330,7 +2317,7 @@ import { estado } from "./core/state.js";
     if (!name || !name.trim()) return;
     try {
       const b = await api("POST", "/api/boards", { name: name.trim() });
-      currentBoardId = b.id;
+      estado.currentBoardId = b.id;
       await loadBoard();
     } catch (e) { alert("No se pudo crear el tablero: " + e.message); }
   });
@@ -2368,7 +2355,7 @@ import { estado } from "./core/state.js";
         opt.addEventListener("click", async () => {
           if (p.key === current) return;
           try {
-            await api("PATCH", "/api/boards/" + currentBoardId, { theme: p.key });
+            await api("PATCH", "/api/boards/" + estado.currentBoardId, { theme: p.key });
             await loadBoard();
             renderBoardThemeManager();
           } catch (e) { alert("No se pudo cambiar la paleta: " + e.message); }
@@ -2393,7 +2380,7 @@ import { estado } from "./core/state.js";
       opt.innerHTML = `<span class="theme-swatch" style="background:${p.swatch}"></span><span>${escapeHtml(p.label)}</span>`;
       opt.addEventListener("click", async () => {
         try {
-          await api("PATCH", "/api/boards/" + currentBoardId, { theme: p.key });
+          await api("PATCH", "/api/boards/" + estado.currentBoardId, { theme: p.key });
           themePromptOverlay.classList.remove("open");
           await loadBoard();
         } catch (e) { alert("No se pudo guardar la paleta: " + e.message); }
@@ -2405,7 +2392,7 @@ import { estado } from "./core/state.js";
   async function skipThemePrompt() {
     if (!themePromptOverlay.classList.contains("open")) return;
     try {
-      await api("PATCH", "/api/boards/" + currentBoardId, { themePromptSeen: true });
+      await api("PATCH", "/api/boards/" + estado.currentBoardId, { themePromptSeen: true });
       themePromptOverlay.classList.remove("open");
       await loadBoard();
     } catch (e) { alert("No se pudo guardar: " + e.message); }
@@ -2444,7 +2431,7 @@ import { estado } from "./core/state.js";
         const label = estado.boardLabels.find(l => l.id === btn.dataset.id);
         if (!label || !confirm(`¿Eliminar la etiqueta "${label.name}"? Se quitará de todas las tarjetas.`)) return;
         try {
-          await api("DELETE", `/api/boards/${currentBoardId}/labels/${btn.dataset.id}`);
+          await api("DELETE", `/api/boards/${estado.currentBoardId}/labels/${btn.dataset.id}`);
           await loadCards();
           renderBoardLabelsManager();
         } catch (e) { alert(e.message || "Error al eliminar etiqueta"); }
@@ -2489,7 +2476,7 @@ import { estado } from "./core/state.js";
       const name = form.querySelector("input").value.trim();
       if (!name) return;
       try {
-        await api("PUT", `/api/boards/${currentBoardId}/labels/${labelId}`, { name, color: editColor });
+        await api("PUT", `/api/boards/${estado.currentBoardId}/labels/${labelId}`, { name, color: editColor });
         await loadCards();
         renderBoardLabelsManager();
       } catch (e) { alert(e.message || "Error al actualizar etiqueta"); }
@@ -2519,7 +2506,7 @@ import { estado } from "./core/state.js";
     const name = input.value.trim();
     if (!name) { input.focus(); return; }
     try {
-      await api("POST", `/api/boards/${currentBoardId}/labels`, { name, color: boardSelectedColor });
+      await api("POST", `/api/boards/${estado.currentBoardId}/labels`, { name, color: boardSelectedColor });
       input.value = "";
       await loadCards();
       renderBoardLabelsManager();
@@ -2558,7 +2545,7 @@ import { estado } from "./core/state.js";
       const rm = row.querySelector("[data-rm]");
       if (rm) rm.addEventListener("click", async () => {
         try {
-          await api("DELETE", "/api/boards/" + currentBoardId + "/members/" + encodeURIComponent(m.email));
+          await api("DELETE", "/api/boards/" + estado.currentBoardId + "/members/" + encodeURIComponent(m.email));
           await loadMembers(); renderMembers();
         } catch (e) { alert("No se pudo quitar: " + e.message); }
       });
@@ -2567,7 +2554,7 @@ import { estado } from "./core/state.js";
   }
 
   document.getElementById("membersBtn").addEventListener("click", () => {
-    if (!currentBoardId) return;
+    if (!estado.currentBoardId) return;
     switchSettingsTab("miembros");
     renderMembers();
     membersOverlay.classList.add("open");
@@ -2582,7 +2569,7 @@ import { estado } from "./core/state.js";
     const email = input.value.trim();
     if (!email) return;
     try {
-      await api("POST", "/api/boards/" + currentBoardId + "/members", { email });
+      await api("POST", "/api/boards/" + estado.currentBoardId + "/members", { email });
       input.value = "";
       await loadBoard();          // actualiza memberCount en el selector
       renderMembers();
@@ -2595,7 +2582,7 @@ import { estado } from "./core/state.js";
     const name = document.getElementById("renameInput").value.trim();
     if (!name) return;
     try {
-      await api("PATCH", "/api/boards/" + currentBoardId, { name });
+      await api("PATCH", "/api/boards/" + estado.currentBoardId, { name });
       await loadBoard();          // refresca el nombre en el selector
       renderMembers();
     } catch (e) { alert("No se pudo renombrar: " + e.message); }
@@ -2606,7 +2593,7 @@ import { estado } from "./core/state.js";
     const days = parseInt(document.getElementById("dueSoonInput").value, 10);
     if (!Number.isInteger(days) || days < 0 || days > 90) { alert("Ingresá un número de días entre 0 y 90."); return; }
     try {
-      await api("PATCH", "/api/boards/" + currentBoardId, { dueSoonDays: days });
+      await api("PATCH", "/api/boards/" + estado.currentBoardId, { dueSoonDays: days });
       await loadBoard();
       renderMembers();
     } catch (e) { alert("No se pudo guardar: " + e.message); }
@@ -2617,9 +2604,9 @@ import { estado } from "./core/state.js";
     if (!b) return;
     if (!confirm(`¿Eliminar el tablero “${b.name}” y todas sus tarjetas?\n\nEsta acción no se puede deshacer.`)) return;
     try {
-      await api("DELETE", "/api/boards/" + currentBoardId);
+      await api("DELETE", "/api/boards/" + estado.currentBoardId);
       membersOverlay.classList.remove("open");
-      currentBoardId = null;       // loadBoard elegirá el personal
+      estado.currentBoardId = null;       // loadBoard elegirá el personal
       await loadBoard();
     } catch (e) { alert("No se pudo eliminar el tablero: " + e.message); }
   });
@@ -2632,8 +2619,8 @@ import { estado } from "./core/state.js";
   function previewProfile() {
     const emoji = document.getElementById("profileEmoji").value.trim();
     document.getElementById("profilePreview").innerHTML = avatarHtml({
-      email: me.email,
-      name: document.getElementById("profileName").value || shortName(me.email),
+      email: estado.me.email,
+      name: document.getElementById("profileName").value || shortName(estado.me.email),
       avatarEmoji: emoji || null,
       avatarColor: profileColor || null,
     }, 40);
@@ -2659,10 +2646,10 @@ import { estado } from "./core/state.js";
   })();
 
   function openProfile() {
-    document.getElementById("profileName").value = me.profile.name || "";
-    document.getElementById("profileEmoji").value = me.profile.avatarEmoji || "";
-    document.getElementById("profileEmail").textContent = me.email;
-    profileColor = me.profile.avatarColor || "";
+    document.getElementById("profileName").value = estado.me.profile.name || "";
+    document.getElementById("profileEmoji").value = estado.me.profile.avatarEmoji || "";
+    document.getElementById("profileEmail").textContent = estado.me.email;
+    profileColor = estado.me.profile.avatarColor || "";
     previewProfile();
     profileOverlay.classList.add("open");
   }
@@ -2681,7 +2668,7 @@ import { estado } from "./core/state.js";
         avatarEmoji: document.getElementById("profileEmoji").value.trim(),
         avatarColor: profileColor,
       });
-      me.profile = { name: prof.name, avatarEmoji: prof.avatarEmoji, avatarColor: prof.avatarColor };
+      estado.me.profile = { name: prof.name, avatarEmoji: prof.avatarEmoji, avatarColor: prof.avatarColor };
       renderMe();
       await loadMembers();   // refresca avatares en filtro y miembros
       render();              // refresca avatares en las tarjetas
@@ -2745,7 +2732,7 @@ import { estado } from "./core/state.js";
       const dir   = btn.dataset.dir;
       btn.disabled = true;
       try {
-        await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { direction: dir });
+        await api("PATCH", "/api/boards/" + estado.currentBoardId + "/columns/" + colId, { direction: dir });
         await loadCards();
       } catch (err) { alert(err.message || "Error al mover columna"); btn.disabled = false; }
       return;
@@ -2756,7 +2743,7 @@ import { estado } from "./core/state.js";
       const isDone = btn.dataset.done === "1";
       btn.disabled = true;
       try {
-        await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { isDone: !isDone });
+        await api("PATCH", "/api/boards/" + estado.currentBoardId + "/columns/" + colId, { isDone: !isDone });
         await loadCards();
       } catch (err) { alert(err.message || "Error al actualizar la columna"); btn.disabled = false; }
       return;
@@ -2778,7 +2765,7 @@ import { estado } from "./core/state.js";
         if (saved) return; saved = true;
         const newName = input.value.trim();
         if (newName && newName !== col.name) {
-          try { await api("PATCH", "/api/boards/" + currentBoardId + "/columns/" + colId, { name: newName }); }
+          try { await api("PATCH", "/api/boards/" + estado.currentBoardId + "/columns/" + colId, { name: newName }); }
           catch (err) { alert(err.message || "Error al renombrar"); }
         }
         await loadCards();
@@ -2793,7 +2780,7 @@ import { estado } from "./core/state.js";
       const col = estado.COLUMNS.find(c => c.id === colId);
       if (!confirm(`¿Eliminar la columna "${col?.name || colId}"?`)) return;
       try {
-        await api("DELETE", "/api/boards/" + currentBoardId + "/columns/" + colId);
+        await api("DELETE", "/api/boards/" + estado.currentBoardId + "/columns/" + colId);
         await loadCards();
       } catch (err) { alert(err.message || "Error al eliminar columna"); }
     }
@@ -2805,8 +2792,8 @@ import { estado } from "./core/state.js";
 
   // F: alterna el filtro entre "mis tareas" (asignadas a mí) y "todos".
   function toggleMyTasks() {
-    if (!me) return;
-    estado.assigneeFilter = (estado.assigneeFilter === me.email) ? "" : me.email;
+    if (!estado.me) return;
+    estado.assigneeFilter = (estado.assigneeFilter === estado.me.email) ? "" : estado.me.email;
     const sel = document.getElementById("assigneeFilter");
     sel.value = [...sel.options].some(o => o.value === estado.assigneeFilter) ? estado.assigneeFilter : "";
     if (sel.value !== estado.assigneeFilter) estado.assigneeFilter = sel.value;  // por si no soy opción del filtro
@@ -2959,7 +2946,7 @@ import { estado } from "./core/state.js";
   }
 
   async function renderActivity() {
-    if (!currentBoardId) return;
+    if (!estado.currentBoardId) return;
     const actList = document.getElementById("adminActivityList");
     const userFilter = document.getElementById("activityUserFilter").value;
     const from = document.getElementById("activityFrom").value;
@@ -2978,7 +2965,7 @@ import { estado } from "./core/state.js";
       if (userFilter) params.set("user", userFilter);
       if (from) params.set("from", String(new Date(from).getTime()));
       if (to)   params.set("to",   String(new Date(to + "T23:59:59").getTime()));
-      const data = await api("GET", "/api/boards/" + currentBoardId + "/activity?" + params);
+      const data = await api("GET", "/api/boards/" + estado.currentBoardId + "/activity?" + params);
       if (!data.activity.length) {
         actList.innerHTML = '<div class="activity-empty">Sin actividad en este período.</div>';
         return;
@@ -3027,7 +3014,7 @@ import { estado } from "./core/state.js";
       }
       adminUserList.innerHTML = data.allowed.map(u => {
         const isAdm = adminEmails.has(u.email);
-        const isSelf = u.email === me.email;
+        const isSelf = u.email === estado.me.email;
         return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)">
           <span style="flex:1;font-size:13px">${escapeHtml(u.email)}${isAdm ? ' <span title="Admin" style="font-size:11px;background:#ffe082;border-radius:3px;padding:1px 5px">Admin</span>' : ''}</span>
           ${!isSelf ? `<label title="Admin" style="font-size:12px;color:#555;cursor:pointer"><input type="checkbox" data-email="${escapeHtml(u.email)}" data-action="admin" ${isAdm ? "checked" : ""}> Admin</label>` : ""}
@@ -3124,9 +3111,9 @@ import { estado } from "./core/state.js";
     if (estado.state.cards.find(c => c.id === cardId)) { openModal(cardId); return; }
     try {
       const data = await api("GET", "/api/cards/" + cardId);
-      if (data.boardId !== currentBoardId) {
-        currentBoardId = data.boardId;
-        document.getElementById("boardSelect").value = currentBoardId;
+      if (data.boardId !== estado.currentBoardId) {
+        estado.currentBoardId = data.boardId;
+        document.getElementById("boardSelect").value = estado.currentBoardId;
         updateBoardControls();
         await loadMembers();
         await loadCards();

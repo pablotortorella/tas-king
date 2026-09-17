@@ -57,4 +57,21 @@ export const estado = {
   boardLabels: [],    // etiquetas del tablero actual
   boardGoals: [],     // objetivos del tablero actual (con progreso)
   members: [],        // miembros del tablero actual
+
+  // ---------- Sesión ----------
+  me: null,             // usuario actual + sus tableros
+  currentBoardId: null, // tablero seleccionado
 };
+
+// ---------- Derivados ----------
+// No son estado: son lecturas del estado. Viven acá porque cualquier módulo que
+// necesite saber qué columnas cierran, o en qué tablero está parado, lo pregunta
+// sin tener que conocer la forma interna de `estado`.
+
+/** Columnas marcadas con is_done=1; si no hay ninguna, la última por posición. */
+export const getDoneColumnIds = () => {
+  const done = estado.COLUMNS.filter(c => c.isDone).map(c => c.id);
+  return new Set(done.length > 0 ? done : [(estado.COLUMNS[estado.COLUMNS.length - 1] || {}).id || "terminado"]);
+};
+
+export const currentBoard = () => estado.me && estado.me.boards.find(b => b.id === estado.currentBoardId);
