@@ -7,7 +7,7 @@
 // app.js lo importa por su efecto, igual que drag.js.
 
 import { api } from "./core/api.js";
-import { escapeHtml, relativeTime } from "./core/dom.js";
+import { avatarHtml, escapeHtml, relativeTime } from "./core/dom.js";
 import { estado } from "./core/state.js";
 import { actionLabel, loadBoard } from "./board.js";
 

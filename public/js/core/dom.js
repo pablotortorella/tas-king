@@ -15,6 +15,14 @@ export const AVATAR_COLORS = [
   "#4bbf6b", "#00aecc", "#838c91", "#d29034",
 ];
 
+// Paleta de etiquetas. La comparten el administrador de etiquetas del tablero y
+// el selector de la tarjeta, o sea dos features: por eso vive en el núcleo y no
+// en ninguna de las dos.
+export const LABEL_COLORS = [
+  "#F44336", "#2196F3", "#4CAF50", "#FFC107", "#FF9800",
+  "#9C27B0", "#00BCD4", "#009688", "#E91E63", "#3F51B5",
+];
+
 export const shortName = (email) => (email || "").split("@")[0];
 
 export function uid() {
