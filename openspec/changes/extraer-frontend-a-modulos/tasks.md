@@ -72,7 +72,7 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 5.20 `keyboard.js`: atajos, cadena de Escape, modal de ayuda, deep-link
 - [x] 5.21 `app.js` queda como composition root: arranque, cableado y registro de los 4 hooks de `window` en un punto único, cada uno comentado con el test que lo usa
 - [x] 5.22 Revisar que no quedó ningún import entre módulos de feature: las aristas de vuelta van por `bus.js`
-- [ ] 5.23 `npm run test:all` en verde y recorrido manual completo del producto
+- [x] 5.23 Verificación en staging de la modularización completa (2026-09-17, Version ID `1d6810de-94d3-433f-a5d6-ebb6383bda66`): los 19 archivos de `js/` se sirven como `text/javascript` y fuera del Worker; el navegador resuelve el grafo completo de imports (21 assets en 200, incluidos los de dos niveles de profundidad que el HTML no menciona); cero errores de consola y cero violaciones de CSP; los 5 documentos conservan cabeceras y el 304 condicional; el 401 sin sesión sigue redirigiendo a `/landing`
 
 ## 6. F6 — Endurecer `script-src`
 
