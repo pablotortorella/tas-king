@@ -71,3 +71,12 @@ y los triggers. No reconstruir ni borrar datos.
   acepta escrituras del Worker anterior y detecta el borrado de la última tarjeta.
 
 Referencia: [transacciones y resultados de D1 batch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch).
+
+## Nota de operación (2026-09-18)
+
+El requisito de aplicar la migración antes del Worker nuevo estaba documentado
+pero **no lo hacía cumplir ningún script**: `npm run deploy` y `deploy:staging`
+corrían `wrangler deploy` antes de migrar. Con la 0015 sin aplicar en producción,
+eso significaba una ventana de peticiones con `no such column: sync_version`.
+
+Se invirtió el orden en ambos scripts y `test/deploy-scripts.test.js` lo verifica.
