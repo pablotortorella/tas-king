@@ -87,11 +87,11 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 
 ## 7. Documentación e integración
 
-- [ ] 7.1 ADR nuevo en `docs/ADRs/`: por qué módulos ES sin build step, por qué cambia el ruteo de assets, y la decisión sobre `frame-ancestors`
-- [ ] 7.2 Corregir en `docs/PRODUCT_BACKLOG.md` el diagnóstico del ítem «CSP con `'unsafe-inline'`»: la premisa era equivocada, el problema real era que las cabeceras no llegaban al documento
-- [ ] 7.3 Agregar al backlog el ítem separado de `style-src` y los 148 atributos `style=`
-- [ ] 7.4 Actualizar `docs/STATUS.md` con la sesión, la causa raíz del gap de cabeceras y los tests agregados
-- [ ] 7.5 Evaluar si corresponde entrada en `public/releases.html` y bump de versión: el refactor es interno, pero el endurecimiento de seguridad puede merecer mención
-- [ ] 7.6 Rebase contra `origin/main`, `npm run test:all`, revisar el diff completo y abrir PR
-- [ ] 7.7 Desplegar a staging, verificar cabeceras y recorrido manual, e integrar a `main` siguiendo el flujo de `CLAUDE.md`
+- [x] 7.1 ADR nuevo en `docs/ADRs/`: por qué módulos ES sin build step, por qué cambia el ruteo de assets, y la decisión sobre `frame-ancestors`
+- [x] 7.2 Corregir en `docs/PRODUCT_BACKLOG.md` el diagnóstico del ítem «CSP con `'unsafe-inline'`»: la premisa era equivocada, el problema real era que las cabeceras no llegaban al documento
+- [x] 7.3 Agregar al backlog el ítem separado de `style-src` y los 148 atributos `style=`
+- [x] 7.4 Actualizar `docs/STATUS.md` con la sesión, la causa raíz del gap de cabeceras y los tests agregados
+- [x] 7.5 Evaluar si corresponde entrada en `public/releases.html` y bump de versión: el refactor es interno, pero el endurecimiento de seguridad puede merecer mención
+- [~] 7.6 Rebase contra `origin/main` (innecesario: la rama está al día), `npm run test:all` en verde (212 + 87) y diff revisado: 60 archivos, 40 nuevos. **Falta abrir el PR** — se decidió hacer dos, el refactor primero y el fix de Esc después, para no mezclar un cambio de comportamiento con un change que promete no cambiarlo
+- [~] 7.7 Staging desplegado con el estado final (2026-09-17, Version ID `72182e18-2dc1-4ce1-86d6-7bfc7b5f2ef3`, v2.3.0): política endurecida verificada en el borde (`script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`), cero scripts inline en las 5 páginas, cero violaciones en navegador, y el toggle de tema de las públicas funciona desde su archivo nuevo. **Falta: que Pablo confirme el login autenticado con Google, y la integración a `main`**
 - [ ] 7.8 Producción solo con aprobación explícita de Pablo; F6 conviene desplegarla sola para que un revert sea de una línea
