@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-15
+**Última actualización**: 2026-09-18
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -53,12 +53,14 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 | — | 🔒 Cabeceras de seguridad en el documento | 2026-09-17 — el diagnóstico del backlog estaba equivocado: no era que el CSP tuviera `'unsafe-inline'`, era que **ninguna cabecera de seguridad llegaba al HTML**. El Asset Worker respondía antes que el Worker, así que la app no tenía CSP ni `X-Frame-Options` (era enmarcable). El único test que lo cubría invocaba `app.request()` y se salteaba el ruteo. Ver ADR-017 |
 | — | 🧩 Frontend en módulos ES | 2026-09-17 — `index.html` pasó de 4.545 a 512 líneas de markup; el JS vive en 17 módulos bajo `public/js/` con tres capas y dirección de dependencia única. Habilitó `script-src 'self'` sin `'unsafe-inline'`. Ver ADR-017 |
 | — | ⌨️ Esc cierra la ayuda (F1) | 2026-09-17 — el impacto era mayor que el reportado: con la ayuda abierta el guard `.overlay.open` mataba **todos** los atajos, y como Esc no cerraba, no había salida por teclado. Se sumó a la cadena de Escape (un solo lugar decide qué cierra Esc) y se borró el código muerto. 5 tests E2E nuevos |
+| — | 🔄 Sincronización de comentarios, checklists y borrados | 2026-09-15 implementada (ADR-016, migración 0015); llegó a producción el 2026-09-18 junto con la v2.3.0 |
+| — | 🚦 Migrar antes de desplegar el Worker | 2026-09-18 — los scripts desplegaban antes de migrar, contra lo que pedía la documentación desde el 15/09. Con la 0015 sin aplicar en producción eso abría una ventana de 500. `test/deploy-scripts.test.js` verifica el orden |
 
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
 
-- **Sincronización de comentarios, checklists y borrados** — 2026-09-15, PR #41 integrado y `main` validado nuevamente en staging. Revisión persistente por tablero, lectura consistente y actualización del modal sin interrumpir borradores. Pendiente de producción; requiere migración 0015 antes del Worker. Ver `docs/STATUS.md` y ADR-016.
+_Sin ítems pendientes — todo lo implementado está en producción desde el deploy v2.3.0 del 2026-09-18._
 
 ---
 

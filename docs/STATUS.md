@@ -1,13 +1,32 @@
 # Estado de Implementación — FUN TasKing! v2.3.0
 
-**Última actualización**: 2026-09-17
-**Producción registrada**: v2.2.1, desplegada y verificada.
+**Última actualización**: 2026-09-18
+**Producción registrada**: v2.3.0, desplegada y verificada.
+
+**Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## 🚀 Deploy a producción v2.3.0 — 2026-09-18
+
+**Version ID:** `e20ace17-9736-4c7a-b1e0-13138d4074de` · **SHA:** `fb8eb81` · producción pasó de v2.2.1 a v2.3.0.
+
+- **Orden del deploy corregido el mismo día (PR #45).** Los dos scripts corrían `wrangler deploy` antes de la migración, contra lo que pedían ADR-016 y este documento desde el 15/09. La 0015 nunca se había aplicado en producción, así que el orden viejo habría abierto una ventana de 500 por `no such column: sync_version`. `test/deploy-scripts.test.js` verifica ahora el orden en ambos scripts.
+- **Beneficio no previsto, mostrado por un accidente:** al probar el orden nuevo en staging, la migración falló con un error transitorio de la API de Cloudflare y la cadena `&&` cortó **antes** de tocar el Worker. Con el orden anterior ese mismo fallo habría dejado el Worker nuevo arriba y la base sin migrar.
+- **El log del deploy confirma la secuencia:** respaldo (línea 160) → migración 0015, 15 comandos (195) → Worker (273).
+- **`main` estuvo en rojo entre el PR #45 y el deploy.** Dos tests de caracterización del perfil recargaban la página y hacían clic sin esperar a que cargara la sesión; `openProfile()` lee `estado.me` y lanzaba. Error del test, no del producto: ese comportamiento es previo al refactor. Reproducido a propósito retrasando `/api/me` con `page.route`, corregido en el PR #46.
+- **Consecuencia del refactor sobre la suite:** la carga de la página pasó de 1 a ~19 subrecursos, así que los tests que compiten contra el final de carga tienen menos margen. Uno tenía una carrera real (corregido); otros esperan con reintento y solo quedaron más frágiles. Explica el aumento de "flaky" de estos días.
+- **Verificación en producción:** v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, `X-Frame-Options`, `nosniff`, `Referrer-Policy` y HSTS presentes en el documento; las 5 páginas responden 200 con CSP; 24 assets JS/CSS en 200/304; cero violaciones de política y cero errores de consola en navegador.
+
+### Pendientes conocidos, ninguno bloqueante
+
+- **Dos flakes sin causa identificada.** Uno cuelga `page.goto` en `card-mutation-performance` (mitigado con `retries: 1`, que Playwright cuenta aparte como "flaky"); el otro apareció una vez en `checklists` —un renombrado que no persistió— y no reprodujo en cuatro corridas. El segundo cuida comportamiento real y conviene no perderlo de vista.
+- **`style-src` conserva `'unsafe-inline'`**, declarado en `src/middleware/cors.js`. Faltan migrar 148 atributos `style=`, varios con valores interpolados. Anotado en el backlog.
+- **Hallazgos de una revisión que apuntó al PR #41** y quedaron sin verificar por mí: el dump de backup no restaura los 15 índices, no hay trigger en `attachments`, y `persistOrder()` dispara una escritura de `boards` por tarjeta al reordenar. Valen una mirada propia antes de darlos por ciertos.
+
 ## 🧩 Frontend en módulos y cabeceras de seguridad — v2.3.0 preparada
 
-**Estado:** rama `refactor/frontend-modulos`, validada en staging. No desplegada a producción.
+**Estado:** ✅ en producción desde el 2026-09-18 (Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`). PRs #43, #44 y #46 integrados.
 
 - **Hallazgo que cambió el alcance:** el ítem del backlog decía que el CSP tenía `'unsafe-inline'`. El problema real era otro y mayor: **ninguna cabecera de seguridad llegaba al HTML**. `wrangler.jsonc` montaba los assets sin `run_worker_first`, así que el Asset Worker respondía antes que el Worker y `createCorsMiddleware()` nunca tocaba esas respuestas. La app no tenía CSP ni `X-Frame-Options` en las páginas que un navegador ejecuta: era enmarcable. El único test que cubría el CSP invocaba `app.request()` y se salteaba el ruteo de assets, por eso pasaba en verde.
 - **Entrega de cabeceras:** `run_worker_first` acotado a documentos, más un handler que los sirve desde el binding de assets preservando `Content-Type`, `Cache-Control` y `ETag`. Los assets estáticos siguen saliendo del borde sin pasar por el Worker. Se sumó `frame-ancestors 'none'`.
@@ -22,7 +41,7 @@
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 
-**Estado:** PR #41 integrado en `main` y validado nuevamente en staging. Producción sigue en v2.2.1, pendiente de aprobación final.
+**Estado:** ✅ en producción desde el 2026-09-18, despachado junto con la v2.3.0. La migración 0015 se aplicó en ese deploy, antes del Worker.
 
 - **Causa:** `MAX(cards.updated_at)` no detectaba recursos relacionados, borrados que conservaban el máximo ni escrituras en el mismo milisegundo. El cliente solo reaccionaba a versiones mayores.
 - **Datos:** migración `0015_board_sync.sql`, con `boards.sync_version` y triggers transaccionales para tarjetas, comentarios, checklists e ítems. No añade llamadas al binding en las escrituras; agrega actualizaciones internas del contador. La revisión conserva la escala previa para clientes abiertos.
