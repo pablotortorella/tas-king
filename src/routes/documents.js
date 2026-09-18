@@ -50,11 +50,16 @@ export function setupDocumentRoutes(app) {
 
   app.get("/", serveDocument);
 
-  // Cualquier .html, no una lista fija: `run_worker_first` manda todo /*.html
-  // hasta acá, así que una página nueva sin ruta equivalente daría 404 en vez
-  // de servirse. Estas respuestas suelen ser el redirect 307 a la URL sin
-  // extensión; igual llevan cabeceras.
-  app.get("/:document{.+\\.html}", serveDocument);
+  // Cualquier .html del primer nivel, no una lista fija: `run_worker_first` manda
+  // todo /*.html hasta acá, así que una página nueva sin ruta equivalente daría
+  // 404 en vez de servirse. Estas respuestas suelen ser el redirect 307 a la URL
+  // sin extensión; igual llevan cabeceras.
+  //
+  // `[^/]+` y no `.+`: con `.+` el patrón cruza barras y se come rutas ajenas
+  // terminadas en .html, entre ellas /uploads/<key>.html. Las keys de adjuntos
+  // se arman con la extensión del NOMBRE del archivo, no del MIME, así que eso
+  // es alcanzable y dejaba el adjunto inaccesible.
+  app.get("/:document{[^/]+\\.html}", serveDocument);
 
   for (const path of EXTENSIONLESS_DOCUMENTS) {
     app.get(path, serveDocument);

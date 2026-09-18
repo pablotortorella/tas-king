@@ -128,3 +128,17 @@ test("ninguna página sirve JavaScript inline", async ({ request }) => {
     expect(inline.map(m => m[2].trim().slice(0, 60)), `${path} no debería tener script inline`).toEqual([]);
   }
 });
+
+test("la ruta de documentos no tapa los adjuntos terminados en .html", async ({ request }) => {
+  // El patrón de la ruta de documentos usaba `.+`, que cruza barras, así que
+  // capturaba cualquier path terminado en .html — incluido /uploads/<key>.html.
+  // Las keys se arman con uid() + la extensión del NOMBRE del archivo, no del
+  // MIME, así que un adjunto puede terminar en .html y quedaba inalcanzable:
+  // lo atendía el Asset Worker (404 vacío) en vez de la ruta de adjuntos.
+  const html = await request.get("/uploads/inexistente.html");
+  const png = await request.get("/uploads/inexistente.png");
+
+  // Las dos las tiene que atender la misma ruta, la de adjuntos.
+  expect(await html.text(), "/uploads/*.html debería atenderlo la ruta de adjuntos")
+    .toBe(await png.text());
+});
