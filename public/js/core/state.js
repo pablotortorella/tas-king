@@ -28,6 +28,9 @@ export const estado = {
   boardLoadRevision: 0,
   boardRefreshPending: false,
   lastKnownVersion: 0,
+  // El polling lo enciende cuando llegan checklists nuevas y el modal lo apaga
+  // al reconstruirlas: por eso no es local de ninguno de los dos.
+  checklistRefreshPending: false,
 
   // ---------- Filtros y vista ----------
   // Qué subconjunto de tarjetas se está mirando. Nada de esto se persiste: son
