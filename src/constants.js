@@ -1,6 +1,6 @@
 // ---------- Constants ----------
 
-// Id de la columna "Terminado" (debe coincidir con COLUMNS en public/index.html).
+// Id de la columna "Terminado" (debe coincidir con estado.COLUMNS en public/js/core/state.js).
 // Se usa para derivar el progreso de los objetivos.
 export const DONE_COLUMN = "terminado";
 

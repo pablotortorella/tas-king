@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 // Paleta Material Design — debe coincidir con VALID_COLORS en src/routes/labels.js
-// y LABEL_COLORS en public/index.html
+// y LABEL_COLORS en public/js/core/dom.js
 const VALID_COLORS = [
   "#F44336", "#2196F3", "#4CAF50", "#FFC107", "#FF9800",
   "#9C27B0", "#00BCD4", "#009688", "#E91E63", "#3F51B5",

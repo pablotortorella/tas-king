@@ -38,7 +38,20 @@ export function createCorsMiddleware() {
     c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     c.header(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com"
+      // script-src sin 'unsafe-inline': todo el JavaScript de la app sale de
+      // archivos propios. Un <script> inyectado en el documento no se ejecuta.
+      //
+      // style-src SÍ lo conserva, a propósito: quedan 148 atributos style= en el
+      // markup, varios generados con valores interpolados (barras de progreso,
+      // swatches de color). Migrarlos a CSSOM es un trabajo aparte, anotado en el
+      // backlog. Declararlo acá deja la excepción a la vista en vez de escondida.
+      //
+      // frame-ancestors además de X-Frame-Options: el primero es lo que define la
+      // especificación de CSP y lo que respetan los navegadores actuales; el
+      // segundo cubre clientes viejos. Ver ADR-017.
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+      + "img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none'; "
+      + "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com"
     );
 
     // HSTS (solo en prod)

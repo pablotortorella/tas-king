@@ -1,9 +1,24 @@
-# Estado de Implementación — FUN TasKing! v2.2.1
+# Estado de Implementación — FUN TasKing! v2.3.0
 
-**Última actualización**: 2026-09-15
+**Última actualización**: 2026-09-17
 **Producción registrada**: v2.2.1, desplegada y verificada.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## 🧩 Frontend en módulos y cabeceras de seguridad — v2.3.0 preparada
+
+**Estado:** rama `refactor/frontend-modulos`, validada en staging. No desplegada a producción.
+
+- **Hallazgo que cambió el alcance:** el ítem del backlog decía que el CSP tenía `'unsafe-inline'`. El problema real era otro y mayor: **ninguna cabecera de seguridad llegaba al HTML**. `wrangler.jsonc` montaba los assets sin `run_worker_first`, así que el Asset Worker respondía antes que el Worker y `createCorsMiddleware()` nunca tocaba esas respuestas. La app no tenía CSP ni `X-Frame-Options` en las páginas que un navegador ejecuta: era enmarcable. El único test que cubría el CSP invocaba `app.request()` y se salteaba el ruteo de assets, por eso pasaba en verde.
+- **Entrega de cabeceras:** `run_worker_first` acotado a documentos, más un handler que los sirve desde el binding de assets preservando `Content-Type`, `Cache-Control` y `ETag`. Los assets estáticos siguen saliendo del borde sin pasar por el Worker. Se sumó `frame-ancestors 'none'`.
+- **Frontend:** `public/index.html` pasó de 4.545 a 512 líneas de markup. El JavaScript vive en 17 módulos bajo `public/js/`, con tres capas y dirección de dependencia única: núcleo (`state`, `api`, `dom`, `bus`) → tablero (`board.js`) → features → `app.js` como composition root. Ninguna feature importa a otra; los avisos sin respuesta esperada van por un bus de nueve eventos, todos suscriptos en un solo lugar.
+- **Endurecimiento:** `script-src 'self'` sin `'unsafe-inline'`. Para llegar hubo que sacar los 8 bloques inline de las páginas públicas, que resultaron ser 3 archivos: el script anti-flash estaba copiado idéntico en las cuatro. `style-src` conserva `'unsafe-inline'` a propósito y declarado: faltan migrar 148 atributos `style=`.
+- **Corrección de diseño durante la implementación:** la primera versión decía que toda arista de vuelta pasaría por el bus. Medido sobre el código: 18 secciones llaman a `render`/`loadCards`/`loadBoard` en 66 sitios y **44 son `await`**, una usando el valor de retorno. `emit()` devuelve `undefined` y atrapa excepciones. Se agregó una capa en vez de forzar el bus.
+- **Pruebas:** `npm run test:all` pasa **212 unitarios + 87 E2E** (eran 172 + 67). Los 40 unitarios nuevos son de frontend, que antes no tenía ninguno. Los E2E nuevos cubren cabeceras sobre la respuesta servida —no invocando el handler por dentro, que es lo que dejó pasar el bug original— y los flujos que estaban a ciegas: exportar, tabs de admin, perfil, ayuda y paneo.
+- **Bug latente encontrado y corregido:** `admin.js` usaba `avatarHtml` sin importarlo, en una rama que ningún test alcanzaba. Lo detectó un verificador estático, no la suite. Tiene test propio, verificado en rojo.
+- **Staging:** Version ID `1d6810de-94d3-433f-a5d6-ebb6383bda66`. Los 19 archivos de `js/` se sirven como `text/javascript` y fuera del Worker; el navegador resuelve el grafo completo de imports (21 assets, incluidos los de dos niveles que el HTML no menciona); cero errores de consola y cero violaciones de política en las 5 páginas; 304 condicional y cabeceras intactos. **Falta que Pablo confirme el login con Google autenticado.**
+- **Efecto colateral medido:** el documento pasó de 208.867 a 25.756 bytes, y el JS y el CSS quedaron cacheables por separado.
+- **Andamiaje:** tres herramientas en `openspec/changes/extraer-frontend-a-modulos/tools/` (análisis de dependencias, extractor por AST, verificador de identificadores). Se archivan con el change. Requieren `acorn`, instalado con `--no-save` por no ser dependencia del producto.
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 

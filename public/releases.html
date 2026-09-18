@@ -5,18 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Novedades · FUN TasKing!</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<script>
-  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
-  (function () {
-    try {
-      var t = localStorage.getItem("tasking-theme");
-      if (t !== "dark" && t !== "light") {
-        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
-      document.documentElement.setAttribute("data-theme", t);
-    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
-  })();
-</script>
+<script src="/js/theme-boot.js"></script>
 <style>
   /* Candy Pop, la paleta oficial (#10) — páginas públicas no tienen selector de
      paleta por tablero, solo claro/oscuro. */
@@ -47,6 +36,16 @@
   <h1>📣 Novedades</h1>
 
   <!-- Los releases más recientes van arriba. Para sumar uno nuevo, copiá un bloque .release al principio. -->
+
+  <div class="release">
+    <h2>v2.3.0 — Más rápida al abrir, y más protegida <span class="tag">Release 20</span></h2>
+    <div class="date">Septiembre de 2026</div>
+    <ul>
+      <li><b>La página abre más liviana</b>: pasó de 204 KB a 25 KB, y el resto queda guardado en tu navegador — a partir de la segunda visita, carga menos.</li>
+      <li><b>Más protegida</b>: ahora el navegador bloquea cualquier código que no venga de FUN TasKing!, e impide que otro sitio muestre la app dentro suyo haciéndose pasar por ella.</li>
+      <li><b>Sin cambios en cómo se usa</b>: nada se movió de lugar. Es una reorganización interna para que lo próximo salga mejor y más seguro.</li>
+    </ul>
+  </div>
 
   <div class="release">
     <h2>v2.2.2 — Cambios compartidos al día <span class="tag">Release 19</span></h2>
@@ -263,20 +262,6 @@
     </ul>
   </div>
 </main>
-<script>
-  function currentTheme() {
-    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-  }
-  function syncThemeButton() {
-    document.getElementById("themeBtn").textContent = currentTheme() === "dark" ? "☀️" : "🌙";
-  }
-  document.getElementById("themeBtn").addEventListener("click", () => {
-    const next = currentTheme() === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("tasking-theme", next); } catch (e) { /* modo privado */ }
-    syncThemeButton();
-  });
-  syncThemeButton();
-</script>
+<script src="/js/theme-public.js"></script>
 </body>
 </html>

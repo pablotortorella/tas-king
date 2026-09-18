@@ -18,6 +18,12 @@ Queremos un frontend rápido de iterar, sin fricción de build, tooling o npm.
 **Decisión**
 Un único archivo `public/index.html` (~2000 líneas) con HTML + inline CSS + inline JS. Sin React, Vue, Webpack, Parcel.
 
+> **Actualizado por ADR-017 (2026-09-17).** La parte de *sin build step* sigue vigente y se reafirmó: el frontend
+> usa módulos ES nativos, sin bundler ni transpilación. La parte de *archivo único* ya no: `index.html` quedó en
+> ~500 líneas de markup y el JavaScript vive en `public/js/`, repartido en módulos con una dirección de dependencia
+> explícita. El motivo fue poder declarar `script-src 'self'` sin `'unsafe-inline'`, que con JS inline es imposible.
+> Ver `docs/ADRs/ADR-017-frontend-modular-y-cabeceras.md`.
+
 **Consecuencias**
 - ✅ **Ventajas**:
   - Cero build time, zero bundle size

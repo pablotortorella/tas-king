@@ -3,9 +3,21 @@
   "name": "tas-king",
   "main": "src/index.js",
   "compatibility_date": "2025-01-01",
+  // `run_worker_first` acotado a documentos: sin esto el Asset Worker responde
+  // antes que el Worker y las cabeceras de seguridad (CSP, X-Frame-Options,
+  // nosniff, Referrer-Policy, Permissions-Policy) NUNCA llegan al HTML — solo
+  // a las respuestas JSON de la API, donde casi no sirven. Ver ADR-017.
+  // NO usar `true`: eso haría pasar por el Worker cada JS/CSS/imagen, pagando
+  // una invocación por asset para decorar respuestas que no lo necesitan.
+  // `assets` es heredable, así que env.staging y env.production usan esto mismo.
   "assets": {
     "directory": "./public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // Debe coincidir con las rutas de src/routes/documents.js. Las URLs
+    // canónicas son las SIN extensión: Cloudflare redirige /landing.html ->
+    // /landing, así que cubrir solo /*.html dejaría sin cabeceras justo a las
+    // páginas que el navegador termina cargando.
+    "run_worker_first": ["/", "/*.html", "/landing", "/releases", "/revoked", "/terminos"]
   },
   // Entorno: DESARROLLO LOCAL (wrangler dev)
   "env": {
