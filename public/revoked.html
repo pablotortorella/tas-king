@@ -5,18 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Acceso revocado · FUN TasKing!</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<script>
-  // Aplica el tema ANTES de pintar (evita el flash claro→oscuro). Igual que en index.html.
-  (function () {
-    try {
-      var t = localStorage.getItem("tasking-theme");
-      if (t !== "dark" && t !== "light") {
-        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
-      document.documentElement.setAttribute("data-theme", t);
-    } catch (e) { /* localStorage puede fallar en modo privado; usar default claro */ }
-  })();
-</script>
+<script src="/js/theme-boot.js"></script>
 <style>
   /* Candy Pop, la paleta oficial (#10) — páginas públicas no tienen selector de
      paleta por tablero, solo claro/oscuro. */

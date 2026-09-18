@@ -99,3 +99,32 @@ test("los assets estáticos no pasan por el Worker", async ({ request }) => {
     expect(res.headers()["content-security-policy"], `${asset} no debería pasar por el Worker`).toBeUndefined();
   }
 });
+
+test("la política prohíbe el JavaScript inline", async ({ request }) => {
+  // Es el objetivo de todo el refactor: mientras hubiera un <script> inline en
+  // alguna página, script-src no podía soltar 'unsafe-inline', y con
+  // 'unsafe-inline' un script inyectado en el documento se ejecuta igual.
+  const csp = (await request.get("/")).headers()["content-security-policy"];
+
+  expect(csp).toMatch(/script-src 'self'[;\s]/);
+  expect(csp).not.toMatch(/script-src[^;]*unsafe-inline/);
+  expect(csp).not.toMatch(/unsafe-eval/);
+
+  // frame-ancestors además de X-Frame-Options (ADR-017).
+  expect(csp).toMatch(/frame-ancestors 'none'/);
+
+  // style-src conserva 'unsafe-inline' a propósito: quedan atributos style= en
+  // el markup. Si algún día se migran, este test es el recordatorio de venir acá.
+  expect(csp).toMatch(/style-src 'self' 'unsafe-inline'/);
+});
+
+test("ninguna página sirve JavaScript inline", async ({ request }) => {
+  // El complemento del test anterior: la política puede prohibirlo, pero si
+  // quedara un bloque inline la página se rompería en silencio para quien la use.
+  for (const path of ["/", ...paginasPublicas()]) {
+    const html = await (await request.get(path, { maxRedirects: 0 })).text();
+    const inline = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)]
+      .filter(m => m[2].trim().length > 0);
+    expect(inline.map(m => m[2].trim().slice(0, 60)), `${path} no debería tener script inline`).toEqual([]);
+  }
+});
