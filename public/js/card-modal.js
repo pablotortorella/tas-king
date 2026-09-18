@@ -904,3 +904,34 @@ fDetails.addEventListener("keydown", e => {
     document.getElementById("saveBtn").click();
   }
 });
+
+// ---------- Sincronización con el polling ----------
+//
+// El polling no sabe que existe un modal abierto: avisa y acá se decide qué
+// hacer. Este refresco preserva lo que la persona está escribiendo, que es la
+// razón de que viva con el modal y no con el polling.
+
+on("tablero:sincronizado", () => {
+  if (!estado.editingId || !overlay.classList.contains("open")) return;
+  renderComments(); // El campo del comentario y los demás borradores no se tocan.
+  estado.checklistRefreshPending = true;
+});
+
+on("poll:fin", refreshSyncedChecklists);
+
+function refreshSyncedChecklists() {
+  if (!estado.checklistRefreshPending) return;
+  if (!estado.editingId || !overlay.classList.contains("open")) { estado.checklistRefreshPending = false; return; }
+  const section = document.getElementById("fChecklistsSection");
+  // No reconstruir el campo que la persona está editando. El siguiente poll
+  // atiende lo pendiente aunque ya no haya otra revisión del tablero.
+  if (section.contains(document.activeElement)) return;
+  const drafts = new Map([...section.querySelectorAll(".checklist-section")].map(el =>
+    [el.dataset.checklistId, el.querySelector(".checklist-add input")?.value || ""]));
+  renderChecklists();
+  section.querySelectorAll(".checklist-section").forEach(el => {
+    const input = el.querySelector(".checklist-add input");
+    if (input && drafts.has(el.dataset.checklistId)) input.value = drafts.get(el.dataset.checklistId);
+  });
+  estado.checklistRefreshPending = false;
+}

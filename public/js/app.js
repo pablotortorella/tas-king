@@ -21,6 +21,7 @@ import {
   render, updateBoardControls, withCardMutation,
 } from "./board.js";
 import { startCardDrag } from "./drag.js";
+import { pollTick, startPolling, stopPolling } from "./polling.js";
 import { closeImportPreview, importOverlay } from "./io.js";
 import "./admin.js";   // se engancha solo a sus controles
 import "./columns.js"; // idem
@@ -56,6 +57,7 @@ import {
   window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
   window.maybeBlinkTip = maybeBlinkTip;            // hook manual / tests E2E
   window.launchConfetti = launchConfetti;          // hook manual
+  window.pollTick = pollTick;                      // hook manual / tests E2E
 
   // Paleta fija para avatares por defecto (derivada del email).
   // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
@@ -67,69 +69,6 @@ import {
 
   // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
   // del tip cambie a la medianoche de la persona y no a la del servidor.
-
-
-          // ---------- Polling de cambios en tiempo real ----------
-  let pollTimer = null;
-  let pollInFlight = false;
-  const POLL_INTERVAL = 5000;
-
-  async function pollTick() {
-    if (!estado.currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
-    // loadCards() hace board.innerHTML = "" y reconstruye todas las tarjetas: si corre
-    // mientras hay un arrastre en curso, el nodo de la tarjeta arrastrada queda huérfano
-    // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
-    // mouse — el próximo pointermove lo reinserta junto al nuevo nodo ya renderizado,
-    // duplicando la tarjeta en pantalla hasta el siguiente poll. Se posterga al próximo tick.
-    if (estado.cardDrag && estado.cardDrag.active) return;
-    const boardId = estado.currentBoardId;
-    const mutationRevision = estado.cardMutationRevision;
-    pollInFlight = true;
-    try {
-      const { version } = await api("GET", "/api/boards/" + boardId + "/version");
-      if (boardId !== estado.currentBoardId || mutationRevision !== estado.cardMutationRevision || estado.pendingCardMutations) return;
-      if (version !== estado.lastKnownVersion) {
-        const doneColIds = getDoneColumnIds();
-        const prevTerminados = new Set(estado.state.cards.filter(c => doneColIds.has(c.column)).map(c => c.id));
-        if (!(await loadCards())) return;
-        if (estado.editingId && overlay.classList.contains("open")) {
-          renderComments(); // El campo del comentario y los demás borradores no se tocan.
-          estado.checklistRefreshPending = true;
-        }
-        estado.state.cards.filter(c => getDoneColumnIds().has(c.column) && !prevTerminados.has(c.id))
-          .forEach(c => celebrateCard(c.id));
-      }
-      refreshSyncedChecklists();
-    } catch (e) { /* ignorar errores de red silenciosamente */ }
-    finally { pollInFlight = false; }
-  }
-  window.pollTick = pollTick; // hook manual / tests E2E
-
-  function refreshSyncedChecklists() {
-    if (!estado.checklistRefreshPending) return;
-    if (!estado.editingId || !overlay.classList.contains("open")) { estado.checklistRefreshPending = false; return; }
-    const section = document.getElementById("fChecklistsSection");
-    // No reconstruir el campo que la persona está editando. El siguiente poll
-    // atiende lo pendiente aunque ya no haya otra revisión del tablero.
-    if (section.contains(document.activeElement)) return;
-    const drafts = new Map([...section.querySelectorAll(".checklist-section")].map(el =>
-      [el.dataset.checklistId, el.querySelector(".checklist-add input")?.value || ""]));
-    renderChecklists();
-    section.querySelectorAll(".checklist-section").forEach(el => {
-      const input = el.querySelector(".checklist-add input");
-      if (input && drafts.has(el.dataset.checklistId)) input.value = drafts.get(el.dataset.checklistId);
-    });
-    estado.checklistRefreshPending = false;
-  }
-
-  function startPolling() {
-    stopPolling();
-    pollTimer = setInterval(pollTick, POLL_INTERVAL);
-  }
-
-  function stopPolling() {
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
 
 
   document.addEventListener("keydown", e => {
