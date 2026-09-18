@@ -81,6 +81,28 @@ npm run deploy
 # → https://tas-king.pablotortorella.workers.dev
 ```
 
+**El orden de los pasos importa, y el script lo garantiza:**
+
+```
+verify-ready  →  db:backup:prod  →  db:migrate:remote  →  wrangler deploy
+  suite            respaldo           migración            Worker nuevo
+```
+
+La migración va **antes** que el Worker. Una migración aditiva agrega lo que el
+Worker nuevo necesita: si el Worker sube primero, cada petición falla con
+`no such column` hasta que la migración termina. Le pasó a la 0015
+(`boards.sync_version`), que el Worker consulta en cada carga de tablero.
+
+Hasta el 2026-09-18 los dos scripts desplegaban **antes** de migrar, en contra de
+lo que pedían ADR-016 y `docs/STATUS.md`. Ahora `test/deploy-scripts.test.js`
+verifica el orden, así que invertirlo por error rompe la suite en vez de
+producción.
+
+> ⚠️ Si alguna vez hace falta una migración **destructiva** (borrar una columna
+> que el Worker viejo todavía usa), este orden no sirve: ahí hay que desplegar
+> primero y migrar después, o partir el cambio en dos despliegues. No es el caso
+> de ninguna migración hasta hoy.
+
 ---
 
 ## 🔧 Setup inicial de Staging (UNA sola vez)
