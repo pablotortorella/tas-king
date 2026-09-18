@@ -118,6 +118,10 @@ test("el perfil guarda nombre y emoji, y persisten tras recargar", async ({ page
   await expect(page.locator("#profileOverlay")).not.toHaveClass(/open/);
 
   await page.reload();
+  // Esperar a que la sesión esté cargada antes de abrir el perfil: openProfile()
+  // lee estado.me, y si se hace clic antes lanza y el modal no abre. En una
+  // máquina rápida no se nota; en CI sí, y por eso este test falló ahí.
+  await expect(page.locator("#board .column")).toHaveCount(5);
   await page.locator("#profileBtn").click();
   await expect(page.locator("#profileName")).toHaveValue(nombre);
   await expect(page.locator("#profileEmoji")).toHaveValue("🦊");
@@ -132,6 +136,7 @@ test("cancelar el perfil no guarda los cambios", async ({ page }) => {
   await expect(page.locator("#profileOverlay")).not.toHaveClass(/open/);
 
   await page.reload();
+  await expect(page.locator("#board .column")).toHaveCount(5);
   await page.locator("#profileBtn").click();
   await expect(page.locator("#profileName")).toHaveValue(original);
 });
