@@ -1,8 +1,19 @@
-// Frontend de FUN TasKing!
+// Frontend de FUN TasKing! — composition root.
 //
-// Movido tal cual desde el <script> inline de public/index.html, sin cambios de
-// comportamiento: este paso es solo la extraccion. La division en modulos ES por
-// dominio viene despues, en commits propios. Ver ADR-017.
+// Este archivo no implementa nada: arranca la aplicación y decide quién atiende
+// qué. Tres responsabilidades, y ninguna más:
+//
+//   1. Suscribir los avisos del bus. Los módulos emiten sin saber quién escucha;
+//      acá, y solo acá, se decide el destinatario.
+//   2. Registrar los hooks de window que usan los tests E2E.
+//   3. La cadena de Escape y el arranque.
+//
+// La cadena de Escape vive acá a propósito: decidir qué cierra Esc cuando hay
+// varios overlays abiertos es cableado entre módulos, no lógica de ninguno. Es
+// también la razón de que varias features exporten su overlay.
+//
+// Ver ADR-017 y openspec/changes/extraer-frontend-a-modulos/design.md (D3) para
+// la dirección de dependencias entre capas.
 
 import {
   AVATAR_COLORS, avatarHtml, defaultColor, escapeHtml,
@@ -56,22 +67,14 @@ import {
   on("pulso:manual", () => runWipPulseSequence({ alwaysShowMessage: true }));
 
   initWipPulse();
-  window.runWipPulseSequence = runWipPulseSequence; // hook manual / tests E2E
-  window.maybeBlinkTip = maybeBlinkTip;            // hook manual / tests E2E
-  window.launchConfetti = launchConfetti;          // hook manual
-  window.pollTick = pollTick;                      // hook manual / tests E2E
 
-  // Paleta fija para avatares por defecto (derivada del email).
-  // Devuelve el HTML de un avatar (círculo con color + emoji o inicial).
-  // Busca el perfil de un miembro del tablero actual por email.
-
-  // Perfil del usuario actual (con email) para pasarlo a avatarHtml.
-
-  // Capa de datos: API REST contra el backend (Worker + D1).
-
-  // Fecha local en formato YYYY-MM-DD. Se la mandamos al backend para que el día
-  // del tip cambie a la medianoche de la persona y no a la del servidor.
-
+  // Hooks para los tests E2E. Cada uno tiene una prueba que lo usa; antes de
+  // sacar alguno, mirar cuál. No son deuda: son la costura que permite disparar
+  // un tick o un pulso sin esperar cinco minutos de reloj.
+  window.pollTick = pollTick;                       // drag-no-duplicate, access-revoked
+  window.runWipPulseSequence = runWipPulseSequence; // wip-pulse
+  window.maybeBlinkTip = maybeBlinkTip;             // tip-diario
+  window.launchConfetti = launchConfetti;           // disparo manual
 
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
