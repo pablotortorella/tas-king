@@ -10,10 +10,6 @@
 // tarjeta, disparar el pulso— emite y app.js decide quién atiende. La cadena de
 // Escape se queda en app.js a propósito: decidir qué cierra Esc es cableado,
 // igual que las suscripciones del bus.
-//
-// BUG CONOCIDO (docs/PRODUCT_BACKLOG.md): Esc no cierra la ayuda. El `return`
-// de `if (helpOpen)` deja inalcanzable el chequeo que sigue. No se corrige acá
-// porque este change no cambia comportamiento; va en uno propio, con su test.
 
 import { emit } from "./core/bus.js";
 import { estado } from "./core/state.js";
@@ -58,11 +54,10 @@ document.addEventListener("keydown", e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  const helpOpen = document.querySelector("#helpModal.open");
-  if (helpOpen) return;
-
-  // Esc: cerrar ayuda
-  if (k === "escape" && helpOpen) { e.preventDefault(); toggleHelpModal(); return; }
+  // Con la ayuda abierta no corren los atajos del tablero. Cerrarla es tarea de
+  // la cadena de Escape, en app.js, que es el único lugar donde se decide qué
+  // cierra Esc cuando hay varios overlays.
+  if (ayudaAbierta()) return;
 
   // Si hay modal de tarjeta abierto, solo permitir esc para cerrarlo
   if (document.querySelector(".overlay.open")) return;
@@ -88,9 +83,20 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// Modal de ayuda (F1)
+// ---------- Modal de ayuda (F1) ----------
+
 const helpModal = document.getElementById("helpModal");
+
+export function ayudaAbierta() {
+  return helpModal.classList.contains("open");
+}
+
+export function cerrarAyuda() {
+  helpModal.classList.remove("open");
+}
+
 function toggleHelpModal() {
   helpModal.classList.toggle("open");
 }
-document.getElementById("helpCloseBtn").addEventListener("click", () => toggleHelpModal());
+
+document.getElementById("helpCloseBtn").addEventListener("click", () => cerrarAyuda());

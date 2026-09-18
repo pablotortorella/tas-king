@@ -33,7 +33,7 @@ import {
 } from "./board.js";
 import { startCardDrag } from "./drag.js";
 import { pollTick, startPolling, stopPolling } from "./polling.js";
-import "./keyboard.js";  // se engancha solo a sus atajos
+import { ayudaAbierta, cerrarAyuda } from "./keyboard.js";
 import { closeImportPreview, importOverlay } from "./io.js";
 import "./admin.js";   // se engancha solo a sus controles
 import "./columns.js"; // idem
@@ -78,7 +78,10 @@ import {
 
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
-    if (overlay.classList.contains("open")) closeModal();
+    // La ayuda va primero: F1 funciona incluso con una tarjeta abierta, así que
+    // puede quedar encima de otro overlay y es lo que hay que cerrar antes.
+    if (ayudaAbierta()) cerrarAyuda();
+    else if (overlay.classList.contains("open")) closeModal();
     else if (profileOverlay.classList.contains("open")) profileOverlay.classList.remove("open");
     else if (importOverlay.classList.contains("open")) closeImportPreview();
     else if (membersOverlay.classList.contains("open")) membersOverlay.classList.remove("open");
