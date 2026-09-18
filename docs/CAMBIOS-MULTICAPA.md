@@ -107,7 +107,7 @@ Claude: Tests pasan → deploy a prod sin preguntar ❌
 
 → **Siempre mantener sincronizados** con un comentario que lo señale:
 ```javascript
-// Debe coincidir con LABEL_COLORS en public/index.html
+// Debe coincidir con LABEL_COLORS en public/js/core/dom.js
 const VALID_COLORS = [...]
 ```
 

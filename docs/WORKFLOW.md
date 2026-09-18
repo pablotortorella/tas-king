@@ -369,7 +369,7 @@ Seguir **ADR-014** (`docs/ADRs/ADR-014-keyboard-ux-standards.md`):
 **3. Import/Export en sincronía con el modelo de datos**
 
 Cuando se agrega una entidad nueva a la DB (tabla nueva o campo nuevo en `cards`):
-- Verificar que `toCSV()` en `public/index.html` la incluya (si aplica para CSV plano)
+- Verificar que `toCSV()` en `public/js/io.js` la incluya (si aplica para CSV plano)
 - Verificar que el endpoint `POST /api/boards/:boardId/import` en `src/routes/cards.js` la maneje
 
 No dejar "para después". El import incompleto es invisible hasta que alguien intenta restaurar datos reales.

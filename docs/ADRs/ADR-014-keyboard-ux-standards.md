@@ -66,7 +66,8 @@ La cadena de cierre sigue la lógica "lo más bloqueante primero":
 
 Si ninguno está abierto, ESC no hace nada (salvo cerrar el modal de ayuda F1 si está abierto).
 
-**Implementado en**: el handler `document.addEventListener("keydown", ...)` en `public/index.html`.
+**Implementado en**: `public/js/keyboard.js` (atajos del tablero) y la cadena de Escape en `public/js/app.js`.
+Hasta el refactor de ADR-017 los dos handlers vivían inline en `public/index.html`.
 
 ---
 

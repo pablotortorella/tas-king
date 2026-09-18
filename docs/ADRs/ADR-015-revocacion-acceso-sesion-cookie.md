@@ -26,7 +26,7 @@ Aplicado en dos lugares — los dos únicos puntos que resuelven autenticación 
 - `createAuthMiddleware()` (todo `/api/*`).
 - `GET /uploads/:key` (vive fuera de `/api/*`, resuelve su propia autenticación — sin este fix quedaba como gap silencioso: alguien revocado podía seguir descargando adjuntos).
 
-El frontend (`public/index.html`) centraliza la reacción en la función `api()` (el único punto por el que pasan todas las llamadas, incluido el polling de fondo): al ver `code: "access_revoked"` navega a `/revoked` y **no resuelve la promesa** — evita que algún `catch` de arriba llegue a mostrar un `alert()` con el error a mitad de la redirección. `/revoked.html` es una página estática nueva con el mensaje ("tu acceso fue revocado... tus tableros no se borraron...") y un link para reintentar el login.
+El frontend centraliza la reacción en la función `api()` (desde ADR-017, en `public/js/core/api.js`; antes inline en `public/index.html`) (el único punto por el que pasan todas las llamadas, incluido el polling de fondo): al ver `code: "access_revoked"` navega a `/revoked` y **no resuelve la promesa** — evita que algún `catch` de arriba llegue a mostrar un `alert()` con el error a mitad de la redirección. `/revoked.html` es una página estática nueva con el mensaje ("tu acceso fue revocado... tus tableros no se borraron...") y un link para reintentar el login.
 
 ### Por qué no aplicar el chequeo al bypass de dev/tests
 

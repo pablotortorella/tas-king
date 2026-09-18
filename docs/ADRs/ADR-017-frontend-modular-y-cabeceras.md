@@ -1,6 +1,6 @@
 # ADR-017: cabeceras de seguridad en el documento y frontend en módulos ES
 
-**Fecha:** 2026-09-16. **Estado:** en implementación en `refactor/frontend-modulos`.
+**Fecha:** 2026-09-16 (ampliado el 2026-09-17). **Estado:** implementado en `refactor/frontend-modulos`.
 
 ## Problema
 
@@ -54,6 +54,71 @@ Ninguna página del producto está pensada para ser embebida —ni el tablero ni
 `landing`, `releases`, `terminos` o `revoked`—, así que `'none'` no le quita nada a
 nadie. Si en algún momento hiciera falta embeber una página pública, la decisión se
 revisa acotándola a esa ruta, no relajando la política global.
+
+### Módulos ES nativos, sin build step
+
+El frontend se reparte en 17 archivos bajo `public/js/` que se cargan con
+`<script type="module">` e `import`/`export` estándar. Sin bundler, sin
+transpilación, sin paso de compilación.
+
+No es una limitación asumida: es la misma decisión que ADR-001 tomó para el
+proyecto entero. Un bundler traería configuración, una carpeta de salida, source
+maps para depurar y un paso que puede quedar desactualizado respecto del código.
+Los navegadores resuelven `import` desde hace años y Cloudflare sirve los
+archivos por ruta; el costo es una petición por módulo, sobre assets cacheables
+que salen del borde sin pasar por el Worker.
+
+Consecuencia que hay que respetar: **los módulos se ejecutan diferidos**, después
+del parseo. Por eso `js/theme-boot.js` —el que aplica el tema antes del primer
+pintado— **no** es un módulo: es un script clásico y bloqueante en el `<head>`.
+Si alguien lo "moderniza" por uniformidad, vuelve el parpadeo claro→oscuro. Hay
+un test que lo fija.
+
+`public/tips.js` también sigue siendo script clásico: expone `DAILY_TIPS` como
+global y un test E2E lo lee de ahí.
+
+### Tres capas, con dirección de dependencia única
+
+```
+app.js            composition root: arranca, cablea, registra hooks de window
+   |
+FEATURES          card-modal  boards  goals  admin  io  feedback  drag
+   |              columns  keyboard  polling
+BOARD             board.js — render, loadBoard, loadCards, withCardMutation
+   |
+NUCLEO + THEME    state  api  dom  bus  |  theme (no importa nada)
+```
+
+**La regla**: una feature importa del tablero y del núcleo, nunca de otra
+feature. El tablero importa del núcleo, nunca de una feature.
+
+La primera versión de esta decisión era distinta y **estaba mal**: decía que las
+features nunca se importan entre sí y que toda arista de vuelta pasa por el bus.
+Al medir el código real aparecieron 18 secciones llamando a `render()`,
+`loadCards()` o `loadBoard()` en 66 sitios, y **44 de esas llamadas son `await`**,
+una usando el valor de retorno. `emit()` devuelve `undefined` y atrapa las
+excepciones de sus oyentes: no puede reemplazar una llamada que se espera. La
+corrección fue agregar una capa, no forzar el bus donde no entra.
+
+Dos módulos quedan por debajo de su capa aparente, y no es una excepción
+caprichosa sino la misma regla aplicada: `theme.js` no importa nada, y
+`archive.js` solo importa del núcleo y del tablero. Lo que ubica a un módulo en
+una capa es la dirección de sus dependencias, no su tamaño ni su nombre.
+
+### El bus: para qué sirve y para qué no
+
+`core/bus.js` transporta **avisos sin respuesta esperada**: se guardó una
+tarjeta, cambiaron las columnas, hay que celebrar. Nueve eventos, todos
+suscriptos en `app.js`, que es el único lugar donde se decide quién atiende qué.
+
+No sirve para lo que se espera. `await loadCards()` necesita el valor de retorno
+y necesita que una excepción se propague; el bus no da ninguna de las dos cosas.
+
+Y tiene un filo que conviene conocer: **atrapa las excepciones de sus oyentes**.
+Eso evita que un error de render deje media interfaz sin actualizar, pero también
+convierte un `ReferenceError` en un fallo silencioso. Ya pasó una vez durante
+esta migración, y lo detectó un test, no la consola. Por eso el andamiaje del
+refactor incluye un verificador estático de identificadores sin declarar.
 
 ## Alternativas
 
