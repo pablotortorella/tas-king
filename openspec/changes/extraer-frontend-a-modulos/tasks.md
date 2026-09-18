@@ -57,21 +57,21 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 5.6 `theme.js`: tema claro/oscuro, paleta por tablero, prompt de bienvenida
 - [x] 5.7 `feedback.js`: pulso WIP, confeti, tip diario
 - [x] 5.A Verificación intermedia en staging del núcleo modular (2026-09-17, Version ID `27b02022-c022-4902-8a15-646cba5c2c3e`): los 9 archivos de `js/` y `css/` se sirven con el Content-Type correcto y fuera del Worker, la cadena de imports ES resuelve en el navegador (10 assets en 200, incluidos los transitivos), los 5 documentos conservan sus cabeceras y el camino de error de `api()` redirige al login ante un 401
-- [ ] 5.8 `polling.js`: `pollTick`, `startPolling`, refresco de checklists sincronizadas
+- [x] 5.8 `polling.js`: `pollTick`, `startPolling`, refresco de checklists sincronizadas
 - [x] 5.9 `board.js`: `loadBoard`, `loadCards`, `render`, `renderCard` y los filtros de búsqueda/responsable/etiqueta — 18 funciones, 8 exportadas. Antes hubo que romper cuatro acoplamientos: `fechaLocal` a `core/dom.js`, `memberByEmail` a `core/state.js`, `renderMe` pasa a atender `sesion:cargada`, y `saveBtn` sale de `withCardMutation` a los eventos `mutacion:inicio`/`mutacion:fin` que atiende el modal
 - [x] 5.10 `drag.js`: arrastre de tarjetas con Pointer Events + paneo del tablero
-- [ ] 5.11 `card-modal.js`: apertura/cierre, comentarios, historial, adjuntos
-- [ ] 5.12 `checklists.js`
+- [x] 5.11 `card-modal.js`: apertura/cierre, comentarios, historial, adjuntos
+- [x] 5.12 `checklists.js`
 - [x] 5.13 `goals.js`: vista de objetivos, panel lateral y objetivos dentro del modal
 - [x] 5.14 `metrics.js`: burn-up, WIP, «¡Pilas con esto!», quietas y por vencer
-- [ ] 5.15 `labels.js`: etiquetas en tarjeta + administrador de etiquetas del tablero
+- [x] 5.15 `labels.js`: etiquetas en tarjeta + administrador de etiquetas del tablero
 - [x] 5.16 `columns.js`: crear, renombrar, mover y eliminar columnas
 - [x] 5.17 `boards.js`: selector de tablero, miembros, tabs de configuración, perfil, renombrar y borrar
 - [x] 5.18 `io.js`: exportar/importar JSON y CSV, vista previa de importación
 - [x] 5.19 `admin.js`: panel de administración, stats, actividad, pendientes
-- [ ] 5.20 `keyboard.js`: atajos, cadena de Escape, modal de ayuda, deep-link
-- [ ] 5.21 `app.js` queda como composition root: arranque, cableado y registro de los 4 hooks de `window` en un punto único, cada uno comentado con el test que lo usa
-- [ ] 5.22 Revisar que no quedó ningún import entre módulos de feature: las aristas de vuelta van por `bus.js`
+- [x] 5.20 `keyboard.js`: atajos, cadena de Escape, modal de ayuda, deep-link
+- [x] 5.21 `app.js` queda como composition root: arranque, cableado y registro de los 4 hooks de `window` en un punto único, cada uno comentado con el test que lo usa
+- [x] 5.22 Revisar que no quedó ningún import entre módulos de feature: las aristas de vuelta van por `bus.js`
 - [ ] 5.23 `npm run test:all` en verde y recorrido manual completo del producto
 
 ## 6. F6 — Endurecer `script-src`
