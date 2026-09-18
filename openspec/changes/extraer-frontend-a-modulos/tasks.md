@@ -76,14 +76,14 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 
 ## 6. F6 — Endurecer `script-src`
 
-- [ ] 6.1 **Decidir antes de empezar la fase**: `landing.html`, `releases.html`, `revoked.html` y `terminos.html` tienen 8 bloques `<script>` inline entre las cuatro. O se extraen también, o la política se diferencia por ruta (pregunta abierta 3 de `design.md`)
-- [ ] 6.2 Ejecutar la decisión de 6.1
-- [ ] 6.3 Confirmar que no queda JavaScript inline en ninguna página alcanzada por la política
-- [ ] 6.4 Sacar `'unsafe-inline'` de `script-src` en `src/middleware/cors.js`, dejando `style-src` como está y conservando los orígenes de Google en `connect-src`
-- [ ] 6.5 Actualizar el test de CSP para afirmar que `script-src` no contiene `'unsafe-inline'` ni `'unsafe-eval'`
-- [ ] 6.6 Recorrer el producto completo con la consola abierta —tablero, modal, checklists, objetivos, métricas, etiquetas, columnas, importación, admin, perfil, tema— y confirmar cero violaciones de CSP
-- [ ] 6.7 Verificar que el login con Google se completa end-to-end bajo la política nueva
-- [ ] 6.8 `npm run test:all` en verde
+- [x] 6.1 **Decidido: extraerlas.** Los 8 bloques resultaron ser 3 archivos — el script anti-flash estaba copiado idéntico en las 4 páginas (y era el mismo ya extraído), el toggle de tema repetido en 3, y landing tenía el suyo. Extraer salió más barato que diferenciar la política por ruta, y elimina un script que vivía en 5 copias. Decisión original: `landing.html`, `releases.html`, `revoked.html` y `terminos.html` tienen 8 bloques `<script>` inline entre las cuatro. O se extraen también, o la política se diferencia por ruta (pregunta abierta 3 de `design.md`)
+- [x] 6.2 Ejecutar la decisión de 6.1
+- [x] 6.3 Confirmar que no queda JavaScript inline en ninguna página alcanzada por la política
+- [x] 6.4 Sacar `'unsafe-inline'` de `script-src` en `src/middleware/cors.js`, dejando `style-src` como está y conservando los orígenes de Google en `connect-src`
+- [x] 6.5 Actualizar el test de CSP para afirmar que `script-src` no contiene `'unsafe-inline'` ni `'unsafe-eval'`
+- [x] 6.6 Recorrer el producto completo con la consola abierta —tablero, modal, checklists, objetivos, métricas, etiquetas, columnas, importación, admin, perfil, tema— y confirmar cero violaciones de CSP
+- [~] 6.7 Login con Google end-to-end: verificado que `/auth/login` responde 302 a `accounts.google.com` y que `connect-src` conserva los orígenes de Google. **El flujo completo (consentimiento → callback → sesión) no se puede probar sin una cuenta real: queda para que Pablo lo confirme en staging.** Nota: el login es una navegación, no un fetch, así que el CSP no la gobierna — `connect-src` solo aplicaría a llamadas XHR a Google, que el frontend no hace
+- [x] 6.8 `npm run test:all` en verde
 
 ## 7. Documentación e integración
 
