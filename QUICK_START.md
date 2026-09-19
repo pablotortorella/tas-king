@@ -17,17 +17,18 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 
 ## 📍 Dónde estamos (Estado actual)
 
-**Última actualización**: 2026-09-15
-**Última versión desplegada registrada**: 2.2.1. `main` y producción contienen las mejoras de performance de backend; ver `docs/STATUS.md`.
+**Última actualización**: 2026-09-19
+**Última versión desplegada registrada**: 2.3.0. El frontend modular, las cabeceras de seguridad y la sincronización ampliada ya están en producción; ver `docs/STATUS.md`.
 
-### ✅ Completado en la última sesión (2026-09-11)
+### ✅ Contexto reciente de TasKing
+- **v2.3.0 en producción** (2026-09-18): frontend modular, cabeceras de seguridad y sincronización ampliada; ver `docs/STATUS.md`.
 - **Tip diario** (v2.2.0, desplegado): una franja sobre el pie muestra un tip por día, guarda el avance por cuenta y realiza el realce diario tras la primera interacción.
 - **Mejora de guardado** (incluida en v2.2.0): crear/editar tarjetas y cambiar etiquetas evita las tres recargas globales, que en la línea base agregaban aproximadamente 1,4–1,5 s por acción. Se mantienen protecciones ante polling y cambios concurrentes. Comprobación posterior de tres rondas en `docs/PERFORMANCE-2026-09-14.md`; acción a pantalla aún pendiente.
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **Sincronización de comentarios, checklists y borrados**: PR #41 integrado y `main` validado nuevamente en staging. Producción sigue en v2.2.1, pendiente de aprobación final. La migración **0015 debe aplicarse antes del Worker nuevo** también en producción.
-2. **Performance cerrada**: v2.2.1 está en producción y Pablo confirmó el 15/09 que toda la interacción se siente más veloz. Instrumentar solo si se vuelven a observar demoras relevantes.
+1. **HomeSuite en integración gradual**: documentación y landing pública viven en ramas separadas; su estado y secuencia están en `docs/HOMESUITE_INFRASTRUCTURE.md`. Ninguna migración de identidad o dominio está implícita en esos cambios.
+2. **Seguimiento de v2.3.0**: los flakes y hallazgos no bloqueantes figuran en `docs/STATUS.md`; investigarlos si se reproducen, sin volver a tratar la migración 0015 como pendiente.
 3. Mantener los presupuestos y criterios de `docs/PERFORMANCE-PRACTICES.md` en los cambios siguientes.
 
 Otros pendientes vigentes: ver `docs/PRODUCT_BACKLOG.md` (fuente de verdad del backlog).

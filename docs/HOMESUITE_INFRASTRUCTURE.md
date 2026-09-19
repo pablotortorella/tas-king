@@ -2,7 +2,7 @@
 
 **Estado:** dominio, Universal SSL y DNSSEC activos; landing local lista para preview
 
-**Fecha:** 2026-09-17
+**Fecha:** 2026-09-19
 
 ## Objetivo
 
@@ -374,27 +374,29 @@ afecten contratos compartidos sí deben ejecutar las pruebas de toda la suite.
 
 ## Retoma después del refactor de TasKing
 
-Estado local al cerrar el 2026-09-17:
+Estado comprobado el 2026-09-19:
 
-- `docs/homesuite-foundation`: visión, MVP, infraestructura, DNSSEC y ADR-018;
-- `feature/homesuite-landing`: change OpenSpec `crear-landing-homesuite` y
-  `apps/site` implementado y probado;
-- ambos worktrees están bajo `/tmp`, pero el trabajo está commiteado en refs Git
-  locales y puede recrearse aunque desaparezcan esas carpetas;
-- no se hizo push, deploy, asociación de Custom Domains ni cambio de registros
-  de parking;
-- la suite base de TasKing mostró inestabilidad E2E antes de crear la landing. El
-  detalle está en `verification.md` dentro del change de la landing.
+- TasKing v2.3.0 y el refactor modular ya están en producción; PRs #43–#47
+  integrados en `main`. La migración 0015 se aplicó antes del Worker nuevo.
+- `docs/homesuite-foundation` fue reconstruida desde sus commits locales y
+  rebasada sobre el `main` que contiene v2.3.0. Incluye visión, MVP, análisis de
+  Tricount, infraestructura, DNSSEC y ADR-018.
+- `feature/homesuite-landing` conserva el change OpenSpec
+  `crear-landing-homesuite` y `apps/site` implementado; sigue separada de la
+  aplicación TasKing y aún requiere actualización y pruebas sobre el nuevo `main`.
+- No se ha desplegado `homesuite-site`, asociado Custom Domains ni retirado los
+  registros de parking. El dominio aún requiere ese corte independiente.
+- La inestabilidad E2E observada antes de la landing está descrita en el
+  `verification.md` del change; los tests nuevos del refactor y el arreglo de la
+  carrera del perfil ya están integrados. Se repetirá la suite al preparar la PR
+  de la landing.
 
-Cuando el refactor quede integrado:
+Secuencia de integración restante:
 
-1. actualizar `main` y confirmar que su suite completa vuelve a estar verde;
-2. rebasar `docs/homesuite-foundation` sobre el nuevo `main`, revisar enlaces e
-   integrar primero la documentación;
-3. rebasar `feature/homesuite-landing` sobre ese `main` ya documentado y resolver
-   únicamente conflictos reales —`apps/site` no debe mezclarse con `public/`,
-   `src/` ni el `wrangler.jsonc` de TasKing—;
-4. repetir:
+1. integrar primero `docs/homesuite-foundation` mediante PR, sin desplegar;
+2. rebasar `feature/homesuite-landing` sobre el `main` ya documentado, manteniendo
+   `apps/site` separado de `public/`, `src/` y el `wrangler.jsonc` de TasKing;
+3. repetir:
 
    ```text
    openspec validate crear-landing-homesuite --strict
@@ -404,14 +406,14 @@ Cuando el refactor quede integrado:
    npm run test:all
    ```
 
-5. revisar el diff final, hacer push y abrir el PR correspondiente;
-6. con autorización explícita, desplegar primero el preview `workers.dev` y
+4. revisar el diff final, hacer push y abrir el PR correspondiente;
+5. con autorización explícita, desplegar primero el preview `workers.dev` y
    revisarlo sin tocar el dominio;
-7. con una segunda aprobación, retirar los registros de parking incompatibles y
+6. con una segunda aprobación, retirar los registros de parking incompatibles y
    asociar `homesuite.info` y `www.homesuite.info` como Custom Domains;
-8. verificar HTTPS, redirección 308, cabeceras, CTA a TasKing y desaparición del
+7. verificar HTTPS, redirección 308, cabeceras, CTA a TasKing y desaparición del
    525; mantener HSTS desactivado;
-9. actualizar `docs/STATUS.md`, este documento y archivar el change OpenSpec una
+8. actualizar `docs/STATUS.md`, este documento y archivar el change OpenSpec una
    vez que la landing esté efectivamente publicada.
 
 ## Cuándo separar repositorios o productos
