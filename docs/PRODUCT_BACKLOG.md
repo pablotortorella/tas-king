@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-18
+**Última actualización**: 2026-09-19
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -17,6 +17,41 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
   - `docs/PRODUCT_BACKLOG.md` (este archivo) → **qué falta y por qué** (prioridades, visión, ideas).
   - `docs/STATUS.md` → **qué existe y cómo** (implementación, tests, fecha de cada sesión).
   - `docs/ADRs.md` → **por qué se decidió así** (decisiones de arquitectura).
+
+---
+
+## 🏠 Horizonte de producto: HomeSuite
+
+**Estado:** visión y MVP documentados; dominio base activo y primera landing
+implementada localmente en un change OpenSpec aislado. No reemplaza
+automáticamente el foco vigente de TasKing.
+
+HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
+compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
+operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
+sesión; la aplicación autenticada será un monolito modular con staging aislado,
+manteniendo separados los dominios de Tareas, Gastos y Compras.
+
+Orden estratégico inicial:
+
+1. plataforma mínima: identidad estable, sesión, espacios e invitaciones;
+2. **HomeSuite Gastos**, con el objetivo concreto de reemplazar Splitwise;
+3. migración gradual de TasKing a `/tareas`, sin big bang;
+4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
+
+Los ingresos compartidos que afectan el saldo neto sí forman parte del MVP.
+Presupuesto, análisis global de ingresos del hogar y flujo de caja son una evolución
+prevista, no parte del primer producto financiero. Antes de implementar cada etapa
+se seguirá el ciclo OpenSpec completo y se incorporarán sus tareas concretas a las
+prioridades de este backlog.
+
+Documentación fuente:
+
+- [Visión de HomeSuite](HOMESUITE_VISION.md)
+- [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
+- [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
+- [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
 ---
 
