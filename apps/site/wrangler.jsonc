@@ -1,6 +1,11 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "homesuite-site",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "homesuite.info", "custom_domain": true },
+    { "pattern": "www.homesuite.info", "custom_domain": true }
+  ],
   "main": "./src/index.js",
   "compatibility_date": "2026-06-30",
   "assets": {
