@@ -21,4 +21,5 @@
 - [x] 3.1 Actualizar documentación de navegación de HomeSuite y revisar el diff.
 - [x] 3.2 Tras aprobación de revisión local, ejecutar CI y abrir el PR para
   integrar el cambio, sin publicar en producción.
-- [ ] 3.3 Publicar en producción sólo con aprobación explícita.
+- [x] 3.3 Publicar en producción con aprobación explícita y comprobar las rutas
+  públicas resultantes.
