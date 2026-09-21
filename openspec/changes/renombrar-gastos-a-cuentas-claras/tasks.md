@@ -19,6 +19,6 @@
 ## 3. Integración
 
 - [x] 3.1 Actualizar documentación de navegación de HomeSuite y revisar el diff.
-- [ ] 3.2 Tras aprobación de revisión local, ejecutar CI y abrir el PR para
+- [x] 3.2 Tras aprobación de revisión local, ejecutar CI y abrir el PR para
   integrar el cambio, sin publicar en producción.
 - [ ] 3.3 Publicar en producción sólo con aprobación explícita.
