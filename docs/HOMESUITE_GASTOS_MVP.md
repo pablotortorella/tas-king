@@ -2,7 +2,7 @@
 
 **Estado:** especificación de producto inicial actualizada; implementación no iniciada
 
-**Fecha:** 2026-09-17
+**Fecha:** 2026-09-21
 
 **Objetivo:** reemplazar Splitwise para familias, viajes, amigos y proyectos
 
@@ -37,6 +37,13 @@ de caja o si una categoría excedió un presupuesto.
 - corrección y anulación con historial;
 - nota y comentarios básicos por movimiento;
 - actividad del grupo;
+- entrada con saldo inicial cero o apertura no cero, auditable y equilibrada por
+  moneda;
+- importación de movimientos desde un archivo exportado de Splitwise, con
+  previsualización, conciliación y protección contra duplicados; una inferencia
+  ambigua de pagador o reparto no bloquea una línea válida;
+- historial y búsqueda únicos por nombre, monto o palabra para movimientos
+  propios e importados, con la procedencia visible en estos últimos;
 - exportación CSV y JSON;
 - archivo del grupo;
 - experiencia móvil y actualización optimista;
@@ -58,7 +65,8 @@ de caja o si una categoría excedió un presupuesto.
 - OCR o escaneo inteligente de recibos;
 - notificaciones push o email de actividad;
 - adjuntos de comprobantes, salvo nueva evidencia de que son imprescindibles;
-- importación automática desde Splitwise;
+- conexión directa mediante la API de Splitwise (sin archivo exportado por la
+  persona usuaria);
 - listas de compras y automatizaciones entre productos.
 
 Los elementos fuera del MVP pueden explorarse después; no deben condicionar la
@@ -117,6 +125,13 @@ propietario en el MVP. Toda corrección conserva autor, fecha y versión anterio
 
 ## 5. Recorridos principales
 
+El recorrido comienza eligiendo el punto de partida del libro: importar
+movimientos de Splitwise, iniciar en cero o registrar un saldo de apertura no
+cero. Si se combinan apertura e importación parcial, el corte de fechas debe
+impedir contar dos veces el mismo período. El flujo de decisión se detalla en el
+[User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md); los recorridos
+siguientes describen el uso cotidiano una vez iniciado el libro.
+
 ### 5.1 Crear un grupo
 
 1. La persona elige “Nuevo grupo”.
@@ -140,7 +155,28 @@ participantes distintos de forma implícita.
 Los enlaces abiertos y reutilizables no forman parte del MVP; se evaluarán después
 con controles de aprobación y abuso.
 
-### 5.3 Elegir el tipo de movimiento
+### 5.3 Importar movimientos de Splitwise
+
+La primera migración se hace con un titular autenticado y una persona invitada que
+acepta acceso al grupo. El archivo aceptado es un CSV del formato de exportación
+de Splitwise, sin distinguir si proviene de un grupo o una relación directa.
+
+1. HomeSuite identifica participantes, filas de movimiento y fila de resumen.
+2. La persona confirma el mapeo de participantes y revisa conteos y saldos por
+   moneda antes de escribir.
+3. Cada incidente señala la **fila original del archivo** y su motivo. La persona
+   puede cancelar, resolver mediante un supuesto explícito o continuar con el
+   subconjunto no afectado.
+4. La confirmación conserva procedencia, supuestos y filas no importadas en el
+   resumen del lote. Una diferencia global sin fila atribuible se muestra sin
+   corregirla con un asiento oculto.
+5. Cada movimiento importado aparece en la cronología y en la misma búsqueda que
+   los movimientos propios, con origen visible. Un reintento no duplica el lote.
+
+Una línea cuyo pagador o reparto no pueda inferirse, pero cuyo efecto de saldo sea
+válido, **no es un incidente**: se importa preservando ese efecto exacto.
+
+### 5.4 Elegir el tipo de movimiento
 
 La acción principal es “Agregar movimiento” y ofrece:
 
@@ -151,7 +187,7 @@ La acción principal es “Agregar movimiento” y ofrece:
 “Préstamo”, “adelanto”, “reintegro” y “pago parcial” no son tipos adicionales. Si
 resulta útil, se escriben en la descripción de una transferencia.
 
-### 5.4 Registrar un gasto
+### 5.5 Registrar un gasto
 
 Datos mínimos:
 
@@ -166,7 +202,7 @@ Datos mínimos:
 El flujo debe optimizar el caso frecuente: un pagador, todos participan y división
 igual. Las opciones avanzadas no deben estorbar ese recorrido.
 
-### 5.5 Registrar un ingreso
+### 5.6 Registrar un ingreso
 
 Datos mínimos:
 
@@ -182,7 +218,7 @@ El flujo frecuente asume un receptor, todos participan y división igual, pero c
 supuesto es visible y modificable. Un alquiler recibido por una persona y compartido
 entre varias debe poder registrarse sin usar un gasto negativo.
 
-### 5.6 Registrar una transferencia
+### 5.7 Registrar una transferencia
 
 1. El usuario elige origen y destino.
 2. Selecciona moneda e importe positivo.
@@ -194,7 +230,7 @@ La transferencia no se vincula a un gasto, ingreso, deuda o préstamo. Puede red
 un saldo existente, aumentarlo o invertir su dirección. El cálculo es el mismo en
 todos los casos.
 
-### 5.7 Corregir un movimiento
+### 5.8 Corregir un movimiento
 
 1. Un usuario autorizado abre la operación.
 2. Modifica datos y confirma.
@@ -205,13 +241,13 @@ todos los casos.
 La interfaz debe mostrar quién realizó la última modificación y permitir consultar
 al menos el resumen de cambios. No se sobrescribe silenciosamente la historia.
 
-### 5.8 Anular un movimiento
+### 5.9 Anular un movimiento
 
 La acción exige confirmación y motivo opcional. El movimiento deja de afectar
 balances, pero permanece visible como anulado en actividad e historial. No existe
 borrado físico desde la interfaz normal.
 
-### 5.9 Consultar balances
+### 5.10 Consultar balances
 
 El grupo muestra:
 
@@ -219,13 +255,18 @@ El grupo muestra:
 - movimientos que explican el saldo;
 - sugerencias deterministas de transferencias para quedar a mano.
 
+Desde el mismo historial se pueden buscar movimientos propios e importados con un
+único campo libre. La búsqueda normaliza mayúsculas, acentos y puntuación, y cubre
+textos, participantes, monto total y efecto individual. Cada resultado explica la
+coincidencia y muestra su origen cuando fue importado; no hay dos listas separadas.
+
 La sugerencia es una proyección recalculable desde los saldos, no una obligación
 persistida entre pares ni la única forma válida de quedar a mano.
 
 Nunca se suman monedas distintas ni se presenta un total convertido sin tasa,
 fecha y consentimiento explícitos.
 
-### 5.10 Exportar y archivar
+### 5.11 Exportar y archivar
 
 - JSON preserva entidades, ids, monedas, revisiones y auditoría necesaria para una
   restauración portable.
@@ -472,6 +513,12 @@ el cambio sin duplicar información sensible innecesaria.
 - misma clave idempotente no duplica;
 - conflicto de revisión devuelve respuesta explícita;
 - exportación reproduce los movimientos vigentes y su moneda;
+- importación conserva todas las líneas de movimientos válidas y sus efectos;
+  no incluye filas de resumen ni duplica un lote ante reintentos; cada incidente
+  informa fila y motivo, y los flujos de cancelar, supuesto o subconjunto quedan
+  auditados;
+- búsqueda libre devuelve resultados propios e importados, señala origen y motivo
+  de coincidencia para textos, participantes y montos;
 - restauración genera los mismos balances.
 
 ### E2E
@@ -487,6 +534,9 @@ el cambio sin duplicar información sensible innecesaria.
 - anulación visible en actividad;
 - uso móvil del recorrido frecuente;
 - aislamiento entre dos grupos bajo identidades distintas.
+- importación con comparación final de saldos, seguida de un movimiento nuevo;
+  búsqueda libre por nombre, monto y palabra sobre ambos orígenes;
+- titular autenticado invita a una persona, quien acepta y ve el mismo libro.
 
 ## 15. Criterios de aceptación del MVP
 
@@ -504,6 +554,13 @@ El MVP está listo para sustituir el uso cotidiano de Splitwise cuando:
    probado.
 9. TasKing no presenta regresiones por la introducción de la plataforma.
 10. El uso diario no requiere intervención de un administrador global.
+11. El grupo puede iniciar en cero, con apertura no cero o importando movimientos
+    de Splitwise; todas las líneas válidas quedan incluidas, el saldo resultante
+    es verificable y un reintento no duplica movimientos. Los incidentes por fila
+    se pueden cancelar, resolver con supuesto explícito o excluir claramente.
+12. Una búsqueda libre reúne movimientos importados y propios por textos, nombre
+    y monto; los importados se distinguen por su origen y cada resultado aclara
+    el motivo de coincidencia.
 
 ## 16. Evolución posterior
 
@@ -541,6 +598,8 @@ Estas preguntas no bloquean la visión, pero deben resolverse antes de implement
 ## Documentos relacionados
 
 - [Brief de exploración y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
+- [User Story Map](HOMESUITE_GASTOS_STORY_MAP.md)
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)

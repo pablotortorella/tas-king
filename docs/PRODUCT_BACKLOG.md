@@ -52,7 +52,30 @@ Documentación fuente:
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
 - [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
+- [User Story Map de Gastos](HOMESUITE_GASTOS_STORY_MAP.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
+
+### Próximo corte: validar la migración de Gastos (A)
+
+Estas son User Stories candidatas. Están ordenadas por dependencia de producto,
+no son tareas técnicas ni un change OpenSpec activo. Cada propuesta se dividirá
+en un change pequeño al llegar a `propose`.
+
+| Orden | Historia | Resultado observable |
+|---|---|---|
+| HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Gastos para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
+| HG-02 | Como titular, quiero invitar a una persona por email para que ambos veamos el mismo libro sin compartir una cuenta. | La invitación se acepta una vez; ambas personas acceden al mismo grupo y no a grupos ajenos. |
+| HG-03 | Como titular, quiero previsualizar un CSV de exportación de Splitwise y mapear sus participantes para saber qué se importará antes de guardar. | Se distinguen participantes, movimientos y fila de resumen; se muestran conteos y saldos previstos por moneda. |
+| HG-04 | Como titular, quiero decidir qué hacer ante cada incidente de importación para no perder control sobre mi historia. | Cada incidente muestra fila y motivo; puedo cancelar, aplicar un supuesto explícito o importar el subconjunto seguro. |
+| HG-05 | Como titular, quiero confirmar una importación idempotente y ver su conciliación para confiar en los saldos migrados. | El lote registra origen, supuestos y filas no importadas; compara saldos; un reintento no duplica dinero. |
+| HG-06 | Como integrante, quiero registrar un gasto compartido simple después de importar para continuar mi uso cotidiano. | Un pagador, dos participantes y división igual actualizan el saldo y la cronología de ambos. |
+| HG-07 | Como integrante, quiero buscar libremente por texto, participante o monto para encontrar movimientos propios e importados en una sola lista. | La búsqueda normaliza texto, incluye total y efecto individual, explica la coincidencia y marca el origen importado. |
+
+**Siguiente propuesta OpenSpec:** `plataforma-homesuite-minima`, que cubre HG-01
+y HG-02. Después, `importacion-splitwise-inicial` cubre HG-03 a HG-05; no se
+mezclarán autenticación, modelo financiero y parser de importación en un solo
+change.
 
 ---
 

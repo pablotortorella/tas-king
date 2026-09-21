@@ -2,7 +2,7 @@
 
 **Estado:** insumo de producto previo a OpenSpec; no es todavía un proposal
 
-**Última actualización:** 2026-09-17
+**Última actualización:** 2026-09-21
 
 **Objetivo:** conservar las decisiones y ejemplos ya conversados para que la fase
 `explore` pueda concentrarse en los puntos realmente abiertos y el futuro
@@ -54,6 +54,32 @@ aparece evidencia concreta de que impiden resolver un caso real.
 8. **La portabilidad es parte de la confianza.**
    El grupo debe poder exportar datos suficientes para reconstruir sus balances
    fuera de HomeSuite.
+9. **La entrada desde Splitwise forma parte del reemplazo usable.**
+   Cada grupo puede importar sus movimientos históricos desde un archivo exportado
+   por la persona usuaria, o comenzar con saldo inicial cero o no cero. Se
+   incorporan todas las líneas de movimientos válidas: una inferencia incierta
+   sobre pagador o reparto no bloquea ni altera el efecto original en el saldo.
+   La importación directa mediante API no es requisito inicial.
+10. **Un saldo inicial no es un saldo actual editable.**
+    Si es no cero, se registra como apertura fechada y auditable, equilibrada
+    entre participantes por moneda. Los movimientos posteriores derivan el saldo
+    actual; no se cambia este último a mano.
+11. **Importación y apertura no deben contar dos veces la misma historia.**
+    El flujo muestra un corte temporal, previsualiza balances y pide reconciliar
+    cualquier diferencia antes de confirmar.
+12. **Un solo historial y una sola búsqueda.**
+    Movimientos creados en HomeSuite e importados aparecen juntos. La búsqueda
+    es un campo libre que encuentra textos, nombres y montos —total y efecto
+    individual—; cada resultado importado muestra claramente su origen y el
+    motivo de la coincidencia.
+13. **La primera migración es colaborativa y no es anónima.**
+    El titular inicia sesión, crea el grupo e invita a una sola persona que
+    acepta acceso. La prueba inicial valida la colaboración real de dos personas.
+14. **Los incidentes de importación son decisiones visibles.**
+    Cada incidente referencia su fila de archivo y motivo. La persona puede
+    cancelar, continuar con un supuesto explícito o importar sólo las filas no
+    afectadas. El resumen conserva filas excluidas y supuestos; una diferencia
+    global sin fila atribuible se informa sin inventar explicación.
 
 ## 3. Referencia de producto: qué aprendemos de Tricount
 
@@ -303,7 +329,8 @@ La sugerencia se recalcula desde los saldos y no se persiste como deuda.
 
 Cada fila debe distinguir visualmente gasto, ingreso y transferencia, e indicar lo
 necesario para comprender su efecto sin abrir el detalle. Ediciones y anulaciones
-deben quedar visibles o accesibles desde la actividad.
+deben quedar visibles o accesibles desde la actividad. Las líneas importadas
+conservan su procedencia dentro de la misma cronología y búsqueda.
 
 ## 7. Alcance recomendado para el primer reemplazo usable
 
@@ -320,6 +347,11 @@ deben quedar visibles o accesibles desde la actividad.
 - experiencia móvil;
 - archivo y restauración;
 - exportación CSV y JSON;
+- importación de movimientos desde Splitwise mediante archivo, con revisión
+  previa, alternativas ante incidentes por fila y opción de saldo inicial cero o
+  no cero;
+- búsqueda unificada por nombre, monto o palabra, con origen visible en cada
+  movimiento importado;
 - idempotencia y backups restaurables.
 
 ### Puede esperar
@@ -328,7 +360,7 @@ deben quedar visibles o accesibles desde la actividad.
 - categorías y estadísticas avanzadas;
 - movimientos recurrentes;
 - recordatorios y notificaciones;
-- importación desde Splitwise o Tricount;
+- importación directa por API de Splitwise e importación desde Tricount;
 - OCR;
 - operación offline completa;
 - conversión de monedas;
@@ -384,6 +416,17 @@ preservar estas restricciones conceptuales.
 - ¿Qué archivos y columnas forman la exportación CSV?
 - ¿Cómo se representa una anulación en exportaciones y restauraciones?
 
+### Migración y apertura
+
+- ¿Qué campos y excepciones aparecen en un CSV real de los grupos que usaremos?
+- ¿Cómo se reconcilian movimientos importados y saldos de Splitwise por moneda?
+- ¿Qué debe pasar ante una segunda importación del mismo archivo o un solapamiento
+  con un saldo de apertura?
+- Si la conciliación final muestra una diferencia, ¿puede confirmarse con
+  advertencia explícita o debe resolverse antes?
+- ¿Qué supuestos concretos estarán disponibles para resolver una fila con
+  incidente en la primera versión?
+
 ### Monedas
 
 - ¿Un grupo multimoneda muestra una pestaña por moneda o varias tarjetas de saldo?
@@ -424,6 +467,8 @@ Consultadas el 2026-09-17:
 ## Documentos relacionados
 
 - [Especificación funcional del MVP](HOMESUITE_GASTOS_MVP.md)
+- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
+- [User Story Map](HOMESUITE_GASTOS_STORY_MAP.md)
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
