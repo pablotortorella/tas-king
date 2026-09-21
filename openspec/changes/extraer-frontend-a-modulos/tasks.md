@@ -1,3 +1,7 @@
+> **Cierre registrado el 2026-09-21:** change implementado, integrado mediante
+> PR #43 y en producción como parte de v2.3.0. Se conserva fuera de `archive` por
+> decisión explícita de producto; no quedan tareas pendientes en este change.
+
 ## 1. F1 — Entrega de cabeceras al documento
 
 Desplegable y valiosa por sí sola: cierra el clickjacking sin tocar `index.html`. La política sigue con `'unsafe-inline'` en esta fase.
@@ -92,6 +96,6 @@ Un módulo por commit, con la suite en verde entre cada uno. El orden va de núc
 - [x] 7.3 Agregar al backlog el ítem separado de `style-src` y los 148 atributos `style=`
 - [x] 7.4 Actualizar `docs/STATUS.md` con la sesión, la causa raíz del gap de cabeceras y los tests agregados
 - [x] 7.5 Evaluar si corresponde entrada en `public/releases.html` y bump de versión: el refactor es interno, pero el endurecimiento de seguridad puede merecer mención
-- [~] 7.6 Rebase contra `origin/main` (innecesario: la rama está al día), `npm run test:all` en verde (212 + 87) y diff revisado: 60 archivos, 40 nuevos. **Falta abrir el PR** — se decidió hacer dos, el refactor primero y el fix de Esc después, para no mezclar un cambio de comportamiento con un change que promete no cambiarlo
-- [~] 7.7 Staging desplegado con el estado final (2026-09-17, Version ID `72182e18-2dc1-4ce1-86d6-7bfc7b5f2ef3`, v2.3.0): política endurecida verificada en el borde (`script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`), cero scripts inline en las 5 páginas, cero violaciones en navegador, y el toggle de tema de las públicas funciona desde su archivo nuevo. Pablo confirmó el login autenticado y los atajos el 2026-09-17. **Falta: la integración a `main`**
-- [ ] 7.8 Producción solo con aprobación explícita de Pablo; F6 conviene desplegarla sola para que un revert sea de una línea
+- [x] 7.6 PR #43 abierto e integrado en `main` como `43a1734`; antes de integrarlo se revisó el diff y pasó `npm run test:all` (212 unitarias + 87 E2E).
+- [x] 7.7 Estado final de staging verificado el 2026-09-17 (Version ID `72182e18-2dc1-4ce1-86d6-7bfc7b5f2ef3`) e integración posterior a `main` mediante PR #43.
+- [x] 7.8 Producción aprobada explícitamente y desplegada el 2026-09-18 como v2.3.0 (Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`). Se verificaron en el borde `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las cinco páginas con cabeceras y cero violaciones de CSP. El detalle histórico está en `docs/STATUS.md`.
