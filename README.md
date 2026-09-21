@@ -15,11 +15,11 @@ mezclar sus dominios.
 
 La primera pieza ya está publicada: [homesuite.info](https://homesuite.info/) sirve la
 landing pública desde un Worker separado. La suite autenticada y las aplicaciones
-de Gastos y Compras siguen en planificación:
+de Cuentas Claras y Compras siguen en planificación:
 
 - [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)
-- [MVP de HomeSuite Gastos](docs/HOMESUITE_GASTOS_MVP.md)
+- [MVP de Cuentas Claras](docs/HOMESUITE_GASTOS_MVP.md)
 - [ADR-018: arquitectura modular](docs/ADRs/ADR-018-homesuite-suite-modular.md)
 
 ## Requisitos
