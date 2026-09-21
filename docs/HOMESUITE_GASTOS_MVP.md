@@ -160,6 +160,8 @@ con controles de aprobación y abuso.
 La primera migración se hace con un titular autenticado y una persona invitada que
 acepta acceso al grupo. El archivo aceptado es un CSV del formato de exportación
 de Splitwise, sin distinguir si proviene de un grupo o una relación directa.
+El [CSV sintético de referencia](HOMESUITE_GASTOS_CSV_DE_EJEMPLO.md) conserva
+columnas, formatos y ejemplos de operaciones sin incorporar ningún export personal.
 
 1. HomeSuite identifica participantes, filas de movimiento y fila de resumen.
 2. La persona confirma el mapeo de participantes y revisa conteos y saldos por
