@@ -27,7 +27,7 @@ npm run test:all              # Debe pasar 100% — si falla, STOP
 - **Nuevo flujo Git para trabajo paralelo**: `main` queda como integración/producción; cada tarea usa rama propia y, si hay más de un agente, worktree propio. Ver la sección siguiente y `CLAUDE.md`.
 
 ### ⏭️ Próximo
-1. **HomeSuite en integración gradual**: documentación y landing pública viven en ramas separadas; su estado y secuencia están en `docs/HOMESUITE_INFRASTRUCTURE.md`. Ninguna migración de identidad o dominio está implícita en esos cambios.
+1. **HomeSuite ya tiene sitio público**: `https://homesuite.info/` sirve la landing desde el Worker independiente `homesuite-site`; `www` redirige al apex. La migración de identidad, sesiones y TasKing a `app.homesuite.info` sigue pendiente. Ver `docs/HOMESUITE_INFRASTRUCTURE.md`.
 2. **Seguimiento de v2.3.0**: los flakes y hallazgos no bloqueantes figuran en `docs/STATUS.md`; investigarlos si se reproducen, sin volver a tratar la migración 0015 como pendiente.
 3. Mantener los presupuestos y criterios de `docs/PERFORMANCE-PRACTICES.md` en los cambios siguientes.
 
