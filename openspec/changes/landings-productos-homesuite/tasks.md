@@ -14,5 +14,5 @@
 
 - [x] 3.1 Cubrir navegación, rutas, estados, CTA y cabeceras con tests
 - [x] 3.2 Pasar pruebas aisladas, Wrangler dry-run y suite completa de TasKing
-- [ ] 3.3 Revisar diff y publicar PR sin desplegar a producción
+- [x] 3.3 Revisar diff y publicar PR sin desplegar a producción
 - [ ] 3.4 Revisar preview, desplegar sólo con aprobación y actualizar estado
