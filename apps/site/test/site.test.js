@@ -58,7 +58,7 @@ describe("homesuite-site", () => {
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
 
-  it("mantiene la portada sin JavaScript y con el enlace productivo a TasKing", async () => {
+  it("mantiene la portada sin JavaScript y enlaza las tres landings", async () => {
     const html = await readFile(
       new URL("../public/index.html", import.meta.url),
       "utf8",
@@ -66,11 +66,40 @@ describe("homesuite-site", () => {
 
     expect(html).toContain("Te damos la bienvenida a casa");
     expect(html).toContain("Conocé las herramientas");
-    expect(html).toContain("Abrir Fun TasKing");
-    expect(html).toContain("https://tas-king.pablotortorella.workers.dev");
+    expect(html).toContain('href="/tareas"');
+    expect(html).toContain('href="/gastos"');
+    expect(html).toContain('href="/compras"');
+    expect(html).toContain("Conocé Fun TasKing");
+    expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     expect(html).toContain("Gastos");
     expect(html).toContain("Compras");
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/\sstyle=/i);
+  });
+
+  it.each([
+    ["tareas", "Fun TasKing!", true],
+    ["gastos", "Las cuentas compartidas, más claras.", false],
+    ["compras", "Una lista para comprar mejor, juntos.", false],
+  ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
+    const html = await readFile(
+      new URL(`../public/${slug}.html`, import.meta.url),
+      "utf8",
+    );
+
+    expect(html).toContain(`href="https://homesuite.info/${slug}"`);
+    expect(html).toContain(heading);
+    expect(html).toContain('href="/"');
+    expect(html).not.toMatch(/<script\b/i);
+    expect(html).not.toMatch(/\sstyle=/i);
+
+    if (available) {
+      expect(html).toContain('href="https://tas-king.pablotortorella.workers.dev"');
+      expect(html).toContain("Abrir Fun TasKing");
+    } else {
+      expect(html).toContain("Esta herramienta todavía está en preparación.");
+      expect(html).not.toMatch(/<button\b|<form\b/i);
+      expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
+    }
   });
 });
