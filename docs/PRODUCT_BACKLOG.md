@@ -22,8 +22,9 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 ## 🏠 Horizonte de producto: HomeSuite
 
-**Estado:** visión y MVP documentados; dominio base activo y primera landing
-implementada localmente en un change OpenSpec aislado. No reemplaza
+**Estado:** visión y MVP documentados; landing pública en producción desde el
+2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
+autenticada, Gastos y Compras aún no están implementados. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
 HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida

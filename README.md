@@ -13,7 +13,9 @@ dirección acordada incorpora primero un reemplazo propio de Splitwise y despué
 mejor experiencia de listas de compras, reutilizando identidad e infraestructura sin
 mezclar sus dominios.
 
-Esta evolución está documentada, pero todavía no implementada:
+La primera pieza ya está publicada: [homesuite.info](https://homesuite.info/) sirve la
+landing pública desde un Worker separado. La suite autenticada y las aplicaciones
+de Gastos y Compras siguen en planificación:
 
 - [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)

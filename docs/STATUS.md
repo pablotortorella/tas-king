@@ -1,11 +1,19 @@
 # Estado de Implementación — FUN TasKing! v2.3.0
 
-**Última actualización**: 2026-09-18
+**Última actualización**: 2026-09-21
 **Producción registrada**: v2.3.0, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## 🏠 HomeSuite: sitio público en producción — 2026-09-21
+
+- Los PRs #48 (fundamentos), #49 (landing) y #50 (Custom Domains) están integrados. El sitio público corre en el Worker independiente `homesuite-site`, sin D1, R2, OAuth ni cambios al Worker `tas-king`.
+- `https://homesuite.info/` responde 200 con la portada «Organizarnos puede ser más simple.» y el CTA a Fun TasKing. `https://www.homesuite.info/herramientas?origen=www` responde 308 a la misma ruta y query del apex; CSS y preview `workers.dev` responden 200.
+- Se retiraron únicamente los dos A de parking del apex y el CNAME `www` de GoDaddy. `_domainconnect` y `_dmarc` se conservaron. El error 525 desapareció; DNSSEC siguió validando con bandera `ad` en `1.1.1.1`.
+- Deploy desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. TasKing siguió respondiendo 200. Antes del corte, 217 pruebas unitarias y 93 E2E pasaron sobre el `main` integrado de la landing; el PR #50 pasó CI y sus 4 unitarias + 3 E2E aisladas.
+- Pendiente: identidad, sesiones, recursos y migración gradual de TasKing a `app.homesuite.info`; el dominio de la app todavía no se asoció. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md).
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 

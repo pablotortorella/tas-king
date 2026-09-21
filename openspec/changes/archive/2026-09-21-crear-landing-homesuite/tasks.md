@@ -30,7 +30,7 @@
 ## 5. Preview y publicación
 
 - [x] 5.1 Revisar localmente la portada en navegador real
-- [ ] 5.2 Desplegar preview `workers.dev` sólo después de autorización
-- [ ] 5.3 Asociar Custom Domains y retirar parking sólo después de revisión y aprobación explícita
-- [ ] 5.4 Verificar DNSSEC, HTTPS, redirección, cabeceras y CTA en producción
-- [ ] 5.5 Actualizar documentación operativa y archivar el change después de publicar
+- [x] 5.2 Desplegar preview `workers.dev` sólo después de autorización
+- [x] 5.3 Asociar Custom Domains y retirar parking sólo después de revisión y aprobación explícita
+- [x] 5.4 Verificar DNSSEC, HTTPS, redirección, cabeceras y CTA en producción
+- [x] 5.5 Actualizar documentación operativa y archivar el change después de publicar

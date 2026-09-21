@@ -1,8 +1,8 @@
 # HomeSuite — infraestructura, dominios y repositorio
 
-**Estado:** dominio, Universal SSL y DNSSEC activos; landing local lista para preview
+**Estado:** sitio público en producción; app autenticada y migración de TasKing pendientes
 
-**Fecha:** 2026-09-19
+**Fecha:** 2026-09-21
 
 ## Objetivo
 
@@ -21,7 +21,7 @@ autenticada modular.
 
 ## Estado comprobado del dominio
 
-Snapshot del 2026-09-17:
+Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
 
 - `homesuite.info` está registrado en GoDaddy hasta el 2029-09-16.
 - La zona fue incorporada a la cuenta Cloudflare que ya opera TasKing.
@@ -48,14 +48,27 @@ Snapshot del 2026-09-17:
 - `app.homesuite.info` y `staging.homesuite.info` todavía no tienen contenido.
 - Wrangler quedó autenticado en la cuenta Cloudflare correcta para operaciones
   posteriores de Workers.
-- La rama local `feature/homesuite-landing` contiene `apps/site`, su change
-  OpenSpec y pruebas aisladas en verde. Todavía no fue pusheada ni desplegada.
-- El apex devuelve temporalmente error 525 porque los registros de parking de
-  GoDaddy siguen proxificados. Se reemplazarán al asociar el Custom Domain; no se
-  habilitó HSTS ni se aplicó una solución insegura como el modo Flexible.
+- En ese momento, el apex devolvía 525 por el parking de GoDaddy proxificado.
+  No se habilitó HSTS ni se aplicó una solución insegura como el modo Flexible.
 
-Este snapshot no es una fuente dinámica. Antes de cualquier modificación se debe
-volver a comprobar DNS y estado de la zona.
+### Estado operativo actual (2026-09-21)
+
+- `homesuite.info` y `www.homesuite.info` son Custom Domains de `homesuite-site`.
+  El Worker se desplegó desde `main` SHA `f8cb9b6`, Version ID
+  `48847d8f-86de-4b18-b2ad-def62e348bba`; `workers.dev` sigue habilitado.
+- El apex responde 200 por HTTPS, con cabeceras de seguridad y los cuatro assets
+  esperados. `www` responde 308 al apex conservando path y query. El antiguo 525
+  desapareció. El CTA a Fun TasKing apunta a su URL productiva, que responde 200.
+- Se retiraron sólo los dos A de parking del apex (`15.197.148.33` y
+  `3.33.130.190`) y el CNAME `www` → apex. `_domainconnect` y `_dmarc` se
+  conservaron; no se configuró correo ni se activó HSTS.
+- `1.1.1.1` devolvió la respuesta A del apex con bandera `ad` después del corte:
+  DNSSEC sigue validando.
+- TasKing continúa en su Worker original; todavía no existe una app autenticada
+  bajo `app.homesuite.info` ni staging de HomeSuite.
+
+Este estado es un snapshot, no una fuente dinámica. Antes de otra modificación
+se debe volver a comprobar DNS, certificados y Worker.
 
 ## Mapa de hostnames
 
@@ -336,9 +349,8 @@ flujo de invitaciones, no a la activación básica del dominio.
 ## Secuencia de migración
 
 1. ✅ Completar activación de la zona, Universal SSL y DNSSEC.
-2. 🟡 Crear `apps/site` y desplegar una landing mínima en `workers.dev`: código y
-   pruebas locales completos; preview remoto pendiente de autorización.
-3. Asociar apex y `www` a `homesuite-site`; verificar HTTPS y redirección.
+2. ✅ Crear `apps/site` y desplegar la landing en `workers.dev`.
+3. ✅ Asociar apex y `www` a `homesuite-site`; HTTPS y redirección verificados.
 4. Crear el esqueleto de `apps/app` sin mover todavía TasKing.
 5. Crear `homesuite-app-staging` y asociar `staging.homesuite.info`.
 6. Crear recursos staging y cliente OAuth staging.
@@ -372,49 +384,40 @@ npm run deploy:app
 El deploy de una unidad no debe publicar silenciosamente otra. Los cambios que
 afecten contratos compartidos sí deben ejecutar las pruebas de toda la suite.
 
-## Retoma después del refactor de TasKing
+## Retoma operativa después de publicar la landing
 
-Estado comprobado el 2026-09-19:
+Estado comprobado el 2026-09-21:
 
-- TasKing v2.3.0 y el refactor modular ya están en producción; PRs #43–#47
-  integrados en `main`. La migración 0015 se aplicó antes del Worker nuevo.
-- `docs/homesuite-foundation` fue reconstruida desde sus commits locales y
-  rebasada sobre el `main` que contiene v2.3.0. Incluye visión, MVP, análisis de
-  Tricount, infraestructura, DNSSEC y ADR-018.
-- `feature/homesuite-landing` conserva el change OpenSpec
-  `crear-landing-homesuite` y `apps/site` implementado; sigue separada de la
-  aplicación TasKing y aún requiere actualización y pruebas sobre el nuevo `main`.
-- No se ha desplegado `homesuite-site`, asociado Custom Domains ni retirado los
-  registros de parking. El dominio aún requiere ese corte independiente.
-- La inestabilidad E2E observada antes de la landing está descrita en el
-  `verification.md` del change; los tests nuevos del refactor y el arreglo de la
-  carrera del perfil ya están integrados. Se repetirá la suite al preparar la PR
-  de la landing.
+- Los PRs #48 (fundamentos), #49 (landing) y #50 (Custom Domains) están
+  integrados en `main`. `apps/site` y su `wrangler.jsonc` siguen separados de
+  `public/`, `src/` y el Worker de TasKing.
+- El preview se publicó primero y se verificó antes del corte. La configuración
+  final declara ambos Custom Domains y `workers_dev: true` explícitamente.
+- Un intento previo de asociarlos recibió `409 Conflict` por los registros de
+  parking. Ese intento deshabilitó temporalmente el preview porque Wrangler
+  asumió `workers_dev: false` al usar `--domain` sin declararlo. Se restauró el
+  preview, se retiraron los tres registros incompatibles y se desplegó la
+  configuración versionada desde `main`; el estado final responde 200/308.
+- La sesión OAuth de Wrangler pudo desplegar Workers, pero la API DNS respondió
+  `Authentication error` al listar registros. La eliminación se hizo desde el
+  panel de Cloudflare, previa comparación exacta de nombres y contenidos.
+- La suite del `main` integrado de la landing pasó 217 unitarias y 93 E2E. El
+  PR #50 pasó CI, 4 pruebas unitarias y 3 E2E aisladas, y Wrangler dry-run.
 
-Secuencia de integración restante:
+Próxima etapa: planear identidad y el esqueleto de `apps/app`, con staging,
+sesiones, OAuth y recursos independientes. No apuntar `app.homesuite.info` al
+Worker actual de TasKing por conveniencia.
 
-1. integrar primero `docs/homesuite-foundation` mediante PR, sin desplegar;
-2. rebasar `feature/homesuite-landing` sobre el `main` ya documentado, manteniendo
-   `apps/site` separado de `public/`, `src/` y el `wrangler.jsonc` de TasKing;
-3. repetir:
+Para un redeploy exclusivo del sitio público desde un `main` limpio:
 
-   ```text
-   openspec validate crear-landing-homesuite --strict
-   npx vitest run --config apps/site/vitest.config.mjs
-   npx playwright test --config apps/site/playwright.config.mjs
-   npx wrangler deploy --dry-run --config apps/site/wrangler.jsonc
-   npm run test:all
-   ```
+```bash
+npx wrangler deploy --config apps/site/wrangler.jsonc
+```
 
-4. revisar el diff final, hacer push y abrir el PR correspondiente;
-5. con autorización explícita, desplegar primero el preview `workers.dev` y
-   revisarlo sin tocar el dominio;
-6. con una segunda aprobación, retirar los registros de parking incompatibles y
-   asociar `homesuite.info` y `www.homesuite.info` como Custom Domains;
-7. verificar HTTPS, redirección 308, cabeceras, CTA a TasKing y desaparición del
-   525; mantener HSTS desactivado;
-8. actualizar `docs/STATUS.md`, este documento y archivar el change OpenSpec una
-   vez que la landing esté efectivamente publicada.
+No usar `npm run deploy` para la landing: ese script pertenece a TasKing y
+ejecuta respaldo y migraciones de su D1. Ante un problema del sitio público,
+revisar primero los Custom Domains y las versiones del Worker `homesuite-site`;
+no cambiar el DNS ni el Worker de TasKing como rollback improvisado.
 
 ## Cuándo separar repositorios o productos
 
