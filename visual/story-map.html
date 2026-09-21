@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HomeSuite Gastos · User Story Map</title>
+  <link rel="stylesheet" href="board.css">
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <p class="brandline">HomeSuite · Gastos · Artefacto 02</p>
+        <h1>El mapa para llegar al reemplazo</h1>
+        <p class="subtitle">User Story Map · Actividades arriba; debajo, cortes de entrega que atraviesan el recorrido completo.</p>
+      </div>
+      <div class="header-mark" aria-label="HomeSuite">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#245c43"/><path d="M14 30h36v25H14z" fill="#fff8e8"/><path d="M7 31 28 10a6 6 0 0 1 8 0l21 21a4 4 0 0 1-3 7H10a4 4 0 0 1-3-7Z" fill="#d7664f"/><path d="M26 55V45a6 6 0 0 1 12 0v10" fill="#245c43"/><path d="M18 42a3 3 0 0 1 6 0v5h-6Zm22 0a3 3 0 0 1 6 0v5h-6Z" fill="#f2c86b"/></svg>
+        <span>HomeSuite</span>
+      </div>
+    </header>
+
+    <p class="map-intro"><b>Objetivo:</b> traer la historia y los saldos, continuar registrando y encontrar cualquier movimiento —propio o importado— en el mismo lugar.</p>
+
+    <section aria-labelledby="backbone-title">
+      <h2 id="backbone-title" class="section-title">Backbone · Lo que la persona intenta hacer</h2>
+      <div class="map-left-offset">
+        <div class="activity-grid">
+          <div class="activity"><span>1</span> Armar el grupo</div>
+          <div class="activity"><span>2</span> Traer el punto de partida</div>
+          <div class="activity"><span>3</span> Registrar lo nuevo</div>
+          <div class="activity"><span>4</span> Encontrar movimientos</div>
+          <div class="activity"><span>5</span> Entender y conciliar</div>
+          <div class="activity"><span>6</span> Compartir y conservar</div>
+        </div>
+        <div class="task-grid" style="margin-top: 3mm">
+          <div class="task">Nombrar el grupo y reconocer a sus participantes.</div>
+          <div class="task">Importar historia o abrir en cero/no cero; revisar procedencia.</div>
+          <div class="task">Anotar gasto, ingreso o transferencia.</div>
+          <div class="task">Buscar por nombre, monto o palabra sin separar orígenes.</div>
+          <div class="task">Ver saldo, explicar cambios y quedar a mano.</div>
+          <div class="task">Invitar, corregir, exportar y archivar.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="map-slices" aria-labelledby="slices-title">
+      <h2 id="slices-title" class="section-title">Cortes verticales · Qué podremos validar en cada paso</h2>
+
+      <div class="slice-row a">
+        <div class="slice-label">A<small>Probar la migración</small></div>
+        <article class="slice-card"><strong>Grupo piloto</strong><p>Titular con login e invitación aceptada por una persona.</p></article>
+        <article class="slice-card"><strong>Historia completa</strong><p>CSV Splitwise, mapear personas e incorporar todas las líneas válidas una vez.</p></article>
+        <article class="slice-card"><strong>Primer paso nuevo</strong><p>Agregar un gasto propio después de importar.</p></article>
+        <article class="slice-card"><strong>Una búsqueda</strong><p>Campo libre: texto, persona o monto; mostrar «Importado de Splitwise».</p></article>
+        <article class="slice-card"><strong>Saldos comparados</strong><p>Cotejar origen y reconstruido; incidentes con fila y motivo, sin ajustes invisibles.</p></article>
+        <article class="slice-card"><strong>Lote visible</strong><p>Ver procedencia, supuestos y filas no importadas.</p></article>
+      </div>
+
+      <div class="slice-row b">
+        <div class="slice-label">B<small>Uso familiar real</small></div>
+        <article class="slice-card"><strong>Colaboración segura</strong><p>Invitar y gestionar participantes con acceso propio.</p></article>
+        <article class="slice-card"><strong>Otras entradas</strong><p>Empezar en cero o con apertura no nula sin duplicar períodos.</p></article>
+        <article class="slice-card"><strong>Vida compartida</strong><p>Gastos, ingresos y transferencias; correcciones auditables.</p></article>
+        <article class="slice-card"><strong>Buscar en móvil</strong><p>Fecha, personas, monto, palabra y origen en resultados conjuntos.</p></article>
+        <article class="slice-card"><strong>Quedar a mano</strong><p>Balance neto, detalle explicativo y transferencia sugerida.</p></article>
+        <article class="slice-card"><strong>Control de datos</strong><p>Exportar, respaldar y revocar acceso sin perder historia.</p></article>
+      </div>
+
+      <div class="slice-row c">
+        <div class="slice-label">C<small>Otros grupos</small></div>
+        <article class="slice-card"><strong>Más contextos</strong><p>Viajes, amistades y proyectos con más participantes.</p></article>
+        <article class="slice-card"><strong>Más migraciones</strong><p>Otros grupos o relaciones; reimportaciones controladas.</p></article>
+        <article class="slice-card"><strong>Más repartos</strong><p>Desigual, varios pagadores/receptores y varias monedas.</p></article>
+        <article class="slice-card"><strong>Filtros útiles</strong><p>Profundizar sin partir el historial según su origen.</p></article>
+        <article class="slice-card"><strong>Cerrar un ciclo</strong><p>Archivar con saldos visibles y restaurar después.</p></article>
+        <article class="slice-card"><strong>Más control</strong><p>Roles y preferencias más finos.</p></article>
+      </div>
+    </section>
+
+    <aside class="map-note"><strong>Reglas que cruzan todo el mapa</strong><span>Importar todos los movimientos válidos · conservar el efecto exacto · marcar origen · comparar saldos · no mezclar dos veces el mismo período · probar con datos sintéticos.</span></aside>
+
+    <footer class="footer"><span>Borrador visual para revisión · Los cortes aún no son backlog</span><span>HomeSuite Gastos · User Story Map · 21 sep 2026</span></footer>
+  </main>
+</body>
+</html>

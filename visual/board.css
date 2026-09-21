@@ -1,0 +1,333 @@
+@page {
+  size: A3 landscape;
+  margin: 0;
+}
+
+:root {
+  color-scheme: light;
+  --paper: #f7f2e8;
+  --ink: #22362b;
+  --muted: #56675c;
+  --green: #245c43;
+  --coral: #d7664f;
+  --gold: #f2c86b;
+  --mint: #dcece1;
+  --blue: #dbece9;
+  --line: #d8d4c8;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background: #d8ddd7;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+  position: relative;
+  width: 420mm;
+  height: 297mm;
+  overflow: hidden;
+  padding: 12mm 14mm 13mm;
+  background:
+    radial-gradient(circle at 93% 8%, rgba(242, 200, 107, .24), transparent 55mm),
+    var(--paper);
+}
+
+@media screen {
+  .page {
+    margin: 24px auto;
+    box-shadow: 0 20px 60px rgba(16, 36, 25, .18);
+  }
+}
+
+@media print {
+  html, body { background: white; }
+  .page { margin: 0; break-after: page; }
+  .sticky, .route, .slice-card, .activity, .task { break-inside: avoid; }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16mm;
+  min-height: 34mm;
+}
+
+.brandline {
+  margin: 0 0 3mm;
+  color: var(--coral);
+  font-size: 9pt;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30pt;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+}
+
+.subtitle {
+  max-width: 215mm;
+  margin: 3mm 0 0;
+  color: var(--muted);
+  font-size: 11pt;
+  line-height: 1.35;
+}
+
+.header-mark {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  padding-top: 1mm;
+  color: var(--green);
+  font-weight: 800;
+  font-size: 13pt;
+  white-space: nowrap;
+}
+
+.header-mark svg { width: 15mm; height: 15mm; }
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin: 4mm 0 3mm;
+  color: var(--green);
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.section-title::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+
+.route-grid,
+.journey-grid,
+.activity-grid,
+.task-grid {
+  display: grid;
+  gap: 3mm;
+}
+
+.route-grid { grid-template-columns: repeat(3, 1fr); }
+.journey-grid { grid-template-columns: repeat(7, 1fr); gap: 2.5mm; }
+
+.route,
+.sticky,
+.slice-card,
+.activity,
+.task {
+  border: 1px solid rgba(36, 92, 67, .13);
+  border-radius: 3mm;
+  box-shadow: 1mm 1.5mm 3mm rgba(31, 58, 42, .09);
+}
+
+.route {
+  position: relative;
+  min-height: 39mm;
+  padding: 4mm 5mm;
+  background: #fff8df;
+}
+
+.route:nth-child(2) { background: #e5f0e8; }
+.route:nth-child(3) { background: #f8e6e0; }
+
+.route-tag,
+.tiny-label {
+  display: block;
+  margin-bottom: 2mm;
+  color: var(--green);
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.route strong { display: block; font-size: 13pt; }
+.route p { margin: 2mm 0 0; font-size: 9.5pt; line-height: 1.3; }
+
+.journey-card {
+  position: relative;
+  height: 112mm;
+  padding: 5mm 4mm 4mm;
+  background: #fffdf2;
+  transform: rotate(-.45deg);
+}
+
+.journey-card:nth-child(even) { background: #e6f0e8; transform: rotate(.55deg); }
+.journey-card:nth-child(3n) { background: #fff1db; }
+
+.journey-card::before {
+  position: absolute;
+  top: -2mm;
+  left: 50%;
+  width: 17mm;
+  height: 5mm;
+  background: rgba(218, 142, 112, .32);
+  content: "";
+  transform: translateX(-50%) rotate(-3deg);
+}
+
+.step-no {
+  display: inline-grid;
+  width: 9mm;
+  height: 9mm;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-size: 10pt;
+  font-weight: 800;
+}
+
+.journey-card h2 {
+  min-height: 17mm;
+  margin: 3mm 0 4mm;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14pt;
+  line-height: 1.1;
+}
+
+.journey-card p { margin: 0 0 4mm; font-size: 9.5pt; line-height: 1.32; }
+.journey-card .risk { margin-top: auto; color: #8d493a; }
+.journey-card { display: flex; flex-direction: column; }
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3mm;
+  margin-top: 7mm;
+}
+
+.principle {
+  min-height: 24mm;
+  padding: 4mm 5mm;
+  border-left: 1.5mm solid var(--coral);
+  border-radius: 2mm;
+  background: white;
+  font-size: 9.5pt;
+  line-height: 1.3;
+}
+
+.principle strong { display: block; margin-bottom: 1mm; color: var(--green); }
+
+.footer {
+  position: absolute;
+  right: 14mm;
+  bottom: 6mm;
+  left: 14mm;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 2mm;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 8pt;
+}
+
+.map-intro {
+  margin: 1mm 0 4mm;
+  color: var(--muted);
+  font-size: 10pt;
+}
+
+.map-left-offset { margin-left: 18mm; }
+.activity-grid, .task-grid { grid-template-columns: repeat(6, 1fr); }
+
+.activity {
+  display: grid;
+  min-height: 22mm;
+  place-items: center;
+  padding: 3mm;
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+  font-size: 11pt;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.activity span { color: var(--gold); }
+
+.task {
+  min-height: 25mm;
+  padding: 3mm;
+  background: #fffdf5;
+  color: var(--muted);
+  font-size: 8.8pt;
+  line-height: 1.3;
+}
+
+.map-slices { margin-top: 5mm; }
+
+.slice-row {
+  display: grid;
+  grid-template-columns: 15mm repeat(6, 1fr);
+  gap: 3mm;
+  margin-bottom: 3mm;
+}
+
+.slice-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3mm;
+  background: var(--coral);
+  color: white;
+  font-size: 21pt;
+  font-weight: 800;
+}
+
+.slice-label small {
+  max-width: 12mm;
+  margin-top: 2mm;
+  font-size: 7pt;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.slice-row.b .slice-label { background: var(--green); }
+.slice-row.c .slice-label { background: #547c76; }
+
+.slice-card {
+  min-height: 43mm;
+  padding: 3.2mm;
+  background: #f9e2d9;
+  font-size: 9pt;
+  line-height: 1.25;
+}
+
+.slice-row.b .slice-card { background: #deeadf; }
+.slice-row.c .slice-card { background: #e0eeeb; }
+
+.slice-card strong { display: block; margin-bottom: 2mm; font-size: 9.6pt; }
+.slice-card p { margin: 0; }
+
+.map-note {
+  display: flex;
+  gap: 5mm;
+  margin: 5mm 0 0 18mm;
+  padding: 3mm 5mm;
+  border-radius: 2mm;
+  background: white;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+
+.map-note strong { color: var(--green); white-space: nowrap; }
