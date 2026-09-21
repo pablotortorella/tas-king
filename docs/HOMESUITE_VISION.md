@@ -12,7 +12,7 @@ HomeSuite será una suite de herramientas pequeñas para coordinar la vida compa
 Nace a partir de tres necesidades concretas:
 
 1. **Tareas:** evolucionar FUN TasKing! como herramienta de organización compartida.
-2. **Gastos:** reemplazar Splitwise con una alternativa propia, robusta y auditable.
+2. **Cuentas Claras:** reemplazar Splitwise con una alternativa propia, robusta y auditable.
 3. **Compras:** mejorar sustancialmente la experiencia actual de armar y usar la
    lista del supermercado en Google Keep.
 
@@ -26,9 +26,9 @@ uso real en más de un producto.
   se descarta su identidad ni se fuerza un renombre inmediato.
 - Cada herramienta conserva su propio modelo, navegación y experiencia. Una suite
   no significa una única interfaz con conceptos mezclados.
-- La primera herramienta nueva será **HomeSuite Gastos**. Su objetivo inicial es
+- La primera herramienta nueva será **Cuentas Claras**. Su objetivo inicial es
   reemplazar Splitwise, no administrar el presupuesto completo del hogar.
-- Gastos incluye desde el MVP ingresos compartidos que afectan el saldo neto. La
+- Cuentas Claras incluye desde el MVP ingresos compartidos que afectan el saldo neto. La
   arquitectura no debe impedir incorporar después categorías, recurrencias,
   presupuestos, análisis de ingresos y flujo de caja, pero esas capacidades
   posteriores no forman parte del primer reemplazo de Splitwise.
@@ -83,7 +83,7 @@ extraerá gradualmente a partir de componentes probados.
 https://homesuite.info/
 ├── /                 Presentación de la suite
 ├── /tareas           Presentación de TasKing
-├── /gastos           Presentación de HomeSuite Gastos
+├── /cuentas-claras   Presentación de Cuentas Claras
 └── /compras          Presentación de HomeSuite Compras
 ```
 
@@ -95,7 +95,7 @@ El sitio público no necesita recibir ni compartir la sesión autenticada.
 https://app.homesuite.info/
 ├── /                 Selector de herramientas y espacios recientes
 ├── /tareas/*         TasKing dentro de HomeSuite
-├── /gastos/*         Libro de gastos compartidos
+├── /cuentas-claras/* Cuentas Claras compartidas
 └── /compras/*        Listas compartidas
 ```
 
@@ -179,7 +179,7 @@ o grupos de amigos. HomeSuite usará invitaciones y membresías por espacio.
 
 Un **espacio** representa el contexto compartido —por ejemplo, Familia, Viaje a
 Cartagena o Proyecto X— y puede habilitar uno o más productos. Un tablero, libro
-de gastos o lista pertenece a un espacio. Crear un grupo desde Gastos podrá crear
+de Cuentas Claras o lista pertenece a un espacio. Crear un grupo desde Cuentas Claras podrá crear
 el espacio y su primer libro en una sola operación.
 
 No se migrarán obligatoriamente todos los tableros actuales al introducir el
@@ -226,14 +226,14 @@ al libro.
 
 ## Secuencia de evolución
 
-1. Documentar y validar la visión, arquitectura, infraestructura y MVP de Gastos.
+1. Documentar y validar la visión, arquitectura, infraestructura y MVP de Cuentas Claras.
 2. Activar la zona Cloudflare y DNSSEC para `homesuite.info`.
 3. Crear el sitio público y asociar apex y `www`.
 4. Preparar aplicación y recursos aislados de staging.
 5. Separar el frontend en superficies mantenibles sin detener TasKing.
 6. Extraer identidad estable, sesión, espacios, miembros e invitaciones.
 7. Preparar aplicación y recursos de producción.
-8. Implementar y validar HomeSuite Gastos.
+8. Implementar y validar Cuentas Claras.
 9. Mantener TasKing en su URL actual hasta completar una migración probada a
    `/tareas`.
 10. Diseñar e implementar HomeSuite Compras sobre la plataforma compartida.
@@ -249,12 +249,12 @@ las especificaciones incrementales ni autoriza un despliegue.
   afectar varios productos.
 - **Seguridad same-origin:** una vulnerabilidad de frontend puede operar contra
   otras APIs autenticadas; CSP, validación y aislamiento modular son obligatorios.
-- **Despliegues de producto acoplados:** Tareas, Gastos y Compras se publican
+- **Despliegues de producto acoplados:** Tareas, Cuentas Claras y Compras se publican
   juntos inicialmente; se separarán si el costo se vuelve observable. Sitio y
   aplicación sí tienen deploy independiente desde el principio.
 - **Sobre-generalización:** espacios y membresías deben resolver casos presentes,
   no convertirse en un framework abstracto.
-- **Confianza financiera:** Gastos necesita más auditoría e invariantes que una
+- **Confianza financiera:** Cuentas Claras necesita más auditoría e invariantes que una
   herramienta de tareas.
 
 ## Éxito inicial
@@ -272,7 +272,7 @@ HomeSuite habrá validado su primera etapa cuando:
 
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
-- [Especificación del MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
-- [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [Especificación del MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
+- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
 - [Backlog del producto](PRODUCT_BACKLOG.md)
 - [ADRs históricos de TasKing](ADRs.md)

@@ -24,19 +24,19 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 **Estado:** visión y MVP documentados; landing pública en producción desde el
 2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
-autenticada, Gastos y Compras aún no están implementados. Esto no reemplaza
+autenticada, Cuentas Claras y Compras aún no están implementados. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
 HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
 compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
 operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
 sesión; la aplicación autenticada será un monolito modular con staging aislado,
-manteniendo separados los dominios de Tareas, Gastos y Compras.
+manteniendo separados los dominios de Tareas, Cuentas Claras y Compras.
 
 Orden estratégico inicial:
 
 1. plataforma mínima: identidad estable, sesión, espacios e invitaciones;
-2. **HomeSuite Gastos**, con el objetivo concreto de reemplazar Splitwise;
+2. **Cuentas Claras**, con el objetivo concreto de reemplazar Splitwise;
 3. migración gradual de TasKing a `/tareas`, sin big bang;
 4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
 
@@ -50,13 +50,13 @@ Documentación fuente:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
-- [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
-- [Brief de exploración de Gastos y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
-- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
-- [User Story Map de Gastos](HOMESUITE_GASTOS_STORY_MAP.md)
+- [MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
+- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [User Journey de entrada y migración de Cuentas Claras](HOMESUITE_GASTOS_JOURNEY.md)
+- [User Story Map de Cuentas Claras](HOMESUITE_GASTOS_STORY_MAP.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
-### Próximo corte: validar la migración de Gastos (A)
+### Próximo corte: validar la migración de Cuentas Claras (A)
 
 Estas son User Stories candidatas. Están ordenadas por dependencia de producto,
 no son tareas técnicas ni un change OpenSpec activo. Cada propuesta se dividirá
@@ -64,7 +64,7 @@ en un change pequeño al llegar a `propose`.
 
 | Orden | Historia | Resultado observable |
 |---|---|---|
-| HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Gastos para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
+| HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
 | HG-02 | Como titular, quiero invitar a una persona por email para que ambos veamos el mismo libro sin compartir una cuenta. | La invitación se acepta una vez; ambas personas acceden al mismo grupo y no a grupos ajenos. |
 | HG-03 | Como titular, quiero previsualizar un CSV de exportación de Splitwise y mapear sus participantes para saber qué se importará antes de guardar. | Se distinguen participantes, movimientos y fila de resumen; se muestran conteos y saldos previstos por moneda. |
 | HG-04 | Como titular, quiero decidir qué hacer ante cada incidente de importación para no perder control sobre mi historia. | Cada incidente muestra fila y motivo; puedo cancelar, aplicar un supuesto explícito o importar el subconjunto seguro. |

@@ -67,11 +67,11 @@ describe("homesuite-site", () => {
     expect(html).toContain("Te damos la bienvenida a casa");
     expect(html).toContain("Conocé las herramientas");
     expect(html).toContain('href="/tareas"');
-    expect(html).toContain('href="/gastos"');
+    expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('href="/compras"');
     expect(html).toContain("Conocé Fun TasKing");
     expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
-    expect(html).toContain("Gastos");
+    expect(html).toContain("Cuentas Claras");
     expect(html).toContain("Compras");
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/\sstyle=/i);
@@ -79,7 +79,7 @@ describe("homesuite-site", () => {
 
   it.each([
     ["tareas", "Fun TasKing!", true],
-    ["gastos", "Las cuentas compartidas, más claras.", false],
+    ["cuentas-claras", "Las cuentas compartidas, más claras.", false],
     ["compras", "Una lista para comprar mejor, juntos.", false],
   ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
     const html = await readFile(

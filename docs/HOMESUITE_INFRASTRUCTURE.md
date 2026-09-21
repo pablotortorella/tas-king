@@ -99,7 +99,7 @@ sesión host-only, evita CORS innecesario y reduce certificados y configuración
 ```text
 https://app.homesuite.info/
 ├── /tareas/*
-├── /gastos/*
+├── /cuentas-claras/*
 ├── /compras/*
 ├── /auth/*
 └── /api/*
@@ -164,7 +164,7 @@ equipos, releases o requisitos de aislamiento realmente independientes.
 Worker de assets estáticos para:
 
 - landing general;
-- landings de Tareas, Gastos y Compras;
+- landings de Tareas, Cuentas Claras y Compras;
 - privacidad, términos y novedades;
 - redirección canónica de `www` al apex.
 
@@ -218,7 +218,7 @@ Su URL principal en `workers.dev` sirve la versión publicada, no es staging;
 para revisar una versión remota antes de publicarla se usaría una URL de preview
 asociada a esa versión.
 
-Una D1 por entorno contiene inicialmente plataforma, Tareas, Gastos y Compras. Las
+Una D1 por entorno contiene inicialmente plataforma, Tareas, Cuentas Claras y Compras. Las
 tablas y módulos mantienen fronteras claras. Separar bases por producto se hará
 solo por escala, seguridad, retención o cadencia comprobadas.
 
@@ -490,7 +490,7 @@ La base de dominio estará resuelta cuando:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
-- [MVP de HomeSuite Gastos](HOMESUITE_GASTOS_MVP.md)
+- [MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
 - [Cloudflare: configuración DNS primaria](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/)
 - [Cloudflare: Custom Domains de Workers](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 - [Cloudflare: Universal SSL](https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/)

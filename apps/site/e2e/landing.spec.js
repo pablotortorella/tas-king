@@ -8,12 +8,12 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
     name: "Organizarnos puede ser más simple.",
   })).toBeVisible();
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
-  await expect(page.getByText("Gastos", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cuentas Claras", { exact: true })).toBeVisible();
   await expect(page.getByText("Compras", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Conocé las herramientas" })).toBeVisible();
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
-  await expect(page.getByRole("link", { name: "Conocé Gastos" })).toHaveAttribute("href", "/gastos");
+  await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
   await expect(page.getByRole("link", { name: "Conocé Compras" })).toHaveAttribute("href", "/compras");
 });
 
@@ -51,7 +51,7 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
 });
 
 for (const [slug, heading] of [
-  ["gastos", "Las cuentas compartidas, más claras."],
+  ["cuentas-claras", "Las cuentas compartidas, más claras."],
   ["compras", "Una lista para comprar mejor, juntos."],
 ]) {
   test(`/${slug} explica el producto sin fingir una app disponible`, async ({ page }) => {
@@ -65,7 +65,7 @@ for (const [slug, heading] of [
   });
 }
 
-for (const slug of ["tareas", "gastos", "compras"]) {
+for (const slug of ["tareas", "cuentas-claras", "compras"]) {
   test(`/${slug} sirve HTML con cabeceras de seguridad`, async ({ request }) => {
     const response = await request.get(`/${slug}`);
 
@@ -90,10 +90,18 @@ for (const slug of ["tareas", "gastos", "compras"]) {
 
 test("las landings respetan la preferencia de modo oscuro", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/gastos");
+  await page.goto("/cuentas-claras");
 
   const pageColor = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue("--page").trim()
   );
   expect(pageColor).toBe("#161914");
+});
+
+test("/gastos ya no conserva una landing ni redirige", async ({ request }) => {
+  const response = await request.get("/gastos", { maxRedirects: 0 });
+
+  expect(response.status()).toBe(404);
+  expect(response.headers().location).toBeUndefined();
+  expect(await response.text()).not.toContain("Cuentas Claras");
 });
