@@ -22,7 +22,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npx wrangler dev --config apps/site/wrangler.jsonc --port 8790",
+    command: "npx wrangler dev --config apps/site/wrangler.jsonc --port 8790 --persist-to .wrangler/site-e2e-state",
     cwd: repoRoot,
     url: "http://127.0.0.1:8790/",
     reuseExistingServer: false,

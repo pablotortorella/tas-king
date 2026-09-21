@@ -213,14 +213,40 @@ Objetivo de nombres, sujeto a comprobar disponibilidad antes de crear:
 | R2 de backups | `homesuite-app-backups` | `homesuite-app-backups-staging` |
 | OAuth client | `HomeSuite Production` | `HomeSuite Staging` |
 
-El Worker público es `homesuite-site` y no necesita variante staging al inicio;
-los previews de rama o `workers.dev` alcanzan hasta que el sitio lo justifique.
+El Worker público es `homesuite-site` y no necesita variante staging al inicio.
+Su URL principal en `workers.dev` sirve la versión publicada, no es staging;
+para revisar una versión remota antes de publicarla se usaría una URL de preview
+asociada a esa versión.
 
 Una D1 por entorno contiene inicialmente plataforma, Tareas, Gastos y Compras. Las
 tablas y módulos mantienen fronteras claras. Separar bases por producto se hará
 solo por escala, seguridad, retención o cadencia comprobadas.
 
 ## Ambientes
+
+### Decisión para el sitio público y la futura app (2026-09-21)
+
+- **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
+  producción. `staging.homesuite.info` y `qa.homesuite.info` no resuelven ni
+  tienen un Worker de HomeSuite asociado. El staging existente de TasKing es
+  propio de la aplicación anterior; no equivale a un staging de HomeSuite.
+- **Sitio público:** revisión visual local primero; tras aprobación, pruebas,
+  integración y deploy del sitio. Si hace falta compartir una versión remota
+  previa, usar una URL de preview por versión de Cloudflare Workers. No asumir
+  que la URL principal `homesuite-site.*.workers.dev` es un preview aislado.
+  Los previews pueden ser públicos: no incluir datos privados ni secretos.
+- **App autenticada:** reservar `staging.homesuite.info` para
+  `homesuite-app-staging`, con D1, R2, secrets y cliente OAuth propios. Crear
+  ese entorno antes de probar allí sesiones, datos o migraciones, y pasar a
+  producción sólo después de validarlo. No apuntar ese hostname al sitio
+  público provisionalmente.
+- **Si el sitio necesita una URL de QA estable:** evaluar un Worker separado y
+  `preview.homesuite.info`, protegido con Access si corresponde. No crear un
+  segundo entorno permanente sólo por conveniencia de nomenclatura; revisar
+  esta decisión cuando haya revisiones remotas frecuentes.
+
+Esta decisión distingue revisión local, preview de una versión y staging con
+recursos independientes. `qa.homesuite.info` no tiene uso asignado por ahora.
 
 ### Local
 
