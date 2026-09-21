@@ -9,11 +9,11 @@
 
 ## 🏠 HomeSuite: sitio público en producción — 2026-09-21
 
-- Los PRs #48 (fundamentos), #49 (landing) y #50 (Custom Domains) están integrados. El sitio público corre en el Worker independiente `homesuite-site`, sin D1, R2, OAuth ni cambios al Worker `tas-king`.
-- `https://homesuite.info/` responde 200 con la portada «Organizarnos puede ser más simple.» y el CTA a Fun TasKing. `https://www.homesuite.info/herramientas?origen=www` responde 308 a la misma ruta y query del apex; CSS y preview `workers.dev` responden 200.
+- Los PRs #48 (fundamentos), #49 (landing), #50 (Custom Domains) y #52 (landings de productos) están integrados. El sitio público corre en el Worker independiente `homesuite-site`, sin D1, R2, OAuth ni cambios al Worker `tas-king`.
+- `https://homesuite.info/`, `/tareas`, `/gastos` y `/compras` responden 200. La portada conserva «Organizarnos puede ser más simple.» y la landing de Tareas enlaza al TasKing actual. `www` redirige 308 al apex conservando path y query. La URL principal de `homesuite-site` en `workers.dev` sirve producción, no staging.
 - Se retiraron únicamente los dos A de parking del apex y el CNAME `www` de GoDaddy. `_domainconnect` y `_dmarc` se conservaron. El error 525 desapareció; DNSSEC siguió validando con bandera `ad` en `1.1.1.1`.
-- Deploy desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. TasKing siguió respondiendo 200. Antes del corte, 217 pruebas unitarias y 93 E2E pasaron sobre el `main` integrado de la landing; el PR #50 pasó CI y sus 4 unitarias + 3 E2E aisladas.
-- Pendiente: identidad, sesiones, recursos y migración gradual de TasKing a `app.homesuite.info`; el dominio de la app todavía no se asoció. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md).
+- Publicación inicial desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. Las landings del PR #52 se publicaron desde `main` SHA `45f5222`, Version ID `cc65ff3f-6747-41d3-98e0-c0b3742b81b9`. Ese PR pasó CI, 7 unitarias y 13 E2E del sitio; las cuatro rutas se comprobaron en producción. El favicon del sitio usa la casita de HomeSuite con el techo coral por delante.
+- No hay staging de HomeSuite ni registros para `staging.homesuite.info` o `qa.homesuite.info`. `staging.homesuite.info` queda reservado para la futura app autenticada con recursos propios; la landing se revisa localmente y, si hace falta revisión remota, con preview por versión. Pendiente: identidad, sesiones, recursos y migración gradual de TasKing a `app.homesuite.info`. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md#decisión-para-el-sitio-público-y-la-futura-app-2026-09-21).
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
