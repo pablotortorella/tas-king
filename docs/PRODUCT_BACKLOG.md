@@ -50,10 +50,10 @@ Documentación fuente:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
-- [MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
-- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
-- [User Journey de entrada y migración de Cuentas Claras](HOMESUITE_GASTOS_JOURNEY.md)
-- [User Story Map de Cuentas Claras](HOMESUITE_GASTOS_STORY_MAP.md)
+- [MVP de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_MVP.md)
+- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md)
+- [User Journey de entrada y migración de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_JOURNEY.md)
+- [User Story Map de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
 ### Próximo corte: validar la migración de Cuentas Claras (A)

@@ -1,4 +1,4 @@
-# HomeSuite Gastos — brief para exploración y proposal
+# HomeSuite Cuentas Claras — brief para exploración y proposal
 
 **Estado:** insumo de producto previo a OpenSpec; no es todavía un proposal
 
@@ -10,7 +10,7 @@
 
 ## 1. Problema que queremos resolver
 
-HomeSuite Gastos debe sustituir el uso cotidiano de Splitwise con una alternativa
+HomeSuite Cuentas Claras debe sustituir el uso cotidiano de Splitwise con una alternativa
 propia, robusta y portable para:
 
 - familias y parejas;
@@ -386,7 +386,8 @@ preservar estas restricciones conceptuales.
 
 ### Producto y vocabulario
 
-- ¿El producto se presenta como “Gastos”, “Cuentas compartidas” u otro nombre?
+- **Resuelta:** el producto se presenta como **Cuentas Claras**; “gastos” se
+  conserva sólo como tipo descriptivo de movimiento cuando corresponda.
 - ¿La interfaz llama “saldo”, “balance” o adapta el término según el país?
 - ¿La fuente de un ingreso merece un campo propio o alcanza inicialmente con la
   descripción?
@@ -466,9 +467,9 @@ Consultadas el 2026-09-17:
 
 ## Documentos relacionados
 
-- [Especificación funcional del MVP](HOMESUITE_GASTOS_MVP.md)
-- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
-- [User Story Map](HOMESUITE_GASTOS_STORY_MAP.md)
+- [Especificación funcional del MVP](HOMESUITE_CUENTAS_CLARAS_MVP.md)
+- [User Journey de entrada y migración](HOMESUITE_CUENTAS_CLARAS_JOURNEY.md)
+- [User Story Map](HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md)
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)

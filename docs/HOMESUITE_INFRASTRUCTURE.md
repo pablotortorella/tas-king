@@ -490,7 +490,7 @@ La base de dominio estará resuelta cuando:
 
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
-- [MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
+- [MVP de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_MVP.md)
 - [Cloudflare: configuración DNS primaria](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/)
 - [Cloudflare: Custom Domains de Workers](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 - [Cloudflare: Universal SSL](https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/)

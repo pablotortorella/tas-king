@@ -1,4 +1,4 @@
-# HomeSuite Gastos — User Journey de entrada y migración
+# HomeSuite Cuentas Claras — User Journey de entrada y migración
 
 **Estado:** validado como guía de producto; Story Map y backlog separados
 
@@ -95,7 +95,7 @@ una conexión directa no es requisito de este primer recorrido.
 
 ## Documentos relacionados
 
-- [Brief de exploración](HOMESUITE_GASTOS_EXPLORACION.md)
-- [Especificación funcional inicial](HOMESUITE_GASTOS_MVP.md)
-- [User Story Map](HOMESUITE_GASTOS_STORY_MAP.md)
+- [Brief de exploración](HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md)
+- [Especificación funcional inicial](HOMESUITE_CUENTAS_CLARAS_MVP.md)
+- [User Story Map](HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md)
 - [Versión visual navegable](../visual/journey.html) · [PDF para revisión](../visual/journey.pdf)
