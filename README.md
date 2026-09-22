@@ -19,7 +19,7 @@ de Cuentas Claras y Compras siguen en planificación:
 
 - [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)
-- [MVP de Cuentas Claras](docs/HOMESUITE_GASTOS_MVP.md)
+- [MVP de Cuentas Claras](docs/HOMESUITE_CUENTAS_CLARAS_MVP.md)
 - [ADR-018: arquitectura modular](docs/ADRs/ADR-018-homesuite-suite-modular.md)
 
 ## Requisitos

@@ -272,7 +272,7 @@ HomeSuite habrá validado su primera etapa cuando:
 
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
-- [Especificación del MVP de Cuentas Claras](HOMESUITE_GASTOS_MVP.md)
-- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
+- [Especificación del MVP de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_MVP.md)
+- [Brief de exploración de Cuentas Claras y referencia de Tricount](HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md)
 - [Backlog del producto](PRODUCT_BACKLOG.md)
 - [ADRs históricos de TasKing](ADRs.md)

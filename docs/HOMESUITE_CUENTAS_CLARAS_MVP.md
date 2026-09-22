@@ -1,4 +1,4 @@
-# HomeSuite Gastos — especificación funcional del MVP
+# HomeSuite Cuentas Claras — especificación funcional del MVP
 
 **Estado:** especificación de producto inicial actualizada; implementación no iniciada
 
@@ -129,7 +129,7 @@ El recorrido comienza eligiendo el punto de partida del libro: importar
 movimientos de Splitwise, iniciar en cero o registrar un saldo de apertura no
 cero. Si se combinan apertura e importación parcial, el corte de fechas debe
 impedir contar dos veces el mismo período. El flujo de decisión se detalla en el
-[User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md); los recorridos
+[User Journey de entrada y migración](HOMESUITE_CUENTAS_CLARAS_JOURNEY.md); los recorridos
 siguientes describen el uso cotidiano una vez iniciado el libro.
 
 ### 5.1 Crear un grupo
@@ -160,7 +160,7 @@ con controles de aprobación y abuso.
 La primera migración se hace con un titular autenticado y una persona invitada que
 acepta acceso al grupo. El archivo aceptado es un CSV del formato de exportación
 de Splitwise, sin distinguir si proviene de un grupo o una relación directa.
-El [CSV sintético de referencia](HOMESUITE_GASTOS_CSV_DE_EJEMPLO.md) conserva
+El [CSV sintético de referencia](HOMESUITE_CUENTAS_CLARAS_CSV_DE_EJEMPLO.md) conserva
 columnas, formatos y ejemplos de operaciones sin incorporar ningún export personal.
 
 1. HomeSuite identifica participantes, filas de movimiento y fila de resumen.
@@ -599,9 +599,9 @@ Estas preguntas no bloquean la visión, pero deben resolverse antes de implement
 
 ## Documentos relacionados
 
-- [Brief de exploración y referencia de Tricount](HOMESUITE_GASTOS_EXPLORACION.md)
-- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
-- [User Story Map](HOMESUITE_GASTOS_STORY_MAP.md)
+- [Brief de exploración y referencia de Tricount](HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md)
+- [User Journey de entrada y migración](HOMESUITE_CUENTAS_CLARAS_JOURNEY.md)
+- [User Story Map](HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md)
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](HOMESUITE_INFRASTRUCTURE.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)

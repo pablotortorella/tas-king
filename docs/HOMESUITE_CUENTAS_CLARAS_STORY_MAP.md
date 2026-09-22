@@ -1,4 +1,4 @@
-# HomeSuite Gastos — User Story Map
+# HomeSuite Cuentas Claras — User Story Map
 
 **Estado:** validado como mapa de producto; las historias candidatas están en el backlog, todavía sin cambio OpenSpec
 
@@ -86,7 +86,7 @@ aceptación y sin convertir este mapa en una lista de tareas técnicas.
 
 ## Documentos relacionados
 
-- [User Journey de entrada y migración](HOMESUITE_GASTOS_JOURNEY.md)
-- [Brief de exploración](HOMESUITE_GASTOS_EXPLORACION.md)
-- [Especificación funcional inicial](HOMESUITE_GASTOS_MVP.md)
+- [User Journey de entrada y migración](HOMESUITE_CUENTAS_CLARAS_JOURNEY.md)
+- [Brief de exploración](HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md)
+- [Especificación funcional inicial](HOMESUITE_CUENTAS_CLARAS_MVP.md)
 - [Versión visual navegable](../visual/story-map.html) · [PDF para revisión](../visual/story-map.pdf)

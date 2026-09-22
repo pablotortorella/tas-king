@@ -168,7 +168,7 @@ realmente independientes.
 
 - [Visión de HomeSuite](../HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](../HOMESUITE_INFRASTRUCTURE.md)
-- [MVP de HomeSuite Gastos](../HOMESUITE_GASTOS_MVP.md)
+- [MVP de Cuentas Claras](../HOMESUITE_CUENTAS_CLARAS_MVP.md)
 - [Cloudflare: Routes and domains](https://developers.cloudflare.com/workers/configuration/routing/)
 - [Cloudflare: Service Bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/)
 - [Cloudflare D1: límites](https://developers.cloudflare.com/d1/platform/limits/)

@@ -1,4 +1,4 @@
-# HomeSuite Gastos — CSV de ejemplo de Splitwise
+# HomeSuite Cuentas Claras — CSV de ejemplo de Splitwise
 
 **Estado:** fixture sintético de referencia para diseño y futuras pruebas
 
