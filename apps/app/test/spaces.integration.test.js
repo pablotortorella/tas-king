@@ -57,4 +57,13 @@ describe("API local de espacios", () => {
     const member = await env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = (SELECT id FROM users WHERE email = ?)").bind(space.id, "link2@example.test").first();
     expect(member.role).toBe("member");
   });
+
+  it("conserva la identidad local al aceptar desde el formulario", async () => {
+    const ownerHeaders = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "tom@example.test" };
+    const space = await (await app.request("http://app.test/api/local/spaces", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Casa Tom" }) }, env)).json();
+    const invitation = await (await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "jerry@example.test" }) }, env)).json();
+    const response = await app.request(`http://app.test/local/invitations/${invitation.id}?as=jerry@example.test`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" }, env);
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe(`/local/spaces/${space.id}?as=jerry%40example.test`);
+  });
 });

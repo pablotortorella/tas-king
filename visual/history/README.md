@@ -24,3 +24,4 @@ contexto de decisiones anteriores.
 |---|---|---|
 | v0.1.0 | Alcance inicial | Journey y Story Map de importación/movimientos; plataforma aún pendiente. |
 | v0.1.1 | PR #59 — fundaciones locales | Plataforma mínima en WIP: Worker aislado, esquema D1, invariantes y demo local. OAuth, espacios persistidos e invitaciones siguen pendientes. |
+| v0.1.2 | Colaboración local | Espacio, owner, invitación y aceptación/rechazo contra D1 local están en WIP validado; OAuth, sesión y despliegue siguen pendientes. Snapshots HTML, PDF y PNG en ambas carpetas. |
