@@ -40,9 +40,9 @@ confirmen.
   administradores. El esquema queda preparado para que una transferencia futura
   sea posible.
 - Migrar TasKing, compartir su cookie, modificar su Worker o sus recursos.
-- La migración de la landing pública de `/gastos` a `/cuentas-claras`: se hará
-  como change pequeño separado, sin redirección, conforme a la decisión D9 de la
-  exploración.
+- Cambiar nuevamente la landing pública o reintroducir compatibilidad con
+  `/gastos`: la migración a `/cuentas-claras` ya se completó, sin redirección,
+  en el change separado `renombrar-gastos-a-cuentas-claras`.
 
 ## Capabilities
 

@@ -173,8 +173,8 @@ Todo deploy a producción va acompañado de estos dos updates, en el mismo momen
 | **Por qué se decidió así** | docs/ADRs.md | Decisiones arquitectónicas |
 | **Visión de la suite** | docs/HOMESUITE_VISION.md | HomeSuite, dominios y evolución |
 | **Infraestructura de la suite** | docs/HOMESUITE_INFRASTRUCTURE.md | DNS, Workers, ambientes y monorepo |
-| **MVP financiero** | docs/HOMESUITE_GASTOS_MVP.md | Reemplazo inicial de Splitwise |
-| **Exploración financiera** | docs/HOMESUITE_GASTOS_EXPLORACION.md | Tricount, decisiones, casos y preguntas abiertas |
+| **MVP financiero** | docs/HOMESUITE_CUENTAS_CLARAS_MVP.md | Reemplazo inicial de Splitwise |
+| **Exploración financiera** | docs/HOMESUITE_CUENTAS_CLARAS_EXPLORACION.md | Tricount, decisiones, casos y preguntas abiertas |
 | **Flujo de trabajo** | docs/WORKFLOW.md | Detalles de proceso |
 | **Deployar a staging/prod** | docs/DEPLOYMENT.md | ✨ NUEVO — Local → Staging → Production |
 | **Última sesión** | AI_HANDOFF.md | Qué se hizo, qué viene |
