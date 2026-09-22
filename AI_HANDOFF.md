@@ -1,5 +1,24 @@
 # AI_HANDOFF
 
+## Última sesión — HomeSuite App local (2026-09-22)
+
+Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.
+
+- `apps/app/` ya existe en `main` (PR #59): Worker aislado, esquema D1,
+  fundaciones y demo local.
+- Este corte convierte el recorrido en D1 local real: espacio + owner + auditoría,
+  invitación, cancelación, descubrimiento privado y aceptación/rechazo con rol
+  `member`. La UI local se revisó manualmente en `127.0.0.1:8792`.
+- Pruebas actuales: 5 unitarias y 5 integraciones D1 verdes. Una integración
+  encontró y corrigió el contexto de `crypto.randomUUID`; la revisión manual
+  encontró y corrigió la pérdida de identidad de desarrollo al aceptar.
+- No hay OAuth, sesión real, D1 remoto, staging, DNS ni despliegue. `DEV_LOCAL_MODE`
+  es obligatorio para las rutas locales; la identidad de demo no debe pasar a
+  producción.
+- Pendiente al retomar: añadir regresión del POST de aceptación, mostrar el
+  integrante aceptado en participantes, revisar el diff, actualizar snapshot
+  visual v0.1.2 y abrir PR. Ver `visual/history/README.md` y OpenSpec.
+
 ## Estado actual
 **FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
 https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
