@@ -43,10 +43,12 @@ uso real en más de un producto.
 HomeSuite comparte:
 
 - identidad y sesión;
-- perfil;
+- perfil base de la persona (nombre visible, avatar emoji y color);
 - espacios, miembros e invitaciones;
+- administración operativa de la suite y métricas agregadas de productos;
 - selector de herramientas y navegación global;
 - patrones visuales y de accesibilidad;
+- tokens de tema comunes;
 - auditoría, exportación, backups y operación.
 
 Cada producto es dueño de:
@@ -56,6 +58,27 @@ Cada producto es dueño de:
 - sus permisos específicos;
 - sus tablas y endpoints;
 - su interfaz y pruebas.
+
+El perfil base se guarda una sola vez en la plataforma de HomeSuite y se asocia
+al usuario interno, nunca al email. Un producto puede mostrarlo, pero no debe
+reutilizar la cookie, la base ni las preferencias de otro producto. La futura
+migración desde el perfil que hoy existe en TasKing requerirá que la misma
+persona se autentique con la identidad estable correspondiente y confirme la
+operación; no habrá lectura silenciosa ni sincronización bidireccional.
+
+La administración de HomeSuite es un rol de plataforma distinto de ser titular
+de un espacio. Al comienzo estará asignado de forma explícita al administrador
+de la suite y será visible desde su perfil. Podrá ofrecer salud operativa y
+conteos agregados por producto —usuarios, espacios, invitaciones y, cuando
+existan, transacciones— sin conceder por ello lectura ordinaria de información
+privada. Cualquier acceso excepcional a contenido individual requerirá una
+capacidad aparte, motivo y auditoría.
+
+Los temas se implementarán como tokens visuales compartidos, no como una UI
+idéntica en todos los productos. La curaduría de una paleta y nombres inspirados
+en América Latina se realizará como una exploración de diseño cuando Cuentas
+Claras ya sea usable; ejemplos como jacarandás, chicha morada o flora regional
+son puntos de partida, no decisiones cerradas.
 
 ### Confianza antes que sofisticación
 

@@ -15,10 +15,11 @@
 - Publicación inicial desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. Las landings del PR #52 se publicaron desde `main` SHA `45f5222`, Version ID `cc65ff3f-6747-41d3-98e0-c0b3742b81b9`. El PR #56 renombró Gastos a Cuentas Claras y se publicó desde `main` SHA `aef6306`, Version ID `76bdcbe9-3a69-403b-a1e7-e327528ec17b`; CI, las verificaciones específicas del sitio y la comprobación pública aprobaron. El favicon del sitio usa la casita de HomeSuite con el techo coral por delante.
 - No hay staging de HomeSuite ni registros para `staging.homesuite.info` o `qa.homesuite.info`. `staging.homesuite.info` queda reservado para la futura app autenticada con recursos propios; la landing se revisa localmente y, si hace falta revisión remota, con preview por versión. Pendiente: identidad, sesiones, recursos y migración gradual de TasKing a `app.homesuite.info`. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md#decisión-para-el-sitio-público-y-la-futura-app-2026-09-21).
 
-### ⚠️ HomeSuite App: colaboración local en curso — 2026-09-22
+### ⚠️ HomeSuite App: colaboración local lista para el siguiente corte — 2026-09-22
 
-- Rama `feature/homesuite-spaces-local`, aún sin integrar ni desplegar. Implementa D1 local para crear espacio/owner, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
-- Validado manualmente con dos identidades locales; pruebas: 5 unitarias y 5 integraciones D1. Sin Google OAuth, cookie real, recursos remotos, DNS ni staging.
+- PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
+- Validado manualmente con dos identidades locales; pruebas: 5 unitarias y 6 integraciones D1. Sin Google OAuth, cookie real, recursos remotos, DNS ni staging.
+- Próximo corte: OAuth Google, sesión host-only y perfil base compartido de HomeSuite (nombre, avatar emoji y color). La eventual reutilización del perfil de TasKing será una migración consentida; no se comparten aún sus cookies, Worker, base ni preferencias.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
