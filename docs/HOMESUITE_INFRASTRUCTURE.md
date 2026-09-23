@@ -229,8 +229,9 @@ solo por escala, seguridad, retención o cadencia comprobadas.
 - **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
   producción. Desde 2026-09-23, `staging.homesuite.info` está asociado al
   Worker aislado `homesuite-app-staging`, con la D1 exclusiva
-  `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`). No
-  tiene secretos ni cliente OAuth todavía. `qa.homesuite.info` sigue sin uso.
+  `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`). Tiene
+  un `SESSION_SECRET` exclusivo, almacenado fuera de Git; aún no tiene cliente
+  OAuth ni sus secretos de Google. `qa.homesuite.info` sigue sin uso.
   El staging existente de TasKing es propio de la aplicación anterior; no
   equivale a este staging de HomeSuite.
 - **Sitio público:** revisión visual local primero; tras aprobación, pruebas,
