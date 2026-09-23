@@ -7,9 +7,9 @@
 
 ## 2. Identidad y sesión
 
-- [ ] 2.1 Implementar Google OAuth Authorization Code con `state`, PKCE, validación completa de ID token y `sub` como identidad estable.
-- [ ] 2.2 Emitir, validar y cerrar sesión `__Host-homesuite_session` host-only; validar `returnTo` relativo.
-- [ ] 2.3 Cubrir rechazo de token inválido, issuer/audience/email no verificado, estado OAuth inválido y redirección externa.
+- [x] 2.1 Implementar Google OAuth Authorization Code con `state`, PKCE, validación completa de ID token y `sub` como identidad estable.
+- [x] 2.2 Emitir, validar y cerrar sesión `__Host-homesuite_session` host-only; validar `returnTo` relativo.
+- [x] 2.3 Cubrir rechazo de token inválido, issuer/audience/email no verificado, estado OAuth inválido y redirección externa.
 
 ## 3. Espacios y colaboración
 

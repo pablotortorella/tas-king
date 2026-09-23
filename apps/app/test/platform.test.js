@@ -39,4 +39,11 @@ describe("fundaciones de plataforma", () => {
     expect(root.status).toBe(200);
     expect(root.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
   });
+
+  it("escapa los datos que se interpolan en la interfaz local", async () => {
+    const response = await app.request("http://app.test/demo/espacio?nombre=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E");
+    const body = await response.text();
+    expect(body).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(body).not.toContain("<img src=x onerror=alert(1)>");
+  });
 });

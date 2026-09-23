@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
+import { createSession, currentSession, revokeSession } from "../src/sessions.js";
 
 describe("D1: invariantes de espacios", () => {
   it("permite un solo titular por espacio", async () => {
@@ -65,5 +66,35 @@ describe("API local de espacios", () => {
     const response = await app.request(`http://app.test/local/invitations/${invitation.id}?as=jerry@example.test`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" }, env);
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe(`/local/spaces/${space.id}?as=jerry%40example.test`);
+  });
+});
+
+describe("D1: sesiones de HomeSuite", () => {
+  it("crea una sesión firmada, la resuelve y permite cerrarla", async () => {
+    await env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES (?, ?, ?, ?)").bind("u_session", "sub-session", "session@example.test", "Session User").run();
+    const secret = "s".repeat(32);
+    const created = await createSession(env.DB, { userId: "u_session", secret });
+    const request = new Request("https://app.test/api/me", { headers: { Cookie: `__Host-homesuite_session=${encodeURIComponent(created.token)}` } });
+    await expect(currentSession(env.DB, request, secret)).resolves.toMatchObject({ user_id: "u_session", email: "session@example.test" });
+    await revokeSession(env.DB, request, secret);
+    await expect(currentSession(env.DB, request, secret)).resolves.toBeNull();
+  });
+
+  it("redirige a Google con PKCE sólo si el ambiente tiene secretos completos", async () => {
+    const authEnv = { DB: env.DB, GOOGLE_CLIENT_ID: "client-id", GOOGLE_CLIENT_SECRET: "not-a-real-secret", SESSION_SECRET: "s".repeat(32) };
+    const response = await app.request("https://app.test/auth/google?returnTo=%2Fcuentas-claras", undefined, authEnv);
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.get("location"));
+    expect(location.origin).toBe("https://accounts.google.com");
+    expect(location.searchParams.get("returnTo")).toBeNull();
+    expect(response.headers.get("set-cookie")).toContain("homesuite_oauth=");
+    expect(response.headers.get("set-cookie")).toContain("Secure");
+  });
+
+  it("rechaza un callback OAuth sin estado firmado, antes de intercambiar el código", async () => {
+    const authEnv = { DB: env.DB, GOOGLE_CLIENT_ID: "client-id", GOOGLE_CLIENT_SECRET: "not-a-real-secret", SESSION_SECRET: "s".repeat(32) };
+    const response = await app.request("https://app.test/auth/callback?code=untrusted&state=other", undefined, authEnv);
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("No pudimos verificar el acceso");
   });
 });
