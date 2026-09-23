@@ -62,6 +62,50 @@ Estas son User Stories candidatas. Están ordenadas por dependencia de producto,
 no son tareas técnicas ni un change OpenSpec activo. Cada propuesta se dividirá
 en un change pequeño al llegar a `propose`.
 
+#### Capacidad transversal posterior: perfil de HomeSuite
+
+Una vez que la identidad Google y la sesión real estén resueltas, HomeSuite debe
+ofrecer un perfil único para la suite: nombre visible, avatar emoji y color. El
+perfil base se identifica por el mismo usuario interno vinculado al `sub` de
+Google y puede mostrarse en Cuentas Claras, TasKing y futuros productos.
+
+No se copiarán datos entre productos ni se compartirán sus preferencias: cada
+producto conservará su configuración propia. Antes de leer el perfil existente
+de TasKing o migrarlo, se definirá un contrato explícito y una migración
+consentida; hasta entonces, el perfil de HomeSuite será su fuente de verdad. Así
+evitamos acoplar la nueva plataforma a la cookie, la base o el Worker actual de
+TasKing.
+
+| Orden | Historia | Resultado observable |
+|---|---|---|
+| HP-01 | Como persona usuaria, quiero editar mi nombre visible, avatar emoji y color desde HomeSuite para que mi identidad se vea de forma consistente en los productos de la suite. | Los productos que ya usan la plataforma muestran el mismo perfil base, sin duplicar datos personales. |
+| HP-02 | Como persona usuaria con perfil previo en TasKing, quiero que HomeSuite pueda proponer reutilizarlo de forma segura para no cargarlo de nuevo. | Sólo tras autenticación con la misma identidad estable y confirmación explícita se copia el perfil; los datos y preferencias de TasKing permanecen aislados. |
+
+#### Capacidad transversal posterior: administración y temas de la suite
+
+La titularidad de un espacio no equivale a administrar HomeSuite. Existirá un
+rol técnico y explícito de **administración de la suite**, inicialmente asignado
+al usuario administrador de la plataforma. Su perfil ofrecerá una entrada a la
+administración global y a la de cada producto habilitado.
+
+La primera consola deberá priorizar salud y operación: usuarios, espacios,
+invitaciones, uso por producto y conteos agregados de registros (por ejemplo,
+transacciones). El acceso al contenido privado de un espacio o a movimientos
+individuales no será implícito por ser administrador: requerirá una capacidad
+separada, justificación visible y auditoría, si alguna vez resulta necesaria.
+
+Los temas visuales también serán una capacidad compartida, con tokens comunes
+que cada producto aplica sin perder su propia interfaz. La nomenclatura y la
+paleta inspiradas en América Latina se explorarán cuando Cuentas Claras sea
+usable; no se congelan nombres ni colores antes de esa conversación de diseño.
+
+| Orden | Historia | Resultado observable |
+|---|---|---|
+| HA-01 | Como administrador de HomeSuite, quiero acceder desde mi perfil a una consola de suite y a las administraciones de productos para operar la plataforma sin confundir ese poder con la titularidad de un espacio. | El acceso sólo aparece y funciona para administradores de plataforma; toda acción administrativa queda auditada. |
+| HA-02 | Como administrador, quiero ver indicadores agregados de usuarios, espacios y uso de cada producto para conocer el estado de la suite sin exponer contenidos privados por defecto. | La consola muestra métricas agregadas y separa expresamente cualquier acceso excepcional a datos individuales. |
+| HT-01 | Como persona usuaria, quiero elegir temas visuales coherentes entre productos para reconocer mi experiencia de HomeSuite en Tareas, Cuentas Claras y Compras. | La selección usa tokens compartidos; cada producto conserva su composición y preferencias específicas. |
+| HT-02 | Como persona usuaria, quiero temas con nombres e historias inspirados en América Latina para que la suite tenga una identidad cercana y no genérica. | La paleta y sus nombres se definen en una exploración visual posterior, con referencias culturales cuidadosas y sin apropiación superficial. |
+
 | Orden | Historia | Resultado observable |
 |---|---|---|
 | HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
