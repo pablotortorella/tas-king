@@ -227,9 +227,13 @@ solo por escala, seguridad, retención o cadencia comprobadas.
 ### Decisión para el sitio público y la futura app (2026-09-21)
 
 - **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
-  producción. `staging.homesuite.info` y `qa.homesuite.info` no resuelven ni
-  tienen un Worker de HomeSuite asociado. El staging existente de TasKing es
-  propio de la aplicación anterior; no equivale a un staging de HomeSuite.
+  producción. Desde 2026-09-23, `staging.homesuite.info` está asociado al
+  Worker aislado `homesuite-app-staging`, con la D1 exclusiva
+  `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`). Tiene
+  un `SESSION_SECRET` exclusivo, almacenado fuera de Git; aún no tiene cliente
+  OAuth ni sus secretos de Google. `qa.homesuite.info` sigue sin uso.
+  El staging existente de TasKing es propio de la aplicación anterior; no
+  equivale a este staging de HomeSuite.
 - **Sitio público:** revisión visual local primero; tras aprobación, pruebas,
   integración y deploy del sitio. Si hace falta compartir una versión remota
   previa, usar una URL de preview por versión de Cloudflare Workers. No asumir
