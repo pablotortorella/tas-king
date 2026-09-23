@@ -15,6 +15,8 @@
     "test:homesuite-app:integration": "vitest run --config apps/app/vitest.integration.config.mjs",
     "dev:homesuite-app": "wrangler dev --config apps/app/wrangler.jsonc --var DEV_LOCAL_MODE:true --var DEV_LOCAL_EMAIL:zelda@example.test",
     "db:migrate:homesuite-app:local": "wrangler d1 migrations apply homesuite-app-local --local --config apps/app/wrangler.jsonc",
+    "db:migrate:homesuite-app:staging": "wrangler d1 migrations apply homesuite-app-db-staging --remote --env staging --config apps/app/wrangler.jsonc",
+    "deploy:homesuite-app:staging": "npm run db:migrate:homesuite-app:staging && wrangler deploy --env staging --config apps/app/wrangler.jsonc",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
