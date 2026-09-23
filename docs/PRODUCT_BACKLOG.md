@@ -56,7 +56,7 @@ Documentación fuente:
 - [User Story Map de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 
-### Próximo corte: validar la migración de Cuentas Claras (A)
+### Corte activo: plataforma mínima de Cuentas Claras (A)
 
 Estas son User Stories candidatas. Están ordenadas por dependencia de producto,
 no son tareas técnicas ni un change OpenSpec activo. Cada propuesta se dividirá
@@ -72,10 +72,13 @@ en un change pequeño al llegar a `propose`.
 | HG-06 | Como integrante, quiero registrar un gasto compartido simple después de importar para continuar mi uso cotidiano. | Un pagador, dos participantes y división igual actualizan el saldo y la cronología de ambos. |
 | HG-07 | Como integrante, quiero buscar libremente por texto, participante o monto para encontrar movimientos propios e importados en una sola lista. | La búsqueda normaliza texto, incluye total y efecto individual, explica la coincidencia y marca el origen importado. |
 
-**Siguiente propuesta OpenSpec:** `plataforma-homesuite-minima`, que cubre HG-01
-y HG-02. Después, `importacion-splitwise-inicial` cubre HG-03 a HG-05; no se
-mezclarán autenticación, modelo financiero y parser de importación en un solo
-change.
+**Estado 2026-09-22:** `plataforma-homesuite-minima` está en WIP. PR #59 dejó
+integrados Worker aislado, esquema D1, restricciones de owner/invitación y demo
+local. El corte en curso convierte creación de espacio e invitación en operaciones
+D1 locales cubiertas por integración; Google OAuth, sesión host-only, staging y
+producción siguen pendientes. Después, `importacion-splitwise-inicial` cubre
+HG-03 a HG-05; no se mezclarán autenticación, modelo financiero y parser de
+importación en un solo change.
 
 ---
 

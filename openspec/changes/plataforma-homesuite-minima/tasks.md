@@ -1,8 +1,8 @@
 ## 1. Fundaciones de HomeSuite App
 
-- [ ] 1.1 Crear `apps/app/` con Worker Hono, assets, configuración local y scripts de prueba propios, sin modificar TasKing ni `apps/site/`.
-- [ ] 1.2 Configurar cabeceras de seguridad, rutas de documento, API y manejo de errores para el nuevo origen.
-- [ ] 1.3 Crear migración D1 para usuarios, espacios, membresías, invitaciones y auditoría, con índices e invariantes necesarios.
+- [x] 1.1 Crear `apps/app/` con Worker Hono, assets, configuración local y scripts de prueba propios, sin modificar TasKing ni `apps/site/`.
+- [x] 1.2 Configurar cabeceras de seguridad, rutas de documento, API y manejo de errores para el nuevo origen.
+- [x] 1.3 Crear migración D1 para usuarios, espacios, membresías, invitaciones y auditoría, con índices e invariantes necesarios.
 - [ ] 1.4 Agregar helpers de ID, normalización de email, transacciones y autorización por espacio.
 
 ## 2. Identidad y sesión

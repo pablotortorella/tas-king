@@ -22,6 +22,6 @@ export function canAccessSpace(role) {
   return role === "owner" || role === "member";
 }
 
-export function createPlatformId(prefix, randomUUID = crypto.randomUUID) {
+export function createPlatformId(prefix, randomUUID = () => crypto.randomUUID()) {
   return `${prefix}_${randomUUID()}`;
 }

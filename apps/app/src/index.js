@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
 
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
@@ -48,6 +49,117 @@ app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 
 app.get("/api/me", (c) => c.json({ error: "Una sesión es requerida." }, 401));
 
+function localUser(c) {
+  if (c.env.DEV_LOCAL_MODE !== "true") return null;
+  return c.req.query("as") || c.env.DEV_LOCAL_EMAIL || c.req.header("X-HomeSuite-Dev-Email") || null;
+}
+
+app.post("/api/local/spaces", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const body = await c.req.json();
+  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.json(space, 201);
+});
+
+app.post("/local/spaces", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.text("Ruta local no disponible.", 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const body = await c.req.parseBody();
+  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.redirect(`/local/spaces/${space.id}`, 303);
+});
+
+app.get("/local/spaces/:spaceId", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.text("Ruta local no disponible.", 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const space = await c.env.DB.prepare("SELECT s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  if (!space) return c.text("Espacio no encontrado.", 404);
+  const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT invitee_email FROM invitations WHERE space_id = ? AND status = 'pending'").bind(c.req.param("spaceId")).all() : { results: [] };
+  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("spaceId")).all();
+  const participants = members.results.map(member => `<div class="person"><strong>${member.display_name}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
+  const pending = invitations.results.map(row => `<div class="person"><strong>${row.invitee_email}</strong><br><span class="muted">Invitación pendiente</span><br><a class="button secondary" href="/local/invitations?as=${encodeURIComponent(row.invitee_email)}">Ver como invitada</a></div>`).join("");
+  const management = space.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/spaces/${c.req.param("spaceId")}/invitations" method="post"><label class="label">Email</label><input name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${space.name} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
+});
+
+app.post("/local/spaces/:spaceId/invitations", async (c) => {
+  const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const body = await c.req.parseBody();
+  await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
+  return c.redirect(`/local/spaces/${c.req.param("spaceId")}`, 303);
+});
+
+app.get("/local/invitations", async (c) => {
+  const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  const cards = rows.results.map(row => `<section class="card"><h2>${row.space_name}</h2><p>Te invitó <strong>${row.inviter_name}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/local/invitations/${row.id}?as=${encodeURIComponent(user.email)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}`));
+});
+
+app.post("/local/invitations/:invitationId", async (c) => {
+  const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const body = await c.req.parseBody();
+  const accepted = body.decision === "accept";
+  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.redirect(accepted ? `/local/spaces/${spaceId}?as=${encodeURIComponent(user.email)}` : `/local/invitations?as=${encodeURIComponent(user.email)}`, 303);
+});
+
+app.post("/api/local/spaces/:spaceId/invitations", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede invitar." }, 403);
+  const body = await c.req.json();
+  const invitation = await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
+  return c.json(invitation, 201);
+});
+
+app.get("/api/local/spaces/:spaceId/invitations", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede ver invitaciones." }, 403);
+  const rows = await c.env.DB.prepare("SELECT id, invitee_email AS email, status FROM invitations WHERE space_id = ? ORDER BY created_at").bind(c.req.param("spaceId")).all();
+  return c.json(rows.results);
+});
+
+app.delete("/api/local/spaces/:spaceId/invitations/:invitationId", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede cancelar invitaciones." }, 403);
+  await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.id });
+  return c.body(null, 204);
+});
+
+app.get("/api/local/invitations/pending", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  return c.json(rows.results);
+});
+
+app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
+  const email = localUser(c);
+  if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
+  const accepted = c.req.param("decision") === "accept";
+  if (!accepted && c.req.param("decision") !== "reject") return c.json({ error: "Decisión inválida." }, 400);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.json({ status: accepted ? "accepted" : "rejected", spaceId });
+});
+
 app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
 
 app.get("/", (c) => {
@@ -57,7 +169,7 @@ app.get("/", (c) => {
 
 app.get("/demo/crear-espacio", (c) => {
   const { owner, member, index } = demoPair(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" action="/demo/espacio"><input type="hidden" name="ejemplo" value="${index}"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="nombre" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/local/spaces"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.get("/demo/espacio", (c) => {
