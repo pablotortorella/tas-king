@@ -1,5 +1,64 @@
 # AI_HANDOFF
 
+## Retoma prioritaria — HomeSuite App staging (2026-09-23)
+
+**Este bloque reemplaza operativamente los handoffs anteriores de HomeSuite.**
+La fuente complementaria es `docs/STATUS.md`,
+`docs/HOMESUITE_INFRASTRUCTURE.md` y el change OpenSpec
+`plataforma-homesuite-minima`.
+
+### Hecho y verificable
+
+- PR #60 integrado: espacio, titular, invitación, cancelación, descubrimiento
+  privado y aceptación/rechazo contra D1 **local**.
+- PR #61 integrado: perfil compartido, administración de suite y temas quedaron
+  registrados como capacidades posteriores.
+- PR #62 integrado: OAuth Google Authorization Code con PKCE, `state` firmado,
+  nonce, validación criptográfica del ID token por `sub`, cookie
+  `__Host-homesuite_session`, logout y `returnTo` relativo seguro.
+- Staging creado sin tocar TasKing ni producción:
+  - Worker `homesuite-app-staging`;
+  - D1 `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`);
+  - migraciones remotas `0001_platform` y `0002_sessions`;
+  - custom domain `staging.homesuite.info`;
+  - versión desplegada `455e80b3-49f5-438c-a32b-fba437a4b750`;
+  - `SESSION_SECRET` aleatorio y exclusivo en Cloudflare, nunca en Git.
+- La URL técnica `https://homesuite-app-staging.pablotortorella.workers.dev`
+  y `/healthz` respondieron 200. Antes del deploy: 11 pruebas unitarias, 9
+  integraciones D1 y OpenSpec strict en verde.
+- PR #63 (`feature/homesuite-staging`) versiona la configuración, scripts,
+  protección de rutas demo y documentación de staging. Debe integrarse para que
+  `main` sea la fuente definitiva de ese ambiente.
+
+### Pendiente de Pablo — configuración manual, sin compartir secretos
+
+1. En Google Cloud Console crear un **OAuth client ID de tipo Web application**
+   llamado `HomeSuite Staging`.
+2. Registrar sólo `https://staging.homesuite.info/auth/callback` como redirect
+   URI.
+3. Mantener la pantalla de consentimiento en Testing y añadir las dos cuentas
+   Google que harán la prueba; scopes: `openid`, `email`, `profile`.
+4. En Cloudflare → `homesuite-app-staging` → Settings → Variables and Secrets,
+   crear `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. **No enviar el secret por
+   chat, Git ni archivos.**
+5. Abrir `https://staging.homesuite.info` desde navegador/red normal y confirmar
+   HTTPS. La red automática filtraba todos los hostnames `homesuite.info`,
+   incluso los ya existentes, por eso esta comprobación corresponde a Pablo.
+6. Revisar e integrar PR #63 cuando su CI esté verde.
+
+### Próxima sesión técnica
+
+- Con secretos y HTTPS confirmados: probar login/logout real en staging.
+- El flujo de dos personas aún usa rutas `local` bajo `DEV_LOCAL_MODE`. El
+  siguiente change debe mover crear espacio e invitar a rutas autenticadas por
+  sesión real, preservando invariantes y auditoría, y permitir la prueba con dos
+  cuentas Google.
+- No crear `app.homesuite.info`, D1/secret de producción, ni reutilizar D1,
+  cookie, OAuth o Worker de TasKing.
+- Actualizar los snapshots visuales de Journey/Story Map al próximo merge/deploy
+  significativo de Cuentas Claras.
+
+
 ## Última sesión — HomeSuite App local (2026-09-22)
 
 Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.

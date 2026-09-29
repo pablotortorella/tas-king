@@ -21,6 +21,21 @@
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
 - Validado localmente con 11 pruebas unitarias y 9 integraciones D1. El staging técnico ya tiene Worker y D1 propios; faltan cliente OAuth Google, secretos, revisión HTTPS del dominio y prueba manual con dos cuentas reales. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
 
+
+#### Retoma manual pendiente de Pablo
+
+1. Crear el cliente **Web application** `HomeSuite Staging` en Google Cloud, con
+   callback único `https://staging.homesuite.info/auth/callback`, y añadir las
+   dos cuentas de prueba al consentimiento en modo Testing.
+2. Cargar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` como secretos del Worker
+   `homesuite-app-staging`. `SESSION_SECRET` ya existe y no debe reemplazarse.
+   Ningún secret se registra en Git, documentación o chat.
+3. Confirmar desde navegador/red normal que `https://staging.homesuite.info`
+   presenta HTTPS y el shell esperado; la red de automatización filtra todos los
+   hostnames `homesuite.info`.
+4. Revisar/integrar PR #63. Después probar login/logout con las dos cuentas y
+   mover el flujo de espacios e invitaciones de `DEV_LOCAL_MODE` a sesión real.
+
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
 **Version ID:** `e20ace17-9736-4c7a-b1e0-13138d4074de` · **SHA:** `fb8eb81` · producción pasó de v2.2.1 a v2.3.0.
