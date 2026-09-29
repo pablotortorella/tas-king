@@ -5,9 +5,9 @@
 // leen el borrador que el modal mantiene. Partirlos sin desacoplar primero
 // produciría módulos que no pueden existir el uno sin el otro.
 //
-// Los borradores (draftAttachments, draftChecklists, draftGoals) existen porque
-// una tarjeta nueva todavía no tiene id: lo elegido se acumula en memoria y se
-// vincula después de crearla.
+// Los borradores (draftAttachments, draftChecklists, draftGoals, draftLabels)
+// existen porque una tarjeta nueva todavía no tiene id: lo elegido se acumula
+// en memoria y se vincula después de crearla.
 //
 // archive.js se importa desde acá aunque sea otra feature: depende solo del
 // núcleo y del tablero, así que queda por debajo de esta capa. Además deleteCard
@@ -105,6 +105,7 @@ export function openModal(id, defaultCol) {
   estado.removedAttachmentIds = [];
   estado.draftChecklists = [];
   estado.draftGoals = [];
+  estado.draftLabels = [];
   document.getElementById("deleteCardBtn").style.display = card ? "" : "none";
   document.getElementById("archiveCardBtn").style.display = card ? "" : "none";
   renderDraftAttachments();
@@ -128,6 +129,7 @@ export function closeModal() {
   estado.removedAttachmentIds = [];
   estado.draftChecklists = [];
   estado.draftGoals = [];
+  estado.draftLabels = [];
   document.getElementById("fCommentInput").value = "";
   document.getElementById("historyField").style.display = "none";
 }
@@ -457,9 +459,16 @@ export function renderChecklists() {
 
 export function renderLabels() {
   fLabelsSection.innerHTML = "";
-  if (!estado.editingId) return;
-  const card = estado.state.cards.find(c => c.id === estado.editingId);
-  const cardLabels = card ? (card.labels || []) : [];
+
+  // En modo edición las etiquetas vienen del state; en modo borrador
+  // (tarjeta todavía sin id), de draftLabels sobre el catálogo del tablero.
+  let cardLabels;
+  if (estado.editingId) {
+    const card = estado.state.cards.find(c => c.id === estado.editingId);
+    cardLabels = card ? (card.labels || []) : [];
+  } else {
+    cardLabels = estado.boardLabels.filter(l => estado.draftLabels.includes(l.id));
+  }
 
   const section = document.createElement("div");
   section.className = "labels-section";
@@ -473,7 +482,10 @@ export function renderLabels() {
       chip.className = "label-in-card";
       chip.style.backgroundColor = label.color;
       chip.innerHTML = `${escapeHtml(label.name)}<span class="remove">✕</span>`;
-      chip.querySelector(".remove").addEventListener("click", () => removeLabel(label.id));
+      chip.querySelector(".remove").addEventListener("click", () => {
+        if (estado.editingId) removeLabel(label.id);
+        else { estado.draftLabels = estado.draftLabels.filter(id => id !== label.id); renderLabels(); }
+      });
       listDiv.appendChild(chip);
     });
     section.appendChild(listDiv);
@@ -494,9 +506,9 @@ function toggleLabelPicker() {
   const existing = fLabelsSection.querySelector(".label-picker");
   if (existing) { existing.remove(); labelPickerVisible = false; return; }
 
-  const card = estado.state.cards.find(c => c.id === estado.editingId);
-  const cardLabels = card ? (card.labels || []) : [];
-  const assignedIds = new Set(cardLabels.map(l => l.id));
+  const assignedIds = estado.editingId
+    ? new Set((estado.state.cards.find(c => c.id === estado.editingId)?.labels || []).map(l => l.id))
+    : new Set(estado.draftLabels);
 
   const picker = document.createElement("div");
   picker.className = "label-picker";
@@ -521,16 +533,22 @@ function toggleLabelPicker() {
       </div>
     `;
     const addBtn = row.querySelector(`[data-label-id="${label.id}"]`);
-    if (assignedIds.has(label.id)) {
-      addBtn.addEventListener("click", () => removeLabel(label.id));
-    } else {
-      addBtn.addEventListener("click", () => assignLabel(label.id));
-    }
+    addBtn.addEventListener("click", () => {
+      if (estado.editingId) {
+        assignedIds.has(label.id) ? removeLabel(label.id) : assignLabel(label.id);
+      } else {
+        if (assignedIds.has(label.id)) estado.draftLabels = estado.draftLabels.filter(id => id !== label.id);
+        else if (!estado.draftLabels.includes(label.id)) estado.draftLabels.push(label.id);
+        labelPickerVisible = false;
+        renderLabels();
+      }
+    });
     const delBtn = row.querySelector(`[data-delete="${label.id}"]`);
     delBtn.addEventListener("click", async () => {
       if (confirm("¿Eliminar esta etiqueta?")) {
         try {
           await api("DELETE", `/api/boards/${estado.currentBoardId}/labels/${label.id}`);
+          estado.draftLabels = estado.draftLabels.filter(id => id !== label.id);
           await loadCards();
           labelPickerVisible = false;
           renderLabels();
@@ -742,7 +760,7 @@ async function removeGoal(goalId) {
 }
 
 async function createLabel(color) {
-  if (!estado.editingId || !estado.currentBoardId) return;
+  if (!estado.currentBoardId) return;
   const cardId = estado.editingId, boardId = estado.currentBoardId;
   const name = document.getElementById("newLabelName")?.value.trim();
   if (!name) return alert("Falta nombre de etiqueta");
@@ -750,7 +768,12 @@ async function createLabel(color) {
     await withCardMutation(async () => {
       const label = await api("POST", `/api/boards/${boardId}/labels`, { name, color });
       if (boardId === estado.currentBoardId) estado.boardLabels.push(label);
-      await changeCardLabel(cardId, boardId, label.id, true);
+      if (cardId) {
+        await changeCardLabel(cardId, boardId, label.id, true);
+      } else {
+        estado.draftLabels.push(label.id);
+        renderLabels();
+      }
       labelPickerVisible = false;
     });
   } catch (e) { alert("No se pudo crear: " + e.message); }
@@ -825,6 +848,7 @@ saveBtn.addEventListener("click", async () => {
   const nuevos = estado.draftAttachments.filter(a => a._new);
   const checklists = cardId ? [] : structuredClone(estado.draftChecklists);
   const goals = cardId ? [] : [...estado.draftGoals];
+  const labels = cardId ? [] : [...estado.draftLabels];
   try {
     await withCardMutation(async () => {
       // 1) crear o actualizar la tarjeta (campos + comentarios)
@@ -865,9 +889,16 @@ saveBtn.addEventListener("click", async () => {
         }
       }
 
+      // 6) vincular etiquetas del borrador (sólo en tarjetas nuevas)
+      if (labels.length) {
+        for (const labelId of labels) {
+          await api("POST", `/api/cards/${card.id}/labels/${labelId}`);
+        }
+      }
+
       // Los recursos agregados después del POST/PUT no están en esa respuesta.
       // En ese caso releer sólo esta tarjeta, nunca las tres colecciones del tablero.
-      if (removedIds.length || nuevos.length || checklists.length || goals.length) {
+      if (removedIds.length || nuevos.length || checklists.length || goals.length || labels.length) {
         card = await api("GET", "/api/cards/" + card.id);
       }
       applySavedCard(boardId, card);
