@@ -50,6 +50,7 @@ export const estado = {
   removedAttachmentIds: [],   // adjuntos existentes marcados para borrar al guardar
   draftChecklists: [],        // checklists de una tarjeta aún sin guardar
   draftGoals: [],             // objetivos elegidos para una tarjeta aún sin guardar
+  draftLabels: [],            // ids de etiquetas elegidas para una tarjeta aún sin guardar
 
   // ---------- Datos del tablero actual ----------
   // Se recargan al cambiar de tablero y con cada poll que detecta una revisión
