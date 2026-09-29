@@ -50,7 +50,34 @@ input.addEventListener("keydown", e => {
 });
 ```
 
-### 4. `Escape` cierra paneles y overlays en orden de prioridad
+### 4. Ítems de checklist: `Tab` salta entre ítems, `Enter` continúa la lista, `Backspace` en vacío borra
+
+**Añadido 2026-09-29.** Aplica a `.checklist-item-text` (el texto de un ítem de
+checklist, dentro del modal de tarjeta). El resto de la fila (checkbox, ▲, ▼,
+✕) sigue el orden de tabulación nativo del navegador; esto es específico del
+campo de texto.
+
+- `Tab` desde el texto de un ítem enfoca directamente el texto del ítem
+  siguiente (no el checkbox ni los botones de esa fila). En el último ítem,
+  salta a "Nueva subtarea". `Shift+Tab` va hacia atrás de la misma forma.
+- `Enter` confirma la edición (dispara el `change` existente al mover el
+  foco) y deja el cursor en "Nueva subtarea", lista para seguir cargando
+  ítems sin soltar el teclado.
+- `Backspace` con el campo vacío borra el ítem y devuelve el foco al texto
+  del ítem anterior (o a "Nueva subtarea" si era el primero/único).
+
+**Razón**: cargar una checklist es la tarea repetitiva más común del modal;
+forzar el mouse o pasar por 4 controles intermedios por ítem para llegar al
+siguiente texto rompe el flujo. El patrón replica el de editores de listas
+conocidos (Trello, Notion).
+
+**Por qué no crea un ítem en blanco al presionar Enter**: `POST
+/api/checklists/:id/items` rechaza texto vacío (ítems guardados no pueden
+existir sin texto), y queríamos el mismo comportamiento en tarjetas nuevas y
+existentes. Mover el foco a "Nueva subtarea" logra el mismo flujo de carga
+continua sin tocar esa validación ni el backend.
+
+### 5. `Escape` cierra paneles y overlays en orden de prioridad
 
 La cadena de cierre sigue la lógica "lo más bloqueante primero":
 
@@ -104,6 +131,9 @@ Cuando se agrega un nuevo formulario inline, campo o panel:
 | Renombrar columna | ✅ (blur) | — | — |
 | Detalles tarjeta (`fDetails`) | — | ✅ | — |
 | Título tarjeta (`fTitle`) | ✅ (save) | — | — |
+| Renombrar checklist (`.checklist-name`) | ✅ (blur) | — | — |
+| Ítem de checklist (`.checklist-item-text`) | ✅ (→ Nueva subtarea) | — | — |
+| Nueva subtarea (`.checklist-add input`) | ✅ | — | — |
 | Panel Objetivos | — | — | ✅ |
 | Panel Métricas | — | — | ✅ |
 | Invitar miembro (`#inviteEmail`) | ✅ | — | ✅ (vía settings) |

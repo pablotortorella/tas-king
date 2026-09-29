@@ -279,6 +279,7 @@ export function renderChecklists() {
       cl.items.slice().sort((a, b) => a.position - b.position).forEach((item, idx, arr) => {
         const li = document.createElement("li");
         li.className = "checklist-item";
+        li.dataset.itemId = item.id;
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
@@ -319,7 +320,26 @@ export function renderChecklists() {
             } catch (e) { textEl.value = item.text; alert("Error: " + e.message); }
           }
         });
-        textEl.addEventListener("keydown", e => { if (e.key === "Enter") textEl.blur(); });
+        // Tab/Enter/Backspace estándar de la lista (ADR-014): Tab salta directo
+        // al texto del ítem siguiente/anterior (no por checkbox/flechas/borrar);
+        // Enter confirma y deja lista la fila de "Nueva subtarea" para seguir
+        // cargando; Backspace en un ítem vacío lo borra y vuelve al anterior.
+        textEl.addEventListener("keydown", e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            addInput.focus();
+          } else if (e.key === "Backspace" && textEl.value === "") {
+            e.preventDefault();
+            removeItem();
+          } else if (e.key === "Tab" && !e.shiftKey) {
+            e.preventDefault();
+            if (idx < arr.length - 1) focusItemText(arr[idx + 1].id);
+            else addInput.focus();
+          } else if (e.key === "Tab" && e.shiftKey && idx > 0) {
+            e.preventDefault();
+            focusItemText(arr[idx - 1].id);
+          }
+        });
 
         const swapPositions = (a, b) => { [a.position, b.position] = [b.position, a.position]; };
 
@@ -361,11 +381,17 @@ export function renderChecklists() {
           }
         });
 
-        const delItemBtn = document.createElement("button");
-        delItemBtn.className = "checklist-item-del";
-        delItemBtn.textContent = "✕";
-        delItemBtn.title = "Eliminar ítem";
-        delItemBtn.addEventListener("click", async () => {
+        // Busca el input de texto de otro ítem ya renderizado (Tab, o el
+        // anterior tras un borrado) — por eso li lleva data-item-id.
+        const focusItemText = id => {
+          const el = ul.querySelector(`[data-item-id="${id}"] .checklist-item-text`);
+          if (!el) return;
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+        };
+
+        const removeItem = async () => {
+          const prevId = idx > 0 ? arr[idx - 1].id : null;
           if (isDraft) {
             cl.items = cl.items.filter(x => x.id !== item.id);
             renderItems();
@@ -378,9 +404,16 @@ export function renderChecklists() {
               renderItems();
               const cl2 = (estado.state.cards.find(c => c.id === estado.editingId)?.checklists || []).find(x => x.id === cl.id);
               if (cl2) updateBar(cl2, bar, progressEl);
-            } catch (e) { alert("Error: " + e.message); }
+            } catch (e) { alert("Error: " + e.message); return; }
           }
-        });
+          if (prevId) focusItemText(prevId); else addInput.focus();
+        };
+
+        const delItemBtn = document.createElement("button");
+        delItemBtn.className = "checklist-item-del";
+        delItemBtn.textContent = "✕";
+        delItemBtn.title = "Eliminar ítem";
+        delItemBtn.addEventListener("click", removeItem);
 
         li.appendChild(cb);
         li.appendChild(textEl);
