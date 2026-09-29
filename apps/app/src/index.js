@@ -92,6 +92,11 @@ app.get("/api/me", async (c) => {
   return c.json({ id: session.user_id, email: session.email, displayName: session.display_name });
 });
 
+app.use("/demo/*", async (c, next) => {
+  if (c.env?.DEV_LOCAL_MODE !== "true") return c.text("No encontrado.", 404);
+  await next();
+});
+
 app.get("/auth/google", async (c) => {
   const config = authConfig(c.env);
   if (!config) return c.html(page("Acceso no configurado", "<h1>El acceso todavía no está configurado.</h1><p>Esta aplicación aún no tiene un cliente de Google para este ambiente.</p>"), 503);
@@ -244,9 +249,16 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
 
 app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
 
-app.get("/", (c) => {
-  const { index } = startDemoPair();
-  return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>En la versión real vas a entrar con Google. Este es un recorrido local de prueba: no crea una cuenta ni guarda datos.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
+app.get("/", async (c) => {
+  if (c.env?.DEV_LOCAL_MODE === "true") {
+    const { index } = startDemoPair();
+    return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Este es un recorrido local de prueba: guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
+  }
+  const config = authConfig(c.env);
+  const session = config ? await currentSession(c.env.DB, c.req.raw, config.sessionSecret) : null;
+  if (session) return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Tu sesión está activa. La creación de espacios e invitaciones se habilitarán en el siguiente corte de la plataforma.</p><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+  const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
+  return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
 });
 
 app.get("/demo/crear-espacio", (c) => {

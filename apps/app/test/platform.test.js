@@ -41,9 +41,13 @@ describe("fundaciones de plataforma", () => {
   });
 
   it("escapa los datos que se interpolan en la interfaz local", async () => {
-    const response = await app.request("http://app.test/demo/espacio?nombre=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E");
+    const response = await app.request("http://app.test/demo/espacio?nombre=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E", undefined, { DEV_LOCAL_MODE: "true" });
     const body = await response.text();
     expect(body).toContain("&lt;img src=x onerror=alert(1)&gt;");
     expect(body).not.toContain("<img src=x onerror=alert(1)>");
+  });
+
+  it("no expone las rutas de demostración fuera del modo local", async () => {
+    expect((await app.request("https://app.test/demo/crear-espacio")).status).toBe(404);
   });
 });

@@ -8,5 +8,18 @@
     "database_name": "homesuite-app-local",
     "database_id": "00000000-0000-0000-0000-000000000000",
     "migrations_dir": "./migrations"
-  }]
+  }],
+  "env": {
+    "staging": {
+      "name": "homesuite-app-staging",
+      "workers_dev": true,
+      "routes": [{ "pattern": "staging.homesuite.info", "custom_domain": true }],
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "homesuite-app-db-staging",
+        "database_id": "7d270a78-adbb-45fc-b5fc-7550c547af68",
+        "migrations_dir": "./migrations"
+      }]
+    }
+  }
 }
