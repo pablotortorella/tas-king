@@ -1,6 +1,76 @@
 # AI_HANDOFF
 
-## Última sesión — HomeSuite App local (2026-09-22)
+## Última sesión — 3 fixes de backlog de TasKing, PRs abiertos sin mergear (2026-10-08, Sonnet 5)
+
+Pablo se va de vacaciones unos días. Este es el punto exacto para retomar cuando vuelva —
+nada de esto llegó a staging ni a producción todavía.
+
+### Qué se hizo
+
+Se resolvieron los primeros 3 ítems de "🟠 Alta prioridad" en `docs/PRODUCT_BACKLOG.md`,
+cada uno en su propia rama + worktree (regla de CLAUDE.md). Los 3 tienen su suite completa
+verde (217 unit + E2E) y están pusheados a `origin`, **pero ningún PR está mergeado ni
+probado en staging todavía**.
+
+| PR | Rama | Worktree | Qué resuelve |
+|---|---|---|---|
+| [#65](https://github.com/pablotortorella/tas-king/pull/65) | `fix/tip-diario-movil` | `../tas-king-tip-movil` | El tip diario quedaba tapado en móvil por la barra de direcciones del navegador (`100vh` no sigue el viewport visible real). Fix: `body` usa `height: 100dvh` con `100vh` como fallback. |
+| [#66](https://github.com/pablotortorella/tas-king/pull/66) | `feature/etiquetas-tarjetas-nuevas` | `../tas-king-etiquetas-nuevas` | Permite asignar etiquetas a una tarjeta nueva antes de guardarla (`draftLabels`, mismo patrón que `draftGoals`). Sin cambios de backend. |
+| [#67](https://github.com/pablotortorella/tas-king/pull/67) | `fix/tab-enter-modal` | `../tas-king-tab-enter-modal` | En ítems de checklist: Tab salta directo al texto del ítem siguiente (no por checkbox/▲/▼/✕), Enter deja el cursor en "Nueva subtarea", Backspace en un ítem vacío lo borra. Documentado como sección nueva en ADR-014 (el backlog decía "ya documentado" pero no lo estaba). |
+
+El cuarto ítem de Alta prioridad, **Onboarding de usuarios nuevos**, quedó sin empezar —
+necesita decidir el enfoque (estado vacío / tarjetas de ejemplo / mini-tour) antes de codear.
+
+### Verificación hecha (y una trampa para la próxima sesión)
+
+- **Los 3 worktrees comparten el puerto 8787** de `wrangler dev` / Playwright
+  (`reuseExistingServer: true` en `playwright.config.mjs`): correr sus suites en paralelo
+  **contamina los resultados entre ramas** — se vio en vivo, 12 tests ajenos fallaron en una
+  corrida mezclada que no tenían nada que ver con el cambio. Cada suite se corrió **en
+  aislamiento**, una por vez, y ahí sí confirmó 100% verde. Si se retoma con varios worktrees
+  a la vez, correr los tests de a uno o asignarles puertos distintos.
+- No se llegó a probar manualmente en el navegador en esta sesión. Se dejaron 3 `wrangler dev`
+  corriendo (puertos 8787/8788/8789, con `.dev.vars` ya copiado y la D1 local migrada +
+  seedeada en cada worktree) para que Pablo probara, pero la sesión se cortó antes de que
+  confirmara el resultado y los procesos murieron con ella.
+
+### ⏭️ PARA RETOMAR
+
+1. Los 3 worktrees siguen en el filesystem (`../tas-king-tip-movil`,
+   `../tas-king-etiquetas-nuevas`, `../tas-king-tab-enter-modal`), cada uno con su commit,
+   su `.dev.vars` ya copiado y su D1 local migrada + seedeada — no hace falta repetir ese setup.
+2. `main` avanzó bastante desde que se crearon estas ramas (PRs de HomeSuite #59 a #63
+   mergeados). Antes de mergear cada una: `git fetch origin --prune && git rebase origin/main`
+   dentro de su worktree, y repetir `npm run test:all`.
+3. Para probar en el navegador, en cada worktree: `npx wrangler dev --port <8787|8788|8789>`
+   (puerto distinto por worktree si se corren a la vez). Mínimo por ítem:
+   - **#66** (etiquetas): "+" en una columna → en el modal, "🏷️ Etiquetas" → "+ Asignar
+     etiqueta" → crear/elegir una → ver el chip *antes* de guardar → Guardar → reabrir y
+     confirmar que persiste.
+   - **#67** (checklist): abrir una tarjeta → "☑ Agregar checklist" → cargar 2-3 ítems →
+     Tab entre sus textos (salta directo, no por los botones) → Enter (va a "Nueva
+     subtarea") → vaciar un ítem y Backspace (lo borra).
+   - **#65** (tip móvil): el bug real (barra de direcciones tapando el tip) solo se ve en un
+     celular real en la misma wifi (`http://<ip-lan>:<puerto>`) — el emulador mobile de
+     DevTools no lo reproduce. Verificación rápida sin celular: DevTools → Elements → `body`
+     → confirmar `height: 100dvh` aplicado sobre el fallback `100vh`.
+4. Si todo OK en local → `npm run deploy:staging` desde cada rama → revisar → integrar a
+   `main` → staging de `main` → aprobación explícita de Pablo → `npm run deploy`. Actualizar
+   `docs/STATUS.md` y, si corresponde, `public/releases.html` en el momento del deploy (ver
+   CLAUDE.md).
+
+### 🧹 Housekeeping encontrado, no tocado
+
+- Había un `git stash` en el checkout principal ("WIP encontrado en main: docs HomeSuite...",
+  del 2026-09-29). Confirmado: su contenido ya está en `main` (llegó por otro camino, los PRs
+  de HomeSuite ya mergeados). Es seguro `git stash drop`, pero el harness lo bloqueó como
+  "destrucción local irreversible" al intentarlo solo — Pablo puede soltarlo cuando quiera.
+- `.worktrees/homesuite-authenticated-spaces` y `.worktrees/homesuite-handoff` (PRs #68 y
+  #64, ambos abiertos, trabajo con Codex) — no se tocaron, son del otro frente de trabajo.
+
+---
+
+## Handoff anterior (2026-09-22, HomeSuite App local)
 
 Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.
 
