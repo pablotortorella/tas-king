@@ -1,6 +1,6 @@
 # AI_HANDOFF
 
-## Retoma prioritaria — HomeSuite App staging (2026-09-23)
+## Retoma prioritaria — HomeSuite App staging (2026-10-08)
 
 **Este bloque reemplaza operativamente los handoffs anteriores de HomeSuite.**
 La fuente complementaria es `docs/STATUS.md`,
@@ -26,9 +26,12 @@ La fuente complementaria es `docs/STATUS.md`,
 - La URL técnica `https://homesuite-app-staging.pablotortorella.workers.dev`
   y `/healthz` respondieron 200. Antes del deploy: 11 pruebas unitarias, 9
   integraciones D1 y OpenSpec strict en verde.
-- PR #63 (`feature/homesuite-staging`) versiona la configuración, scripts,
-  protección de rutas demo y documentación de staging. Debe integrarse para que
-  `main` sea la fuente definitiva de ese ambiente.
+- PR #63 integrado en `main` (SHA `ddfc0b0`): versiona la configuración,
+  scripts, protección de rutas demo y documentación de staging.
+- Pablo confirmó desde navegador normal que `https://staging.homesuite.info`
+  presenta HTTPS y llega al Worker correcto. Mientras no estén las credenciales
+  OAuth, el aviso «El acceso de este ambiente todavía no está configurado.» es
+  el comportamiento esperado.
 
 ### Pendiente de Pablo — configuración manual, sin compartir secretos
 
@@ -41,18 +44,17 @@ La fuente complementaria es `docs/STATUS.md`,
 4. En Cloudflare → `homesuite-app-staging` → Settings → Variables and Secrets,
    crear `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`. **No enviar el secret por
    chat, Git ni archivos.**
-5. Abrir `https://staging.homesuite.info` desde navegador/red normal y confirmar
-   HTTPS. La red automática filtraba todos los hostnames `homesuite.info`,
-   incluso los ya existentes, por eso esta comprobación corresponde a Pablo.
-6. Revisar e integrar PR #63 cuando su CI esté verde.
+5. No enviar el valor de ningún secret por chat, Git ni archivos. Una vez
+   guardados, basta confirmar que la operación está lista.
 
 ### Próxima sesión técnica
 
-- Con secretos y HTTPS confirmados: probar login/logout real en staging.
-- El flujo de dos personas aún usa rutas `local` bajo `DEV_LOCAL_MODE`. El
-  siguiente change debe mover crear espacio e invitar a rutas autenticadas por
-  sesión real, preservando invariantes y auditoría, y permitir la prueba con dos
-  cuentas Google.
+- Con secretos configurados: probar login/logout real en staging.
+- Hay un corte WIP separado en `feature/homesuite-authenticated-spaces`:
+  rutas autenticadas por sesión real para crear/renombrar espacio, invitar,
+  cancelar y aceptar/rechazar; conserva las rutas `/local` sólo para desarrollo.
+  Incluye 11 pruebas unitarias y 12 integraciones en verde, pero aún requiere
+  revisión, PR y validación manual con las dos cuentas Google antes de desplegar.
 - No crear `app.homesuite.info`, D1/secret de producción, ni reutilizar D1,
   cookie, OAuth o Worker de TasKing.
 - Actualizar los snapshots visuales de Journey/Story Map al próximo merge/deploy

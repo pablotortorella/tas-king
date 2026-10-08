@@ -19,7 +19,7 @@
 
 - PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
-- Validado localmente con 11 pruebas unitarias y 9 integraciones D1. El staging técnico ya tiene Worker y D1 propios; faltan cliente OAuth Google, secretos, revisión HTTPS del dominio y prueba manual con dos cuentas reales. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
+- Validado localmente con 11 pruebas unitarias y 9 integraciones D1. Staging tiene Worker y D1 propios y Pablo confirmó HTTPS desde navegador normal. Faltan el cliente OAuth Google, sus dos secretos y la prueba manual con dos cuentas reales. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
 
 
 #### Retoma manual pendiente de Pablo
@@ -30,11 +30,11 @@
 2. Cargar `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` como secretos del Worker
    `homesuite-app-staging`. `SESSION_SECRET` ya existe y no debe reemplazarse.
    Ningún secret se registra en Git, documentación o chat.
-3. Confirmar desde navegador/red normal que `https://staging.homesuite.info`
-   presenta HTTPS y el shell esperado; la red de automatización filtra todos los
-   hostnames `homesuite.info`.
-4. Revisar/integrar PR #63. Después probar login/logout con las dos cuentas y
-   mover el flujo de espacios e invitaciones de `DEV_LOCAL_MODE` a sesión real.
+3. Con los secretos cargados, probar login/logout con las dos cuentas reales.
+4. El siguiente corte funcional ya está preservado como WIP en
+   `feature/homesuite-authenticated-spaces`: mueve crear espacio, invitar,
+   cancelar y aceptar/rechazar a sesión real. Aún requiere revisión, PR y prueba
+   manual antes de desplegar.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
