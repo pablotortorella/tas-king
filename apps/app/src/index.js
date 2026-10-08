@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
-import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
+import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
@@ -41,11 +41,29 @@ export const app = new Hono();
 
 const OAUTH_COOKIE = "homesuite_oauth";
 
+function sessionSecret(env = {}) {
+  return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
+}
+
 function authConfig(env = {}) {
-  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret, SESSION_SECRET: sessionSecret } = env;
-  return typeof clientId === "string" && typeof clientSecret === "string" && typeof sessionSecret === "string" && sessionSecret.length >= 32
-    ? { clientId, clientSecret, sessionSecret }
+  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret } = env;
+  const secret = sessionSecret(env);
+  return typeof clientId === "string" && typeof clientSecret === "string" && secret
+    ? { clientId, clientSecret, sessionSecret: secret }
     : null;
+}
+
+async function signedInUser(c) {
+  const secret = sessionSecret(c.env);
+  return secret ? currentSession(c.env.DB, c.req.raw, secret) : null;
+}
+
+function signInRequired(c) {
+  return c.redirect(`/auth/google?returnTo=${encodeURIComponent(new URL(c.req.url).pathname)}`, 303);
+}
+
+function formError(title, message, status = 400) {
+  return page(title, `<p class="eyebrow">Cuentas Claras</p><h1>${html(title)}</h1><p class="notice" role="alert">${html(message)}</p><a class="button secondary" href="/">Volver</a>`);
 }
 
 function setCookie(c, value) {
@@ -86,8 +104,7 @@ app.get("/api/me", async (c) => {
     const user = await ensureLocalUser(c.env.DB, email);
     return c.json({ id: user.id, email: user.email, displayName: user.display_name, local: true });
   }
-  const config = authConfig(c.env);
-  const session = config ? await currentSession(c.env.DB, c.req.raw, config.sessionSecret) : null;
+  const session = await signedInUser(c);
   if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
   return c.json({ id: session.user_id, email: session.email, displayName: session.display_name });
 });
@@ -135,8 +152,8 @@ app.get("/auth/callback", async (c) => {
 });
 
 app.post("/auth/logout", async (c) => {
-  const config = authConfig(c.env);
-  if (config) await revokeSession(c.env.DB, c.req.raw, config.sessionSecret);
+  const secret = sessionSecret(c.env);
+  if (secret) await revokeSession(c.env.DB, c.req.raw, secret);
   setCookie(c, expiredSessionCookie(isSecureRequest(c)));
   return c.redirect("/", 303);
 });
@@ -247,6 +264,107 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
   return c.json({ status: accepted ? "accepted" : "rejected", spaceId });
 });
 
+
+
+app.get("/spaces/new", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/spaces"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><button class="button" type="submit">Crear espacio</button></form>`));
+});
+
+app.post("/spaces", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const body = await c.req.parseBody();
+    const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name });
+    return c.redirect(`/spaces/${encodeURIComponent(space.id)}`, 303);
+  } catch {
+    return c.html(formError("No pudimos crear el espacio", "Elegí un nombre de hasta 120 caracteres."), 400);
+  }
+});
+
+app.get("/spaces/:spaceId", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const space = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
+  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all();
+  const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT id, invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] };
+  const participants = members.results.map((member) => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
+  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post"><button class="button secondary">Cancelar invitación</button></form></div>`).join("");
+  const ownerTools = space.role === "owner" ? `<section class="card"><h2>Administrar espacio</h2><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post"><label class="label" for="space-name">Nombre</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><h2>Invitar</h2><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post"><label class="label" for="email">Email</label><input id="email" name="email" type="email" required autocomplete="email"><button class="button">Invitar</button></form>${pending}</section>` : "";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio está protegido por tu sesión. Todavía no inventamos saldos ni movimientos.</p><section class="card"><h2>Participantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar espacio</a>`));
+});
+
+app.post("/spaces/:spaceId/rename", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    await renameSpace(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch {
+    return c.html(formError("No pudimos guardar el nombre", "Sólo el titular puede usar un nombre válido."), 403);
+  }
+});
+
+app.post("/spaces/:spaceId/invitations", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
+  try {
+    await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: (await c.req.parseBody()).email });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch {
+    return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
+  }
+});
+
+app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
+  try {
+    await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.user_id });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch {
+    return c.html(formError("Invitación no encontrada", "La invitación ya no está pendiente.", 404), 404);
+  }
+});
+
+app.get("/invitations", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending' ORDER BY i.created_at").bind(user.email).all();
+  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}<a class="button secondary" href="/">Volver</a>`));
+});
+
+app.post("/invitations/:invitationId", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const body = await c.req.parseBody();
+  if (body.decision !== "accept" && body.decision !== "reject") return c.html(formError("Decisión inválida", "Elegí aceptar o rechazar la invitación."), 400);
+  try {
+    const accepted = body.decision === "accept";
+    const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.user_id, email: user.email, accepted });
+    return c.redirect(accepted ? `/spaces/${encodeURIComponent(spaceId)}` : "/invitations", 303);
+  } catch {
+    return c.html(formError("Invitación no encontrada", "La invitación no existe, ya fue resuelta o no te corresponde.", 404), 404);
+  }
+});
+
+app.get("/cuentas-claras", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
+  if (rows.results.length === 1) return c.redirect(`/spaces/${encodeURIComponent(rows.results[0].id)}`, 303);
+  const spaces = rows.results.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.id)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("") || "<p>No tenés espacios todavía.</p>";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
+});
+
 app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
 
 app.get("/", async (c) => {
@@ -255,8 +373,13 @@ app.get("/", async (c) => {
     return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Este es un recorrido local de prueba: guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
   }
   const config = authConfig(c.env);
-  const session = config ? await currentSession(c.env.DB, c.req.raw, config.sessionSecret) : null;
-  if (session) return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Tu sesión está activa. La creación de espacios e invitaciones se habilitarán en el siguiente corte de la plataforma.</p><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+  const session = await signedInUser(c);
+  if (session) {
+    const spaces = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(session.user_id).all();
+    const pending = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM invitations WHERE invitee_email = ? AND status = 'pending'").bind(session.email).first();
+    const list = spaces.results.length ? spaces.results.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.id)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === 'owner' ? 'Titular' : 'Integrante'}</span></div>`).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
+    return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+  }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
   return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
 });
