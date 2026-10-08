@@ -20,6 +20,7 @@
 - PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
 - Validado localmente con 11 pruebas unitarias y 9 integraciones D1. El staging técnico ya tiene Worker y D1 propios; faltan cliente OAuth Google, secretos, revisión HTTPS del dominio y prueba manual con dos cuentas reales. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
+- Próximo corte preparado localmente en `feature/homesuite-authenticated-spaces`: rutas reales de creación/renombre, selección, invitación/cancelación y aceptación/rechazo protegidas por cookie de sesión; 11 pruebas unitarias y 12 integraciones. Aún no se despliega: requiere revisión, PR y las credenciales Google de staging para validación humana.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
