@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
+import { createCsrfToken, validateCsrfRequest } from "./csrf.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
@@ -66,6 +67,20 @@ function formError(title, message, status = 400) {
   return page(title, `<p class="eyebrow">Cuentas Claras</p><h1>${html(title)}</h1><p class="notice" role="alert">${html(message)}</p><a class="button secondary" href="/">Volver</a>`);
 }
 
+function requestId(c) {
+  return c.get("requestId") ?? "unknown";
+}
+
+function logFailure(c, event, error) {
+  console.error("[homesuite-app]", JSON.stringify({
+    event,
+    requestId: requestId(c),
+    method: c.req.method,
+    path: new URL(c.req.url).pathname,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+  }));
+}
+
 function setCookie(c, value) {
   c.header("Set-Cookie", value, { append: true });
 }
@@ -86,9 +101,34 @@ function html(value) {
   return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 
+async function csrfInput(c, user) {
+  const token = await createCsrfToken({ sessionId: user.id, secret: sessionSecret(c.env) });
+  return `<input type="hidden" name="_csrf" value="${html(token)}">`;
+}
+
+function isProtectedMutation(c) {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) return false;
+  const path = new URL(c.req.url).pathname;
+  return path === "/auth/logout" || path === "/spaces" || path.startsWith("/spaces/") || path.startsWith("/invitations/");
+}
+
 app.use("*", async (c, next) => {
+  c.set("requestId", c.req.header("cf-ray") || crypto.randomUUID());
   await next();
+  c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+});
+
+app.use("*", async (c, next) => {
+  if (!isProtectedMutation(c)) return next();
+  const secret = sessionSecret(c.env);
+  const user = secret ? await currentSession(c.env.DB, c.req.raw, secret) : null;
+  if (!user) return signInRequired(c);
+  if (!await validateCsrfRequest(c.req.raw, { sessionId: user.id, secret })) {
+    return c.html(formError("Solicitud no verificada", "Recargá la página e intentá de nuevo."), 403);
+  }
+  c.set("protectedUser", user);
+  await next();
 });
 
 app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
@@ -145,6 +185,7 @@ app.get("/auth/callback", async (c) => {
     setCookie(c, sessionCookie(session.token, secure));
     return c.redirect(state.returnTo, 303);
   } catch (error) {
+    logFailure(c, "oauth_callback_failed", error);
     setCookie(c, oauthCookie("", secure, 0));
     const message = error instanceof GoogleIdentityConflictError ? "Este email ya está vinculado a otra identidad de HomeSuite." : "No pudimos completar el acceso con Google. Intentá de nuevo.";
     return c.html(page("No pudimos iniciar sesión", `<h1>No pudimos iniciar sesión.</h1><p>${message}</p>`), 400);
@@ -186,7 +227,7 @@ app.get("/local/spaces/:spaceId", async (c) => {
   const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("spaceId")).all();
   const participants = members.results.map(member => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
   const pending = invitations.results.map(row => `<div class="person"><strong>${html(row.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><br><a class="button secondary" href="/local/invitations?as=${encodeURIComponent(row.invitee_email)}">Ver como invitada</a></div>`).join("");
-  const management = space.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/spaces/${c.req.param("spaceId")}/invitations" method="post"><label class="label">Email</label><input name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
+  const management = space.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/spaces/${c.req.param("spaceId")}/invitations" method="post"><label class="label" for="local-invite-email">Email</label><input id="local-invite-email" name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
   return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
 });
 
@@ -269,12 +310,11 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/spaces"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
+  const user = c.get("protectedUser");
   try {
     const body = await c.req.parseBody();
     const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name });
@@ -291,15 +331,15 @@ app.get("/spaces/:spaceId", async (c) => {
   if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
   const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all();
   const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT id, invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] };
+  const csrf = await csrfInput(c, user);
   const participants = members.results.map((member) => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
-  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post"><button class="button secondary">Cancelar invitación</button></form></div>`).join("");
-  const ownerTools = space.role === "owner" ? `<section class="card"><h2>Administrar espacio</h2><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post"><label class="label" for="space-name">Nombre</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><h2>Invitar</h2><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post"><label class="label" for="email">Email</label><input id="email" name="email" type="email" required autocomplete="email"><button class="button">Invitar</button></form>${pending}</section>` : "";
+  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
+  const ownerTools = space.role === "owner" ? `<section class="card"><h2>Administrar espacio</h2><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><h2>Invitar</h2><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post">${csrf}<label class="label" for="email">Email</label><input id="email" name="email" type="email" required autocomplete="email"><button class="button">Invitar</button></form>${pending}</section>` : "";
   return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio está protegido por tu sesión. Todavía no inventamos saldos ni movimientos.</p><section class="card"><h2>Participantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar espacio</a>`));
 });
 
 app.post("/spaces/:spaceId/rename", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
+  const user = c.get("protectedUser");
   try {
     await renameSpace(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
@@ -309,8 +349,7 @@ app.post("/spaces/:spaceId/rename", async (c) => {
 });
 
 app.post("/spaces/:spaceId/invitations", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
+  const user = c.get("protectedUser");
   const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
   try {
@@ -322,8 +361,7 @@ app.post("/spaces/:spaceId/invitations", async (c) => {
 });
 
 app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
+  const user = c.get("protectedUser");
   const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
   try {
@@ -338,13 +376,13 @@ app.get("/invitations", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending' ORDER BY i.created_at").bind(user.email).all();
-  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  const csrf = await csrfInput(c, user);
+  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post">${csrf}<button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
   return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}<a class="button secondary" href="/">Volver</a>`));
 });
 
 app.post("/invitations/:invitationId", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
+  const user = c.get("protectedUser");
   const body = await c.req.parseBody();
   if (body.decision !== "accept" && body.decision !== "reject") return c.html(formError("Decisión inválida", "Elegí aceptar o rechazar la invitación."), 400);
   try {
@@ -378,7 +416,7 @@ app.get("/", async (c) => {
     const spaces = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(session.user_id).all();
     const pending = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM invitations WHERE invitee_email = ? AND status = 'pending'").bind(session.email).first();
     const list = spaces.results.length ? spaces.results.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.id)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === 'owner' ? 'Titular' : 'Integrante'}</span></div>`).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
-    return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+    return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post">${await csrfInput(c, session)}<button class="button secondary">Cerrar sesión</button></form>`));
   }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
   return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
@@ -406,8 +444,8 @@ app.get("/demo/invitacion", (c) => {
 app.notFound((c) => c.json({ error: "No encontrado." }, 404));
 
 app.onError((error, c) => {
-  console.error("[homesuite-app]", error);
-  return c.json({ error: "Error interno." }, 500);
+  logFailure(c, "unhandled_error", error);
+  return c.json({ error: "Error interno.", requestId: requestId(c) }, 500);
 });
 
 export default { fetch: app.fetch };

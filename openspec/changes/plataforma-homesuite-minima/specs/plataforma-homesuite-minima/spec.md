@@ -7,6 +7,8 @@ la persona al claim `sub` validado del ID token y SHALL requerir que el email es
 verificado antes de usarlo para invitaciones. La sesión SHALL usar una cookie
 `__Host-homesuite_session` exclusiva de `app.homesuite.info`, con `Secure`,
 `HttpOnly`, `SameSite=Lax` y `Path=/`, sin atributo `Domain`.
+Las operaciones que cambian estado SHALL exigir origen confiable y token CSRF
+firmado, ligado a la sesión activa.
 
 #### Scenario: Una persona inicia sesión por primera vez
 
@@ -25,6 +27,12 @@ verificado antes de usarlo para invitaciones. La sesión SHALL usar una cookie
 
 - **WHEN** el parámetro `returnTo` contiene una URL absoluta o un origen externo
 - **THEN** HomeSuite lo rechaza y redirige sólo a una ruta interna segura
+
+#### Scenario: Un sitio externo intenta ejecutar una mutación
+
+- **WHEN** una solicitud autenticada que cambia estado omite el token CSRF o
+  declara un origen distinto al de HomeSuite App
+- **THEN** HomeSuite la rechaza antes de modificar datos
 
 ### Requirement: Una persona crea un espacio privado de Cuentas Claras
 

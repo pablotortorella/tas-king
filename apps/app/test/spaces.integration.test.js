@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
+import { createCsrfToken } from "../src/csrf.js";
 import { createSession, currentSession, revokeSession } from "../src/sessions.js";
 
 describe("D1: invariantes de espacios", () => {
@@ -114,14 +115,47 @@ async function realIdentity(emailPrefix) {
     email,
     context: { DB: env.DB, SESSION_SECRET: REAL_SESSION_SECRET },
     headers: { Cookie: `__Host-homesuite_session=${encodeURIComponent(session.token)}` },
+    csrfToken: await createCsrfToken({ sessionId: session.id, secret: REAL_SESSION_SECRET }),
   };
 }
 
 function authenticatedRequest(identity, url, init = {}) {
-  return app.request(url, { ...init, headers: { ...identity.headers, ...(init.headers ?? {}) } }, identity.context);
+  const method = init.method ?? "GET";
+  const mutationHeaders = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+    ? { Origin: new URL(url).origin, "X-CSRF-Token": identity.csrfToken }
+    : {};
+  return app.request(url, { ...init, headers: { ...identity.headers, ...mutationHeaders, ...(init.headers ?? {}) } }, identity.context);
 }
 
 describe("recorrido web con sesión real", () => {
+  it("rechaza mutaciones sin token CSRF o desde otro origen", async () => {
+    const owner = await realIdentity("csrf-real");
+    const withoutToken = await app.request("https://app.test/spaces", {
+      method: "POST",
+      headers: { ...owner.headers, Origin: "https://app.test", "Content-Type": "application/x-www-form-urlencoded" },
+      body: "name=No+crear",
+    }, owner.context);
+    expect(withoutToken.status).toBe(403);
+
+    const crossOrigin = await app.request("https://app.test/spaces", {
+      method: "POST",
+      headers: { ...owner.headers, Origin: "https://evil.example", "X-CSRF-Token": owner.csrfToken, "Content-Type": "application/x-www-form-urlencoded" },
+      body: "name=Tampoco+crear",
+    }, owner.context);
+    expect(crossOrigin.status).toBe(403);
+
+    const spaces = await env.DB.prepare("SELECT COUNT(*) AS count FROM memberships WHERE user_id = ?").bind(owner.id).first();
+    expect(spaces.count).toBe(0);
+  });
+
+  it("incluye un token CSRF firmado en los formularios autenticados", async () => {
+    const owner = await realIdentity("forms-real");
+    const response = await authenticatedRequest(owner, "https://app.test/spaces/new");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('name="_csrf"');
+    expect(response.headers.get("x-request-id")).toBeTruthy();
+  });
+
   it("crea y renombra un espacio exclusivamente para su titular", async () => {
     const owner = await realIdentity("zelda-real");
     const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Casa+Hyrule" });

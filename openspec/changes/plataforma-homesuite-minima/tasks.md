@@ -28,7 +28,7 @@
 ## 5. Verificación y operación
 
 - [x] 5.1 Tests unitarios de identidad, sesiones, D1, invariantes y autorización negativa entre espacios.
-- [ ] 5.2 E2E con identidades sintéticas: crear espacio, invitar, cancelar, aceptar/rechazar, aislamiento y privacidad previa a aceptar.
+- [x] 5.2 E2E con identidades sintéticas: crear espacio, invitar, cancelar, aceptar/rechazar, aislamiento y privacidad previa a aceptar.
 - [x] 5.3 Validar localmente el Worker, migraciones y suite completa de HomeSuite App.
 - [x] 5.4 Crear recursos de staging aislados, asociar `staging.homesuite.info` y configurar cliente OAuth/secrets de staging fuera de Git.
 - [ ] 5.5 Verificar manualmente en staging con dos cuentas Google el recorrido completo, incluido el nombre de la persona invitante.

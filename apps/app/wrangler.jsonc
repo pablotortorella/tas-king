@@ -14,6 +14,10 @@
       "name": "homesuite-app-staging",
       "workers_dev": true,
       "routes": [{ "pattern": "staging.homesuite.info", "custom_domain": true }],
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1
+      },
       "vars": {
         "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com"
       },
