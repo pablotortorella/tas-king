@@ -19,7 +19,7 @@ export async function inviteToSpace(db, { spaceId, inviterUserId, email }) {
   const invitationId = createPlatformId("invite");
   const eventId = createPlatformId("audit");
   await db.batch([
-    db.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id) VALUES (?, ?, ?, ?)").bind(invitationId, spaceId, inviteeEmail, inviterUserId),
+    db.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id, expires_at) VALUES (?, ?, ?, ?, datetime('now', '+30 days'))").bind(invitationId, spaceId, inviteeEmail, inviterUserId),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'invitation_created', 'invitation', ?)").bind(eventId, inviterUserId, spaceId, invitationId),
   ]);
   return { id: invitationId, email: inviteeEmail, status: "pending" };

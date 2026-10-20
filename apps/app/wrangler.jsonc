@@ -18,9 +18,25 @@
         "enabled": true,
         "head_sampling_rate": 1
       },
-      "vars": {
-        "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com"
+      "triggers": {
+        "crons": ["17 4 * * *"]
       },
+      "vars": {
+        "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com",
+        "REQUIRE_RATE_LIMITS": "true"
+      },
+      "ratelimits": [
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "31001",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "MUTATION_RATE_LIMITER",
+          "namespace_id": "31002",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
       "d1_databases": [{
         "binding": "DB",
         "database_name": "homesuite-app-db-staging",

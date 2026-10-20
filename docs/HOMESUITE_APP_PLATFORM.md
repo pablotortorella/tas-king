@@ -7,8 +7,9 @@
 ## Alcance
 
 `apps/app` es el Worker autenticado de HomeSuite. En este corte ofrece identidad,
-sesiones, espacios privados, membresías e invitaciones para Cuentas Claras. No
-contiene todavía movimientos, saldos, archivos, correo ni importaciones.
+sesiones, espacios privados, membresías e invitaciones para Cuentas Claras. El
+esquema y el dominio monetario preparan libros y movimientos auditables, pero no
+hay todavía endpoints ni pantallas para registrar datos financieros.
 
 El sitio público `homesuite-site`, TasKing y HomeSuite App no comparten Worker,
 cookie, D1 ni secretos. Staging usa además un cliente OAuth propio.
@@ -74,6 +75,24 @@ En el panel en español: **Workers y Pages → homesuite-app-staging →
 Observabilidad → Logs**. Un error mostrado al usuario puede correlacionarse por
 `X-Request-Id`.
 
+## Protección operativa
+
+- Los cuerpos mutables con `Content-Length` superior a 16 KiB se rechazan con
+  413 antes de ejecutar un handler.
+- OAuth usa un Rate Limiting binding por IP de 20 solicitudes por minuto.
+- Las mutaciones autenticadas usan otro binding por sesión de 60 solicitudes por
+  minuto. Un límite excedido devuelve 429, `Retry-After: 60` y request ID.
+- Staging exige ambos bindings; si faltan, las rutas protegidas fallan cerradas.
+- El cron diario de las 04:17 UTC vence invitaciones pendientes y elimina sólo
+  sesiones vencidas o revocadas hace más de 30 días. No purga historia financiera.
+
+## Recuperación y ciclo de vida
+
+El deploy de staging ejecuta backup, migraciones y publicación en ese orden. Ver
+[backup y recuperación](HOMESUITE_RECOVERY.md) y
+[ciclo de vida de datos](HOMESUITE_DATA_LIFECYCLE.md). El 2026-10-20 se comprobó
+un export previo a `0003` mediante una restauración D1 local aislada.
+
 ## Verificación y despliegue
 
 ```bash
@@ -100,9 +119,9 @@ OAuth y Version ID. La prueba manual pendiente requiere dos cuentas Google:
 
 ## Pendiente antes de datos financieros reales
 
-- modelo monetario e idempotencia del change financiero;
-- límites de payload y rate limiting;
-- política de retención, exportación y eliminación;
-- procedimiento de backup y restauración ensayado;
-- limpieza de sesiones expiradas y revocación global;
-- rotación del secreto OAuth antes de declarar producción lista.
+- endpoints transaccionales que consuman las invariantes e idempotencia ya
+  definidas, con autorización y concurrencia optimista;
+- exportación y eliminación administrada por espacio;
+- backup externo y restore drill del ambiente productivo;
+- rotación del secreto OAuth antes de declarar producción lista;
+- monitoreo y alertas para cron, errores y backups.

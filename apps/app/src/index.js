@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, validateCsrfRequest } from "./csrf.js";
+import { runMaintenance } from "./maintenance.js";
+import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
@@ -41,6 +43,7 @@ function demoQuery(index) {
 export const app = new Hono();
 
 const OAUTH_COOKIE = "homesuite_oauth";
+const MAX_MUTATION_BODY_BYTES = 16 * 1024;
 
 function sessionSecret(env = {}) {
   return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
@@ -112,6 +115,26 @@ function isProtectedMutation(c) {
   return path === "/auth/logout" || path === "/spaces" || path.startsWith("/spaces/") || path.startsWith("/invitations/");
 }
 
+function isMutation(c) {
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method);
+}
+
+function clientAddress(c) {
+  return c.req.header("CF-Connecting-IP") || "unknown";
+}
+
+async function enforceRateLimit(c, limiter, key) {
+  const result = await checkRateLimit(limiter, key);
+  if (!result.configured && c.env?.REQUIRE_RATE_LIMITS === "true") {
+    logFailure(c, "rate_limit_binding_missing", new Error("RateLimitBindingMissing"));
+    return c.json({ error: "Protección temporalmente no disponible.", requestId: requestId(c) }, 503);
+  }
+  if (result.allowed) return null;
+  c.header("Retry-After", String(RATE_LIMIT_RETRY_SECONDS));
+  console.warn("[homesuite-app]", JSON.stringify({ event: "rate_limited", requestId: requestId(c), method: c.req.method, path: new URL(c.req.url).pathname }));
+  return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde.", requestId: requestId(c) }, 429);
+}
+
 app.use("*", async (c, next) => {
   c.set("requestId", c.req.header("cf-ray") || crypto.randomUUID());
   await next();
@@ -120,10 +143,28 @@ app.use("*", async (c, next) => {
 });
 
 app.use("*", async (c, next) => {
+  if (isMutation(c)) {
+    const contentLength = Number.parseInt(c.req.header("Content-Length") ?? "0", 10);
+    if (Number.isFinite(contentLength) && contentLength > MAX_MUTATION_BODY_BYTES) {
+      return c.json({ error: "La solicitud es demasiado grande.", requestId: requestId(c) }, 413);
+    }
+  }
+  await next();
+});
+
+app.use("/auth/*", async (c, next) => {
+  const limited = await enforceRateLimit(c, c.env?.AUTH_RATE_LIMITER, clientAddress(c));
+  if (limited) return limited;
+  await next();
+});
+
+app.use("*", async (c, next) => {
   if (!isProtectedMutation(c)) return next();
   const secret = sessionSecret(c.env);
   const user = secret ? await currentSession(c.env.DB, c.req.raw, secret) : null;
   if (!user) return signInRequired(c);
+  const limited = await enforceRateLimit(c, c.env?.MUTATION_RATE_LIMITER, user.id);
+  if (limited) return limited;
   if (!await validateCsrfRequest(c.req.raw, { sessionId: user.id, secret })) {
     return c.html(formError("Solicitud no verificada", "Recargá la página e intentá de nuevo."), 403);
   }
@@ -448,4 +489,11 @@ app.onError((error, c) => {
   return c.json({ error: "Error interno.", requestId: requestId(c) }, 500);
 });
 
-export default { fetch: app.fetch };
+export default {
+  fetch: app.fetch,
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runMaintenance(env.DB).then((result) => {
+      console.log("[homesuite-app]", JSON.stringify({ event: "maintenance_completed", ...result }));
+    }));
+  },
+};

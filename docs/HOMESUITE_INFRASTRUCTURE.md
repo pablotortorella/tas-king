@@ -82,6 +82,10 @@ se debe volver a comprobar DNS, certificados y Worker.
 - `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
   se verificaron públicamente. El recorrido manual con dos cuentas Google sigue
   pendiente; producción no fue creada ni modificada.
+- La siguiente versión de staging añade dos bindings de Rate Limiting, cron
+  diario y migración `0003_financial_foundations`. Su deploy respalda D1 antes de
+  migrar. El primer export previo a `0003` pasó un restore drill local aislado;
+  ver [recuperación](HOMESUITE_RECOVERY.md).
 
 ## Mapa de hostnames
 
@@ -234,6 +238,12 @@ asociada a esa versión.
 Una D1 por entorno contiene inicialmente plataforma, Tareas, Cuentas Claras y Compras. Las
 tablas y módulos mantienen fronteras claras. Separar bases por producto se hará
 solo por escala, seguridad, retención o cadencia comprobadas.
+
+Staging usa dos namespaces de Rate Limiting independientes: OAuth por IP y
+mutaciones por sesión. Son controles de abuso, no mecanismos contables ni de
+idempotencia. El cron `17 4 * * *` mantiene sesiones e invitaciones efímeras y no
+toca tablas financieras. La política completa está en
+[ciclo de vida de datos](HOMESUITE_DATA_LIFECYCLE.md).
 
 ## Ambientes
 
