@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGoogleAuthorization, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "../src/auth.js";
+import { createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "../src/auth.js";
 
 const encoder = new TextEncoder();
 
@@ -27,6 +27,23 @@ describe("seguridad de OAuth", () => {
     expect(authorization.state.verifier).not.toBe(url.searchParams.get("code_challenge"));
     expect(authorization.state.nonce).toHaveLength(43);
     expect(authorization.state.returnTo).toBe("/cuentas-claras");
+  });
+
+  it("envía el verificador PKCE al intercambiar el código", async () => {
+    let request;
+    await exchangeGoogleCode({
+      code: "authorization-code",
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      redirectUri: "https://staging.homesuite.info/auth/callback",
+      codeVerifier: "pkce-verifier",
+      fetcher: async (_url, options) => {
+        request = options;
+        return { ok: true, json: async () => ({ id_token: "token" }) };
+      },
+    });
+
+    expect(request.body.get("code_verifier")).toBe("pkce-verifier");
   });
 
   it("acepta sólo returnTo relativo seguro", () => {
