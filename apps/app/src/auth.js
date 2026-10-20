@@ -87,11 +87,12 @@ export async function createGoogleAuthorization({ clientId, redirectUri, returnT
   return { url: url.toString(), state: { state, verifier, nonce, returnTo: validReturnTo(returnTo), expiresAt: Date.now() + 10 * 60 * 1000 } };
 }
 
-export async function exchangeGoogleCode({ code, clientId, clientSecret, redirectUri, fetcher = fetch }) {
+export async function exchangeGoogleCode({ code, clientId, clientSecret, redirectUri, codeVerifier, fetcher = fetch }) {
+  if (typeof codeVerifier !== "string" || !codeVerifier) throw new Error("Falta el verificador PKCE.");
   const response = await fetcher(GOOGLE_TOKEN_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
+    body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, code_verifier: codeVerifier, grant_type: "authorization_code" }),
   });
   if (!response.ok) throw new Error("Google no aceptó el código de acceso.");
   const body = await response.json();

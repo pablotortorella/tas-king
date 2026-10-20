@@ -229,9 +229,12 @@ solo por escala, seguridad, retención o cadencia comprobadas.
 - **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
   producción. Desde 2026-09-23, `staging.homesuite.info` está asociado al
   Worker aislado `homesuite-app-staging`, con la D1 exclusiva
-  `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`). Tiene
-  un `SESSION_SECRET` exclusivo, almacenado fuera de Git; aún no tiene cliente
-  OAuth ni sus secretos de Google. `qa.homesuite.info` sigue sin uso.
+  `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`). Desde
+  2026-10-16 tiene cliente OAuth `HomeSuite Staging`; `GOOGLE_CLIENT_SECRET` y
+  `SESSION_SECRET` son secretos cifrados fuera de Git, mientras el client ID
+  público se versiona en la configuración de staging. El login real fue
+  verificado con una cuenta Google contra la versión
+  `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`. `qa.homesuite.info` sigue sin uso.
   El staging existente de TasKing es propio de la aplicación anterior; no
   equivale a este staging de HomeSuite.
 - **Sitio público:** revisión visual local primero; tras aprobación, pruebas,
@@ -381,10 +384,10 @@ flujo de invitaciones, no a la activación básica del dominio.
 1. ✅ Completar activación de la zona, Universal SSL y DNSSEC.
 2. ✅ Crear `apps/site` y desplegar la landing en `workers.dev`.
 3. ✅ Asociar apex y `www` a `homesuite-site`; HTTPS y redirección verificados.
-4. Crear el esqueleto de `apps/app` sin mover todavía TasKing.
-5. Crear `homesuite-app-staging` y asociar `staging.homesuite.info`.
-6. Crear recursos staging y cliente OAuth staging.
-7. Validar shell, sesión e infraestructura en staging.
+4. ✅ Crear el esqueleto de `apps/app` sin mover todavía TasKing.
+5. ✅ Crear `homesuite-app-staging` y asociar `staging.homesuite.info`.
+6. ✅ Crear recursos staging y cliente OAuth staging.
+7. ✅ Validar shell, sesión e infraestructura en staging.
 8. Crear recursos y cliente OAuth de producción.
 9. Asociar `app.homesuite.info` a `homesuite-app`.
 10. Migrar TasKing a `/tareas` sin retirar su URL actual.

@@ -137,7 +137,7 @@ app.get("/auth/callback", async (c) => {
   }
   try {
     const redirectUri = `${new URL(c.req.url).origin}/auth/callback`;
-    const tokens = await exchangeGoogleCode({ code, clientId: config.clientId, clientSecret: config.clientSecret, redirectUri });
+    const tokens = await exchangeGoogleCode({ code, clientId: config.clientId, clientSecret: config.clientSecret, redirectUri, codeVerifier: state.verifier });
     const identity = await validateGoogleIdToken({ idToken: tokens.id_token, audience: config.clientId, nonce: state.nonce });
     const user = await upsertGoogleUser(c.env.DB, identity);
     const session = await createSession(c.env.DB, { userId: user.id, secret: config.sessionSecret });
