@@ -28,4 +28,4 @@
 - [x] 5.1 Documentar clases de datos, retención, exportación, eliminación y bloqueos previos a producción.
 - [x] 5.2 Ejecutar suites de HomeSuite, E2E, OpenSpec strict, dry-run y escaneo de secretos.
 - [x] 5.3 Desplegar a staging sin crear datos financieros, verificar límites, cron, observabilidad y esquema.
-- [ ] 5.4 Actualizar estado e infraestructura con SHA, Version ID, backup y resultado del restore drill; abrir PR apilado.
+- [x] 5.4 Actualizar estado e infraestructura con SHA, Version ID, backup y resultado del restore drill; abrir PR apilado.

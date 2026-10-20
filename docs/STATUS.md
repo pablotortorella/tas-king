@@ -42,7 +42,8 @@
 - Desplegado desde SHA `a0d9155` como versión
   `cff2c319-b514-483f-aa49-c0b29e6b2169`. `0003` figura aplicada, existen las
   ocho tablas financieras, sus conteos siguen en cero y no hay violaciones de
-  foreign keys. Producción no fue creada ni modificada.
+  foreign keys. El PR apilado es el #71, sobre #68. Producción no fue creada ni
+  modificada.
 - La política de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md) mantiene bloqueados
   los datos reales y producción hasta contar con exportación/eliminación de
   producto, backup externo, restore drill productivo y credenciales rotadas.
