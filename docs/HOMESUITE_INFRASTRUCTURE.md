@@ -1,8 +1,8 @@
 # HomeSuite — infraestructura, dominios y repositorio
 
-**Estado:** sitio público en producción; app autenticada y migración de TasKing pendientes
+**Estado:** sitio público en producción; app autenticada operativa en staging
 
-**Fecha:** 2026-09-21
+**Fecha:** 2026-10-20
 
 ## Objetivo
 
@@ -51,7 +51,7 @@ Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
 - En ese momento, el apex devolvía 525 por el parking de GoDaddy proxificado.
   No se habilitó HSTS ni se aplicó una solución insegura como el modo Flexible.
 
-### Estado operativo actual (2026-09-21)
+### Snapshot operativo posterior a la landing (2026-09-21)
 
 - `homesuite.info` y `www.homesuite.info` son Custom Domains de `homesuite-site`.
   El Worker se desplegó desde `main` SHA `f8cb9b6`, Version ID
@@ -69,6 +69,19 @@ Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
 
 Este estado es un snapshot, no una fuente dinámica. Antes de otra modificación
 se debe volver a comprobar DNS, certificados y Worker.
+
+### Estado operativo actual (2026-10-20)
+
+- `homesuite-app-staging` sirve `staging.homesuite.info` con OAuth Google, sesión
+  D1, espacios, membresías e invitaciones reales.
+- D1 sigue aislada en `homesuite-app-db-staging`; no hubo migraciones nuevas en
+  el despliegue de este corte.
+- La versión `47d429e5-3bc8-4bcb-8be8-676f8a4d05e5`, desplegada desde
+  `feature/homesuite-authenticated-spaces` SHA `9e4d9b5`, añade protección CSRF,
+  recorridos autenticados y Workers Observability.
+- `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
+  se verificaron públicamente. El recorrido manual con dos cuentas Google sigue
+  pendiente; producción no fue creada ni modificada.
 
 ## Mapa de hostnames
 
@@ -270,6 +283,8 @@ recursos independientes. `qa.homesuite.info` no tiene uso asignado por ahora.
 - Datos sintéticos o explícitamente autorizados; no se copia producción por
   conveniencia.
 - Todo cambio se prueba aquí antes de producción.
+- Workers Observability habilitado; los logs técnicos no incluyen identidad,
+  secretos ni payloads de producto.
 
 ### Producción
 
@@ -302,6 +317,10 @@ La cookie de producción será:
 
 El sitio público no recibe esa cookie. El login admite un `returnTo` relativo y
 validado; nunca una URL arbitraria.
+
+Las mutaciones autenticadas requieren un token CSRF firmado ligado a la sesión y
+un `Origin` o `Referer` del mismo origen. `SameSite=Lax` se considera defensa
+adicional, no reemplazo de esta validación.
 
 ## DNS, certificados y seguridad de zona
 
@@ -405,13 +424,11 @@ El checkout principal sigue reservado para `main`. Cada cambio usa rama y worktr
 La raíz del monorepo ofrecerá scripts explícitos, cuando existan:
 
 ```text
-npm run dev:site
-npm run dev:app
-npm run test
-npm run test:e2e
-npm run deploy:site
-npm run deploy:app:staging
-npm run deploy:app
+npm run dev:homesuite-app
+npm run test:homesuite-app
+npm run test:homesuite-app:integration
+npm run test:e2e:homesuite-app
+npm run deploy:homesuite-app:staging
 ```
 
 El deploy de una unidad no debe publicar silenciosamente otra. Los cambios que
@@ -498,6 +515,7 @@ La base de dominio estará resuelta cuando:
 - [Visión de HomeSuite](HOMESUITE_VISION.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
 - [MVP de Cuentas Claras](HOMESUITE_CUENTAS_CLARAS_MVP.md)
+- [Contrato de HomeSuite App](HOMESUITE_APP_PLATFORM.md)
 - [Cloudflare: configuración DNS primaria](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/)
 - [Cloudflare: Custom Domains de Workers](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 - [Cloudflare: Universal SSL](https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/)

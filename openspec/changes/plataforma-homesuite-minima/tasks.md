@@ -36,6 +36,6 @@
 
 ## 6. Documentación e integración
 
-- [ ] 6.1 Actualizar infraestructura, guía de desarrollo y estado con recursos realmente creados, sin secretos.
-- [ ] 6.2 Documentar el contrato de plataforma y las decisiones de sesión, identidad, privacidad y roles.
+- [x] 6.1 Actualizar infraestructura, guía de desarrollo y estado con recursos realmente creados, sin secretos.
+- [x] 6.2 Documentar el contrato de plataforma y las decisiones de sesión, identidad, privacidad y roles.
 - [ ] 6.3 Revisar diff, validar OpenSpec strict, ejecutar las pruebas aplicables y abrir PR.

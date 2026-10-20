@@ -1,6 +1,6 @@
 # Estado de Implementación — FUN TasKing! v2.3.0
 
-**Última actualización**: 2026-09-21
+**Última actualización**: 2026-10-20
 **Producción registrada**: v2.3.0, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
@@ -15,12 +15,14 @@
 - Publicación inicial desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. Las landings del PR #52 se publicaron desde `main` SHA `45f5222`, Version ID `cc65ff3f-6747-41d3-98e0-c0b3742b81b9`. El PR #56 renombró Gastos a Cuentas Claras y se publicó desde `main` SHA `aef6306`, Version ID `76bdcbe9-3a69-403b-a1e7-e327528ec17b`; CI, las verificaciones específicas del sitio y la comprobación pública aprobaron. El favicon del sitio usa la casita de HomeSuite con el techo coral por delante.
 - `staging.homesuite.info` quedó asociado el 2026-09-23 a `homesuite-app-staging`, aislado del sitio público y de TasKing. Usa D1 exclusiva `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`) con las migraciones `0001_platform` y `0002_sessions`. El 2026-10-16 quedaron configurados el cliente OAuth `HomeSuite Staging`, el client ID público versionado y `GOOGLE_CLIENT_SECRET`/`SESSION_SECRET` como secretos cifrados fuera de Git. HTTPS, `/healthz`, autorización Google, callback, sesión y logout fueron verificados con una cuenta real en la versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`. `qa.homesuite.info` continúa sin uso. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md#decisión-para-el-sitio-público-y-la-futura-app-2026-09-21).
 
-### ⚠️ HomeSuite App: OAuth real operativo en staging — 2026-10-16
+### ⚠️ HomeSuite App: plataforma colaborativa en staging — 2026-10-20
 
 - PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
 - El primer login real detectó que el flujo generaba el desafío PKCE pero omitía `code_verifier` al canjear el código. El fix lo envía desde el estado firmado y agrega una regresión específica; 12 pruebas unitarias y 9 integraciones D1 pasan. Se desplegó desde `fd14035` como versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`, y Pablo confirmó login y sesión con su cuenta Google. Sigue pendiente el recorrido completo con dos cuentas, espacios e invitaciones. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
-- Próximo corte preparado en `feature/homesuite-authenticated-spaces`: rutas reales de creación/renombre, selección, invitación/cancelación y aceptación/rechazo protegidas por cookie de sesión; 12 pruebas unitarias y 12 integraciones antes del hardening adicional. Aún no se despliega: requiere revisión, protección CSRF, observabilidad y validación en staging.
+- `feature/homesuite-authenticated-spaces` incorpora rutas reales de creación/renombre, selección, invitación/cancelación y aceptación/rechazo. Toda mutación autenticada exige origen confiable y token CSRF firmado ligado a sesión; staging tiene observabilidad estructurada y `X-Request-Id`, sin registrar identidad ni payloads.
+- Verificación: 15 pruebas unitarias, 14 integraciones D1 y 3 E2E pasan. El E2E cubre dos identidades sintéticas, privacidad antes de aceptar, cancelación, aceptación/rechazo y aislamiento; las integraciones cubren roles, auditoría y rechazo CSRF.
+- Desplegado desde SHA `9e4d9b5` como versión `47d429e5-3bc8-4bcb-8be8-676f8a4d05e5`. `/healthz`, HTTPS, cabeceras, request ID y redirect OAuth con PKCE se verificaron. Falta únicamente la aceptación manual completa con dos cuentas Google reales; producción permanece intacta.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 

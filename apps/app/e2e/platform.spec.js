@@ -37,3 +37,27 @@ test("una invitación se puede rechazar sin crear membresía", async ({ page }) 
   await page.getByRole("button", { name: "Rechazar" }).click();
   await expect(page.getByText("No tenés invitaciones pendientes.")).toBeVisible();
 });
+
+test("sólo el titular puede cancelar una invitación pendiente", async ({ request }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const owner = `owner-${suffix}@example.test`;
+  const invitee = `invitee-${suffix}@example.test`;
+  const ownerHeaders = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": owner };
+
+  const created = await request.post("/api/local/spaces", { headers: ownerHeaders, data: { name: `Grupo ${suffix}` } });
+  expect(created.status()).toBe(201);
+  const space = await created.json();
+  const invited = await request.post(`/api/local/spaces/${space.id}/invitations`, { headers: ownerHeaders, data: { email: invitee } });
+  expect(invited.status()).toBe(201);
+  const invitation = await invited.json();
+
+  const denied = await request.delete(`/api/local/spaces/${space.id}/invitations/${invitation.id}`, {
+    headers: { "X-HomeSuite-Dev-Email": invitee },
+  });
+  expect(denied.status()).toBe(403);
+
+  const canceled = await request.delete(`/api/local/spaces/${space.id}/invitations/${invitation.id}`, { headers: ownerHeaders });
+  expect(canceled.status()).toBe(204);
+  const invitations = await request.get(`/api/local/spaces/${space.id}/invitations`, { headers: ownerHeaders });
+  await expect(invitations.json()).resolves.toEqual([{ id: invitation.id, email: invitee, status: "canceled" }]);
+});

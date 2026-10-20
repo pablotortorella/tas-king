@@ -135,7 +135,7 @@ app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 
 function localUser(c) {
   if (c.env?.DEV_LOCAL_MODE !== "true") return null;
-  return c.req.query("as") || c.env.DEV_LOCAL_EMAIL || c.req.header("X-HomeSuite-Dev-Email") || null;
+  return c.req.query("as") || c.req.header("X-HomeSuite-Dev-Email") || c.env.DEV_LOCAL_EMAIL || null;
 }
 
 app.get("/api/me", async (c) => {
