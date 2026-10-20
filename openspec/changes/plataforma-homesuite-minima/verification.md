@@ -12,8 +12,8 @@ Ejecutada el 2026-10-20 sobre `feature/homesuite-authenticated-spaces`:
 
 ## Staging
 
-- SHA desplegado: `9e4d9b5`;
-- Version ID: `47d429e5-3bc8-4bcb-8be8-676f8a4d05e5`;
+- SHA desplegado: `30ed752`;
+- Version ID: `cf49271c-7cd3-4ae3-a9b9-ad38b45bf3b2`;
 - D1: sin migraciones pendientes;
 - `/healthz`: 200 con `homesuite-app`;
 - raíz: 200 por HTTPS con CSP, COOP, Permissions Policy, Referrer Policy,

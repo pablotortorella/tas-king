@@ -76,8 +76,8 @@ se debe volver a comprobar DNS, certificados y Worker.
   D1, espacios, membresías e invitaciones reales.
 - D1 sigue aislada en `homesuite-app-db-staging`; no hubo migraciones nuevas en
   el despliegue de este corte.
-- La versión `47d429e5-3bc8-4bcb-8be8-676f8a4d05e5`, desplegada desde
-  `feature/homesuite-authenticated-spaces` SHA `9e4d9b5`, añade protección CSRF,
+- La versión `cf49271c-7cd3-4ae3-a9b9-ad38b45bf3b2`, desplegada desde
+  `feature/homesuite-authenticated-spaces` SHA `30ed752`, añade protección CSRF,
   recorridos autenticados y Workers Observability.
 - `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
   se verificaron públicamente. El recorrido manual con dos cuentas Google sigue
