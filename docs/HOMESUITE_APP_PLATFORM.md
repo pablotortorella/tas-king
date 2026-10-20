@@ -117,6 +117,12 @@ OAuth y Version ID. La prueba manual pendiente requiere dos cuentas Google:
 4. recibe otra invitación, la acepta y abre el mismo espacio;
 5. una tercera identidad o una cuenta no invitada no puede abrirlo.
 
+El corte de preparación financiera se desplegó el 2026-10-20 desde `a0d9155`
+como Version ID `cff2c319-b514-483f-aa49-c0b29e6b2169`. Se comprobaron health,
+cabeceras, request ID, rechazo 413, OAuth con PKCE, cron, ambos rate limiters,
+migración `0003`, ocho tablas financieras vacías y cero violaciones de foreign
+keys. Producción no fue creada ni modificada.
+
 ## Pendiente antes de datos financieros reales
 
 - endpoints transaccionales que consuman las invariantes e idempotencia ya

@@ -82,10 +82,14 @@ se debe volver a comprobar DNS, certificados y Worker.
 - `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
   se verificaron públicamente. El recorrido manual con dos cuentas Google sigue
   pendiente; producción no fue creada ni modificada.
-- La siguiente versión de staging añade dos bindings de Rate Limiting, cron
-  diario y migración `0003_financial_foundations`. Su deploy respalda D1 antes de
-  migrar. El primer export previo a `0003` pasó un restore drill local aislado;
-  ver [recuperación](HOMESUITE_RECOVERY.md).
+- La versión `cff2c319-b514-483f-aa49-c0b29e6b2169`, desplegada desde SHA
+  `a0d9155`, añadió dos bindings de Rate Limiting, cron diario y la migración
+  `0003_financial_foundations`. El deploy creó primero el backup UTC
+  `20261020T053821Z`; su SQL de 3210 bytes pasó el restore drill D1 local.
+- Staging tiene las ocho tablas financieras nuevas, todavía con cero libros,
+  movimientos, revisiones y eventos. `PRAGMA foreign_key_check` no devolvió
+  violaciones. Producción no fue creada ni modificada. Ver
+  [recuperación](HOMESUITE_RECOVERY.md).
 
 ## Mapa de hostnames
 

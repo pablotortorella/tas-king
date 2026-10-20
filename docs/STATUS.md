@@ -24,6 +24,29 @@
 - Verificación: 15 pruebas unitarias, 14 integraciones D1 y 3 E2E pasan. El E2E cubre dos identidades sintéticas, privacidad antes de aceptar, cancelación, aceptación/rechazo y aislamiento; las integraciones cubren roles, auditoría y rechazo CSRF.
 - Desplegado desde SHA `30ed752` como versión `cf49271c-7cd3-4ae3-a9b9-ad38b45bf3b2`. `/healthz`, HTTPS, cabeceras, request ID y redirect OAuth con PKCE se verificaron. Falta únicamente la aceptación manual completa con dos cuentas Google reales; producción permanece intacta.
 
+### Cuentas Claras: base segura para datos financieros — 2026-10-20
+
+- `feature/homesuite-financial-readiness` añade el esquema `0003` para libros,
+  participantes, movimientos, componentes, revisiones inmutables, eventos e
+  idempotencia. Los importes usan enteros en unidad menor y las invariantes de
+  gasto, ingreso, transferencia, reparto y suma cero tienen pruebas propias.
+- El Worker rechaza cuerpos mutables mayores a 16 KiB, usa Rate Limiting separado
+  para OAuth y mutaciones, y ejecuta un cron diario que vence invitaciones y
+  purga sesiones antiguas sin tocar historia financiera.
+- El deploy de staging creó primero el backup UTC `20261020T053821Z`; el SQL de
+  3210 bytes pasó `quick_check`, foreign keys y tablas esenciales en una D1 local
+  aislada. La cadena operativa queda fijada como backup → migración → Worker.
+- Verificación: 23 unitarias, 22 integraciones D1, 3 E2E, ambos OpenSpec strict,
+  dry-run de Wrangler y escaneo de secretos. En staging, health y cabeceras
+  responden, 16 KiB + 1 devuelve 413 y OAuth conserva PKCE.
+- Desplegado desde SHA `a0d9155` como versión
+  `cff2c319-b514-483f-aa49-c0b29e6b2169`. `0003` figura aplicada, existen las
+  ocho tablas financieras, sus conteos siguen en cero y no hay violaciones de
+  foreign keys. Producción no fue creada ni modificada.
+- La política de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md) mantiene bloqueados
+  los datos reales y producción hasta contar con exportación/eliminación de
+  producto, backup externo, restore drill productivo y credenciales rotadas.
+
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
 **Version ID:** `e20ace17-9736-4c7a-b1e0-13138d4074de` · **SHA:** `fb8eb81` · producción pasó de v2.2.1 a v2.3.0.

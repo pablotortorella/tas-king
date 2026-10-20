@@ -32,9 +32,11 @@ directorio temporal nuevo, nunca `--remote`, y verifica:
 D1 no autoriza `PRAGMA integrity_check`; `quick_check` es la comprobación de
 integridad compatible usada deliberadamente.
 
-El 2026-10-20 se exportó staging antes de la migración `0003`, se obtuvo un SQL
-de 3210 bytes y el restore drill terminó correctamente. La ruta local y el
-bookmark no se versionan.
+El 2026-10-20 el deploy exportó staging antes de la migración `0003`. El backup
+UTC `20261020T053821Z` produjo un SQL de 3210 bytes con SHA-256
+`bcce634f4274528b9a94b12381181c955da71d7a204a6731cc0450ba8657061c`; el
+restore drill terminó correctamente. La ruta local y el bookmark no se
+versionan.
 
 ## Deploy de staging
 
