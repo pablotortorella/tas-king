@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-19
+**Última actualización**: 2026-10-23
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -162,6 +162,7 @@ importación en un solo change.
 | — | 🔄 Sincronización de comentarios, checklists y borrados | 2026-09-15 implementada (ADR-016, migración 0015); llegó a producción el 2026-09-18 junto con la v2.3.0 |
 | — | 🚦 Migrar antes de desplegar el Worker | 2026-09-18 — los scripts desplegaban antes de migrar, contra lo que pedía la documentación desde el 15/09. Con la 0015 sin aplicar en producción eso abría una ventana de 500. `test/deploy-scripts.test.js` verifica el orden |
 
+| — | 📱 Tip diario completo en móvil, etiquetas en tarjeta nueva y teclado en checklists | 2026-10-23 — v2.3.1 (PRs #65, #66 y #67). `100dvh` en el `body`; `draftLabels` con el patrón de `draftGoals`; Tab/Enter/Backspace en ítems de checklist (ADR-014). Falta auditar el resto de los campos del modal con el mismo criterio de teclado. Ver `docs/STATUS.md` |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
@@ -193,9 +194,6 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟠 Alta prioridad
 
-- **Tip diario se recorta en móvil** (pedido de Pablo, 2026-09-22) — al usar TasKing en pantalla móvil, la franja fija del tip puede quedar por debajo del viewport y su texto no llega a leerse. Reproducir en viewport móvil real, revisar la relación entre contenedor principal, altura dinámica del navegador y `tip-daily`/footer; corregir sin truncar el consejo ni ocultar contenido accesible.
-- **Etiquetas en tarjetas nuevas** (pedido de Pablo, 2026-09-11) — 🟢 esfuerzo chico. Hoy las etiquetas solo se pueden asignar reabriendo una tarjeta ya creada: el selector de etiquetas del modal hace `POST /api/cards/:id/labels/:labelId` al instante, y en una tarjeta nueva todavía no hay `:id`. Los objetivos ya resolvieron este mismo problema con un borrador en memoria (`draftGoals` en `public/js/card-modal.js`): se acumulan los ids elegidos mientras se redacta y se vinculan después de crear la tarjeta (paso 5 del guardado). La salida esperada es la simétrica — un `draftLabels` con el mismo patrón, más el picker de etiquetas visible en modo borrador (hoy `renderCardLabels`/el picker asumen `editingId`). Sin cambios de backend ni de esquema.
-- **Tab/Enter estándar en toda la interfaz de tarjetas**: navegación por teclado en el modal — Tab entre campos, Enter confirma, Esc cierra. Incluye checklists (Tab entre ítems, Enter agrega el siguiente, Backspace en ítem vacío lo borra). Criterios ya documentados en ADR-014; falta auditar que se cumplan en todos los campos.
 - **Onboarding para usuarios nuevos**: primer login → tablero vacío sin guía. Opciones: estado vacío con instrucciones ("Creá tu primera tarjeta con N"), tarjetas de ejemplo precargadas, o mini-tour de tooltips.
 
 ## 🟡 Media prioridad
@@ -258,6 +256,7 @@ _Sin ítems pendientes — ver ✅ Completado._
 ### 🟢 Bajo — limpieza
 
 - `deniedPage()` (`src/routes/auth.js`) interpola el email en HTML sin escapar — riesgo real bajísimo (viene verificado por Google), pero escapar cuesta una línea.
+- `uid()` (`public/js/core/dom.js`) puede colisionar: timestamp en ms + 5 caracteres aleatorios, y `test/frontend-dom.test.js` (500 llamadas seguidas) falló una vez en la v2.3.1 (chance ~0,2 %). Usar `crypto.randomUUID()` o un contador.
 - `Logger("debug")` nunca funciona: `this.levels[level] || 1` — `debug` vale 0 (falsy) y cae a `info`.
 - `DONE_COLUMN` en `src/constants.js` es código muerto desde que las columnas son dinámicas.
 - `checklists.js` monkey-patchea `c.req.param` para reusar `cardWithAccess` — frágil; refactor honesto: `cardWithAccessById(db, cardId, email)`.
