@@ -16,6 +16,24 @@ function draft(type, totalMinor, a, b, overrides = {}) {
 }
 
 describe("libro financiero compartido", () => {
+  it("separa saldos en monedas sudamericanas y MXN sin conversión", async () => {
+    const owner = await ensureLocalUser(env.DB, "ledger-currencies@example.test");
+    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "Monedas", defaultCurrency: "CLP" });
+    const member = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Beto" });
+    const ownId = (await readLedger(env.DB, { spaceId: space.id, userId: owner.id })).participants.find(p => p.linkedUserId === owner.id).id;
+    await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: draft("expense", 1000, ownId, member.id, { currency: "CLP" }), idempotencyKey: crypto.randomUUID() });
+    await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: draft("expense", 2500, ownId, member.id, { currency: "MXN" }), idempotencyKey: crypto.randomUUID() });
+    const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    expect(data.ledger.default_currency).toBe("CLP");
+    expect(data.balances).toHaveLength(4);
+    expect(data.balances).toEqual(expect.arrayContaining([
+      { currency: "CLP", participantId: ownId, amountMinor: 500 },
+      { currency: "CLP", participantId: member.id, amountMinor: -500 },
+      { currency: "MXN", participantId: ownId, amountMinor: 1250 },
+      { currency: "MXN", participantId: member.id, amountMinor: -1250 },
+    ]));
+  });
+
   it("crea libro y participantes, y vincula una invitación sin mover saldos", async () => {
     const owner = await ensureLocalUser(env.DB, "ledger-owner@example.test");
     const invited = await ensureLocalUser(env.DB, "ledger-invited@example.test");

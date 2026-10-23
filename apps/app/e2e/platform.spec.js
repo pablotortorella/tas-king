@@ -9,6 +9,27 @@ test("una sesión local usa el formulario autenticado con CSRF real", async ({ p
   await expect(page.getByRole("heading", { name: `Casa autenticada ${suffix}` })).toBeVisible();
 });
 
+test("la segunda cuenta entra directo a sus invitaciones pendientes", async ({ page, browser }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const invitee = `invitee-${suffix}@example.test`;
+  await page.goto(`/api/local/session?as=owner-${suffix}%40example.test`);
+  await page.getByLabel("Nombre", { exact: true }).fill(`Casa invitación ${suffix}`);
+  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.getByLabel("Invitar por email").fill(invitee);
+  await page.getByRole("button", { name: "Invitar" }).click();
+
+  const invitedContext = await browser.newContext();
+  try {
+    const invitedPage = await invitedContext.newPage();
+    await invitedPage.goto(new URL(`/api/local/session?as=${encodeURIComponent(invitee)}`, page.url()).href);
+    await expect(invitedPage).toHaveURL(/\/invitations$/u);
+    await invitedPage.getByRole("button", { name: "Aceptar invitación" }).click();
+    await expect(invitedPage.getByRole("heading", { name: `Casa invitación ${suffix}` })).toBeVisible();
+  } finally {
+    await invitedContext.close();
+  }
+});
+
 test("registra, corrige y anula un gasto desde el teléfono", async ({ page }) => {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   await page.setViewportSize({ width: 390, height: 844 });

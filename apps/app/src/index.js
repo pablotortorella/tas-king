@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
-import { CURRENCY_MINOR_UNITS, FinancialValidationError } from "./finance.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError } from "./finance.js";
 import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
 import { escapeHtml, ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm, renderLedgerOverview } from "./ledger-ui.js";
 import { runMaintenance } from "./maintenance.js";
@@ -217,7 +217,8 @@ app.get("/api/local/session", async (c) => {
   const user = await ensureLocalUser(c.env.DB, email);
   const session = await createSession(c.env.DB, { userId: user.id, secret });
   setCookie(c, sessionCookie(session.token, true));
-  return c.redirect("/spaces/new", 303);
+  const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
+  return c.redirect(invitation ? "/invitations" : "/spaces/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {
@@ -381,7 +382,7 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${currency}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
