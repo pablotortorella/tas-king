@@ -80,6 +80,15 @@ npm run dev                 # Ver cambios en tiempo real → localhost:8787
 npm run test:watch          # Tests se re-ejecutan al guardar
 ```
 
+Para HomeSuite App, que tiene Worker y D1 propios:
+
+```bash
+npm run dev:homesuite-app
+npm run test:homesuite-app
+npm run test:homesuite-app:integration
+npm run test:e2e:homesuite-app
+```
+
 ### Estructura modular del backend
 
 El código backend (`src/`) está organizado por responsabilidad (~100-150 líneas cada archivo, manejable):
@@ -252,6 +261,21 @@ npm run deploy:staging
 ```
 
 Staging es único: el último deploy reemplaza al anterior. Antes de desplegar, anotar rama y SHA; no se despliegan dos tareas en paralelo. Si otra rama cambia `main` después de esta validación, rebasar, volver a probar y validar la integración resultante.
+
+HomeSuite App usa un despliegue independiente, que aplica primero sus migraciones
+D1 y no toca TasKing ni `homesuite-site`:
+
+```bash
+git status -sb
+git rev-parse --short HEAD
+npm run deploy:homesuite-app:staging
+
+curl -fsS https://staging.homesuite.info/healthz
+```
+
+Registrar el Version ID y comprobar raíz, cabeceras, `X-Request-Id` e inicio
+OAuth. La prueba de colaboración real usa dos cuentas Google en ventanas
+separadas y nunca datos financieros reales.
 
 Una vez integrada la rama, actualizar el checkout de `main`, ejecutar `npm run test:all`, desplegar **ese SHA de `main`** a staging y hacer el smoke test final. Así producción se promueve desde el mismo código que se revisó.
 

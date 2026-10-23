@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
+import { createCsrfToken } from "../src/csrf.js";
 import { createSession, currentSession, revokeSession } from "../src/sessions.js";
 
 describe("D1: invariantes de espacios", () => {
@@ -96,5 +97,116 @@ describe("D1: sesiones de HomeSuite", () => {
     const response = await app.request("https://app.test/auth/callback?code=untrusted&state=other", undefined, authEnv);
     expect(response.status).toBe(400);
     expect(await response.text()).toContain("No pudimos verificar el acceso");
+  });
+});
+
+
+let realIdentityIndex = 0;
+const REAL_SESSION_SECRET = "r".repeat(32);
+
+async function realIdentity(emailPrefix) {
+  realIdentityIndex += 1;
+  const id = `u_real_${realIdentityIndex}`;
+  const email = `${emailPrefix}-${realIdentityIndex}@example.test`;
+  await env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES (?, ?, ?, ?)").bind(id, `google-${id}`, email, emailPrefix).run();
+  const session = await createSession(env.DB, { userId: id, secret: REAL_SESSION_SECRET });
+  return {
+    id,
+    email,
+    context: { DB: env.DB, SESSION_SECRET: REAL_SESSION_SECRET },
+    headers: { Cookie: `__Host-homesuite_session=${encodeURIComponent(session.token)}` },
+    csrfToken: await createCsrfToken({ sessionId: session.id, secret: REAL_SESSION_SECRET }),
+  };
+}
+
+function authenticatedRequest(identity, url, init = {}) {
+  const method = init.method ?? "GET";
+  const mutationHeaders = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+    ? { Origin: new URL(url).origin, "X-CSRF-Token": identity.csrfToken }
+    : {};
+  return app.request(url, { ...init, headers: { ...identity.headers, ...mutationHeaders, ...(init.headers ?? {}) } }, identity.context);
+}
+
+describe("recorrido web con sesión real", () => {
+  it("rechaza mutaciones sin token CSRF o desde otro origen", async () => {
+    const owner = await realIdentity("csrf-real");
+    const withoutToken = await app.request("https://app.test/spaces", {
+      method: "POST",
+      headers: { ...owner.headers, Origin: "https://app.test", "Content-Type": "application/x-www-form-urlencoded" },
+      body: "name=No+crear",
+    }, owner.context);
+    expect(withoutToken.status).toBe(403);
+
+    const crossOrigin = await app.request("https://app.test/spaces", {
+      method: "POST",
+      headers: { ...owner.headers, Origin: "https://evil.example", "X-CSRF-Token": owner.csrfToken, "Content-Type": "application/x-www-form-urlencoded" },
+      body: "name=Tampoco+crear",
+    }, owner.context);
+    expect(crossOrigin.status).toBe(403);
+
+    const spaces = await env.DB.prepare("SELECT COUNT(*) AS count FROM memberships WHERE user_id = ?").bind(owner.id).first();
+    expect(spaces.count).toBe(0);
+  });
+
+  it("incluye un token CSRF firmado en los formularios autenticados", async () => {
+    const owner = await realIdentity("forms-real");
+    const response = await authenticatedRequest(owner, "https://app.test/spaces/new");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('name="_csrf"');
+    expect(response.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("crea y renombra un espacio exclusivamente para su titular", async () => {
+    const owner = await realIdentity("zelda-real");
+    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Casa+Hyrule" });
+    expect(created.status).toBe(303);
+    const location = created.headers.get("location");
+    expect(location).toMatch(/^\/spaces\/space_/);
+    const page = await authenticatedRequest(owner, `https://app.test${location}`);
+    expect(await page.text()).toContain("Casa Hyrule");
+    const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
+    expect(renamed.status).toBe(303);
+    const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE space_id = ? ORDER BY created_at DESC LIMIT 1").bind(location.split("/").at(-1)).first();
+    expect(audit.action).toBe("space_renamed");
+    const outsider = await realIdentity("ganon-real");
+    const forbidden = await authenticatedRequest(outsider, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Nope" });
+    expect(forbidden.status).toBe(403);
+  });
+
+  it("mantiene la invitación privada, acepta una vez y aísla a terceras personas", async () => {
+    const owner = await realIdentity("link-real");
+    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Viaje+Kakariko" });
+    const location = created.headers.get("location");
+    const invitee = await realIdentity("zelda-invite");
+    const invited = await authenticatedRequest(owner, `https://app.test${location}/invitations`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `email=${encodeURIComponent(invitee.email)}` });
+    expect(invited.status).toBe(303);
+    const invitationPage = await authenticatedRequest(invitee, "https://app.test/invitations");
+    const invitationHtml = await invitationPage.text();
+    expect(invitationHtml).toContain("Viaje Kakariko");
+    expect(invitationHtml).toContain("link-real");
+    expect(invitationHtml).not.toContain("Participantes");
+    const invitation = await env.DB.prepare("SELECT id FROM invitations WHERE space_id = ? AND invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const accepted = await authenticatedRequest(invitee, `https://app.test/invitations/${invitation.id}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" });
+    expect(accepted.headers.get("location")).toBe(location);
+    const joined = await authenticatedRequest(invitee, `https://app.test${location}`);
+    expect(joined.status).toBe(200);
+    const outsider = await realIdentity("outsider-real");
+    const hidden = await authenticatedRequest(outsider, `https://app.test${location}`);
+    expect(hidden.status).toBe(404);
+  });
+
+  it("permite al titular cancelar una pendiente y prohíbe hacerlo a otra persona", async () => {
+    const owner = await realIdentity("sam-real");
+    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Comarca" });
+    const location = created.headers.get("location");
+    const invitee = await realIdentity("frodo-real");
+    await authenticatedRequest(owner, `https://app.test${location}/invitations`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `email=${encodeURIComponent(invitee.email)}` });
+    const invitation = await env.DB.prepare("SELECT id FROM invitations WHERE space_id = ? AND invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const denied = await authenticatedRequest(invitee, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });
+    expect(denied.status).toBe(403);
+    const canceled = await authenticatedRequest(owner, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });
+    expect(canceled.status).toBe(303);
+    const state = await env.DB.prepare("SELECT status FROM invitations WHERE id = ?").bind(invitation.id).first();
+    expect(state.status).toBe("canceled");
   });
 });

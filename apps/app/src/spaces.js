@@ -59,3 +59,16 @@ export async function ensureLocalUser(db, email) {
   await db.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES (?, ?, ?, ?)").bind(id, `local:${normalized}`, normalized, name).run();
   return { id, email: normalized, display_name: name };
 }
+
+
+export async function renameSpace(db, { spaceId, userId, name }) {
+  const spaceName = normalizeSpaceName(name);
+  if (!spaceName) throw new Error("Nombre de espacio inválido.");
+  const membership = await db.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(spaceId, userId).first();
+  if (membership?.role !== "owner") throw new Error("Sólo el titular puede renombrar el espacio.");
+  await db.batch([
+    db.prepare("UPDATE spaces SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(spaceName, spaceId),
+    db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'space_renamed', 'space', ?)").bind(createPlatformId("audit"), userId, spaceId, spaceId),
+  ]);
+  return { id: spaceId, name: spaceName };
+}
