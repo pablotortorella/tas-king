@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+test("una sesión local usa el formulario autenticado con CSRF real", async ({ page }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await page.goto(`/api/local/session?as=owner-${suffix}%40example.test`);
+  await expect(page).toHaveURL(/\/spaces\/new$/u);
+  await page.getByLabel("Nombre del espacio").fill(`Casa autenticada ${suffix}`);
+  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await expect(page.getByRole("heading", { name: "Cuentas Claras está lista." })).toBeVisible();
+});
+
 test("dos identidades crean, invitan, aceptan y quedan aisladas", async ({ page }) => {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const invitee = `invitee-${suffix}@example.test`;
