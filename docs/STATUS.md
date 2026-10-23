@@ -67,9 +67,26 @@
 - Verificación local: pruebas monetarias, integración D1 con dos identidades,
   permisos, reintentos y concurrencia; Playwright cubre gasto, corrección y
   anulación a 390 px. Esta rama no se desplegó en staging ni en producción.
-- Siguen pendientes la importación de Splitwise y la copia externa/restore drill
-  productivos descritos en [recuperación](HOMESUITE_RECOVERY.md). La rama aún no
-  habilita el uso de información financiera real.
+- En esta rama aún faltaba la importación de Splitwise. También quedan pendientes
+  la copia externa y el restore drill productivos descritos en
+  [recuperación](HOMESUITE_RECOVERY.md). No habilita datos financieros reales.
+
+### Cuentas Claras: importación Splitwise en rama apilada — 2026-10-23
+
+- `feature/homesuite-splitwise-import` añade una previsualización de CSV con
+  nombres dinámicos, movimientos válidos, incidentes por fila y saldos de origen.
+  El titular mapea participantes y decide explícitamente excluir una fila o
+  asumir la moneda predeterminada si falta ese dato.
+- La confirmación conserva lote, archivo, supuestos, filas excluidas, diferencias
+  de conciliación y efectos originales. Los lotes pendientes son invisibles para
+  el libro hasta completarse; repetir el mismo archivo no duplica dinero.
+- Los movimientos importados aparecen en la cronología, balances, exportación y
+  búsqueda libre junto con los nuevos, con origen y fila visibles. La búsqueda
+  explica coincidencias por descripción, categoría, persona, total o efecto.
+- Documentación operativa y límites en
+  [Importar Splitwise](HOMESUITE_CUENTAS_CLARAS_IMPORT.md). Esta rama todavía no
+  se desplegó. Producción y datos financieros reales siguen bloqueados por las
+  condiciones de recuperación y ciclo de vida existentes.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 

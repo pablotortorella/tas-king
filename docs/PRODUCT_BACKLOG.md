@@ -132,6 +132,12 @@ de HG-06, además de ingresos, transferencias, balances, correcciones y
 exportación. HG-03 a HG-05 y HG-07 quedan para el cambio de importación y
 búsqueda. No hay publicación productiva de Cuentas Claras.
 
+**Avance del mismo corte:** `feature/homesuite-splitwise-import`, apilada sobre
+el núcleo, implementa HG-03 a HG-05 y HG-07 con CSV, mapeo, incidentes,
+conciliación, importación idempotente y búsqueda conjunta. Falta integrar y
+validar ambas ramas en staging antes de cambiar el estado de estas historias a
+completado.
+
 ---
 
 ## ✅ Completado

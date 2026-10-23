@@ -64,7 +64,7 @@ describe("mantenimiento programado", () => {
       env.DB.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES ('maint_ledger', 'maint_space', 'COP')"),
     ]);
     const result = await runMaintenance(env.DB, { now: new Date("2026-10-20T05:00:00.000Z") });
-    expect(result).toEqual({ expiredInvitations: 1, deletedSessions: 1 });
+    expect(result).toEqual({ expiredInvitations: 1, deletedSessions: 1, deletedImportPreviews: 0, deletedPendingImports: 0 });
     expect(await env.DB.prepare("SELECT status FROM invitations WHERE id = 'old_invite'").first()).toEqual({ status: "expired" });
     expect(await env.DB.prepare("SELECT action FROM platform_audit_events WHERE entity_id = 'old_invite'").first()).toEqual({ action: "invitation_expired" });
     expect(await env.DB.prepare("SELECT id FROM expense_ledgers WHERE id = 'maint_ledger'").first()).toEqual({ id: "maint_ledger" });
