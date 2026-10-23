@@ -37,7 +37,7 @@ function validateComponents(components, participants, allowedDirections) {
   return components.map((component) => {
     if (!component || !participants.has(component.participantId)) throw new FinancialValidationError("El participante no pertenece al libro.");
     if (allowedDirections && !allowedDirections.has(component.direction)) throw new FinancialValidationError("La dirección de efectivo no corresponde al movimiento.");
-    const key = `${component.participantId}:${component.direction ?? "allocation"}`;
+    const key = allowedDirections ? `${component.participantId}:${component.direction}` : component.participantId;
     if (seen.has(key)) throw new FinancialValidationError("Un participante no puede repetirse en el mismo componente.");
     seen.add(key);
     return { ...component, amountMinor: assertMinorAmount(component.amountMinor) };
@@ -54,7 +54,11 @@ function sum(components) {
 
 function effectsFor(type, cashParties, allocations) {
   const effects = new Map();
-  const add = (participantId, amount) => effects.set(participantId, (effects.get(participantId) ?? 0) + amount);
+  const add = (participantId, amount) => {
+    const next = (effects.get(participantId) ?? 0) + amount;
+    if (!Number.isSafeInteger(next)) throw new FinancialValidationError("El saldo excede el rango monetario permitido.");
+    effects.set(participantId, next);
+  };
   if (type === "expense") {
     cashParties.forEach(component => add(component.participantId, component.amountMinor));
     allocations.forEach(component => add(component.participantId, -component.amountMinor));
@@ -89,6 +93,31 @@ export function validateEntryDraft(draft, participantIds) {
   }
 
   const effects = effectsFor(type, cashParties, allocations);
-  if (sum(effects) !== 0) throw new FinancialValidationError("Los efectos del movimiento no suman cero.");
+  if (effects.reduce((total, effect) => total + BigInt(effect.amountMinor), 0n) !== 0n) {
+    throw new FinancialValidationError("Los efectos del movimiento no suman cero.");
+  }
   return { type, currency, totalMinor, cashParties, allocations, effects };
+}
+
+export function parseMoney(value, currency) {
+  const normalized = normalizeCurrency(currency);
+  const units = normalized && CURRENCY_MINOR_UNITS[normalized];
+  if (units === undefined || typeof value !== "string" || !/^\d+(?:[.,]\d+)?$/u.test(value.trim())) {
+    throw new FinancialValidationError("Ingresá un importe válido para la moneda.");
+  }
+  const [whole, fraction = ""] = value.trim().replace(",", ".").split(".");
+  if (fraction.length > units) throw new FinancialValidationError("El importe tiene demasiados decimales para la moneda.");
+  const amount = BigInt(whole) * 10n ** BigInt(units) + BigInt(fraction.padEnd(units, "0") || "0");
+  if (amount <= 0n || amount > BigInt(Number.MAX_SAFE_INTEGER)) throw new FinancialValidationError("El importe está fuera de rango.");
+  return Number(amount);
+}
+
+export function formatMoney(amountMinor, currency) {
+  const units = CURRENCY_MINOR_UNITS[normalizeCurrency(currency)];
+  if (units === undefined || !Number.isSafeInteger(amountMinor)) throw new FinancialValidationError("Importe inválido.");
+  const absolute = BigInt(Math.abs(amountMinor));
+  const scale = 10n ** BigInt(units);
+  const whole = new Intl.NumberFormat("es-CO").format(absolute / scale);
+  const fraction = units ? `,${String(absolute % scale).padStart(units, "0")}` : "";
+  return `${amountMinor < 0 ? "−" : ""}${currency} ${whole}${fraction}`;
 }

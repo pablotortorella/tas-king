@@ -48,6 +48,29 @@
   los datos reales y producción hasta contar con exportación/eliminación de
   producto, backup externo, restore drill productivo y credenciales rotadas.
 
+### Cuentas Claras: uso cotidiano en rama de revisión — 2026-10-23
+
+- `feature/homesuite-financial-core`, apilada sobre #71, convierte cada espacio
+  nuevo en grupo con libro y participante propietario. La migración `0004` crea
+  libros y participantes vinculados para los espacios existentes de staging.
+- El titular puede añadir participantes sin cuenta y elegir uno al invitar; la
+  aceptación vincula la identidad confirmada sin trasladar saldos. Gastos e
+  ingresos admiten un pagador o receptor y reparto igual o exacto. También hay
+  transferencias, saldos por participante y moneda, cronología y detalle.
+- Corregir crea una revisión inmutable; anular conserva el movimiento y retira
+  su efecto de los saldos. Cada escritura usa una clave idempotente y las
+  correcciones simultáneas se resuelven mediante la revisión esperada.
+- El libro se exporta en JSON con participantes, movimientos, revisiones y
+  eventos; el CSV incluye efectos por participante en unidades menores. Las
+  páginas financieras usan `Cache-Control: private, no-store` y ofrecen un
+  formulario móvil con estado provisional mientras se confirma la escritura.
+- Verificación local: pruebas monetarias, integración D1 con dos identidades,
+  permisos, reintentos y concurrencia; Playwright cubre gasto, corrección y
+  anulación a 390 px. Esta rama no se desplegó en staging ni en producción.
+- Siguen pendientes la importación de Splitwise y la copia externa/restore drill
+  productivos descritos en [recuperación](HOMESUITE_RECOVERY.md). La rama aún no
+  habilita el uso de información financiera real.
+
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
 **Version ID:** `e20ace17-9736-4c7a-b1e0-13138d4074de` · **SHA:** `fb8eb81` · producción pasó de v2.2.1 a v2.3.0.

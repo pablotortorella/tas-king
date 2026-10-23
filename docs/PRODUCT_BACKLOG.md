@@ -24,7 +24,8 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 **Estado:** visión y MVP documentados; landing pública en producción desde el
 2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
-autenticada, Cuentas Claras y Compras aún no están implementados. Esto no reemplaza
+autenticada funciona en staging; el núcleo cotidiano de Cuentas Claras está en
+una rama de revisión y Compras aún no está implementada. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
 HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
@@ -123,6 +124,13 @@ D1 locales cubiertas por integración; Google OAuth, sesión host-only, staging 
 producción siguen pendientes. Después, `importacion-splitwise-inicial` cubre
 HG-03 a HG-05; no se mezclarán autenticación, modelo financiero y parser de
 importación en un solo change.
+
+**Estado 2026-10-23:** el recorrido con dos cuentas y la base financiera están
+verificados en staging (#68 y #71, aún abiertos). La rama
+`feature/homesuite-financial-core` implementa HG-01, HG-02 y el uso cotidiano
+de HG-06, además de ingresos, transferencias, balances, correcciones y
+exportación. HG-03 a HG-05 y HG-07 quedan para el cambio de importación y
+búsqueda. No hay publicación productiva de Cuentas Claras.
 
 ---
 

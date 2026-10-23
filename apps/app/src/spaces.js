@@ -1,25 +1,37 @@
 import { createPlatformId, normalizeEmail, normalizeSpaceName } from "./platform.js";
+import { normalizeCurrency } from "./finance.js";
 
-export async function createSpaceForUser(db, { userId, name }) {
+export async function createSpaceForUser(db, { userId, name, defaultCurrency = "COP" }) {
   const spaceName = normalizeSpaceName(name);
   if (!spaceName) throw new Error("Nombre de espacio inválido.");
+  const currency = normalizeCurrency(defaultCurrency);
+  if (!currency) throw new Error("Moneda inválida.");
+  const user = await db.prepare("SELECT display_name FROM users WHERE id = ?").bind(userId).first();
+  if (!user) throw new Error("Usuario no encontrado.");
   const spaceId = createPlatformId("space");
+  const ledgerId = createPlatformId("ledger");
   const eventId = createPlatformId("audit");
   await db.batch([
     db.prepare("INSERT INTO spaces (id, name) VALUES (?, ?)").bind(spaceId, spaceName),
     db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'owner')").bind(spaceId, userId),
+    db.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES (?, ?, ?)").bind(ledgerId, spaceId, currency),
+    db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES (?, ?, ?, ?)").bind(ledgerId, createPlatformId("participant"), user.display_name, userId),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'space_created', 'space', ?)").bind(eventId, userId, spaceId, spaceId),
   ]);
-  return { id: spaceId, name: spaceName, role: "owner" };
+  return { id: spaceId, name: spaceName, role: "owner", ledgerId, defaultCurrency: currency };
 }
 
-export async function inviteToSpace(db, { spaceId, inviterUserId, email }) {
+export async function inviteToSpace(db, { spaceId, inviterUserId, email, targetParticipantId = null }) {
   const inviteeEmail = normalizeEmail(email);
   if (!inviteeEmail) throw new Error("Email inválido.");
+  if (targetParticipantId) {
+    const target = await db.prepare("SELECT p.id FROM ledger_participants p JOIN expense_ledgers l ON l.id = p.ledger_id WHERE l.space_id = ? AND p.id = ? AND p.linked_user_id IS NULL AND p.active = 1").bind(spaceId, targetParticipantId).first();
+    if (!target) throw new Error("Participante no disponible.");
+  }
   const invitationId = createPlatformId("invite");
   const eventId = createPlatformId("audit");
   await db.batch([
-    db.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id, expires_at) VALUES (?, ?, ?, ?, datetime('now', '+30 days'))").bind(invitationId, spaceId, inviteeEmail, inviterUserId),
+    db.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id, target_participant_id, expires_at) VALUES (?, ?, ?, ?, ?, datetime('now', '+30 days'))").bind(invitationId, spaceId, inviteeEmail, inviterUserId, targetParticipantId),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'invitation_created', 'invitation', ?)").bind(eventId, inviterUserId, spaceId, invitationId),
   ]);
   return { id: invitationId, email: inviteeEmail, status: "pending" };
@@ -36,7 +48,7 @@ export async function cancelInvitation(db, { invitationId, spaceId, actorUserId 
 }
 
 export async function resolveInvitation(db, { invitationId, userId, email, accepted }) {
-  const invitation = await db.prepare("SELECT id, space_id FROM invitations WHERE id = ? AND invitee_email = ? AND status = 'pending'").bind(invitationId, email).first();
+  const invitation = await db.prepare("SELECT id, space_id, target_participant_id FROM invitations WHERE id = ? AND invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP").bind(invitationId, email).first();
   if (!invitation) throw new Error("Invitación pendiente no encontrada.");
   const action = accepted ? "invitation_accepted" : "invitation_rejected";
   const status = accepted ? "accepted" : "rejected";
@@ -44,7 +56,19 @@ export async function resolveInvitation(db, { invitationId, userId, email, accep
     db.prepare("UPDATE invitations SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?").bind(status, invitationId),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, 'invitation', ?)").bind(createPlatformId("audit"), userId, invitation.space_id, action, invitationId),
   ];
-  if (accepted) statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'member')").bind(invitation.space_id, userId));
+  if (accepted) {
+    const ledger = await db.prepare("SELECT id FROM expense_ledgers WHERE space_id = ?").bind(invitation.space_id).first();
+    if (!ledger) throw new Error("Libro no disponible.");
+    const participant = invitation.target_participant_id
+      ? await db.prepare("SELECT id FROM ledger_participants WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL AND active = 1").bind(ledger.id, invitation.target_participant_id).first()
+      : null;
+    if (invitation.target_participant_id && !participant) throw new Error("Participante no disponible.");
+    const user = await db.prepare("SELECT display_name FROM users WHERE id = ?").bind(userId).first();
+    statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'member')").bind(invitation.space_id, userId));
+    statements.splice(2, 0, invitation.target_participant_id
+      ? db.prepare("UPDATE ledger_participants SET linked_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL").bind(userId, ledger.id, invitation.target_participant_id)
+      : db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES (?, ?, ?, ?)").bind(ledger.id, createPlatformId("participant"), user.display_name, userId));
+  }
   await db.batch(statements);
   return invitation.space_id;
 }
