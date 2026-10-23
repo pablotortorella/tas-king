@@ -4,9 +4,37 @@ test("una sesión local usa el formulario autenticado con CSRF real", async ({ p
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   await page.goto(`/api/local/session?as=owner-${suffix}%40example.test`);
   await expect(page).toHaveURL(/\/spaces\/new$/u);
-  await page.getByLabel("Nombre del espacio").fill(`Casa autenticada ${suffix}`);
+  await page.getByLabel("Nombre", { exact: true }).fill(`Casa autenticada ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
-  await expect(page.getByRole("heading", { name: "Cuentas Claras está lista." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Casa autenticada ${suffix}` })).toBeVisible();
+});
+
+test("registra, corrige y anula un gasto desde el teléfono", async ({ page }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/api/local/session?as=fin-${suffix}%40example.test`);
+  await page.getByLabel("Nombre", { exact: true }).fill(`Casa ${suffix}`);
+  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.getByLabel("Participante sin cuenta").fill("Beto");
+  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await page.getByRole("link", { name: "Gasto", exact: true }).click();
+  await page.getByLabel("Descripción").fill("Supermercado");
+  await page.getByLabel("Importe", { exact: true }).fill("100,00");
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("heading", { name: "Supermercado" })).toBeVisible();
+  await page.getByRole("link", { name: "Volver al libro" }).click();
+  await expect(page.getByText("Le deben COP 50,00")).toBeVisible();
+  await page.getByRole("link", { name: /Supermercado/ }).click();
+  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByLabel("Importe", { exact: true }).fill("120,00");
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByText("COP 120,00")).toBeVisible();
+  await page.getByRole("link", { name: "Anular" }).click();
+  await page.getByRole("button", { name: "Confirmar anulación" }).click();
+  await expect(page.locator(".entry-amount")).toContainText("Anulado");
+  await expect(page.getByRole("heading", { name: "Efecto original, no vigente" })).toBeVisible();
+  const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
 });
 
 test("dos identidades crean, invitan, aceptan y quedan aisladas", async ({ page }) => {

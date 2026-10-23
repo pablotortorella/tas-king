@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
+import { CURRENCY_MINOR_UNITS, FinancialValidationError } from "./finance.js";
+import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
+import { escapeHtml, ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm, renderLedgerOverview } from "./ledger-ui.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
@@ -70,6 +73,13 @@ function formError(title, message, status = 400) {
   return page(title, `<p class="eyebrow">Cuentas Claras</p><h1>${html(title)}</h1><p class="notice" role="alert">${html(message)}</p><a class="button secondary" href="/">Volver</a>`);
 }
 
+function ledgerFailure(c, error) {
+  if (!(error instanceof LedgerError) && !(error instanceof FinancialValidationError)) throw error;
+  const status = error.status ?? 400;
+  if (c.req.header("Accept")?.includes("application/json")) return c.json({ error: error.message }, status);
+  return c.html(formError("No pudimos guardar", error.message), status);
+}
+
 function requestId(c) {
   return c.get("requestId") ?? "unknown";
 }
@@ -97,7 +107,7 @@ function oauthCookie(value, secure, maxAge = 10 * 60) {
 }
 
 function page(title, content) {
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} · HomeSuite</title><link rel="stylesheet" href="/app.css"><body><main class="shell"><a class="brand" href="/">⌂ HomeSuite</a>${content}</main></body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/ledger-ui.js" defer></script><body><main class="shell"><a class="brand" href="/">⌂ HomeSuite</a>${content}</main></body></html>`;
 }
 
 function html(value) {
@@ -140,6 +150,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+  if (new URL(c.req.url).pathname.startsWith("/spaces/") || new URL(c.req.url).pathname === "/cuentas-claras") c.header("Cache-Control", "private, no-store");
 });
 
 app.use("*", async (c, next) => {
@@ -370,14 +381,14 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${currency}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
   const user = c.get("protectedUser");
   try {
     const body = await c.req.parseBody();
-    const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name });
+    const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
     return c.redirect(`/spaces/${encodeURIComponent(space.id)}`, 303);
   } catch {
     return c.html(formError("No pudimos crear el espacio", "Elegí un nombre de hasta 120 caracteres."), 400);
@@ -392,10 +403,119 @@ app.get("/spaces/:spaceId", async (c) => {
   const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all();
   const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT id, invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] };
   const csrf = await csrfInput(c, user);
+  const ledger = await readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id });
   const participants = members.results.map((member) => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
   const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
-  const ownerTools = space.role === "owner" ? `<section class="card"><h2>Administrar espacio</h2><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><h2>Invitar</h2><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post">${csrf}<label class="label" for="email">Email</label><input id="email" name="email" type="email" required autocomplete="email"><button class="button">Invitar</button></form>${pending}</section>` : "";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio está protegido por tu sesión. Todavía no inventamos saldos ni movimientos.</p><section class="card"><h2>Participantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar espacio</a>`));
+  const nominalOptions = ledger.participants.filter(person => !person.linkedUserId && person.active).map(person => `<option value="${html(person.id)}">${html(person.displayName)}</option>`).join("");
+  const ownerTools = space.role === "owner" ? `<section class="ledger-section"><h2>Administrar grupo</h2><form action="/spaces/${encodeURIComponent(space.id)}/participants" method="post">${csrf}<label class="label" for="participant-name">Participante sin cuenta</label><input id="participant-name" name="name" required maxlength="120"><button class="button secondary">Agregar participante</button></form><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post">${csrf}<label class="label" for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email"><label class="label" for="target-participant">Vincular con participante (opcional)</label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominalOptions}</select><button class="button">Invitar</button></form>${pending}</section>` : "";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.id, userId: user.user_id })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
+});
+
+app.post("/spaces/:spaceId/participants", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    await addParticipant(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/new", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+    const type = ["expense", "income", "transfer"].includes(c.req.query("type")) ? c.req.query("type") : "expense";
+    return c.html(page("Agregar movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, type })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/entries", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
+    const location = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(saved.id)}`;
+    return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }, 201) : c.redirect(location, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/entries/:entryId", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
+    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
+    const revisions = await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
+    return c.html(page(entry.description, renderEntryDetail(entry, data, { spaceId: c.req.param("spaceId"), userId: user.user_id, revisions: revisions.results })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
+    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
+    if (entry.status !== "active" || (data.ledger.role !== "owner" && entry.createdByUserId !== user.user_id)) throw new LedgerError("No podés corregir este movimiento.", 403);
+    return c.html(page("Corregir movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, entry })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
+    const location = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(saved.id)}`;
+    return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }) : c.redirect(location, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
+    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
+    if (entry.status !== "active" || (data.ledger.role !== "owner" && entry.createdByUserId !== user.user_id)) throw new LedgerError("No podés anular este movimiento.", 403);
+    const spacePath = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}`;
+    return c.html(page("Anular movimiento", `<p class="eyebrow">Cuentas Claras</p><h1>Anular ${escapeHtml(entry.description)}</h1><p>El movimiento dejará de afectar los saldos y seguirá visible en el historial.</p><form class="ledger-form" method="post" action="${spacePath}/ledger/entries/${encodeURIComponent(entry.id)}/void">${await csrfInput(c, user)}<input type="hidden" name="expectedRevision" value="${entry.revision}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}"><label>Motivo (opcional)<textarea name="reason" maxlength="1000" rows="2"></textarea></label><div class="form-actions"><button class="button" type="submit">Confirmar anulación</button><a class="button secondary" href="${spacePath}/ledger/entries/${encodeURIComponent(entry.id)}">Cancelar</a></div></form>`));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    await voidEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), idempotencyKey: form.get("idempotencyKey"), reason: form.get("reason") });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(c.req.param("entryId"))}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/export.json", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await exportLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    c.header("Content-Disposition", "attachment; filename=cuentas-claras.json");
+    c.header("Cache-Control", "private, no-store");
+    return c.json(data);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/export.csv", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    c.header("Content-Disposition", "attachment; filename=cuentas-claras.csv");
+    c.header("Cache-Control", "private, no-store");
+    return c.body(ledgerCsv(data), 200, { "Content-Type": "text/csv; charset=utf-8" });
+  } catch (error) { return ledgerFailure(c, error); }
 });
 
 app.post("/spaces/:spaceId/rename", async (c) => {
@@ -413,7 +533,8 @@ app.post("/spaces/:spaceId/invitations", async (c) => {
   const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
   try {
-    await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: (await c.req.parseBody()).email });
+    const body = await c.req.parseBody();
+    await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
   } catch {
     return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
@@ -463,7 +584,15 @@ app.get("/cuentas-claras", async (c) => {
   return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
 });
 
-app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
+const LEDGER_STYLES = `
+select,textarea{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:8px;background:#fff;font:inherit;color:#20342a}
+button{cursor:pointer}.ledger-section{border-top:1px solid #d9d0c0;padding:28px 0;margin-top:28px}.ledger-section h2{font-size:1.65rem}.section-top,.form-actions,.quick-actions,.export-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.section-top .eyebrow{margin:0}.section-top .button{margin:0}.quick-actions{justify-content:flex-start;margin-top:18px}.quick-actions a,.export-actions a{color:#206447;font-weight:700}.balance-table{width:100%;border-collapse:collapse;text-align:left}.balance-table th,.balance-table td{padding:12px 8px;border-bottom:1px solid #ded7ca}.balance-table th:last-child,.balance-table td:last-child{text-align:right}.money{font-variant-numeric:tabular-nums;white-space:nowrap}.owes{color:#a0352d}.owed{color:#206447}.entry-list{list-style:none;padding:0;margin:0}.entry-row{border-bottom:1px solid #ded7ca}.entry-row a{display:flex;justify-content:space-between;gap:16px;padding:14px 0;color:inherit;text-decoration:none}.entry-row small{display:block;color:#68766d;margin-top:4px}.entry-voided{opacity:.7}.entry-amount{font-size:1.5rem;color:#20342a}.ledger-form{display:grid;gap:18px;margin-top:24px}.ledger-form label{display:grid;gap:7px;font-weight:700}.ledger-form fieldset{border:1px solid #d9d0c0;padding:15px}.ledger-form legend{font-weight:800}.form-grid,.share-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ledger-form .check-row{display:flex;align-items:center;gap:9px;margin:8px 0;font-weight:400}.check-row input{width:auto}.ledger-form .button{margin:0}.form-actions{justify-content:flex-start}.form-feedback{margin:0}.pending-entry{border:1px solid #d9d0c0;padding:12px;color:#52665b}.ledger-section ol{padding-left:20px;line-height:1.8}
+@media(max-width:560px){.shell{padding:20px 16px 56px}.section-top{align-items:flex-start}.section-top .button{width:100%;text-align:center}.balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.form-grid,.share-grid{grid-template-columns:1fr}.entry-row a{align-items:flex-start}.entry-row .money{font-size:.9rem}.form-actions .button{flex:1;text-align:center}}
+`;
+
+app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}${LEDGER_STYLES}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
+
+app.get("/ledger-ui.js", (c) => c.body(`document.querySelectorAll("form[data-optimistic]").forEach(form=>form.addEventListener("submit",async event=>{if(!form.reportValidity())return;event.preventDefault();const button=form.querySelector('button[type="submit"]');const feedback=form.querySelector(".form-feedback");const data=new FormData(form);const preview=document.createElement("p");preview.className="pending-entry";preview.textContent=[data.get("description"),data.get("amount"),data.get("currency"),"pendiente"].filter(Boolean).join(" · ");feedback.before(preview);feedback.textContent="Guardando movimiento…";button.disabled=true;try{const response=await fetch(form.action,{method:"POST",body:data,headers:{Accept:"application/json"},credentials:"same-origin"});const result=await response.json();if(!response.ok)throw new Error(result.error||"No pudimos guardar el movimiento.");location.assign(result.location)}catch(error){preview.remove();feedback.textContent=error.message;button.disabled=false}}));`, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {
