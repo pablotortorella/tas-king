@@ -70,20 +70,22 @@ Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
 Este estado es un snapshot, no una fuente dinámica. Antes de otra modificación
 se debe volver a comprobar DNS, certificados y Worker.
 
-### Estado operativo actual (2026-10-20)
+### Estado operativo actual (2026-10-23)
 
 - `homesuite-app-staging` sirve `staging.homesuite.info` con OAuth Google, sesión
   D1, espacios, membresías e invitaciones reales.
 - D1 sigue aislada en `homesuite-app-db-staging`; no hubo migraciones nuevas en
   el despliegue de este corte.
-- La versión `cf49271c-7cd3-4ae3-a9b9-ad38b45bf3b2`, desplegada desde
-  `feature/homesuite-authenticated-spaces` SHA `30ed752`, añade protección CSRF,
-  recorridos autenticados y Workers Observability.
+- La versión `7098716d-2685-4371-a573-f890a7a5244e`, desplegada desde SHA
+  `4d9bfdc`, contiene protección CSRF compatible con los formularios reales de
+  Chrome, recorridos autenticados, Workers Observability, Rate Limiting, cron y
+  los fundamentos financieros de `0003`.
 - `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
-  se verificaron públicamente. El recorrido manual con dos cuentas Google sigue
-  pendiente; producción no fue creada ni modificada.
+  se verificaron públicamente. El recorrido completo con dos cuentas Google se
+  comprobó el 2026-10-23, incluida privacidad previa, rechazo, nueva invitación,
+  aceptación, roles y auditoría.
 - La versión `cff2c319-b514-483f-aa49-c0b29e6b2169`, desplegada desde SHA
-  `a0d9155`, añadió dos bindings de Rate Limiting, cron diario y la migración
+  `a0d9155`, introdujo dos bindings de Rate Limiting, cron diario y la migración
   `0003_financial_foundations`. El deploy creó primero el backup UTC
   `20261020T053821Z`; su SQL de 3210 bytes pasó el restore drill D1 local.
 - Staging tiene las ocho tablas financieras nuevas, todavía con cero libros,

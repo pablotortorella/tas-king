@@ -110,14 +110,21 @@ privacidad previa, aceptar/rechazar y aislamiento; las integraciones cubren
 roles, auditoría, sesiones y CSRF.
 
 Después de cada deploy de staging se verifica `/healthz`, cabeceras, redirect
-OAuth y Version ID. La prueba manual pendiente requiere dos cuentas Google:
+OAuth y Version ID. La prueba manual con dos cuentas Google, completada el
+2026-10-23, verificó:
 
 1. la primera crea un espacio e invita el email exacto de la segunda;
 2. la segunda entra en ventana separada y ve espacio y nombre del invitante, pero
    no participantes ni saldos;
 3. rechaza una invitación y confirma que no obtuvo acceso;
 4. recibe otra invitación, la acepta y abre el mismo espacio;
-5. una tercera identidad o una cuenta no invitada no puede abrirlo.
+5. la cuenta invitada no pudo abrir la URL directa antes de aceptar y, después,
+   accedió como integrante sin controles de titular.
+
+La prueba descubrió que Chrome envía `Origin: null` en el formulario bajo
+`Referrer-Policy: no-referrer`. El fix `130fc74` quedó cubierto por un E2E con
+sesión real y se desplegó dentro de `4d9bfdc` como Version ID
+`7098716d-2685-4371-a573-f890a7a5244e`.
 
 El corte de preparación financiera se desplegó el 2026-10-20 desde `a0d9155`
 como Version ID `cff2c319-b514-483f-aa49-c0b29e6b2169`. Se comprobaron health,

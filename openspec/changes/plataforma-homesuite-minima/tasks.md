@@ -31,11 +31,11 @@
 - [x] 5.2 E2E con identidades sintéticas: crear espacio, invitar, cancelar, aceptar/rechazar, aislamiento y privacidad previa a aceptar.
 - [x] 5.3 Validar localmente el Worker, migraciones y suite completa de HomeSuite App.
 - [x] 5.4 Crear recursos de staging aislados, asociar `staging.homesuite.info` y configurar cliente OAuth/secrets de staging fuera de Git.
-- [ ] 5.5 Verificar manualmente en staging con dos cuentas Google el recorrido completo, incluido el nombre de la persona invitante.
+- [x] 5.5 Verificar manualmente en staging con dos cuentas Google el recorrido completo, incluido el nombre de la persona invitante.
 - [ ] 5.6 Tras aprobación explícita, crear/verificar recursos de producción, asociar `app.homesuite.info`, desplegar y actualizar estado operativo.
 
 ## 6. Documentación e integración
 
 - [x] 6.1 Actualizar infraestructura, guía de desarrollo y estado con recursos realmente creados, sin secretos.
 - [x] 6.2 Documentar el contrato de plataforma y las decisiones de sesión, identidad, privacidad y roles.
-- [ ] 6.3 Revisar diff, validar OpenSpec strict, ejecutar las pruebas aplicables y abrir PR.
+- [x] 6.3 Revisar diff, validar OpenSpec strict, ejecutar las pruebas aplicables y abrir PR.
