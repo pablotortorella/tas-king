@@ -9,6 +9,8 @@ import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
+import { buildImportPlan, cancelImportPreview, commitImportPreview, createImportPreview, readImportBatch, readImportPreview, reviewImportPreview } from "./splitwise-import.js";
+import { renderImportBatch, renderImportPreview, renderImportReview, renderImportUpload } from "./splitwise-ui.js";
 
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
@@ -47,6 +49,7 @@ export const app = new Hono();
 
 const OAUTH_COOKIE = "homesuite_oauth";
 const MAX_MUTATION_BODY_BYTES = 16 * 1024;
+const MAX_IMPORT_BODY_BYTES = 2 * 1024 * 1024 + 16 * 1024;
 
 function sessionSecret(env = {}) {
   return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
@@ -156,7 +159,8 @@ app.use("*", async (c, next) => {
 app.use("*", async (c, next) => {
   if (isMutation(c)) {
     const contentLength = Number.parseInt(c.req.header("Content-Length") ?? "0", 10);
-    if (Number.isFinite(contentLength) && contentLength > MAX_MUTATION_BODY_BYTES) {
+    const limit = new URL(c.req.url).pathname.endsWith("/ledger/import/preview") ? MAX_IMPORT_BODY_BYTES : MAX_MUTATION_BODY_BYTES;
+    if (Number.isFinite(contentLength) && contentLength > limit) {
       return c.json({ error: "La solicitud es demasiado grande.", requestId: requestId(c) }, 413);
     }
   }
@@ -408,7 +412,7 @@ app.get("/spaces/:spaceId", async (c) => {
   const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
   const nominalOptions = ledger.participants.filter(person => !person.linkedUserId && person.active).map(person => `<option value="${html(person.id)}">${html(person.displayName)}</option>`).join("");
   const ownerTools = space.role === "owner" ? `<section class="ledger-section"><h2>Administrar grupo</h2><form action="/spaces/${encodeURIComponent(space.id)}/participants" method="post">${csrf}<label class="label" for="participant-name">Participante sin cuenta</label><input id="participant-name" name="name" required maxlength="120"><button class="button secondary">Agregar participante</button></form><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post">${csrf}<label class="label" for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email"><label class="label" for="target-participant">Vincular con participante (opcional)</label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominalOptions}</select><button class="button">Invitar</button></form>${pending}</section>` : "";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.id, userId: user.user_id })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.id, userId: user.user_id, query: c.req.query("q") ?? "" })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
 });
 
 app.post("/spaces/:spaceId/participants", async (c) => {
@@ -416,6 +420,88 @@ app.post("/spaces/:spaceId/participants", async (c) => {
   try {
     await addParticipant(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/import", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
+    if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede importar.", 403);
+    return c.html(page("Importar Splitwise", renderImportUpload({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user) })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/import/preview", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const file = form.get("file");
+    if (!(file instanceof File) || !file.size || file.size > 2 * 1024 * 1024) throw new LedgerError("Seleccioná un CSV de hasta 2 MiB.", 413);
+    const result = await createImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, fileName: file.name, csvText: await file.text() });
+    const base = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import`;
+    return c.redirect(result.batchId ? `${base}/batches/${encodeURIComponent(result.batchId)}` : `${base}/previews/${encodeURIComponent(result.previewId)}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/import/previews/:previewId", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, participants: data.participants.filter(person => person.active) })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
+    const form = await c.req.formData();
+    const mapping = preview.parsed.participantNames.map((_, index) => form.get(`mapping_${index}`));
+    const decisions = preview.parsed.incidents.map((_, index) => form.get(`decision_${index}`));
+    await reviewImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), mapping, decisions });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/previews/${encodeURIComponent(c.req.param("previewId"))}/review`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
+    if (!preview.review) throw new LedgerError("Revisá el archivo antes de confirmar.");
+    const plan = buildImportPlan(preview.parsed, preview.review, preview.ledger.default_currency);
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    return c.html(page("Confirmar Splitwise", renderImportReview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, plan, participants: data.participants })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/import/previews/:previewId/cancel", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    await cancelImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/import/previews/:previewId/confirm", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const batchId = await commitImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), acknowledgeDifference: form.get("acknowledgeDifference") === "yes" });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(batchId)}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/import/batches/:batchId", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const batch = await readImportBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
+    return c.html(page("Importación Splitwise", renderImportBatch({ spaceId: c.req.param("spaceId"), batch })));
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -447,7 +533,7 @@ app.get("/spaces/:spaceId/ledger/entries/:entryId", async (c) => {
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
     const entry = data.entries.find(row => row.id === c.req.param("entryId"));
     if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
-    const revisions = await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
+    const revisions = entry.imported ? { results: [] } : await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
     return c.html(page(entry.description, renderEntryDetail(entry, data, { spaceId: c.req.param("spaceId"), userId: user.user_id, revisions: revisions.results })));
   } catch (error) { return ledgerFailure(c, error); }
 });
@@ -587,7 +673,8 @@ app.get("/cuentas-claras", async (c) => {
 const LEDGER_STYLES = `
 select,textarea{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:8px;background:#fff;font:inherit;color:#20342a}
 button{cursor:pointer}.ledger-section{border-top:1px solid #d9d0c0;padding:28px 0;margin-top:28px}.ledger-section h2{font-size:1.65rem}.section-top,.form-actions,.quick-actions,.export-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.section-top .eyebrow{margin:0}.section-top .button{margin:0}.quick-actions{justify-content:flex-start;margin-top:18px}.quick-actions a,.export-actions a{color:#206447;font-weight:700}.balance-table{width:100%;border-collapse:collapse;text-align:left}.balance-table th,.balance-table td{padding:12px 8px;border-bottom:1px solid #ded7ca}.balance-table th:last-child,.balance-table td:last-child{text-align:right}.money{font-variant-numeric:tabular-nums;white-space:nowrap}.owes{color:#a0352d}.owed{color:#206447}.entry-list{list-style:none;padding:0;margin:0}.entry-row{border-bottom:1px solid #ded7ca}.entry-row a{display:flex;justify-content:space-between;gap:16px;padding:14px 0;color:inherit;text-decoration:none}.entry-row small{display:block;color:#68766d;margin-top:4px}.entry-voided{opacity:.7}.entry-amount{font-size:1.5rem;color:#20342a}.ledger-form{display:grid;gap:18px;margin-top:24px}.ledger-form label{display:grid;gap:7px;font-weight:700}.ledger-form fieldset{border:1px solid #d9d0c0;padding:15px}.ledger-form legend{font-weight:800}.form-grid,.share-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ledger-form .check-row{display:flex;align-items:center;gap:9px;margin:8px 0;font-weight:400}.check-row input{width:auto}.ledger-form .button{margin:0}.form-actions{justify-content:flex-start}.form-feedback{margin:0}.pending-entry{border:1px solid #d9d0c0;padding:12px;color:#52665b}.ledger-section ol{padding-left:20px;line-height:1.8}
-@media(max-width:560px){.shell{padding:20px 16px 56px}.section-top{align-items:flex-start}.section-top .button{width:100%;text-align:center}.balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.form-grid,.share-grid{grid-template-columns:1fr}.entry-row a{align-items:flex-start}.entry-row .money{font-size:.9rem}.form-actions .button{flex:1;text-align:center}}
+.search-form{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:10px;margin:16px 0}.search-form label{font-weight:700}.search-form .button{margin:0}.incident-row{display:grid;grid-template-columns:auto 1fr minmax(170px,230px);gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #ded7ca}.incident-row span{min-width:0;overflow-wrap:anywhere}.table-scroll{overflow-x:auto}.table-scroll .balance-table{min-width:650px}.ledger-form input[type=file]{font:inherit}.ledger-form .check-row input[type=checkbox]{width:auto}
+@media(max-width:560px){.shell{padding:20px 16px 56px}.section-top{align-items:flex-start}.section-top .button{width:100%;text-align:center}.balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.form-grid,.share-grid{grid-template-columns:1fr}.entry-row a{align-items:flex-start}.entry-row .money{font-size:.9rem}.form-actions .button{flex:1;text-align:center}.search-form{grid-template-columns:1fr}.incident-row{grid-template-columns:1fr}}
 `;
 
 app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}${LEDGER_STYLES}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
