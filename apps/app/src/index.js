@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
-import { createCsrfToken, validateCsrfRequest } from "./csrf.js";
+import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
@@ -124,8 +124,17 @@ app.use("*", async (c, next) => {
   const secret = sessionSecret(c.env);
   const user = secret ? await currentSession(c.env.DB, c.req.raw, secret) : null;
   if (!user) return signInRequired(c);
-  if (!await validateCsrfRequest(c.req.raw, { sessionId: user.id, secret })) {
-    return c.html(formError("Solicitud no verificada", "Recargá la página e intentá de nuevo."), 403);
+  const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: user.id, secret });
+  if (!csrf.valid) {
+    console.warn("[homesuite-app]", JSON.stringify({
+      event: "csrf_rejected",
+      requestId: requestId(c),
+      reason: csrf.reason,
+      hasOrigin: Boolean(c.req.header("Origin")),
+      hasReferer: Boolean(c.req.header("Referer")),
+      secFetchSite: c.req.header("Sec-Fetch-Site") ?? "missing",
+    }));
+    return c.html(formError("Solicitud no verificada", `Recargá la página e intentá de nuevo. Código: ${requestId(c)}.`), 403);
   }
   c.set("protectedUser", user);
   await next();
@@ -147,6 +156,16 @@ app.get("/api/me", async (c) => {
   const session = await signedInUser(c);
   if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
   return c.json({ id: session.user_id, email: session.email, displayName: session.display_name });
+});
+
+app.get("/api/local/session", async (c) => {
+  const email = localUser(c);
+  const secret = sessionSecret(c.env);
+  if (!email || !secret) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const session = await createSession(c.env.DB, { userId: user.id, secret });
+  setCookie(c, sessionCookie(session.token, true));
+  return c.redirect("/spaces/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {

@@ -34,7 +34,9 @@ Toda mutación autenticada bajo `/spaces`, `/invitations` o `/auth/logout` exige
 
 1. una sesión vigente en D1;
 2. un token CSRF firmado y ligado al ID de esa sesión;
-3. un `Origin` del mismo origen o, como fallback, un `Referer` del mismo origen.
+3. un `Origin` del mismo origen o, como fallback, un `Referer` del mismo origen;
+   si ambos están ausentes o la política `no-referrer` produce `Origin: null`,
+   Fetch Metadata debe declarar `Sec-Fetch-Site: same-origin`.
 
 Los formularios incluyen `_csrf`; clientes futuros pueden usar
 `X-CSRF-Token`. La validación ocurre antes de leer o modificar datos de producto.

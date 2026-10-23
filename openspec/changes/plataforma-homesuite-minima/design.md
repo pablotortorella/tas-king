@@ -52,8 +52,11 @@ El estado de OAuth y el verificador PKCE viven en cookies temporales de la misma
 sesión de navegador. `returnTo` sólo acepta paths relativos permitidos.
 
 Toda mutación autenticada exige además un token CSRF firmado y ligado al ID de
-sesión, junto con un `Origin` o `Referer` del mismo origen. `SameSite=Lax` y el
-prefijo `__Host-` se conservan como defensa adicional, no como única barrera.
+sesión, junto con un `Origin` o `Referer` del mismo origen. Cuando ambos están
+ausentes, o `Referrer-Policy: no-referrer` convierte el origen en `null`, se
+acepta únicamente Fetch Metadata con `Sec-Fetch-Site: same-origin`; un origen
+explícito distinto siempre prevalece y se rechaza. `SameSite=Lax` y el prefijo
+`__Host-` se conservan como defensa adicional, no como única barrera.
 
 ### D4. Modelo mínimo, auditable y preparado para transferencia futura
 

@@ -11,6 +11,14 @@ describe("protección CSRF", () => {
     expect(hasTrustedOrigin(new Request("https://app.test/spaces"))).toBe(false);
   });
 
+  it("acepta Fetch Metadata de mismo origen sólo cuando no hay un origen explícito", () => {
+    expect(hasTrustedOrigin(new Request("https://app.test/spaces", { headers: { "Sec-Fetch-Site": "same-origin" } }))).toBe(true);
+    expect(hasTrustedOrigin(new Request("https://app.test/spaces", { headers: { Origin: "null", "Sec-Fetch-Site": "same-origin" } }))).toBe(true);
+    expect(hasTrustedOrigin(new Request("https://app.test/spaces", { headers: { Origin: "null", "Sec-Fetch-Site": "cross-site" } }))).toBe(false);
+    expect(hasTrustedOrigin(new Request("https://app.test/spaces", { headers: { Origin: "https://other.test", "Sec-Fetch-Site": "same-origin" } }))).toBe(false);
+    expect(hasTrustedOrigin(new Request("https://app.test/spaces", { headers: { "Sec-Fetch-Site": "cross-site" } }))).toBe(false);
+  });
+
   it("liga el token firmado a una sesión concreta", async () => {
     const token = await createCsrfToken({ sessionId: "session-one", secret });
     const request = new Request("https://app.test/spaces", {
