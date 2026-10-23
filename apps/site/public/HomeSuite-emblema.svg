@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+<title id="title">HomeSuite — hogar</title>
+<desc id="desc">Emblema vectorial de una casa cálida, con techo terracota, puerta verde, ventanas iluminadas y paisaje verde.</desc>
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#426957"/><stop offset="1" stop-color="#183629"/></linearGradient>
+ <linearGradient id="lawn" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#729a78"/><stop offset="1" stop-color="#4c785c"/></linearGradient>
+ <linearGradient id="walls" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff3d8"/><stop offset="1" stop-color="#e8dbbd"/></linearGradient>
+ <linearGradient id="roof" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ff967f"/><stop offset="1" stop-color="#ef685b"/></linearGradient>
+ <radialGradient id="light"><stop stop-color="#ffe4a1"/><stop offset="1" stop-color="#d99b3a"/></radialGradient>
+ <clipPath id="badge"><circle cx="400" cy="400" r="390"/></clipPath>
+</defs>
+<g clip-path="url(#badge)">
+ <circle cx="400" cy="400" r="390" fill="url(#sky)"/>
+ <path d="M-10 370 Q220 150 425 285 T810 330 V800 H-10Z" fill="#173b2d" opacity=".3"/>
+ <path d="M-10 520 Q250 400 440 470 T810 515 V800 H-10Z" fill="#1b3e30" opacity=".57"/>
+ <circle cx="583" cy="161" r="72" fill="#bd9f56" opacity=".2"/>
+ <circle cx="583" cy="161" r="43" fill="#f3c567"/>
+ <!-- chimney -->
+ <rect x="537" y="278" width="69" height="119" rx="9" fill="#f2e7cd"/>
+ <!-- house walls -->
+ <path d="M186 414 400 217 614 414 V651 Q400 696 186 651Z" fill="url(#walls)"/>
+ <!-- roof -->
+ <path d="M155 405 382 197 Q400 181 418 197 L645 405 Q666 425 648 444 Q631 461 612 444 L400 252 188 444 Q169 461 152 444 Q135 426 155 405Z" fill="url(#roof)"/>
+ <path d="M400 191 Q409 187 418 197 L645 405 Q666 425 648 444 Q631 461 612 444 L400 252Z" fill="#df6757" opacity=".36"/>
+ <!-- window upper -->
+ <path d="M358 377 v-17 a42 42 0 0 1 84 0 v58 h-84Z" fill="url(#light)"/>
+ <path d="M400 320 v98 M358 377 h84" fill="none" stroke="#fff2d9" stroke-width="7"/>
+ <!-- two lower windows -->
+ <path d="M234 507 v-19 a28 28 0 0 1 56 0 v66 h-56Z M510 507 v-19 a28 28 0 0 1 56 0 v66 h-56Z" fill="url(#light)"/>
+ <path d="M262 460 v94 M234 510 h56 M538 460 v94 M510 510 h56" stroke="#fff2d9" stroke-width="6" fill="none"/>
+ <!-- green arched door -->
+ <path d="M346 648 V520 a54 54 0 0 1 108 0 v128Z" fill="#295643"/>
+ <path d="M350 648 V520 a50 50 0 0 1 100 0 v128Z" fill="#315e49"/>
+ <circle cx="428" cy="572" r="10" fill="#f6c469"/>
+ <!-- bushes behind foreground -->
+ <circle cx="170" cy="619" r="110" fill="#37654c"/>
+ <circle cx="637" cy="621" r="110" fill="#37654c"/>
+ <circle cx="139" cy="693" r="101" fill="#214936"/>
+ <circle cx="661" cy="700" r="103" fill="#214936"/>
+ <!-- foreground hill -->
+ <path d="M-5 714 Q210 638 408 646 Q600 632 805 720 V805 H-5Z" fill="url(#lawn)"/>
+ <!-- pathway to door -->
+ <path d="M363 646 H442 C472 683 506 706 513 747 C519 774 497 797 493 810 H283 C335 779 391 760 398 724 C405 697 383 667 363 646Z" fill="#f8e9c9"/>
+</g>
+</svg>
