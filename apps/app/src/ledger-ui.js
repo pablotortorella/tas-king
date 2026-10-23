@@ -8,7 +8,29 @@ export function escapeHtml(value) {
 function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
 function option(value, label, selected) { return `<option value="${escapeHtml(value)}"${selected ? " selected" : ""}>${escapeHtml(label)}</option>`; }
 function selectedOptions(participants, selectedId) { return participants.filter(p => p.active).map(p => option(p.id, p.displayName, selectedId === p.id)).join(""); }
-function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia" })[type] ?? type; }
+function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia", imported: "Importado" })[type] ?? type; }
+
+function searchable(value) {
+  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
+}
+
+export function searchLedger(entries, participants, query) {
+  const needle = searchable(query);
+  if (!needle) return entries.map(entry => ({ ...entry, matchReason: null }));
+  const names = new Map(participants.map(p => [p.id, p.displayName]));
+  return entries.flatMap(entry => {
+    let reason = null;
+    if (searchable(entry.description).includes(needle)) reason = "Descripción";
+    else if (entry.category && searchable(entry.category).includes(needle)) reason = "Categoría";
+    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle)) reason = "Importe total";
+    else for (const effect of entry.effects) {
+      const name = names.get(effect.participantId) ?? "";
+      if (searchable(name).includes(needle)) { reason = `Participante: ${name}`; break; }
+      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle)) { reason = `Efecto de ${name}`; break; }
+    }
+    return reason ? [{ ...entry, matchReason: reason }] : [];
+  });
+}
 
 function revisionSummary(row, previous) {
   const snapshot = JSON.parse(row.snapshot_json);
@@ -74,28 +96,33 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   return `<p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(entryLabel(currentType).toLowerCase())}</h1><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus></label><div class="form-grid"><label>Importe<input name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : "")}" placeholder="0,00"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => option(code, currencyLabel(code), code === currency)).join("")}</select></label><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label></div>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><div class="form-actions"><button class="button" type="submit">Guardar</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div><p class="form-feedback" role="status" aria-live="polite"></p></form>`;
 }
 
-export function renderLedgerOverview(data, { spaceId, userId }) {
+export function renderLedgerOverview(data, { spaceId, userId, query = "" }) {
   const currencies = [...new Set([data.ledger.default_currency, ...data.balances.map(b => b.currency)])];
   const balanceRows = currencies.flatMap(currency => data.participants.map(p => {
     const amount = data.balances.find(b => b.currency === currency && b.participantId === p.id)?.amountMinor ?? 0;
     return `<tr><td>${escapeHtml(p.displayName)}</td><td>${escapeHtml(currency)}</td><td class="money ${amount < 0 ? "owes" : amount > 0 ? "owed" : ""}">${amount > 0 ? "Le deben " : amount < 0 ? "Debe " : ""}${escapeHtml(formatMoney(Math.abs(amount), currency))}</td></tr>`;
   })).join("");
-  const rows = data.entries.map(entry => `<li class="entry-row ${entry.status === "voided" ? "entry-voided" : ""}"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span><strong>${escapeHtml(entry.description)}</strong><small>${escapeHtml(entry.occurredAt)} · ${escapeHtml(entryLabel(entry.type))} · ${escapeHtml(entry.creatorName)}${entry.status === "voided" ? " · Anulado" : ""}</small></span><strong class="money">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</strong></a></li>`).join("");
+  const rows = searchLedger(data.entries, data.participants, query).map(entry => `<li class="entry-row ${entry.status === "voided" ? "entry-voided" : ""}"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span><strong>${escapeHtml(entry.description)}</strong><small>${escapeHtml(entry.occurredAt)} · ${entry.imported ? "Importado de Splitwise" : escapeHtml(entryLabel(entry.type))} · ${escapeHtml(entry.creatorName)}${entry.status === "voided" ? " · Anulado" : ""}${entry.matchReason ? ` · Coincide: ${escapeHtml(entry.matchReason)}` : ""}</small></span><strong class="money">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</strong></a></li>`).join("");
   const people = data.participants.map(p => `<div class="person"><strong>${escapeHtml(p.displayName)}</strong><br><span class="muted">${p.linkedUserId ? "Cuenta vinculada" : "Sin cuenta"}${p.active ? "" : " · Inactivo"}</span></div>`).join("");
-  return `<section class="ledger-section"><div class="section-top"><div><p class="eyebrow">Cuentas Claras</p><h2>Balances</h2></div><a class="button" href="${path(spaceId)}/ledger/new">Agregar movimiento</a></div><table class="balance-table"><thead><tr><th>Participante</th><th>Moneda</th><th>Saldo</th></tr></thead><tbody>${balanceRows}</tbody></table><div class="quick-actions"><a href="${path(spaceId)}/ledger/new?type=expense">Gasto</a><a href="${path(spaceId)}/ledger/new?type=income">Ingreso</a><a href="${path(spaceId)}/ledger/new?type=transfer">Transferencia</a></div></section><section class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/export.json">JSON</a><a href="${path(spaceId)}/ledger/export.csv">CSV</a></div></div>${rows ? `<ul class="entry-list">${rows}</ul>` : "<p>Todavía no hay movimientos.</p>"}</section><section class="ledger-section"><h2>Participantes</h2>${people}</section>`;
+  return `<section class="ledger-section"><div class="section-top"><div><p class="eyebrow">Cuentas Claras</p><h2>Balances</h2></div><a class="button" href="${path(spaceId)}/ledger/new">Agregar movimiento</a></div><table class="balance-table"><thead><tr><th>Participante</th><th>Moneda</th><th>Saldo</th></tr></thead><tbody>${balanceRows}</tbody></table><div class="quick-actions"><a href="${path(spaceId)}/ledger/new?type=expense">Gasto</a><a href="${path(spaceId)}/ledger/new?type=income">Ingreso</a><a href="${path(spaceId)}/ledger/new?type=transfer">Transferencia</a>${data.ledger.role === "owner" ? `<a href="${path(spaceId)}/ledger/import">Importar Splitwise</a>` : ""}</div></section><section class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/export.json">JSON</a><a href="${path(spaceId)}/ledger/export.csv">CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form"><label for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto"><button class="button secondary" type="submit">Buscar</button></form>${rows ? `<ul class="entry-list">${rows}</ul>` : `<p>${query ? "No hay coincidencias." : "Todavía no hay movimientos."}</p>`}</section><section class="ledger-section"><h2>Participantes</h2>${people}</section>`;
 }
 
 export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const names = new Map(data.participants.map(p => [p.id, p.displayName]));
   const effects = entry.effects.map(effect => `<tr><td>${escapeHtml(names.get(effect.participantId) ?? "Participante")}</td><td class="money">${escapeHtml(formatMoney(effect.amountMinor, entry.currency))}</td></tr>`).join("");
   const history = revisions.map((row, index) => `<li>${escapeHtml(row.created_at)} · ${escapeHtml(row.actor_name)} · ${row.action === "created" ? "Creó" : row.action === "voided" ? "Anuló" : "Corrigió"} · versión ${row.revision}<br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))}</span></li>`).join("");
+  if (entry.imported) return `<p class="eyebrow">Importado de Splitwise · fila ${entry.sourceRowNumber}</p><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</p>${entry.category ? `<p>Categoría original: ${escapeHtml(entry.category)}</p>` : ""}<section class="ledger-section"><h2>Efecto en el saldo</h2><table class="balance-table"><tbody>${effects}</tbody></table></section><a class="button secondary" href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver lote de importación</a><a class="button secondary" href="${path(spaceId)}">Volver al libro</a>`;
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
   return `<p class="eyebrow">${escapeHtml(entryLabel(entry.type))} · ${escapeHtml(entry.occurredAt)}</p><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${entry.status === "voided" ? " · Anulado" : ""}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${entry.status === "voided" ? "Efecto original, no vigente" : "Efecto en el saldo"}</h2><table class="balance-table"><tbody>${effects}</tbody></table></section><section class="ledger-section"><h2>Historial</h2><ol>${history}</ol></section>${mayEdit ? `<div class="form-actions"><a class="button" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button secondary" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div>` : ""}<a class="button secondary" href="${path(spaceId)}">Volver al libro</a>`;
 }
 
 export function ledgerCsv(data) {
-  const quote = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
-  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor"]];
-  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0]);
+  const quote = value => {
+    const text = String(value ?? "");
+    const safe = typeof value === "string" && /^[\s]*[=+@-]/u.test(text) ? `'${text}` : text;
+    return `"${safe.replaceAll('"', '""')}"`;
+  };
+  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen"]];
+  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.imported ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
   return `\uFEFF${lines.map(row => row.map(quote).join(",")).join("\r\n")}\r\n`;
 }

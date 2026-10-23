@@ -34,7 +34,7 @@ export async function addParticipant(db, { spaceId, userId, name }) {
 }
 
 async function participantsFor(db, ledgerId) {
-  const rows = await db.prepare("SELECT id, display_name AS displayName, linked_user_id AS linkedUserId, active FROM ledger_participants WHERE ledger_id = ? ORDER BY created_at, id").bind(ledgerId).all();
+  const rows = await db.prepare("SELECT id, display_name AS displayName, linked_user_id AS linkedUserId, active FROM ledger_participants WHERE ledger_id = ? AND pending_import_batch_id IS NULL ORDER BY created_at, id").bind(ledgerId).all();
   return rows.results;
 }
 
@@ -156,10 +156,12 @@ export async function voidEntry(db, { spaceId, userId, entryId, expectedRevision
 export async function readLedger(db, { spaceId, userId }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);
   const participants = await participantsFor(db, ledger.id);
-  const [entryRows, cashRows, allocationRows] = await Promise.all([
+  const [entryRows, cashRows, allocationRows, importedRows, importedEffects] = await Promise.all([
     db.prepare("SELECT e.*, u.display_name AS creator_name FROM ledger_entries e JOIN users u ON u.id = e.created_by_user_id WHERE e.ledger_id = ? ORDER BY e.occurred_at DESC, e.created_at DESC, e.id DESC").bind(ledger.id).all(),
     db.prepare("SELECT entry_id, participant_id, direction, amount_minor FROM entry_cash_parties WHERE ledger_id = ?").bind(ledger.id).all(),
     db.prepare("SELECT entry_id, participant_id, amount_minor FROM entry_allocations WHERE ledger_id = ?").bind(ledger.id).all(),
+    db.prepare("SELECT e.*, b.actor_user_id, b.file_name, u.display_name AS creator_name FROM splitwise_import_entries e JOIN splitwise_import_batches b ON b.id = e.batch_id JOIN users u ON u.id = b.actor_user_id WHERE e.ledger_id = ? AND b.status = 'committed'").bind(ledger.id).all(),
+    db.prepare("SELECT x.entry_id, x.participant_id, x.amount_minor FROM splitwise_import_effects x JOIN splitwise_import_entries e ON e.ledger_id = x.ledger_id AND e.id = x.entry_id JOIN splitwise_import_batches b ON b.id = e.batch_id WHERE x.ledger_id = ? AND b.status = 'committed'").bind(ledger.id).all(),
   ]);
   const cashByEntry = new Map();
   const sharesByEntry = new Map();
@@ -172,18 +174,31 @@ export async function readLedger(db, { spaceId, userId }) {
     sharesByEntry.get(row.entry_id).push({ participantId: row.participant_id, amountMinor: row.amount_minor });
   }
   const balances = new Map();
+  const addBalance = (currency, participantId, amountMinor) => {
+    const key = `${currency}:${participantId}`;
+    const next = (balances.get(key) ?? 0) + amountMinor;
+    if (!Number.isSafeInteger(next)) throw new LedgerError("El saldo excede el rango permitido.", 500);
+    balances.set(key, next);
+  };
   const entries = entryRows.results.map(row => {
     const cashParties = cashByEntry.get(row.id) ?? [];
     const allocations = sharesByEntry.get(row.id) ?? [];
     const validated = validateEntryDraft({ type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, cashParties, allocations }, participants.map(p => p.id));
-    if (row.status === "active") for (const effect of validated.effects) {
-      const key = `${row.currency_code}:${effect.participantId}`;
-      const next = (balances.get(key) ?? 0) + effect.amountMinor;
-      if (!Number.isSafeInteger(next)) throw new LedgerError("El saldo excede el rango permitido.", 500);
-      balances.set(key, next);
-    }
+    if (row.status === "active") for (const effect of validated.effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
     return { id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
   });
+  const importedEffectsByEntry = new Map();
+  for (const row of importedEffects.results) {
+    if (!importedEffectsByEntry.has(row.entry_id)) importedEffectsByEntry.set(row.entry_id, []);
+    importedEffectsByEntry.get(row.entry_id).push({ participantId: row.participant_id, amountMinor: row.amount_minor });
+  }
+  for (const row of importedRows.results) {
+    const effects = importedEffectsByEntry.get(row.id) ?? [];
+    if (effects.reduce((total, effect) => total + BigInt(effect.amountMinor), 0n) !== 0n) throw new LedgerError("Un movimiento importado está desequilibrado.", 500);
+    for (const effect of effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
+    entries.push({ id: row.id, type: "imported", imported: true, importBatchId: row.batch_id, sourceRowNumber: row.source_row_number, category: row.category, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: "", occurredAt: row.occurred_at, status: "active", revision: 1, createdByUserId: row.actor_user_id, creatorName: row.creator_name, cashParties: [], allocations: [], effects });
+  }
+  entries.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt) || b.id.localeCompare(a.id));
   return { ledger, participants, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }
 
@@ -191,5 +206,6 @@ export async function exportLedger(db, { spaceId, userId }) {
   const data = await readLedger(db, { spaceId, userId });
   const revisions = await db.prepare("SELECT r.* FROM entry_revisions r WHERE r.ledger_id = ? ORDER BY r.entry_id, r.revision").bind(data.ledger.id).all();
   const events = await db.prepare("SELECT * FROM ledger_events WHERE ledger_id = ? ORDER BY created_at, id").bind(data.ledger.id).all();
-  return { schemaVersion: 1, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: data.participants, entries: data.entries, revisions: revisions.results, events: events.results };
+  const imports = await db.prepare("SELECT id, source_hash, file_name, imported_count, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, committed_at FROM splitwise_import_batches WHERE ledger_id = ? AND status = 'committed'").bind(data.ledger.id).all();
+  return { schemaVersion: 2, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: data.participants, entries: data.entries, revisions: revisions.results, events: events.results, imports: imports.results };
 }

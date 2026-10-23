@@ -40,7 +40,8 @@
     "verify-ready": "npm run test:all && echo '✅ Tests passed' && (git status --porcelain | grep -E '^\\.dev\\.vars' && echo '❌ .dev.vars debe estar en .gitignore' && exit 1 || true) && (git diff --cached --name-only | grep -E '(dev\\.vars|secret)' && echo '❌ No commitear secrets' && exit 1 || true) && echo '✅ Listo para push'"
   },
   "dependencies": {
-    "hono": "^4.6.14"
+    "hono": "^4.6.14",
+    "papaparse": "^5.7.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.19",

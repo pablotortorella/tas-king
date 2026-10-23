@@ -58,6 +58,40 @@ test("registra, corrige y anula un gasto desde el teléfono", async ({ page }) =
   expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
 });
 
+test("previsualiza, resuelve incidentes e importa Splitwise en móvil", async ({ page }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const ownerName = `splitwise-e2e-${suffix}`;
+  const csv = "Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n"
+    + "2026-01-01,Comida,Comida,10.00,COP,5.00,-5.00\n"
+    + "2026-01-02,Taxi,Viaje,20.00,,10.00,-10.00\n"
+    + "2026-01-03,Error,Otros,8.00,COP,3.00,-2.00\n"
+    + "Saldo total,,,,COP,15.00,-15.00\n";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/api/local/session?as=${encodeURIComponent(`${ownerName}@example.test`)}`);
+  await page.getByLabel("Nombre", { exact: true }).fill(`Grupo ${suffix}`);
+  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.getByRole("link", { name: "Importar Splitwise" }).click();
+  await page.getByLabel("Archivo CSV").setInputFiles({ name: "grupo.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await page.getByRole("button", { name: "Previsualizar" }).click();
+  await expect(page.getByText("1 movimientos válidos · 2 incidentes · 1 filas de resumen.")).toBeVisible();
+  await page.locator('[name="mapping_0"]').selectOption({ label: ownerName });
+  await page.locator('[name="decision_0"]').selectOption("assume_default");
+  await page.locator('[name="decision_1"]').selectOption("exclude");
+  await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
+  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+  await expect(page.getByText("Fila 3: Moneda COP elegida explícitamente")).toBeVisible();
+  await expect(page.getByText("Fila 4: Los efectos de la fila no suman cero.")).toBeVisible();
+  await page.getByRole("button", { name: "Confirmar importación" }).click();
+  await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible();
+  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByLabel("Buscar").fill("Taxi");
+  await page.getByRole("button", { name: "Buscar" }).click();
+  await expect(page.getByText("Importado de Splitwise", { exact: false })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Taxi/ })).toBeVisible();
+  const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+});
+
 test("dos identidades crean, invitan, aceptan y quedan aisladas", async ({ page }) => {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const invitee = `invitee-${suffix}@example.test`;
