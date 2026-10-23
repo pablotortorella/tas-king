@@ -78,11 +78,20 @@ se debe volver a comprobar DNS, certificados y Worker.
   el despliegue de este corte.
 - La versión `7098716d-2685-4371-a573-f890a7a5244e`, desplegada desde SHA
   `4d9bfdc`, contiene protección CSRF compatible con los formularios reales de
-  Chrome, recorridos autenticados y Workers Observability.
+  Chrome, recorridos autenticados, Workers Observability, Rate Limiting, cron y
+  los fundamentos financieros de `0003`.
 - `/healthz`, HTTPS, cabeceras, `X-Request-Id` y el redirect OAuth con PKCE S256
   se verificaron públicamente. El recorrido completo con dos cuentas Google se
   comprobó el 2026-10-23, incluida privacidad previa, rechazo, nueva invitación,
-  aceptación, roles y auditoría. Producción no fue creada ni modificada.
+  aceptación, roles y auditoría.
+- La versión `cff2c319-b514-483f-aa49-c0b29e6b2169`, desplegada desde SHA
+  `a0d9155`, introdujo dos bindings de Rate Limiting, cron diario y la migración
+  `0003_financial_foundations`. El deploy creó primero el backup UTC
+  `20261020T053821Z`; su SQL de 3210 bytes pasó el restore drill D1 local.
+- Staging tiene las ocho tablas financieras nuevas, todavía con cero libros,
+  movimientos, revisiones y eventos. `PRAGMA foreign_key_check` no devolvió
+  violaciones. Producción no fue creada ni modificada. Ver
+  [recuperación](HOMESUITE_RECOVERY.md).
 
 ## Mapa de hostnames
 
@@ -235,6 +244,12 @@ asociada a esa versión.
 Una D1 por entorno contiene inicialmente plataforma, Tareas, Cuentas Claras y Compras. Las
 tablas y módulos mantienen fronteras claras. Separar bases por producto se hará
 solo por escala, seguridad, retención o cadencia comprobadas.
+
+Staging usa dos namespaces de Rate Limiting independientes: OAuth por IP y
+mutaciones por sesión. Son controles de abuso, no mecanismos contables ni de
+idempotencia. El cron `17 4 * * *` mantiene sesiones e invitaciones efímeras y no
+toca tablas financieras. La política completa está en
+[ciclo de vida de datos](HOMESUITE_DATA_LIFECYCLE.md).
 
 ## Ambientes
 
