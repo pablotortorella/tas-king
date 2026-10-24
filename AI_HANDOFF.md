@@ -1,30 +1,61 @@
 # AI_HANDOFF
 
-## Última sesión — HomeSuite App local (2026-09-22)
+## Última sesión - HomeSuite listo para integrar diseño (2026-10-23)
 
-Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.
+### Empezar por aquí
 
-- `apps/app/` ya existe en `main` (PR #59): Worker aislado, esquema D1,
-  fundaciones y demo local.
-- Este corte convierte el recorrido en D1 local real: espacio + owner + auditoría,
-  invitación, cancelación, descubrimiento privado y aceptación/rechazo con rol
-  `member`. La UI local se revisó manualmente en `127.0.0.1:8792`.
-- Pruebas actuales: 5 unitarias y 5 integraciones D1 verdes. Una integración
-  encontró y corrigió el contexto de `crypto.randomUUID`; la revisión manual
-  encontró y corrigió la pérdida de identidad de desarrollo al aceptar.
-- No hay OAuth, sesión real, D1 remoto, staging, DNS ni despliegue. `DEV_LOCAL_MODE`
-  es obligatorio para las rutas locales; la identidad de demo no debe pasar a
-  producción.
-- Pendiente al retomar: añadir regresión del POST de aceptación, mostrar el
-  integrante aceptado en participantes, revisar el diff, actualizar snapshot
-  visual v0.1.2 y abrir PR. Ver `visual/history/README.md` y OpenSpec.
+- La base que reúne el código más reciente y toda la funcionalidad de HomeSuite es
+  `integration/homesuite-design-base`. Fue actualizada con `main` v2.3.2 en
+  `9e8a8c1`. Crear el trabajo visual desde esta rama, no desde
+  `local/homesuite-full-preview` ni desde un PR funcional intermedio.
+- El sitio público ya tiene el arte nuevo. El PR #74 se integró en `main` como
+  `62b459e` y la versión Cloudflare
+  `fb7807ef-d328-4d98-b9eb-683e28748e6a` está al 100 % en producción.
+- El núcleo funcional todavía está en una cadena de PRs abiertos. El orden de
+  integración es #68 -> #71 -> #75 -> #76 -> #81. Todos están limpios respecto
+  de su base inmediata; no saltar directamente al último PR.
+- La rama consolidada es para desarrollar y revisar el diseño en paralelo. No es
+  una autorización para llevar Cuentas Claras a producción: faltan integrar la
+  cadena, volver a desplegar staging y cerrar las condiciones de recuperación y
+  ciclo de vida de datos.
+
+### Qué contiene la base visual
+
+- OAuth Google y sesión real; espacios privados, invitaciones, rechazo,
+  aceptación, roles y auditoría.
+- Libros, participantes, gastos, ingresos, transferencias, reparto igual o
+  exacto, saldos por moneda, cronología, detalle, corrección inmutable, anulación
+  y exportación JSON/CSV.
+- Importación CSV de Splitwise con previsualización, mapeo de participantes,
+  decisiones por fila, idempotencia, conciliación e incidentes explicados.
+- Monedas vigentes de Sudamérica, MXN y las monedas previas; URLs estables para
+  grupos; acceso local más claro para una segunda cuenta; búsqueda monetaria por
+  fragmentos que ignora separadores de miles.
+- Arte nuevo en la landing y favicon de HomeSuite.
+
+### Guía para el trabajo de diseño
+
+- Sitio público: `apps/site/public/`. Aplicación autenticada:
+  `apps/app/src/ledger-ui.js`, `apps/app/src/splitwise-ui.js` y las vistas de
+  `apps/app/src/index.js`.
+- Conservar nombres de campos, acciones POST, tokens CSRF, rutas con slug,
+  estados vacío/carga/error, permisos owner/member y comportamiento móvil. El
+  rediseño puede cambiar estructura visual y estilos, pero esos contratos están
+  cubiertos por pruebas.
+- No versionar el enlace temporal `Abrir demo local` hacia `127.0.0.1`; sólo
+  existió en `local/homesuite-full-preview` para recorrer ambos Workers.
+- Antes de integrar el diseño, actualizar la rama contra
+  `integration/homesuite-design-base`, ejecutar las suites generales y de
+  HomeSuite, y revisar visualmente escritorio y 390 px.
 
 ## Estado actual
-**FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
-https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
+**FUN TasKing!** está en producción como v2.3.2. **HomeSuite** tiene el sitio
+público en producción y la aplicación autenticada en staging; el siguiente corte
+de producto es Cuentas Claras.
 
-**Versión actual**: v2.1.2 — **Tests**: 121 unitarios + 45 E2E ✅ Todos pasan  
-**Rama**: `main` — producción actualizada ✅
+**TasKing actual**: v2.3.2 - **Tests**: 230 unitarios + 101 E2E.
+**HomeSuite funcional**: rama `integration/homesuite-design-base`; todavía no
+integrada completa en `main` ni habilitada en producción.
 
 **Features completos**: Deep-link, Polling real-time, Celebración con confeti, Historial (#1),
 Etiquetas (#2) con gestión desde ⚙️, Checklists (#3), Protección adjuntos (#4), JWT Google (#5),
@@ -34,17 +65,18 @@ Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta
 CSP + Security headers, i18n landing, Panel admin, IO menu, Temas de color (#10),
 Fix arrastre sin selección de texto en Chrome.
 
-**Próximo**: retomar #9 ¡Pilas con esto! como puerta de entrada inteligente (ver
-docs/PRODUCT_BACKLOG.md), o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
+**Próximo**: aplicar el sistema visual en la rama consolidada, sin alterar los
+contratos funcionales; después integrar la cadena de PRs y validar el resultado
+completo en staging.
 
-## 🎯 Objetivo siguiente sesión
+## Objetivo siguiente sesión
 
-Opciones priorizadas:
-
-1. **#9 ¡Pilas con esto! inteligente** (alta): convertir la sección en puerta de entrada activa al abrir la app — "¿por dónde empezamos hoy?". Ver ideas en docs/PRODUCT_BACKLOG.md.
-2. **Onboarding nuevos usuarios** (media): primera vez que alguien entra y ve el tablero vacío, guiarlos.
-3. **Búsqueda full-text** (baja): buscar por título + detalles en todas las tarjetas.
-4. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8 con 🟢🟡🔴.
+1. Crear la rama del rediseño desde `integration/homesuite-design-base`.
+2. Aplicar el sistema visual a landing, shell autenticado, espacios, invitaciones,
+   libro, movimientos e importación.
+3. Ejecutar pruebas y recorrido visual completo en escritorio y móvil.
+4. Integrar los PRs funcionales en orden y resolver el destino final del PR de
+   diseño contra el `main` resultante.
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
 Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deben cumplirse en cada feature nueva.
@@ -54,13 +86,15 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 - **Framework API**: Hono (JS)
 - **Base de datos**: Cloudflare D1 (SQLite) — migraciones en `migrations/`
 - **Almacenamiento de archivos**: Cloudflare R2 (`tas-king-uploads`)
-- **Frontend**: HTML/CSS/JS vanilla en un único `public/index.html` (sin build)
+- **Frontend**: HTML/CSS/JS vanilla sin build; TasKing está modularizado bajo
+  `public/js/` y HomeSuite vive en `apps/site` y `apps/app`
 - **Auth**: OAuth 2.0 con Google, implementado dentro del Worker. Cookie de sesión firmada con HMAC
 - **Dev local**: `wrangler dev` con D1/R2 emulados. Usuario simulado vía `DEV_USER_EMAIL` en `.dev.vars`
 
 ## Decisiones tomadas
-- **Un solo archivo de frontend**: `public/index.html` sin framework ni build step. Decisión
-  deliberada para mantener simplicidad operativa.
+- **Sin framework ni build step de frontend**: TasKing usa módulos nativos y
+  HomeSuite HTML/CSS/JS servido por Workers. La simplicidad operativa sigue
+  siendo deliberada, pero el frontend ya no vive en un único archivo.
 - **Sin Cloudflare Access**: se intentó pero no funciona en subdominios `*.workers.dev`. Se
   implementó OAuth de Google directamente en el Worker.
 - **Emails permitidos en D1**: la lista de acceso pasó del Secret `ALLOWED_EMAILS` a la tabla
@@ -76,7 +110,9 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 ## Archivos importantes
 - `src/index.js`: setup del Worker (~80 líneas) — importa routes y middlewares
 - `src/routes/`: auth, boards, cards, checklists, labels, uploads, admin, users
-- `public/index.html`: frontend completo — UI Kanban, modales, drag & drop, atajos (~2800 líneas)
+- `public/index.html` + `public/js/`: frontend modular de TasKing
+- `apps/site/`: landing y páginas públicas de HomeSuite
+- `apps/app/`: Worker autenticado y UI funcional de Cuentas Claras
 - `migrations/`: esquema D1 incremental (0001 init → 0010 goals)
 - `wrangler.jsonc`: configuración de Workers, D1 y R2
 - `.dev.vars`: variables locales (no commiteado — ver README para el formato)

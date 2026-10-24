@@ -7,6 +7,34 @@
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## HomeSuite: corte para integración visual - 2026-10-23
+
+- **Base consolidada:** `integration/homesuite-design-base`, sincronizada con
+  `main` v2.3.2 en `9e8a8c1`. Reúne espacios autenticados, preparación
+  financiera, núcleo cotidiano, importación Splitwise, ajustes de la revisión
+  local y el arte nuevo. Es la rama de partida para aplicar el diseño a todo el
+  recorrido, no una rama autorizada para producción.
+- **Cadena funcional abierta:** #68 (`main` -> espacios autenticados), #71
+  (preparación financiera), #75 (núcleo), #76 (Splitwise) y #81 (feedback).
+  Deben integrarse en ese orden. El código financiero posterior a #71 todavía no
+  fue desplegado en staging ni producción.
+- **Arte público:** el PR #74 se integró en `main` como `62b459e`. El mismo
+  arte se validó en la preview de Cloudflare
+  `https://fb7807ef-homesuite-site.pablotortorella.workers.dev` y luego se promovió sin
+  recompilar: Version ID `fb7807ef-d328-4d98-b9eb-683e28748e6a`, 100 % del
+  tráfico de `homesuite-site`. `homesuite.info`, `/tareas`, `/cuentas-claras` y
+  `/compras` respondieron 200; `www` redirigió 308; los hashes de ambos SVG
+  coincidieron con el checkout.
+- **Validación del arte:** la integración con `main` pasó 230 pruebas unitarias y
+  101 E2E. La portada de producción se comprobó además en navegador real.
+- **Límite para el rediseño:** se puede cambiar composición, jerarquía y estilos,
+  preservando acciones POST, CSRF, slugs, permisos, estados de interfaz y
+  comportamiento móvil. El enlace temporal hacia `127.0.0.1` de
+  `local/homesuite-full-preview` no debe llegar a una rama remota.
+
+El relevo operativo y los puntos de entrada para diseño están al principio de
+[`AI_HANDOFF.md`](../AI_HANDOFF.md).
+
 ## 🚀 Deploy a producción v2.3.2 — 2026-10-23
 
 **Version ID:** `0d8891dc-05c0-4fe2-a72e-65ea83921e80` · **SHA:** `53f61f0` · producción pasó de v2.3.1 a v2.3.2. Staging (mismo SHA) fue `6ccea7e0-389e-46c7-9c39-7ae50ed41cca`.
