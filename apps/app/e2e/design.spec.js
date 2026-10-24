@@ -203,3 +203,48 @@ test("archivar deja el grupo de sólo lectura y restaurar lo reabre", async ({ p
   await expect(page.getByRole("status").filter({ hasText: "Grupo restaurado." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Agregar movimiento" }).first()).toBeVisible();
 });
+
+// Contraste real de lo que se ve: color de cada texto contra el primer fondo opaco de sus ancestros.
+async function lowContrast(page) {
+  return page.evaluate(() => {
+    const parse = value => { const match = value.match(/rgba?\(([^)]+)\)/u); if (!match) return null; const [r, g, b, a = 1] = match[1].split(/[ ,/]+/u).filter(Boolean).map(Number); return { r, g, b, a }; };
+    const channel = v => { const u = v / 255; return u <= 0.03928 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4; };
+    const lum = ({ r, g, b }) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    const ratio = (x, y) => { const [hi, lo] = [lum(x), lum(y)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
+    const backgroundOf = node => { for (let el = node; el; el = el.parentElement) { const bg = parse(getComputedStyle(el).backgroundColor); if (bg && bg.a > 0.99) return bg; } return { r: 255, g: 255, b: 255, a: 1 }; };
+    const failures = [];
+    let inspected = 0;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+      if (!text.textContent.trim()) continue;
+      const el = text.parentElement;
+      const style = getComputedStyle(el);
+      if (style.visibility === "hidden" || style.display === "none" || !el.getClientRects().length || el.closest("[hidden]")) continue;
+      const fg = parse(style.color);
+      if (!fg) continue;
+      inspected += 1;
+      const value = ratio(fg, backgroundOf(el));
+      const large = parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontSize) >= 18.66 && Number(style.fontWeight) >= 700);
+      if (value < (large ? 3 : 4.5)) failures.push(`${text.textContent.trim().slice(0, 40)} → ${value.toFixed(2)}`);
+    }
+    return inspected < 5 ? [`sólo se inspeccionaron ${inspected} textos`] : failures;
+  });
+}
+
+for (const scheme of ["light", "dark"]) {
+  test(`el texto de las pantallas cumple el contraste real en ${scheme}`, async ({ browser }) => {
+    const context = await browser.newContext({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    const { pages, book, detail } = await seededBook(page);
+    // Estado con saldo en contra, sugerencias, vista previa y aviso para cubrir más colores.
+    const targets = [...pages, `${book}?aviso=participante`, `${book}/ledger/balance`, `${detail}?aviso=guardado`];
+    for (const path of targets) {
+      await page.goto(path);
+      expect(await lowContrast(page), `contraste en ${path}`).toEqual([]);
+    }
+    await page.goto(`${book}/ledger/new`);
+    await page.getByLabel("Importe", { exact: true }).fill("12.5.1");
+    expect(await lowContrast(page), "contraste de la vista previa con advertencia").toEqual([]);
+    await context.close();
+  });
+}
