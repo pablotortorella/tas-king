@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+<title id="title">HomeSuite — favicon simplificado</title>
+<desc id="desc">Casa color crema con techo terracota, una ventana iluminada y puerta verde, sobre un paisaje verde circular con un sol dorado.</desc>
+<defs>
+  <linearGradient id="fondo" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#3f6957"/><stop offset="1" stop-color="#193b2e"/></linearGradient>
+  <linearGradient id="pared" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5de"/><stop offset="1" stop-color="#eadfc3"/></linearGradient>
+  <linearGradient id="techo" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9580"/><stop offset="1" stop-color="#ef6c59"/></linearGradient>
+  <linearGradient id="puerta" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#578a70"/><stop offset="1" stop-color="#32654e"/></linearGradient>
+  <linearGradient id="campo" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#699b78"/><stop offset="1" stop-color="#46795c"/></linearGradient>
+  <radialGradient id="ventana"><stop stop-color="#ffd47a"/><stop offset="1" stop-color="#d89029"/></radialGradient>
+  <clipPath id="circulo"><circle cx="400" cy="400" r="390"/></clipPath>
+</defs>
+<g clip-path="url(#circulo)">
+  <circle cx="400" cy="400" r="390" fill="url(#fondo)"/>
+  <!-- softly layered scenery -->
+  <path d="M0 390 Q230 205 445 330 Q620 403 800 425 V800 H0Z" fill="#173c2f" opacity=".36"/>
+  <path d="M0 565 Q205 450 410 510 Q600 460 800 550 V800 H0Z" fill="#274d3a" opacity=".58"/>
+  <!-- warm sun -->
+  <circle cx="579" cy="175" r="78" fill="#d0b15e" opacity=".18"/>
+  <circle cx="579" cy="175" r="49" fill="#f9c264"/>
+  <!-- chimney -->
+  <rect x="544" y="270" width="68" height="137" rx="14" fill="#f7edd5"/>
+  <!-- house body -->
+  <path d="M205 418 400 240 595 418 V661 Q400 712 205 661Z" fill="url(#pared)"/>
+  <!-- roof silhouette -->
+  <path d="M149 405 382 194 Q400 176 418 194 L651 405 Q674 429 654 447 Q636 467 613 446 L400 256 187 446 Q164 467 145 447 Q127 429 149 405Z" fill="url(#techo)"/>
+  <path d="M400 188 Q409 185 418 194 L651 405 Q674 429 654 447 Q636 467 613 446 L400 256Z" fill="#cf5d4f" opacity=".21"/>
+  <!-- single glowing arched window -->
+  <path d="M351 398 V359 A49 49 0 0 1 449 359 V398Z" fill="url(#ventana)"/>
+  <path d="M400 310 V398 M351 358 H449" stroke="#ffefd3" stroke-width="8" fill="none"/>
+  <!-- door -->
+  <path d="M340 660 V502 A60 60 0 0 1 460 502 V660Z" fill="url(#puerta)"/>
+  <circle cx="427" cy="572" r="11" fill="#f6bd57"/>
+  <!-- front hill, over lower house, as in simplified illustration -->
+  <path d="M-4 709 Q175 609 400 627 Q628 609 804 709 V804 H-4Z" fill="url(#campo)"/>
+</g>
+</svg>
