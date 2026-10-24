@@ -35,6 +35,35 @@
 El relevo operativo y los puntos de entrada para diseño están al principio de
 [`AI_HANDOFF.md`](../AI_HANDOFF.md).
 
+## 🧭 Cuentas Claras: rediseño visual y propuestas OpenSpec — 2026-10-23
+
+Sesión de diseño y planeamiento. **No se escribió código de producto ni se tocó `main`, `apps/app/`, `apps/site/` ni TasKing.** Todo lo que sigue es material para decidir; nada está desplegado. Rama: `docs/propuestas-cuentas-claras` (sin PR ni merge).
+
+| Qué | Dónde está | Estado |
+|---|---|---|
+| Rediseño visual de Cuentas Claras (10 pantallas, claro y oscuro) | **En el repo**: `docs/diseno/cuentas-claras/` (fuentes `.dc.html`, `canvas.json`, `tokens.json`, 26 capturas PNG y README para retomar). Original en Claude Design, privado: https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 16) | Borrador completo. Renderizado en Chromium y revisado en capturas (casi todas en oscuro, varias en claro); no probado en teléfono real ni otros navegadores. La revisión corrigió alturas de dos pantallas, una columna cortada y la coherencia de personas entre pantallas |
+| Change `libro-y-saldos-cuentas-claras` | `openspec/changes/`, rama `docs/propuestas-cuentas-claras`, commit `699b3bc` | Borrador. `openspec validate --strict` pasa. Sin `explore` previo. Sin PR. Sin implementar |
+| Change `importacion-splitwise-inicial` | ídem | Ídem |
+| Change `busqueda-movimientos-unificada` | ídem | Ídem |
+| Change `colaboracion-y-exportacion-del-libro` | ídem | Ídem |
+| `plataforma-homesuite-minima` | `openspec/changes/` en `main` | **Sin cambios.** Los cuatro changes nuevos dependen de que termine su grupo 3 de `tasks.md` (espacios, membresías e invitaciones) |
+
+**Rediseño (10 pantallas), guardado en `docs/diseno/cuentas-claras/`.** Empezar un grupo: 1 Nuevo grupo, 2 Punto de partida, 3 Importar desde Splitwise. Día a día en móvil: 4 Saldos (con selector COP/USD), 5 Movimientos y búsqueda, 6 Agregar movimiento (gasto, ingreso, transferencia), 7 Detalle y revisiones, 8 «Por qué te deben». Escritorio y personas: 9 Libro de dos paneles, 10 Personas y acceso. Parte de `docs/HOMESUITE_CUENTAS_CLARAS_MVP.md`, el Journey, el Story Map y los estilos de `apps/site/public`. Todas usan los mismos datos sintéticos (Pablo, Ana, Laura, Mateo), de modo que los saldos cierran entre pantallas: saldo de Pablo +$1.748.350 en COP, que suma $0 con los demás, y USD aparte. El modo oscuro se aplicó pasando todos los colores a variables CSS con `prefers-color-scheme`; los pares de color listados en `tokens.json` se verificaron por cálculo de contraste (mínimo 5,1 en texto); no se auditaron todos los pares de todas las pantallas. La paleta oscura es provisoria: la identidad de temas de la suite (HT-01/HT-02) sigue pendiente.
+
+**Cómo se dividieron los changes.** El backlog pide no mezclar modelo financiero, importación y autenticación en un solo change, así que la propuesta se partió en cuatro (orden de dependencia: libro → importación → búsqueda y colaboración). Cubren HG-01 (parcial), HG-03 a HG-07 y el corte B del Story Map. Cada `design.md` termina con **Open Questions**: son las decisiones que el rediseño dio por tomadas y deben resolverse en `/opsx:explore`.
+
+**Decisiones abiertas que más pesan**
+1. Modelo del movimiento importado: sólo efecto firmado por persona, con la inferencia de «pagó X» rotulada. Implica calcular saldos desde `entry_effects`; conviene decidirlo antes de aplicar el change del libro.
+2. El lienzo muestra «pagó Ana» en importados sin rotularlo como inferencia: contradice la regla anterior y hay que corregirlo.
+3. Decimales de COP: el lienzo los oculta, el CSV de ejemplo usa dos.
+4. La opción «saldos anteriores» del lienzo no tiene change; debería quedar deshabilitada.
+5. Algoritmo de sugerencias de transferencia (heurística simple y determinista) y ventana de edición de un miembro sobre lo propio.
+
+**No verificado**: límites reales de `db.batch()` en D1; soporte de FTS5 en D1; formatos de CSV de Splitwise en otros idiomas; que ISO 4217 asigne dos decimales a COP; que minimizar transferencias sea un problema difícil (conocimiento general, sin fuente citada).
+
+**Próximos pasos sugeridos**: abrir el PR de la rama (puede ir como borrador), correr `/opsx:explore` decidiendo de a una las Open Questions empezando por el modelo de efectos, y recién entonces `propose` definitivo de cada change.
+
+
 ## 🚀 Deploy a producción v2.3.2 — 2026-10-23
 
 **Version ID:** `0d8891dc-05c0-4fe2-a72e-65ea83921e80` · **SHA:** `53f61f0` · producción pasó de v2.3.1 a v2.3.2. Staging (mismo SHA) fue `6ccea7e0-389e-46c7-9c39-7ae50ed41cca`.
