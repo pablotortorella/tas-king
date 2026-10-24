@@ -223,7 +223,8 @@ app.get("/api/local/session", async (c) => {
   const session = await createSession(c.env.DB, { userId: user.id, secret });
   setCookie(c, sessionCookie(session.token, true));
   const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
-  return c.redirect(invitation ? "/invitations" : "/spaces/new", 303);
+  const membership = invitation ? null : await c.env.DB.prepare("SELECT 1 AS found FROM memberships WHERE user_id = ? LIMIT 1").bind(user.id).first();
+  return c.redirect(invitation ? "/invitations" : membership ? "/cuentas-claras" : "/spaces/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {
