@@ -26,6 +26,10 @@ export async function addParticipant(db, { spaceId, userId, name }) {
   if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
   const displayName = typeof name === "string" ? name.trim() : "";
   if (!displayName || displayName.length > 120) throw new LedgerError("Ingresá un nombre de hasta 120 caracteres.");
+  const sameName = value => value.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
+  if ((await participantsFor(db, ledger.id)).some(person => person.active && sameName(person.displayName) === sameName(displayName))) {
+    throw new LedgerError("Ya hay una persona con ese nombre en el grupo. Usá otro para distinguirlas.", 409);
+  }
   const id = createPlatformId("participant");
   await db.batch([
     db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name) VALUES (?, ?, ?)").bind(ledger.id, id, displayName),

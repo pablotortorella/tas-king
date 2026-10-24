@@ -111,3 +111,19 @@ describe("archivar y restaurar el grupo", () => {
     expect(after.events.map(event => event.action)).toEqual(expect.arrayContaining(["ledger_archived", "ledger_restored"]));
   });
 });
+
+describe("nombres de participantes", () => {
+  it("rechaza un nombre repetido entre activos sin distinguir mayúsculas ni acentos", async () => {
+    const owner = await identity("nombres-owner@example.test");
+    const space = await createSpaceForUser(env.DB, { userId: owner.user.id, name: "Nombres" });
+    await addParticipant(env.DB, { spaceId: space.id, userId: owner.user.id, name: "José Pérez" });
+    for (const name of ["jose perez", "  JOSÉ   PÉREZ "]) {
+      await expect(addParticipant(env.DB, { spaceId: space.id, userId: owner.user.id, name })).rejects.toMatchObject({ status: 409 });
+    }
+    const response = await request(owner, `/spaces/${space.slug}/participants`, { method: "POST", body: "name=Jose+Perez" });
+    expect(response.status).toBe(409);
+    expect(await response.text()).toContain("Ya hay una persona con ese nombre");
+    await addParticipant(env.DB, { spaceId: space.id, userId: owner.user.id, name: "José Pérez 2" });
+    expect((await readLedger(env.DB, { spaceId: space.id, userId: owner.user.id })).participants).toHaveLength(3);
+  });
+});
