@@ -1,6 +1,6 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-09-19
+**Última actualización**: 2026-10-23
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
@@ -182,6 +182,8 @@ montos ignorando separadores de miles.
 | — | 🔄 Sincronización de comentarios, checklists y borrados | 2026-09-15 implementada (ADR-016, migración 0015); llegó a producción el 2026-09-18 junto con la v2.3.0 |
 | — | 🚦 Migrar antes de desplegar el Worker | 2026-09-18 — los scripts desplegaban antes de migrar, contra lo que pedía la documentación desde el 15/09. Con la 0015 sin aplicar en producción eso abría una ventana de 500. `test/deploy-scripts.test.js` verifica el orden |
 
+| — | 📱 Tip diario completo en móvil, etiquetas en tarjeta nueva y teclado en checklists | 2026-10-23 — v2.3.1 (PRs #65, #66 y #67). `100dvh` en el `body`; `draftLabels` con el patrón de `draftGoals`; Tab/Enter/Backspace en ítems de checklist (ADR-014). Falta auditar el resto de los campos del modal con el mismo criterio de teclado. Ver `docs/STATUS.md` |
+| — | 🎯 Progreso de objetivos con varias columnas de cierre + validación de columna al guardar tarjetas | 2026-10-23 — v2.3.2 (PRs #77 y #78). El progreso cuenta todas las columnas `is_done` (servidor y cliente); crear/editar/reordenar rechazan columnas inexistentes con 400 y el import manda las tarjetas desconocidas a la primera columna. Ver `docs/STATUS.md` |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
@@ -213,9 +215,6 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟠 Alta prioridad
 
-- **Tip diario se recorta en móvil** (pedido de Pablo, 2026-09-22) — al usar TasKing en pantalla móvil, la franja fija del tip puede quedar por debajo del viewport y su texto no llega a leerse. Reproducir en viewport móvil real, revisar la relación entre contenedor principal, altura dinámica del navegador y `tip-daily`/footer; corregir sin truncar el consejo ni ocultar contenido accesible.
-- **Etiquetas en tarjetas nuevas** (pedido de Pablo, 2026-09-11) — 🟢 esfuerzo chico. Hoy las etiquetas solo se pueden asignar reabriendo una tarjeta ya creada: el selector de etiquetas del modal hace `POST /api/cards/:id/labels/:labelId` al instante, y en una tarjeta nueva todavía no hay `:id`. Los objetivos ya resolvieron este mismo problema con un borrador en memoria (`draftGoals` en `public/js/card-modal.js`): se acumulan los ids elegidos mientras se redacta y se vinculan después de crear la tarjeta (paso 5 del guardado). La salida esperada es la simétrica — un `draftLabels` con el mismo patrón, más el picker de etiquetas visible en modo borrador (hoy `renderCardLabels`/el picker asumen `editingId`). Sin cambios de backend ni de esquema.
-- **Tab/Enter estándar en toda la interfaz de tarjetas**: navegación por teclado en el modal — Tab entre campos, Enter confirma, Esc cierra. Incluye checklists (Tab entre ítems, Enter agrega el siguiente, Backspace en ítem vacío lo borra). Criterios ya documentados en ADR-014; falta auditar que se cumplan en todos los campos.
 - **Onboarding para usuarios nuevos**: primer login → tablero vacío sin guía. Opciones: estado vacío con instrucciones ("Creá tu primera tarjeta con N"), tarjetas de ejemplo precargadas, o mini-tour de tooltips.
 
 ## 🟡 Media prioridad
@@ -260,8 +259,6 @@ _Sin ítems pendientes — ver ✅ Completado._
 
 ### 🟠 Alto — bugs funcionales visibles
 
-- **Progreso de objetivos ignora columnas de cierre múltiples** — 🟢 chico. `goalsWithProgress` usa `getDoneColumnId` (una sola columna, `LIMIT 1`), mientras confeti/métricas/urgencia usan todas las `is_done=1` (`getDoneColumnIds`). **Impacto**: con 2+ columnas de cierre, el % de avance queda subestimado — el usuario ve datos incorrectos.
-- **Nadie valida que la columna exista** al crear/editar/importar tarjetas — 🟢 chico. El import usa default `por_conversar`, que puede no existir en tableros con columnas custom. **Impacto**: tarjetas huérfanas en columnas inexistentes, invisibles en la UI y sin error — se percibe como pérdida de datos.
 - **Docs de arranque desactualizadas** — 🟢 chico. `QUICK_START.md` (lectura obligatoria por sesión) congelado al 2026-06-30: menciona PRs "pendientes de merge" ya mergeados y deployados, y "69 unit + 22 E2E" (son 111+36). `STATUS.md`: la sección "Features NO Implementados" está llena de features implementadas, y dice "máx 20 etiquetas / paleta de 20 colores" cuando el código impone 10 y 10. **Impacto**: cada sesión (humana o IA) arranca con un mapa falso del proyecto.
 
 ### 🟡 Medio — endurecimiento y robustez
@@ -278,6 +275,7 @@ _Sin ítems pendientes — ver ✅ Completado._
 ### 🟢 Bajo — limpieza
 
 - `deniedPage()` (`src/routes/auth.js`) interpola el email en HTML sin escapar — riesgo real bajísimo (viene verificado por Google), pero escapar cuesta una línea.
+- `uid()` (`public/js/core/dom.js`) puede colisionar: timestamp en ms + 5 caracteres aleatorios, y `test/frontend-dom.test.js` (500 llamadas seguidas) falló una vez en la v2.3.1 (chance ~0,2 %). Usar `crypto.randomUUID()` o un contador.
 - `Logger("debug")` nunca funciona: `this.levels[level] || 1` — `debug` vale 0 (falsy) y cae a `info`.
 - `DONE_COLUMN` en `src/constants.js` es código muerto desde que las columnas son dinámicas.
 - `checklists.js` monkey-patchea `c.req.param` para reusar `cardWithAccess` — frágil; refactor honesto: `cardWithAccessById(db, cardId, email)`.

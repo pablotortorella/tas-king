@@ -25,13 +25,6 @@ export async function createDefaultColumns(db, boardId) {
   await db.batch(stmts);
 }
 
-export async function getDoneColumnId(db, boardId) {
-  const col = await db.prepare(
-    "SELECT id FROM columns WHERE board_id = ? AND is_done = 1 LIMIT 1"
-  ).bind(boardId).first();
-  return col ? col.id : "terminado";
-}
-
 export async function getDoneColumnIds(db, boardId) {
   const rows = await db.prepare(
     "SELECT id FROM columns WHERE board_id = ? AND is_done = 1"
@@ -48,4 +41,23 @@ export async function getColumnName(db, boardId, columnId) {
     "SELECT name FROM columns WHERE board_id = ? AND id = ?"
   ).bind(boardId, columnId).first();
   return col ? col.name : columnId;
+}
+
+// Nombre de la columna si existe en ese tablero; null si no existe o el id no es
+// un texto. A diferencia de getColumnName (que cae al id para mostrar en la
+// auditoría), sirve para validar y devuelve el nombre en la misma consulta.
+export async function findColumnName(db, boardId, columnId) {
+  if (typeof columnId !== "string" || !columnId) return null;
+  const col = await db.prepare(
+    "SELECT name FROM columns WHERE board_id = ? AND id = ?"
+  ).bind(boardId, columnId).first();
+  return col ? col.name : null;
+}
+
+// Ids de las columnas del tablero, de izquierda a derecha.
+export async function getColumnIds(db, boardId) {
+  const rows = await db.prepare(
+    "SELECT id FROM columns WHERE board_id = ? ORDER BY position ASC"
+  ).bind(boardId).all();
+  return rows.results.map(r => r.id);
 }

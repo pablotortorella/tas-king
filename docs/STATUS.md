@@ -1,11 +1,48 @@
-# Estado de Implementación — FUN TasKing! v2.3.0
+# Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-20
-**Producción registrada**: v2.3.0, desplegada y verificada.
+**Última actualización**: 2026-10-23
+**Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## 🚀 Deploy a producción v2.3.2 — 2026-10-23
+
+**Version ID:** `0d8891dc-05c0-4fe2-a72e-65ea83921e80` · **SHA:** `53f61f0` · producción pasó de v2.3.1 a v2.3.2. Staging (mismo SHA) fue `6ccea7e0-389e-46c7-9c39-7ae50ed41cca`.
+
+Dos bugs del backlog 🟠 «Alto», cada uno en su rama y PR: #77 y #78; el bump de versión y las novedades fueron el PR #79.
+
+- **Progreso de objetivos con varias columnas de cierre (#77).** El servidor usaba `getDoneColumnId` (una sola columna, `LIMIT 1`) y el cliente `COLUMNS.find(c => c.isDone)`, mientras métricas, confeti y urgencia ya contaban todas las `is_done`. Con 2+ columnas de cierre el porcentaje salía subestimado. Ahora `goalsWithProgress` usa `getDoneColumnIds` con `IN (...)` (máximo 10 columnas por tablero) y `applySavedCard` usa `getDoneColumnIds()` de `core/state.js`; `getDoneColumnId` se borró por no tener más usos. **El cliente tenía el mismo defecto**, que habría mostrado un porcentaje distinto del servidor hasta el siguiente sondeo; no figuraba en el backlog. El E2E corta el sondeo (`/version`) para que solo pueda cambiar el porcentaje el cálculo del cliente: falla con «1/2 · 50 %» sin el fix.
+- **Validar que la columna exista (#78).** Crear, editar y reordenar tarjetas aceptaban cualquier `column`: una tarjeta podía quedar en una columna inexistente o de otro tablero, invisible y sin error; un `column` que no era texto daba 500. Ahora responden 400 «La columna no existe en este tablero.» (al editar solo se valida si la columna cambia, así una tarjeta ya huérfana se puede seguir editando y mover). El import no rechaza —sería perder datos—: las tarjetas sin columna o con una desconocida van a la **primera columna del tablero**; antes el default era `por_conversar`, que puede no existir. **Reordenar no estaba en el backlog y tenía el mismo agujero.** Presupuestos D1: crear y editar no suman consultas (la lectura del nombre, que ya existía para la auditoría, pasó antes de escribir y valida); reordenar e importar suman una lectura en paralelo.
+- **Tests:** 230 unitarios y 101 E2E en verde en cada rama, sobre `main` y en los dos deploys. 13 unitarios y 1 E2E nuevos, todos fallaban antes del fix. Sin migraciones; respaldo previo en `backups/prod-20261023-193509.sql`.
+- **Verificado en producción:** v2.3.2 en el pie, `doneColumnIds` en `board.js` y entrada v2.3.2 en `/releases`.
+
+**Qué se aprendió en el camino**
+- El rebase de #78 sobre #77 era limpio pero se repitió la suite completa: ambos tocaban `db/columns.js`.
+- No se probó a mano en staging antes de producción: la verificación fue automática (suite + `curl` de los archivos publicados). Los cambios no tienen superficie nueva, pero conviene una pasada visual con un tablero de dos columnas de cierre.
+
+---
+
+## 🚀 Deploy a producción v2.3.1 — 2026-10-23
+
+**Version ID:** `79a77134-1b7f-4a3a-8d3b-63035ef60690` · **SHA:** `84f23b6` · producción pasó de v2.3.0 a v2.3.1. Staging (mismo SHA) fue `52f9a9d6-53de-4f74-b748-86081e8fe6fa`.
+
+Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden: #65, #66, #67; el bump de versión y las novedades fueron el PR #72.
+
+- **Tip diario en móvil (#65):** el `body` usaba `height: 100vh`, que en móvil incluye la zona que tapa la barra de direcciones y empujaba el tip fuera de pantalla. Ahora `height: 100dvh` con `100vh` de fallback. Causa raíz confirmada en un Motorola Edge 50 con Chrome y Firefox Nightly: la captura previa al fix mostraba el tip cortado y, con el fix en staging, se ve completo. El emulador móvil de DevTools no reproduce el bug.
+- **Etiquetas en tarjeta nueva (#66):** `draftLabels` con el mismo patrón que `draftGoals`; las etiquetas elegidas se acumulan en memoria y se asignan tras crear la tarjeta. Sin cambios de backend ni de esquema.
+- **Checklists con teclado (#67):** Tab salta al texto del ítem siguiente, Enter deja el cursor en «Nueva subtarea» y Backspace en un ítem vacío lo borra. Documentado como sección nueva de ADR-014: el backlog decía que ya estaba y no lo estaba.
+- **Tests:** 217 unitarios y 100 E2E en verde en la rama de cada PR y sobre `main` (el deploy los corre dos veces, en staging y en producción). Sin migraciones nuevas; el respaldo previo quedó en `backups/prod-20261023-154037.sql`.
+- **Verificado en producción:** versión v2.3.1 en el pie, `100dvh` en el CSS, `draftLabels` y el manejo de Backspace en `card-modal.js` y entrada v2.3.1 en `/releases`.
+
+**Qué se aprendió en el camino**
+- **Staging no tenía ninguna de las tres ramas.** Las pruebas manuales iniciales fallaron porque staging servía `main`; se comparó el archivo desplegado contra cada rama para descubrirlo. Staging es un único ambiente: se despliega una rama por vez y se verifica con `curl` que el cambio esté en el archivo publicado antes de pedir una prueba. Una prueba contra código no desplegado no valida nada.
+- **Los worktrees comparten el puerto 8787** de Playwright (`reuseExistingServer`): las suites se corren de a una.
+- **Flake de `uid()`:** `test/frontend-dom.test.js › uid › no repite en llamadas consecutivas` falló una vez (499 de 500) y pasó en las corridas siguientes. `uid()` (`public/js/core/dom.js`) mezcla un timestamp en milisegundos con 5 caracteres aleatorios, así que 500 llamadas casi simultáneas pueden colisionar (chance del orden de 0,2 %). Es una colisión posible, no un fallo del test; queda en el backlog.
+- **Lockfile desalineado:** `package-lock.json` seguía en 2.2.2 con `package.json` en 2.3.0, y cada `npm install` lo modificaba. Quedó corregido en el PR #72.
+
+---
 
 ## 🏠 HomeSuite: sitio público en producción y OAuth en staging — 2026-10-16
 
