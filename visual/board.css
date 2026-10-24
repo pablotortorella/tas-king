@@ -331,3 +331,39 @@ h1 {
 }
 
 .map-note strong { color: var(--green); white-space: nowrap; }
+
+/* Estado de cada post-it (desde v0.1.3): hecho, en revisión o pendiente. */
+.slice-card, .journey-card { display: flex; flex-direction: column; }
+.slice-card p { margin-bottom: 2mm; }
+
+.state {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: .7mm 2.4mm;
+  border-radius: 99px;
+  font-size: 6.8pt;
+  font-weight: 800;
+  letter-spacing: .05em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.journey-card .state { margin-top: 3mm; }
+.state.done { background: var(--green); color: white; }
+.state.wip { background: var(--gold); color: #4a3300; }
+.state.todo { border: .3mm dashed #7d8c82; color: var(--muted); }
+.slice-card.todo { border-style: dashed; box-shadow: none; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2mm 5mm;
+  margin: 1mm 0 3mm;
+  color: var(--muted);
+  font-size: 9pt;
+}
+
+.legend b { color: var(--ink); }
+.legend .state { margin: 0 1.5mm 0 0; }

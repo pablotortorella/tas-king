@@ -1,6 +1,7 @@
 # HomeSuite Cuentas Claras — User Story Map
 
 **Estado:** validado como mapa de producto; las historias candidatas están en el backlog, todavía sin cambio OpenSpec
+**Avance:** la versión visual v0.1.3 (24 oct 2026) marca cada post-it como hecho, en revisión o pendiente; el registro está en [`visual/history/README.md`](../visual/history/README.md).
 
 **Fecha:** 2026-09-21
 
