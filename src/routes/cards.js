@@ -1,7 +1,7 @@
 // ---------- Routes: Cards ----------
 
 import { membership, logEvent } from "../db/helpers.js";
-import { getColumnName } from "../db/columns.js";
+import { findColumnName, getColumnIds, getColumnName } from "../db/columns.js";
 import {
   getBoard, getCardRow, cardJSONById, nextPosition, cardWithAccess,
   replaceCommentsStmts, commentToJSON, auditRowToJSON
@@ -9,6 +9,7 @@ import {
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
+const COLUMN_NOT_FOUND = "La columna no existe en este tablero.";
 
 export function setupCardRoutes(app) {
   app.get("/api/boards/:boardId/version", async c => {
@@ -34,6 +35,8 @@ export function setupCardRoutes(app) {
     if (!(await membership(c.env.DB, boardId, email))) return c.json({ error: "Sin acceso a este tablero." }, 403);
     const b = await c.req.json().catch(() => ({}));
     if (!b.title || !b.column) return c.json({ error: "Faltan title y column." }, 400);
+    const columnName = await findColumnName(c.env.DB, boardId, b.column);
+    if (columnName === null) return c.json({ error: COLUMN_NOT_FOUND }, 400);
     const id = uid();
     const t = now();
     const pos = await nextPosition(c.env.DB, boardId, b.column);
@@ -43,7 +46,6 @@ export function setupCardRoutes(app) {
          VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
       ).bind(id, boardId, String(b.title).trim(), b.column, b.details || "", b.due || "", b.assignee || null, pos, t, t),
     ]);
-    const columnName = await getColumnName(c.env.DB, boardId, b.column);
     await logEvent(c.env.DB, boardId, id, "card_created", email, { column: b.column, columnName });
     return c.json(await cardJSONById(c.env.DB, id));
   });
@@ -60,6 +62,15 @@ export function setupCardRoutes(app) {
     if (error) return error;
     const b = await c.req.json().catch(() => ({}));
     const column = b.column || card.column_id;
+    let columnNames = null;
+    if (column !== card.column_id) {
+      const [fromName, toName] = await Promise.all([
+        getColumnName(c.env.DB, card.board_id, card.column_id),
+        findColumnName(c.env.DB, card.board_id, column),
+      ]);
+      if (toName === null) return c.json({ error: COLUMN_NOT_FOUND }, 400);
+      columnNames = { fromName, toName };
+    }
     const position = column !== card.column_id ? await nextPosition(c.env.DB, card.board_id, column) : card.position;
     const stmts = [
       c.env.DB.prepare(
@@ -79,13 +90,7 @@ export function setupCardRoutes(app) {
 
     const changes = {};
     if (b.title != null && String(b.title).trim() !== card.title) changes.title = { from: card.title, to: String(b.title).trim() };
-    if (column !== card.column_id) {
-      const [fromName, toName] = await Promise.all([
-        getColumnName(c.env.DB, card.board_id, card.column_id),
-        getColumnName(c.env.DB, card.board_id, column),
-      ]);
-      changes.column = { from: card.column_id, to: column, fromName, toName };
-    }
+    if (columnNames) changes.column = { from: card.column_id, to: column, ...columnNames };
     if (b.details != null && b.details !== card.details) changes.details = true;
     if (b.due != null && b.due !== card.due) changes.due = { from: card.due || null, to: b.due || null };
     if (b.assignee !== undefined && (b.assignee || null) !== card.assignee_email) {
@@ -140,9 +145,12 @@ export function setupCardRoutes(app) {
     if (!items.length) return c.json({ updated: 0 });
 
     // Detectar cambios de columna para auditoría (sin IN spread: evita límite de variables en D1)
-    const current = await c.env.DB.prepare(
-      `SELECT id, column_id FROM cards WHERE board_id = ?`
-    ).bind(boardId).all();
+    const [current, columnIds] = await Promise.all([
+      c.env.DB.prepare(`SELECT id, column_id FROM cards WHERE board_id = ?`).bind(boardId).all(),
+      getColumnIds(c.env.DB, boardId),
+    ]);
+    const validColumns = new Set(columnIds);
+    if (items.some(it => !validColumns.has(it.column))) return c.json({ error: COLUMN_NOT_FOUND }, 400);
     const colMap = new Map(current.results.map(r => [r.id, r.column_id]));
 
     // Batch en bloques de 40 (5 vars × 40 = 200 por batch, dentro del límite de D1 local)
@@ -243,11 +251,16 @@ export function setupCardRoutes(app) {
     const data = await c.req.json().catch(() => ({}));
     if (!Array.isArray(data.cards)) return c.json({ error: "Formato inválido: falta cards[]." }, 400);
 
-    const [maxRows, existingLabels, members] = await Promise.all([
+    const [maxRows, existingLabels, members, columnIds] = await Promise.all([
       c.env.DB.prepare("SELECT column_id, MAX(position) AS m FROM cards WHERE board_id = ? GROUP BY column_id").bind(boardId).all(),
       c.env.DB.prepare("SELECT id, name, color FROM labels WHERE board_id = ? ORDER BY position").bind(boardId).all(),
       c.env.DB.prepare("SELECT email FROM board_members WHERE board_id = ?").bind(boardId).all(),
+      getColumnIds(c.env.DB, boardId),
     ]);
+    // Una columna desconocida (de otro tablero, borrada o ausente) deja la tarjeta
+    // invisible: se la manda a la primera columna en vez de perderla.
+    const validColumns = new Set(columnIds);
+    const fallbackColumn = columnIds[0] || "por_conversar";
 
     const posByCol = {};
     for (const r of maxRows.results) posByCol[r.column_id] = r.m || 0;
@@ -272,7 +285,7 @@ export function setupCardRoutes(app) {
     for (const card of data.cards) {
       const id = uid();
       const t = card.created || now();
-      const col = card.column || "por_conversar";
+      const col = validColumns.has(card.column) ? card.column : fallbackColumn;
       posByCol[col] = (posByCol[col] || 0) + 1;
       const assignee = (card.assignee && memberSet.has(card.assignee)) ? card.assignee : null;
 
