@@ -125,11 +125,11 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ nuevo · ⚠️ contradice
 | Archivar / restaurar | 🟡 | Escrituras ya rechazan libro archivado; no hay forma de archivar |
 | Reenviar invitación | ❌ | |
 
-## 4. Qué se puede hacer sin decisiones tuyas, y qué no
+## 4. Qué se hizo sin decisiones tuyas, y qué no
 
-**Hecho en esta rama (solo vista, sin tocar contratos):** paleta única con modo oscuro, hoja de estilos sin estilos en línea, barra superior, libro de dos paneles, saldos por moneda con tarjeta y barras, tarjetas de movimientos con «Tu efecto», formulario de movimiento con opciones tipo chip, detalle con tabla de reparto y línea de tiempo, personas con roles y estados, pasos de importación, estados vacíos, y las pruebas correspondientes. Ver «Estado de avance» al final.
+Ver «Estado de avance» al final: la lista completa, con commits y pruebas.
 
-**No hecho a propósito (necesita `/opsx:explore` contigo):** pantalla 2 (cambia la redirección), pantalla 8 y sugerencias, comentarios, reparto por % y partes, paginación y búsqueda multi-término, reenviar invitación, archivar, supuesto de efecto faltante, atribución de diferencias, propósito del grupo y participantes al crear, selector de herramienta de la suite.
+**No hecho a propósito (necesita `/opsx:explore` contigo):** pantalla 2 como paso propio (cambia la redirección tras crear el grupo y un E2E), comentarios (exige migración nueva y puede chocar con otras ramas que también agreguen `0007`), reparto por % y por partes, reenviar invitación (no hay correo transaccional), desactivar participantes, supuesto de efecto faltante en la importación, atribución de diferencias a filas, propósito del grupo y participantes al crear, y selector de herramienta de la suite.
 
 ## 5. Contratos que las pruebas fijan (verificado leyendo `apps/app/e2e/platform.spec.js`)
 
@@ -140,12 +140,13 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ nuevo · ⚠️ contradice
 
 ## 6. Orden de trabajo propuesto (un PR por grupo)
 
-1. **Base visual**: paleta única + hoja de estilos + barra superior + pruebas de contraste. (Hecho.)
-2. **Libro**: saldos, movimientos y personas en dos paneles. (Hecho.)
-3. **Formulario y detalle de movimiento**. (Hecho.)
-4. **Importación y páginas auxiliares** (pasos, invitaciones, inicio, errores). (Hecho.)
-5. **Con `explore`**: punto de partida, «por qué» + sugerencias, comentarios, paginación/búsqueda, archivar y reenviar.
-6. **Pruebas reales**: teléfono, Safari/iOS y Firefox. No se hicieron.
+1. **Base visual**: paleta única, hoja de estilos sin estilos en línea, modo oscuro, barra superior y pruebas de contraste. (Hecho.)
+2. **Libro**: saldos, movimientos y personas en dos paneles, con barra inferior en el teléfono. (Hecho.)
+3. **Formulario y detalle de movimiento**, con vista previa del efecto. (Hecho.)
+4. **Importación y páginas auxiliares**. (Hecho.)
+5. **Funcionalidad que el spec ya determina** (sin pasar por `explore`; ver abajo): explicación del saldo, sugerencias, búsqueda con términos combinados, «Ver más», archivar/restaurar, nombre único. (Hecho, en commits separados para poder descartarlos.)
+6. **Con `explore`**: punto de partida como paso, comentarios, reparto por % y partes, y lo demás de la sección 4.
+7. **Pruebas reales**: teléfono, Safari/iOS y Firefox. No se hicieron.
 
 ## 7. Preguntas abiertas
 
@@ -156,3 +157,42 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ nuevo · ⚠️ contradice
 5. ¿La búsqueda pasa a SQL con paginación antes de agregar «N de M» y varios términos?
 6. ¿«Tareas / Cuentas Claras / Compras» de la barra de escritorio apuntan a dónde, mientras TasKing y Compras viven en otros Workers?
 7. ¿Quién puede ver la interfaz «sin cuenta» de un participante que luego acepta una invitación ya vinculada a otro (decisión explícita pendiente en el spec)?
+
+## 8. Estado de avance (2026-10-24, madrugada)
+
+Rama `diseno/cuentas-claras-ui`, solo local (no se hizo push ni deploy). Cada punto es un commit chico.
+
+**Diseño aplicado** (solo vista; contratos conservados):
+- `theme.js`: única fuente de la paleta (clara y oscura por `prefers-color-scheme`); `styles.js`: hoja sin estilos en línea (la CSP los prohíbe) con foco visible, controles de 44 px y barras de saldo con clases `w0…w50`.
+- Barra superior, enlace «Saltar al contenido», `theme-color` por esquema, barra inferior en el teléfono (Saldos, Movimientos, +, Personas, Grupos) y dos paneles en escritorio.
+- Libro: tarjeta «Tu saldo» por moneda (roja si debés), saldos con avatar y barra, movimientos con ícono por tipo, «Tu efecto», marca de origen y motivo de coincidencia, personas con rol y estado, estados vacíos con las tres formas de empezar («saldos anteriores» deshabilitada).
+- Formulario: pestañas de tipo, importe grande, opciones como chips (pagó, reparto, método), personas con la persona autenticada primero («· vos») y **vista previa del efecto** antes de guardar, que además avisa si el importe se escribió con puntos de miles.
+- Detalle: tabla «Cómo se repartió» con suma, línea de tiempo de revisiones, insignias, acciones Corregir/Anular.
+- Importación: pasos numerados; tablas con scroll solo donde hace falta.
+- Avisos de confirmación tras cada acción (lista cerrada; el parámetro de la URL nunca se muestra tal cual).
+
+**Funcionalidad agregada (los specs la determinan; no pasó por `explore`, revisala):**
+- «¿Por qué?»: `GET /spaces/:s/ledger/balance?moneda=&persona=` con acumulado y comprobación (spec `saldos-cuentas-claras`).
+- «Para quedar a mano»: regla D6 (mayor con mayor, determinista, sin guardar nada) con «Registrar» que abre la transferencia prellenada (se valida contra los participantes del libro). **El algoritmo es la pregunta abierta n.º 3 del change: se adoptó el que propone D6.**
+- Búsqueda con términos combinados (Y), búsqueda en la nota y «Ver 40 más».
+- Archivar y restaurar el grupo (solo el titular, auditado en `ledger_events`; bloquea movimientos, personas por invitación e importación; la lectura y la exportación siguen).
+- Nombre único entre participantes activos.
+- Acceso local: la sesión de desarrollo entra directo al grupo si ya existe.
+
+**Pruebas nuevas:** contraste calculado de la paleta (`theme.test.js`), marcado y escape (`overview-ui.test.js`), saldos y sugerencias con propiedades (`settlement.test.js`), integración de explicación, prellenado, archivo y nombres (`ledger-views.integration.test.js`) y E2E de diseño (`design.spec.js`: CSP sin violaciones, esquema oscuro, 390 px sin desborde, controles ≥ 44 px, paneles, vista previa, avisos, sugerencias, archivo y **contraste real del texto renderizado en claro y oscuro**). Una prueba existente cambió: el redirect de renombrar ahora agrega `?aviso=renombrado`.
+
+**Hallazgos que corrigieron las pruebas:** el panel de saldos «pegajoso» tapaba los formularios en escritorio (se quitó); la tabla de reparto del detalle se cortaba a 390 px (se compactó); una referencia rota en el script del cliente (la prueba de CSP la detectó).
+
+**Verificado / no verificado**
+- Verificado en Chromium (Playwright): lo anterior, a 390 px y 1280 px, claro y oscuro.
+- **No verificado:** teléfono real, Safari/iOS, Firefox (Chromium es el único navegador del entorno). El efecto del selector `:has()` que muestra los importes exactos tiene alternativa para navegadores sin soporte (se muestran siempre), pero no se probó en ellos. La fuente es la del sistema (Inter queda bloqueada por la CSP).
+- El orden de las personas tiene un desempate por `id` aleatorio cuando se crean en el mismo segundo; solo afecta a quién se le asigna el residuo de un reparto, y la vista previa muestra el mismo resultado que el servidor.
+
+**Cómo verlo en local**
+```bash
+cd ../tas-king-diseno-cc          # worktree de la rama diseno/cuentas-claras-ui
+npm run dev:homesuite-demo        # migra, carga datos sintéticos y arranca en http://localhost:8793
+# entrar como titular:  http://localhost:8793/api/local/session?as=pablo@example.test
+# entrar como integrante: http://localhost:8793/api/local/session?as=laura@example.test
+```
+Los datos son el grupo «Casa compartida» del diseño (Pablo titular, Laura miembro, Ana con invitación pendiente, Mateo sin cuenta; COP y USD; un movimiento anulado; dos importados). Se guardan en `.wrangler/homesuite-app-demo` (ignorado por Git); para empezar de cero, borrá esa carpeta.
