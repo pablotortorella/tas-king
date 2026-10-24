@@ -9,8 +9,8 @@
 
 ## Base común de buenas prácticas — 2026-10-24
 
-**Estado:** documentación preparada en `docs/homesuite-common-practices`; sin
-cambios de aplicación, despliegue ni recursos remotos. Integración pendiente.
+**Alcance:** documentación común de la suite; sin cambios de aplicación,
+despliegue ni recursos remotos. La integración se comprueba en el historial Git.
 
 - [Documentos madre](homesuite/README.md): método, arquitectura, verificación,
   operación y registro de aprendizajes. Cada producto referencia la base y
