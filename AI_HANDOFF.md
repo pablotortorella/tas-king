@@ -55,20 +55,20 @@ Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs
 
 - **Rediseño visual**: 10 pantallas en claro y oscuro, guardadas en el repo en
   `docs/diseno/cuentas-claras/` (fuentes, índice del lienzo, tokens, 26 capturas PNG y un
-  README con cómo retomar y regenerar las capturas). Original en Claude Design, privado:
-  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 16). Se renderizó y revisó en
+  README con cómo retomar y regenerar las capturas). Original en Claude Design:
+  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 18, con pasada de verificación; ver el README de la carpeta). Se renderizó y revisó en
   Chromium; no se probó en teléfono real.
 - **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
-  (commit `699b3bc`, empujada a origin, sin PR ni merge): `libro-y-saldos-cuentas-claras`,
+  (integrada en `main` por el PR #84): `libro-y-saldos-cuentas-claras`,
   `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
   `colaboracion-y-exportacion-del-libro`. Validan con `--strict`.
 - **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
   pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
   varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
-- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) abrir el PR de la rama, mejor como borrador; (2) hacer `explore` con
-  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (3) corregir
+- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) hacer `explore` con
+  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (2) corregir
   en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
-  «saldos anteriores» activa); (4) recién entonces `propose` definitivo.
+  «saldos anteriores» activa); (3) recién entonces `propose` definitivo.
 - **Dependencia**: nada de esto puede aplicarse hasta cerrar el grupo 3 de
   `plataforma-homesuite-minima` (creación de espacios, membresías e invitaciones).
 - La sesión recibió acceso de escritura a `pablotortorella/tas-king` para empujar la rama;

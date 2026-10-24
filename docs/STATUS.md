@@ -37,12 +37,12 @@ El relevo operativo y los puntos de entrada para diseño están al principio de
 
 ## 🧭 Cuentas Claras: rediseño visual y propuestas OpenSpec — 2026-10-23
 
-Sesión de diseño y planeamiento. **No se escribió código de producto ni se tocó `main`, `apps/app/`, `apps/site/` ni TasKing.** Todo lo que sigue es material para decidir; nada está desplegado. Rama: `docs/propuestas-cuentas-claras` (sin PR ni merge).
+Sesión de diseño y planeamiento. **No se escribió código de producto ni se tocó `main`, `apps/app/`, `apps/site/` ni TasKing.** Todo lo que sigue es material para decidir; nada está desplegado. Integrado en `main` por el PR #84; la verificación posterior va en la rama `docs/verificacion-cuentas-claras`.
 
 | Qué | Dónde está | Estado |
 |---|---|---|
-| Rediseño visual de Cuentas Claras (10 pantallas, claro y oscuro) | **En el repo**: `docs/diseno/cuentas-claras/` (fuentes `.dc.html`, `canvas.json`, `tokens.json`, 26 capturas PNG y README para retomar). Original en Claude Design, privado: https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 16) | Borrador completo. Renderizado en Chromium y revisado en capturas (casi todas en oscuro, varias en claro); no probado en teléfono real ni otros navegadores. La revisión corrigió alturas de dos pantallas, una columna cortada y la coherencia de personas entre pantallas |
-| Change `libro-y-saldos-cuentas-claras` | `openspec/changes/`, rama `docs/propuestas-cuentas-claras`, commit `699b3bc` | Borrador. `openspec validate --strict` pasa. Sin `explore` previo. Sin PR. Sin implementar |
+| Rediseño visual de Cuentas Claras (10 pantallas, claro y oscuro) | **En el repo**: `docs/diseno/cuentas-claras/` (fuentes `.dc.html`, `canvas.json`, `tokens.json`, 26 capturas PNG y README para retomar). Original en Claude Design: https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 18) | Borrador completo. Renderizado en Chromium y revisado en capturas (casi todas en oscuro, varias en claro); no probado en teléfono real ni otros navegadores. La revisión corrigió alturas de dos pantallas, una columna cortada y la coherencia de personas entre pantallas |
+| Change `libro-y-saldos-cuentas-claras` | `openspec/changes/`, en `main` (PR #84) | Borrador. `openspec validate --strict` pasa. Sin `explore` previo. Sin implementar |
 | Change `importacion-splitwise-inicial` | ídem | Ídem |
 | Change `busqueda-movimientos-unificada` | ídem | Ídem |
 | Change `colaboracion-y-exportacion-del-libro` | ídem | Ídem |
@@ -61,7 +61,7 @@ Sesión de diseño y planeamiento. **No se escribió código de producto ni se t
 
 **No verificado**: límites reales de `db.batch()` en D1; soporte de FTS5 en D1; formatos de CSV de Splitwise en otros idiomas; que ISO 4217 asigne dos decimales a COP; que minimizar transferencias sea un problema difícil (conocimiento general, sin fuente citada).
 
-**Próximos pasos sugeridos**: abrir el PR de la rama (puede ir como borrador), correr `/opsx:explore` decidiendo de a una las Open Questions empezando por el modelo de efectos, y recién entonces `propose` definitivo de cada change.
+**Próximos pasos sugeridos**: correr `/opsx:explore` decidiendo de a una las Open Questions empezando por el modelo de efectos, y recién entonces `propose` definitivo de cada change.
 
 
 ## 🚀 Deploy a producción v2.3.2 — 2026-10-23
