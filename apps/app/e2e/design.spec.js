@@ -1,0 +1,118 @@
+import { expect, test } from "@playwright/test";
+
+const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+const TAP_TARGETS = [
+  "a.button", "button", ".tabbar a", ".quick-actions a", ".export-actions a", ".type-tabs a", ".choice span", ".back-link",
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio])", "select", "textarea",
+].join(",");
+
+// Crea un grupo con una persona sin cuenta y un gasto, y devuelve las rutas para recorrer.
+async function seededBook(page) {
+  const suffix = unique();
+  await page.goto(`/api/local/session?as=diseno-${suffix}%40example.test`);
+  await page.getByLabel("Nombre", { exact: true }).fill(`Casa diseño ${suffix}`);
+  await page.getByRole("button", { name: "Crear espacio" }).click();
+  const book = new URL(page.url()).pathname;
+  await page.getByLabel("Participante sin cuenta").fill("Beto");
+  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await page.getByRole("link", { name: "Gasto", exact: true }).click();
+  await page.getByLabel("Descripción").fill("Supermercado");
+  await page.getByLabel("Importe", { exact: true }).fill("100,00");
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("heading", { name: "Supermercado" })).toBeVisible();
+  const detail = new URL(page.url()).pathname;
+  return { suffix, book, detail, pages: [book, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/spaces/new", "/cuentas-claras", "/invitations"] };
+}
+
+test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ page }) => {
+  const problems = [];
+  page.on("console", message => { if (message.type() === "error" || /content security policy/iu.test(message.text())) problems.push(message.text()); });
+  page.on("pageerror", error => problems.push(error.message));
+  const { pages } = await seededBook(page);
+  for (const path of pages) {
+    await page.goto(path);
+    await expect(page.locator("main")).toBeVisible();
+  }
+  expect(problems).toEqual([]);
+});
+
+for (const scheme of ["light", "dark"]) {
+  test.describe(`esquema ${scheme}`, () => {
+    test.use({ colorScheme: scheme });
+
+    test("aplica la paleta del dispositivo", async ({ page }) => {
+      await page.goto("/");
+      const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      expect(background).toBe(scheme === "dark" ? "rgb(18, 28, 23)" : "rgb(247, 242, 232)");
+    });
+
+    test("en 390 px no desborda y todos los controles miden al menos 44 px", async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const { pages } = await seededBook(page);
+      for (const path of pages) {
+        await page.goto(path);
+        const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+        expect(sizes.content, `desborde en ${path}`).toBeLessThanOrEqual(sizes.viewport);
+        const small = await page.$$eval(TAP_TARGETS, nodes => nodes
+          .filter(node => node.getClientRects().length && getComputedStyle(node).visibility !== "hidden")
+          .map(node => ({ label: (node.textContent || node.getAttribute("name") || node.tagName).trim().slice(0, 40), height: node.getBoundingClientRect().height }))
+          .filter(item => item.height < 43.5));
+        expect(small, `controles chicos en ${path}`).toEqual([]);
+      }
+    });
+  });
+}
+
+test("en escritorio el libro usa dos paneles y en el teléfono se apilan con barra inferior", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const { book } = await seededBook(page);
+  await page.goto(book);
+  const side = await page.locator("#saldos").boundingBox();
+  const main = await page.locator("#movimientos").boundingBox();
+  expect(main.x).toBeGreaterThan(side.x + side.width - 1);
+  expect(Math.abs(main.y - side.y)).toBeLessThan(80);
+  await expect(page.locator(".tabbar")).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(book);
+  await expect(page.locator(".tabbar")).toBeVisible();
+  const stackedSide = await page.locator("#saldos").boundingBox();
+  const stackedMain = await page.locator("#movimientos").boundingBox();
+  expect(stackedMain.y).toBeGreaterThan(stackedSide.y + stackedSide.height - 1);
+  await expect(page.getByRole("link", { name: "Agregar movimiento" }).first()).toBeVisible();
+});
+
+test("el libro muestra saldo propio, efecto propio y suma cero", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(book);
+  await expect(page.getByText("Tu saldo · COP")).toBeVisible();
+  await expect(page.getByText("Te corresponde recibir.")).toBeVisible();
+  await expect(page.getByText("Tu efecto +COP 50,00")).toBeVisible();
+  await expect(page.getByText("✓ Suman 0")).toBeVisible();
+  await expect(page.getByText("Le deben COP 50,00")).toBeVisible();
+});
+
+test("el formulario cambia de tipo, muestra importes exactos al elegirlos y se maneja con teclado", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(`${book}/ledger/new`);
+  await expect(page.getByRole("link", { name: "Gasto", exact: true }).first()).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".shares")).toBeHidden();
+  await page.getByLabel("Importes exactos").check();
+  await expect(page.locator(".shares")).toBeVisible();
+  await page.getByRole("link", { name: "Transferencia", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Agregar transferencia" })).toBeVisible();
+  await expect(page.getByText("No es un gasto.")).toBeVisible();
+  await page.keyboard.press("Tab");
+  const outline = await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
+  expect(outline).not.toBe("none");
+});
+
+test("el detalle muestra el reparto con suma, línea de tiempo y la anulación sigue visible", async ({ page }) => {
+  const { detail } = await seededBook(page);
+  await page.goto(detail);
+  await expect(page.getByRole("heading", { name: "Cómo se repartió" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Suma" })).toBeVisible();
+  await expect(page.getByText("Reparto igual entre 2 personas.")).toBeVisible();
+  await expect(page.locator(".timeline")).toContainText("Revisión 1");
+  await expect(page.getByText("Vigente · revisión 1")).toBeVisible();
+});
