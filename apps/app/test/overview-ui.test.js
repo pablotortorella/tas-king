@@ -73,9 +73,13 @@ describe("libro: vista general", () => {
   it("muestra un estado vacío con la acción disponible según el rol", () => {
     const owner = renderLedgerOverview(data([]), { spaceId: "casa", userId: "u1" });
     expect(owner).toContain("Todavía no hay movimientos.");
-    expect(owner).toContain("Importar Splitwise");
+    expect(owner).toContain("Traer mis movimientos de Splitwise");
+    expect(owner).toContain("Empezar en cero");
+    expect(owner).toContain("Todavía no disponible");
+    expect(owner.match(/Importar Splitwise/gu) ?? []).toHaveLength(0);
     const member = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "member" } }, { spaceId: "casa", userId: "u1" });
-    expect(member).not.toContain("Importar Splitwise");
+    expect(member).not.toContain("Traer mis movimientos de Splitwise");
+    expect(member).toContain("Empezar en cero");
   });
 });
 

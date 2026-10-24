@@ -1,5 +1,7 @@
 // Piezas visuales compartidas: escape de HTML, íconos, avatares y la estructura de página.
 
+import { DARK, LIGHT } from "./theme.js";
+
 export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
@@ -53,5 +55,5 @@ export function tabbar(spaceHref) {
 
 export function renderPage(title, content, { wide = false, spaceHref = null } = {}) {
   const shellClass = `shell${wide ? " wide" : ""}${spaceHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/ledger-ui.js" defer></script><body><header class="topbar"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a></header><main class="${shellClass}">${content}</main>${spaceHref ? tabbar(spaceHref) : ""}</body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/ledger-ui.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a></header><main id="contenido" class="${shellClass}">${content}</main>${spaceHref ? tabbar(spaceHref) : ""}</body></html>`;
 }

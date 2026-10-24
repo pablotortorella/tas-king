@@ -116,3 +116,40 @@ test("el detalle muestra el reparto con suma, línea de tiempo y la anulación s
   await expect(page.locator(".timeline")).toContainText("Revisión 1");
   await expect(page.getByText("Vigente · revisión 1")).toBeVisible();
 });
+
+test("la vista previa del movimiento muestra el efecto antes de guardar y avisa de importes ambiguos", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(`${book}/ledger/new`);
+  const preview = page.locator(".effect-preview");
+  await expect(preview).toBeHidden();
+  await page.getByLabel("Importe", { exact: true }).fill("286.400");
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText("No entendemos ese importe");
+  await page.getByLabel("Importe", { exact: true }).fill("101,01");
+  await expect(preview).toContainText("Se guardará como COP 101,01.");
+  // El residuo va a quien aparece primero en la lista (orden por creación y luego por id): el signo se mantiene.
+  await expect(preview).toContainText(/\+COP 50,5[01]/u);
+  await expect(preview).toContainText(/−COP 50,5[01]/u);
+  await expect(preview).toContainText("Sobran 1 centavos");
+  await page.getByLabel("Importes exactos").check();
+  await expect(preview).toContainText("Falta el importe");
+});
+
+test("la tabla de reparto del detalle cabe en 390 px sin scroll interno", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { detail } = await seededBook(page);
+  await page.goto(detail);
+  const overflow = await page.$$eval(".table-scroll", nodes => nodes.map(node => node.scrollWidth - node.clientWidth));
+  expect(overflow.every(value => value <= 0)).toBe(true);
+});
+
+test("un error del servidor al guardar se muestra en el formulario y permite reintentar", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(`${book}/ledger/new`);
+  await page.getByLabel("Descripción").fill("Sin importe válido");
+  await page.getByLabel("Importe", { exact: true }).fill("10,00");
+  await page.route("**/ledger/entries", route => route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ error: "Este movimiento cambió. Recargá antes de guardar." }) }));
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.locator(".form-feedback.error")).toContainText("Este movimiento cambió");
+  await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
+});

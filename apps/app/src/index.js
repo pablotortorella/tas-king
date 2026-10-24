@@ -5,6 +5,7 @@ import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError } from ".
 import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
 import { ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm } from "./ledger-ui.js";
 import { renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
+import { LEDGER_CLIENT_JS } from "./client.js";
 import { appCss } from "./styles.js";
 import { avatar, escapeHtml, renderPage } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
@@ -699,7 +700,7 @@ app.get("/cuentas-claras", async (c) => {
 
 app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; charset=utf-8" }));
 
-app.get("/ledger-ui.js", (c) => c.body(`document.querySelectorAll("form[data-optimistic]").forEach(form=>form.addEventListener("submit",async event=>{if(!form.reportValidity())return;event.preventDefault();const button=form.querySelector('button[type="submit"]');const feedback=form.querySelector(".form-feedback");const data=new FormData(form);const preview=document.createElement("p");preview.className="pending-entry";preview.textContent=[data.get("description"),data.get("amount"),data.get("currency"),"pendiente"].filter(Boolean).join(" · ");feedback.before(preview);feedback.textContent="Guardando movimiento…";button.disabled=true;try{const response=await fetch(form.action,{method:"POST",body:data,headers:{Accept:"application/json"},credentials:"same-origin"});const result=await response.json();if(!response.ok)throw new Error(result.error||"No pudimos guardar el movimiento.");location.assign(result.location)}catch(error){preview.remove();feedback.textContent=error.message;button.disabled=false}}));`, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {
