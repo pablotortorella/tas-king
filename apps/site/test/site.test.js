@@ -77,6 +77,21 @@ describe("homesuite-site", () => {
     expect(html).not.toMatch(/\sstyle=/i);
   });
 
+  it("usa el nuevo emblema y favicon en las cuatro páginas", async () => {
+    const pages = ["index", "tareas", "cuentas-claras", "compras"];
+    for (const name of pages) {
+      const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+      expect(html).toContain('href="/HomeSuite-favicon-simplificado.svg"');
+      expect(html).toContain('src="/HomeSuite-favicon-simplificado.svg"');
+      expect(html).not.toContain('href="/favicon.svg"');
+    }
+    const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(home).toContain('src="/HomeSuite-emblema.svg"');
+    for (const name of ["HomeSuite-emblema.svg", "HomeSuite-emblema-preview.png", "HomeSuite-favicon-simplificado.svg", "HomeSuite-favicon-simplificado-preview.png"]) {
+      expect((await readFile(new URL(`../public/${name}`, import.meta.url))).byteLength).toBeGreaterThan(0);
+    }
+  });
+
   it.each([
     ["tareas", "Fun TasKing!", true],
     ["cuentas-claras", "Las cuentas compartidas, más claras.", false],

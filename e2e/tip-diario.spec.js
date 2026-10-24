@@ -100,6 +100,23 @@ test("en 360px el tip se lee completo y los atajos de teclado se ocultan", async
   expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+test("el alto del body sigue el viewport visible real en móvil (dvh con fallback a vh)", async ({ page, request }) => {
+  // En navegadores móviles, 100vh mide el viewport "grande" (barra de
+  // direcciones oculta), no el visible. Con la barra mostrada, un body fijado
+  // a 100vh queda más alto que la pantalla real y, como el body usa
+  // `overflow: hidden`, el tip diario y el pie quedan tapados sin poder hacer
+  // scroll para verlos (pedido de Pablo, 2026-09-22).
+  //
+  // El viewport headless de Playwright no simula esa barra apareciendo o
+  // desapareciendo, así que no hay forma de reproducir el recorte en pantalla;
+  // se fija acá, sobre la regla servida, que el alto siga el viewport
+  // dinámico (dvh) con 100vh solo como fallback para navegadores sin soporte.
+  const css = await (await request.get("/css/app.css")).text();
+  const bodyBlock = css.match(/^body\s*\{[^}]*\}/m)?.[0] ?? "";
+  const declaraciones = [...bodyBlock.matchAll(/height:\s*([^;]+);/g)].map(m => m[1].trim());
+  expect(declaraciones).toEqual(["100vh", "100dvh"]);
+});
+
 test("con movimiento reducido el tip se ve completo y sin animación", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");

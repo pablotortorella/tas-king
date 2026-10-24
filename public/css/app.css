@@ -68,7 +68,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
+  /* dvh sigue el viewport visible real: en móvil, 100vh incluye el área que
+     tapa la barra de direcciones y empuja el tip/pie fuera de pantalla. */
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
