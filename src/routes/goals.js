@@ -1,5 +1,5 @@
 import { membership } from "../db/helpers.js";
-import { getDoneColumnId } from "../db/columns.js";
+import { getDoneColumnIds } from "../db/columns.js";
 
 const uid = () => crypto.randomUUID();
 const now = () => Date.now();
@@ -7,10 +7,11 @@ const now = () => Date.now();
 const MAX_GOALS = 30;
 
 // Devuelve los objetivos del tablero con su progreso calculado.
-// Progreso = tarjetas vinculadas (no archivadas) que están en la columna
-// marcada como "done" sobre el total de tarjetas vinculadas (no archivadas).
+// Progreso = tarjetas vinculadas (no archivadas) que están en alguna columna
+// de cierre sobre el total de tarjetas vinculadas (no archivadas). Mismo
+// criterio que métricas, confeti y urgencia: todas las columnas `is_done`.
 export async function goalsWithProgress(db, boardId) {
-  const doneColumnId = await getDoneColumnId(db, boardId);
+  const doneColumnIds = await getDoneColumnIds(db, boardId);
 
   const goals = await db
     .prepare("SELECT id, title, description, position FROM goals WHERE board_id = ? ORDER BY position, title")
@@ -21,14 +22,14 @@ export async function goalsWithProgress(db, boardId) {
     .prepare(
       `SELECT cg.goal_id AS goal_id,
               COUNT(*) AS total,
-              SUM(CASE WHEN c.column_id = ? THEN 1 ELSE 0 END) AS done
+              SUM(CASE WHEN c.column_id IN (${doneColumnIds.map(() => "?").join(", ")}) THEN 1 ELSE 0 END) AS done
        FROM card_goals cg
        JOIN goals g ON g.id = cg.goal_id
        JOIN cards c ON c.id = cg.card_id
        WHERE g.board_id = ? AND c.archived = 0
        GROUP BY cg.goal_id`
     )
-    .bind(doneColumnId, boardId)
+    .bind(...doneColumnIds, boardId)
     .all();
 
   const byGoal = new Map();

@@ -25,13 +25,6 @@ export async function createDefaultColumns(db, boardId) {
   await db.batch(stmts);
 }
 
-export async function getDoneColumnId(db, boardId) {
-  const col = await db.prepare(
-    "SELECT id FROM columns WHERE board_id = ? AND is_done = 1 LIMIT 1"
-  ).bind(boardId).first();
-  return col ? col.id : "terminado";
-}
-
 export async function getDoneColumnIds(db, boardId) {
   const rows = await db.prepare(
     "SELECT id FROM columns WHERE board_id = ? AND is_done = 1"

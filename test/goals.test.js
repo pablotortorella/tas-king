@@ -122,3 +122,55 @@ describe("Objetivos: CRUD, vínculo con tarjetas y progreso", () => {
     expect(board.cards.find(c => c.id === cardB).goals).toHaveLength(0);
   });
 });
+
+describe("Objetivos: progreso con varias columnas de cierre", () => {
+  const multi = "goals-multi-done@test.local";
+  let boardId;
+  let goalId;
+  let publicadoId;
+
+  async function linkedCard(title, column) {
+    const card = await (await request(`/api/boards/${boardId}/cards`, {
+      email: multi, method: "POST", body: { title, column },
+    })).json();
+    expect((await request(`/api/cards/${card.id}/goals/${goalId}`, { email: multi, method: "POST" })).status).toBe(200);
+    return card.id;
+  }
+
+  async function progress() {
+    const goals = await (await request(`/api/boards/${boardId}/goals`, { email: multi })).json();
+    return goals.find(g => g.id === goalId);
+  }
+
+  beforeAll(async () => {
+    boardId = (await me(multi)).boards[0].id;
+    goalId = (await (await request(`/api/boards/${boardId}/goals`, {
+      email: multi, method: "POST", body: { title: "Entrega" },
+    })).json()).id;
+
+    // Segunda columna de cierre además de "Terminado".
+    publicadoId = (await (await request(`/api/boards/${boardId}/columns`, {
+      email: multi, method: "POST", body: { name: "Publicado" },
+    })).json()).id;
+    const patch = await request(`/api/boards/${boardId}/columns/${publicadoId}`, {
+      email: multi, method: "PATCH", body: { isDone: true },
+    });
+    expect(patch.status).toBe(200);
+  });
+
+  it("cuenta como completadas las tarjetas de todas las columnas de cierre", async () => {
+    await linkedCard("En terminado", "terminado");
+    await linkedCard("En publicado", publicadoId);
+    await linkedCard("Sin terminar", "pendiente");
+
+    expect(await progress()).toMatchObject({ total: 3, done: 2, pct: 67 });
+  });
+
+  it("sigue contando solo una columna cuando hay una sola de cierre", async () => {
+    await request(`/api/boards/${boardId}/columns/${publicadoId}`, {
+      email: multi, method: "PATCH", body: { isDone: false },
+    });
+
+    expect(await progress()).toMatchObject({ total: 3, done: 1, pct: 33 });
+  });
+});
