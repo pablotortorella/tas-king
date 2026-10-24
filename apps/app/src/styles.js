@@ -93,7 +93,7 @@ const BOOK = `
 .entry-row a:hover .entry-title{text-decoration:underline}
 .entry-main{min-width:0}.entry-title{display:block;color:var(--ink);overflow-wrap:anywhere}.entry-main small{display:block;color:var(--ink-3);margin-top:2px;font-size:.88rem}
 .entry-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.entry-side{text-align:right}.entry-side .money{display:block;font-size:1.05rem;color:var(--ink)}.entry-side small{display:block;margin-top:2px;font-size:.82rem;font-weight:700}
+.entry-side{text-align:right}.entry-side .money{display:block;font-size:1.05rem;color:var(--ink)}.entry-side .money.owed,.imported-group .entry-side .money.owed{color:var(--accent-text)}.entry-side .money.owes{color:var(--neg)}.entry-side small{display:block;margin-top:2px;font-size:.82rem;font-weight:700}
 .entry-voided .entry-title,.entry-voided .entry-side .money{text-decoration:line-through;color:var(--ink-3)}.entry-voided{opacity:.9}
 .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--chip);color:var(--ink-2)}.ico svg{display:block}
 .ico-expense{background:var(--coral-soft);color:var(--coral-text)}.ico-income{background:var(--accent-soft);color:var(--accent-deep)}.ico-transfer{background:var(--teal-soft);color:var(--teal-text)}.ico-imported{background:var(--yel-soft);color:var(--yel-text)}
