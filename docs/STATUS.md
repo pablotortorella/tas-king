@@ -1,11 +1,28 @@
-# Estado de Implementación — FUN TasKing! v2.3.1
+# Estado de Implementación — FUN TasKing! v2.3.2
 
 **Última actualización**: 2026-10-23
-**Producción registrada**: v2.3.1, desplegada y verificada.
+**Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## 🚀 Deploy a producción v2.3.2 — 2026-10-23
+
+**Version ID:** `0d8891dc-05c0-4fe2-a72e-65ea83921e80` · **SHA:** `53f61f0` · producción pasó de v2.3.1 a v2.3.2. Staging (mismo SHA) fue `6ccea7e0-389e-46c7-9c39-7ae50ed41cca`.
+
+Dos bugs del backlog 🟠 «Alto», cada uno en su rama y PR: #77 y #78; el bump de versión y las novedades fueron el PR #79.
+
+- **Progreso de objetivos con varias columnas de cierre (#77).** El servidor usaba `getDoneColumnId` (una sola columna, `LIMIT 1`) y el cliente `COLUMNS.find(c => c.isDone)`, mientras métricas, confeti y urgencia ya contaban todas las `is_done`. Con 2+ columnas de cierre el porcentaje salía subestimado. Ahora `goalsWithProgress` usa `getDoneColumnIds` con `IN (...)` (máximo 10 columnas por tablero) y `applySavedCard` usa `getDoneColumnIds()` de `core/state.js`; `getDoneColumnId` se borró por no tener más usos. **El cliente tenía el mismo defecto**, que habría mostrado un porcentaje distinto del servidor hasta el siguiente sondeo; no figuraba en el backlog. El E2E corta el sondeo (`/version`) para que solo pueda cambiar el porcentaje el cálculo del cliente: falla con «1/2 · 50 %» sin el fix.
+- **Validar que la columna exista (#78).** Crear, editar y reordenar tarjetas aceptaban cualquier `column`: una tarjeta podía quedar en una columna inexistente o de otro tablero, invisible y sin error; un `column` que no era texto daba 500. Ahora responden 400 «La columna no existe en este tablero.» (al editar solo se valida si la columna cambia, así una tarjeta ya huérfana se puede seguir editando y mover). El import no rechaza —sería perder datos—: las tarjetas sin columna o con una desconocida van a la **primera columna del tablero**; antes el default era `por_conversar`, que puede no existir. **Reordenar no estaba en el backlog y tenía el mismo agujero.** Presupuestos D1: crear y editar no suman consultas (la lectura del nombre, que ya existía para la auditoría, pasó antes de escribir y valida); reordenar e importar suman una lectura en paralelo.
+- **Tests:** 230 unitarios y 101 E2E en verde en cada rama, sobre `main` y en los dos deploys. 13 unitarios y 1 E2E nuevos, todos fallaban antes del fix. Sin migraciones; respaldo previo en `backups/prod-20261023-193509.sql`.
+- **Verificado en producción:** v2.3.2 en el pie, `doneColumnIds` en `board.js` y entrada v2.3.2 en `/releases`.
+
+**Qué se aprendió en el camino**
+- El rebase de #78 sobre #77 era limpio pero se repitió la suite completa: ambos tocaban `db/columns.js`.
+- No se probó a mano en staging antes de producción: la verificación fue automática (suite + `curl` de los archivos publicados). Los cambios no tienen superficie nueva, pero conviene una pasada visual con un tablero de dos columnas de cierre.
+
+---
 
 ## 🚀 Deploy a producción v2.3.1 — 2026-10-23
 
