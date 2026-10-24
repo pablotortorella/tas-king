@@ -110,3 +110,22 @@ describe("libro: personas", () => {
     expect(html).toContain("/spaces/casa/rename");
   });
 });
+
+describe("libro: ver más", () => {
+  const many = Array.from({ length: 95 }, (_, index) => entry({ id: `e${String(index).padStart(3, "0")}`, description: `Gasto ${index}` }));
+
+  it("muestra 40 movimientos y ofrece ver los siguientes sin perder la búsqueda", () => {
+    const first = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1" });
+    expect(first.match(/class="entry-row/gu)).toHaveLength(40);
+    expect(first).toContain("Ver 40 movimientos más");
+    expect(first).toContain("mostrar=80");
+    const last = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", limit: 80 });
+    expect(last.match(/class="entry-row/gu)).toHaveLength(80);
+    expect(last).toContain("Ver 15 movimientos más");
+    const all = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", limit: 120 });
+    expect(all).not.toContain("movimientos más");
+    const filtered = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", query: "gasto" });
+    expect(filtered).toContain("q=gasto&amp;mostrar=80");
+    expect(filtered).toContain("95 de 95 movimientos · mostrando 40");
+  });
+});

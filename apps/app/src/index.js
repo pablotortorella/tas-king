@@ -6,7 +6,7 @@ import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger,
 import { ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { renderBalanceExplanation } from "./balance-ui.js";
-import { renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
+import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { LEDGER_CLIENT_JS } from "./client.js";
 import { appCss } from "./styles.js";
 import { avatar, escapeHtml, noticeFor, renderPage } from "./ui-parts.js";
@@ -435,7 +435,7 @@ app.get("/spaces/:spaceId", async (c) => {
     readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
   ]);
   const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
-  const content = `${noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", below: people })}`;
+  const content = `${noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
   return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
 });
 

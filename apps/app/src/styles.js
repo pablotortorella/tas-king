@@ -97,6 +97,7 @@ const BOOK = `
 .entry-voided .entry-title,.entry-voided .entry-side .money{text-decoration:line-through;color:var(--ink-3)}.entry-voided{opacity:.9}
 .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--chip);color:var(--ink-2)}.ico svg{display:block}
 .ico-expense{background:var(--coral-soft);color:var(--coral-text)}.ico-income{background:var(--accent-soft);color:var(--accent-deep)}.ico-transfer{background:var(--teal-soft);color:var(--teal-text)}.ico-imported{background:var(--yel-soft);color:var(--yel-text)}
+.more{width:100%;margin-top:12px}
 .list-meta{font-size:.9rem;color:var(--ink-3);margin:0 0 4px}
 .search-form{display:grid;grid-template-columns:1fr auto;gap:8px;margin:12px 0 8px;align-items:center}.search-form .button{margin:0}.search-form .clear{grid-column:1/-1;font-size:.9rem}
 .start-options{display:grid;gap:12px;margin-top:8px}.start-option{border:1.5px solid var(--line-strong);border-radius:18px;padding:16px;background:var(--surface)}.start-option h3{font-size:1.05rem;margin:0 0 4px}.start-option p{margin:0 0 6px;font-size:.95rem}.start-option .button{margin-top:6px}

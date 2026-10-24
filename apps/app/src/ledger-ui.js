@@ -29,21 +29,32 @@ function amountMatches(amountMinor, currency, query) {
   return (needle.usesDecimals ? digits : whole).includes(needle.digits);
 }
 
+function matchTerm(entry, names, raw) {
+  const needle = searchable(raw);
+  if (!needle) return null;
+  if (searchable(entry.description).includes(needle)) return "Descripción";
+  if (entry.category && searchable(entry.category).includes(needle)) return "Categoría";
+  if (entry.note && searchable(entry.note).includes(needle)) return "Nota";
+  if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, raw)) return "Importe total";
+  for (const effect of entry.effects) {
+    const name = names.get(effect.participantId) ?? "";
+    if (searchable(name).includes(needle)) return `Participante: ${name}`;
+    if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, raw)) return `Efecto de ${name}`;
+  }
+  return null;
+}
+
+// Una frase que coincide tal cual gana; si no, cada término de la consulta debe coincidir en algún campo.
 export function searchLedger(entries, participants, query) {
-  const needle = searchable(query);
-  if (!needle) return entries.map(entry => ({ ...entry, matchReason: null }));
+  if (!searchable(query)) return entries.map(entry => ({ ...entry, matchReason: null }));
   const names = new Map(participants.map(p => [p.id, p.displayName]));
+  const terms = String(query).trim().split(/\s+/u).filter(Boolean);
   return entries.flatMap(entry => {
-    let reason = null;
-    if (searchable(entry.description).includes(needle)) reason = "Descripción";
-    else if (entry.category && searchable(entry.category).includes(needle)) reason = "Categoría";
-    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, query)) reason = "Importe total";
-    else for (const effect of entry.effects) {
-      const name = names.get(effect.participantId) ?? "";
-      if (searchable(name).includes(needle)) { reason = `Participante: ${name}`; break; }
-      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, query)) { reason = `Efecto de ${name}`; break; }
-    }
-    return reason ? [{ ...entry, matchReason: reason }] : [];
+    const whole = matchTerm(entry, names, query);
+    if (whole) return [{ ...entry, matchReason: whole }];
+    if (terms.length < 2) return [];
+    const reasons = terms.map(term => matchTerm(entry, names, term));
+    return reasons.every(Boolean) ? [{ ...entry, matchReason: [...new Set(reasons)].join(" + ") }] : [];
   });
 }
 

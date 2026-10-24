@@ -22,3 +22,26 @@ describe("búsqueda monetaria", () => {
     expect(searchLedger([entry(1250)], [], "1250")).toEqual([]);
   });
 });
+
+describe("búsqueda con varios términos", () => {
+  const participants = [{ id: "p1", displayName: "Laura" }, { id: "p2", displayName: "Pablo" }];
+  const gas = { id: "1", description: "Gás natural", category: "Servicios", note: "Cuenta de octubre", totalMinor: 6000000, currency: "COP", effects: [{ participantId: "p1", amountMinor: 4500000 }, { participantId: "p2", amountMinor: -1500000 }] };
+  const mercado = { id: "2", description: "Mercado", category: "", note: "", totalMinor: 100, currency: "COP", effects: [{ participantId: "p2", amountMinor: 100 }] };
+
+  it("exige que cada término coincida en algún campo, ignorando acentos y mayúsculas", () => {
+    const found = searchLedger([gas, mercado], participants, "GAS laura");
+    expect(found.map(row => row.id)).toEqual(["1"]);
+    expect(found[0].matchReason).toBe("Descripción + Participante: Laura");
+    expect(searchLedger([gas, mercado], participants, "gas pablo mercado")).toEqual([]);
+  });
+
+  it("busca también en la nota", () => {
+    expect(searchLedger([gas], participants, "octubre")[0].matchReason).toBe("Nota");
+    expect(searchLedger([gas], participants, "cuenta de gas")[0].matchReason).toBe("Nota + Descripción");
+    expect(searchLedger([gas], participants, "cuenta zzz")).toEqual([]);
+  });
+
+  it("una frase que coincide completa conserva su motivo único", () => {
+    expect(searchLedger([gas], participants, "gas natural")[0].matchReason).toBe("Descripción");
+  });
+});
