@@ -1,0 +1,92 @@
+import { formatMoney } from "./finance.js";
+import { entryLabel, searchLedger } from "./ledger-ui.js";
+import { avatar, escapeHtml, ICONS, shortDate } from "./ui-parts.js";
+
+const path = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
+const signed = (amountMinor, currency) => `${amountMinor > 0 ? "+" : ""}${formatMoney(amountMinor, currency)}`;
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+function ownParticipant(data, userId) {
+  return data.participants.find(person => person.linkedUserId === userId) ?? null;
+}
+
+export function renderBookHead(space, data, userId) {
+  const owner = data.ledger.role === "owner";
+  const active = data.participants.filter(person => person.active).length;
+  const actions = `${owner ? `<a class="button secondary" href="${path(space.slug)}/ledger/import">Importar Splitwise</a>` : ""}<a class="button" href="${path(space.slug)}/ledger/new">Agregar movimiento</a>`;
+  return `<div class="book-head"><div><p class="eyebrow">${owner ? "Titular" : "Integrante"} · Cuentas Claras</p><h1>${escapeHtml(space.name)}</h1><p class="muted">${plural(active, "persona", "personas")} · moneda predeterminada ${escapeHtml(data.ledger.default_currency)}${data.ledger.archived_at ? " · archivado" : ""}</p></div><div class="actions">${actions}</div></div>`;
+}
+
+function balanceBlock(currency, data, ownId) {
+  const amounts = new Map(data.participants.map(person => [person.id, data.balances.find(row => row.currency === currency && row.participantId === person.id)?.amountMinor ?? 0]));
+  const own = ownId ? amounts.get(ownId) ?? 0 : 0;
+  const peak = Math.max(1, ...[...amounts.values()].map(Math.abs));
+  const total = [...amounts.values()].reduce((sum, value) => sum + BigInt(value), 0n);
+  const note = own > 0 ? "Te corresponde recibir." : own < 0 ? "Te toca aportar." : "Estás a mano.";
+  const rows = data.participants.map(person => {
+    const amount = amounts.get(person.id);
+    const width = Math.min(50, Math.round(Math.abs(amount) / peak * 50));
+    const bar = amount === 0 ? "" : `<span class="fill ${amount > 0 ? "pos" : "neg"} w${width}"></span>`;
+    const word = amount > 0 ? "Le deben " : amount < 0 ? "Debe " : "";
+    return `<li class="balance-row">${avatar(person.displayName, { seed: person.id, noAccount: !person.linkedUserId })}<div class="who"><strong>${escapeHtml(person.displayName)}</strong>${person.id === ownId ? ' <span class="tag">· vos</span>' : !person.linkedUserId ? ' <span class="tag">· sin cuenta</span>' : ""}<div class="bar" aria-hidden="true">${bar}</div></div><span class="amount money ${amount < 0 ? "owes" : amount > 0 ? "owed" : ""}">${word}${escapeHtml(formatMoney(Math.abs(amount), currency))}</span></li>`;
+  }).join("");
+  return `<div class="currency-block"><div class="hero${own < 0 ? " neg" : ""}"><p class="hero-label">Tu saldo · ${escapeHtml(currency)}</p><p class="hero-amount money">${escapeHtml(signed(own, currency))}</p><p class="hero-note">${note}</p></div><div class="group-card"><div class="head"><h3>Saldos del grupo · ${escapeHtml(currency)}</h3>${total === 0n ? '<span class="sum-zero">✓ Suman 0</span>' : ""}</div><ul class="balance-list">${rows}</ul></div></div>`;
+}
+
+function entryRow(entry, data, ownId, spaceId) {
+  const names = new Map(data.participants.map(person => [person.id, person.displayName]));
+  const list = direction => entry.cashParties.filter(party => party.direction === direction).map(party => names.get(party.participantId) ?? "Participante").join(", ");
+  const who = entry.imported ? "" : entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
+  const effect = ownId ? entry.effects.find(row => row.participantId === ownId)?.amountMinor : undefined;
+  const voided = entry.status === "voided";
+  const effectText = voided ? '<small class="muted">No cuenta en los saldos</small>'
+    : effect ? `<small class="${effect > 0 ? "owed" : "owes"}">Tu efecto ${escapeHtml(signed(effect, entry.currency))}</small>` : "";
+  const chips = [
+    entry.imported ? `<span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span>` : "",
+    voided ? '<span class="chip void">Anulado</span>' : "",
+    entry.matchReason ? `<span class="chip match">Coincide: ${escapeHtml(entry.matchReason)}</span>` : "",
+  ].join("");
+  const icon = voided ? ICONS.voided : ICONS[entry.type] ?? ICONS.expense;
+  const iconClass = voided ? "" : ` ico-${entry.type}`;
+  return `<li class="entry-row${voided ? " entry-voided" : ""}"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span class="ico${iconClass}">${icon}</span><span class="entry-main"><strong class="entry-title">${escapeHtml(entry.description)}</strong><small>${escapeHtml(entryLabel(entry.type))} · ${escapeHtml(shortDate(entry.occurredAt))}${who ? ` · ${escapeHtml(who)}` : ""}</small>${chips ? `<span class="entry-chips">${chips}</span>` : ""}</span><span class="entry-side"><strong class="money">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</strong>${effectText}</span></a></li>`;
+}
+
+export function renderLedgerOverview(data, { spaceId, userId, query = "", below = "" }) {
+  const own = ownParticipant(data, userId);
+  const currencies = [...new Set([data.ledger.default_currency, ...data.balances.map(row => row.currency)])];
+  const results = searchLedger(data.entries, data.participants, query);
+  const voidedCount = data.entries.filter(entry => entry.status === "voided").length;
+  const meta = query
+    ? `${results.length} de ${plural(data.entries.length, "movimiento", "movimientos")}`
+    : `${plural(data.entries.length - voidedCount, "vigente", "vigentes")}${voidedCount ? ` · ${plural(voidedCount, "anulado", "anulados")}` : ""}`;
+  const rows = results.map(entry => entryRow(entry, data, own?.id, spaceId)).join("");
+  const empty = query
+    ? "<p>No hay coincidencias.</p>"
+    : `<div class="empty"><h3>Todavía no hay movimientos.</h3><p>Los saldos se arman siempre con movimientos que se pueden revisar. Agregá el primero con «Agregar movimiento»${data.ledger.role === "owner" ? " o traé tu historial con «Importar Splitwise»" : ""}.</p></div>`;
+  const quick = `<div class="quick-actions"><span class="lead">Agregar:</span><a href="${path(spaceId)}/ledger/new?type=expense">Gasto</a><a href="${path(spaceId)}/ledger/new?type=income">Ingreso</a><a href="${path(spaceId)}/ledger/new?type=transfer">Transferencia</a></div>`;
+  return `<div class="book-grid"><div class="panel side"><section id="saldos" aria-labelledby="saldos-title"><h2 id="saldos-title" class="sr-only">Saldos</h2>${currencies.map(currency => balanceBlock(currency, data, own?.id)).join("")}${quick}</section></div><div class="panel"><section id="movimientos" class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/export.json">Exportar JSON</a><a href="${path(spaceId)}/ledger/export.csv">Exportar CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form" role="search"><label class="sr-only" for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto" enterkeyhint="search"><button class="button secondary" type="submit">Buscar</button>${query ? `<a class="clear" href="${path(spaceId)}">Quitar búsqueda</a>` : ""}</form>${data.entries.length ? `<p class="list-meta" aria-live="polite">${meta} · propios e importados</p>` : ""}${rows ? `<ul class="entry-list">${rows}</ul>` : empty}</section></div>${below ? `<div class="book-wide">${below}</div>` : ""}</div>`;
+}
+
+export function renderPeople({ data, space, members, invitations, csrf, owner, userId }) {
+  const spaceHref = path(space.slug);
+  const roleByUser = new Map(members.map(member => [member.user_id, member.role]));
+  const inviteFor = id => invitations.find(invitation => invitation.target_participant_id === id);
+  const cancel = invitation => owner ? `<div class="row-actions"><form action="${spaceHref}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>` : "";
+  const block = (person, status, detail, extra = "") => `<div class="person-block"><div class="person-row">${avatar(person.displayName, { seed: person.id, noAccount: !person.linkedUserId })}<div class="grow"><strong>${escapeHtml(person.displayName)}${person.linkedUserId === userId ? ' <span class="muted">· vos</span>' : ""}</strong><span class="muted">${detail}</span></div>${status}</div>${extra}</div>`;
+  const people = data.participants.map(person => {
+    if (person.linkedUserId) {
+      const role = roleByUser.get(person.linkedUserId) === "owner" ? "Propietario" : "Miembro";
+      return block(person, `<span class="chip ${role === "Propietario" ? "ok" : ""}">${role}</span>`, `Con cuenta${person.active ? "" : " · Inactivo"}`);
+    }
+    const invitation = inviteFor(person.id);
+    if (invitation) {
+      return block(person, '<span class="chip warn">Invitación pendiente</span>', `${escapeHtml(invitation.invitee_email)} · figura en los saldos; hasta que acepte, no puede verlos`, cancel(invitation));
+    }
+    return block(person, '<span class="chip">Sin cuenta</span>', `Participante sin cuenta · lo cargan los demás${person.active ? "" : " · Inactivo"}`);
+  }).join("");
+  const loose = invitations.filter(invitation => !invitation.target_participant_id).map(invitation => `<div class="person-block"><div class="person-row">${avatar(invitation.invitee_email)}<div class="grow"><strong>${escapeHtml(invitation.invitee_email)}</strong><span class="muted">Se sumará como participante nuevo al aceptar</span></div><span class="chip warn">Invitación pendiente</span></div>${cancel(invitation)}</div>`).join("");
+  const nominal = data.participants.filter(person => !person.linkedUserId && person.active && !inviteFor(person.id)).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.displayName)}</option>`).join("");
+  const tools = owner ? `<section class="ledger-section" id="administrar"><h2>Administrar grupo</h2><form class="ledger-form" action="${spaceHref}/participants" method="post">${csrf}<label for="participant-name">Participante sin cuenta<span class="hint">Podés sumar a alguien sin invitarlo todavía: figura en los saldos aunque no tenga acceso.</span></label><input id="participant-name" name="name" required maxlength="120"><div class="form-actions"><button class="button secondary">Agregar participante</button></div></form><form class="ledger-form" action="${spaceHref}/invitations" method="post">${csrf}<label for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email" inputmode="email"><label for="target-participant">Vincular con participante (opcional)<span class="hint">Al aceptar, la cuenta se vincula a esa persona y conserva su historial y saldos.</span></label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominal}</select><div class="form-actions"><button class="button">Invitar</button></div></form><form class="ledger-form" action="${spaceHref}/rename" method="post">${csrf}<label for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${escapeHtml(space.name)}"><div class="form-actions"><button class="button secondary">Guardar nombre</button></div></form></section>` : "";
+  const lead = owner ? "Participar en las cuentas no es lo mismo que tener acceso." : "Participar en las cuentas no es lo mismo que tener acceso. La administración queda en manos del titular.";
+  return `<section class="ledger-section" id="personas"><h2>Personas · ${data.participants.length}</h2><p class="muted">${lead}</p>${people}${loose}</section>${tools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`;
+}

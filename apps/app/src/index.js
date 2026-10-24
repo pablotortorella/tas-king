@@ -3,7 +3,10 @@ import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal,
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError } from "./finance.js";
 import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
-import { escapeHtml, ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm, renderLedgerOverview } from "./ledger-ui.js";
+import { ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm } from "./ledger-ui.js";
+import { renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
+import { appCss } from "./styles.js";
+import { avatar, escapeHtml, renderPage } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
@@ -109,13 +112,11 @@ function oauthCookie(value, secure, maxAge = 10 * 60) {
   return cookie(OAUTH_COOKIE, value, { maxAge, secure });
 }
 
-function page(title, content) {
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/ledger-ui.js" defer></script><body><main class="shell"><a class="brand" href="/">⌂ HomeSuite</a>${content}</main></body></html>`;
+function page(title, content, options) {
+  return renderPage(title, content, options);
 }
 
-function html(value) {
-  return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
-}
+const html = escapeHtml;
 
 async function csrfInput(c, user) {
   const token = await createCsrfToken({ sessionId: user.id, secret: sessionSecret(c.env) });
@@ -403,7 +404,7 @@ app.use("/spaces/:spaceId/*", canonicalSpacePath);
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el espacio y su libro en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
@@ -422,16 +423,16 @@ app.get("/spaces/:spaceId", async (c) => {
   if (!user) return signInRequired(c);
   const space = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
-  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all();
-  const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT id, invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] };
-  const csrf = await csrfInput(c, user);
-  const ledger = await readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id });
-  const spaceHref = `/spaces/${encodeURIComponent(space.slug)}`;
-  const participants = members.results.map((member) => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
-  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="${spaceHref}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
-  const nominalOptions = ledger.participants.filter(person => !person.linkedUserId && person.active).map(person => `<option value="${html(person.id)}">${html(person.displayName)}</option>`).join("");
-  const ownerTools = space.role === "owner" ? `<section class="ledger-section"><h2>Administrar grupo</h2><form action="${spaceHref}/participants" method="post">${csrf}<label class="label" for="participant-name">Participante sin cuenta</label><input id="participant-name" name="name" required maxlength="120"><button class="button secondary">Agregar participante</button></form><form action="${spaceHref}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><form action="${spaceHref}/invitations" method="post">${csrf}<label class="label" for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email"><label class="label" for="target-participant">Vincular con participante (opcional)</label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominalOptions}</select><button class="button">Invitar</button></form>${pending}</section>` : "";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "" })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
+  const owner = space.role === "owner";
+  const [members, invitations, csrf, ledger] = await Promise.all([
+    c.env.DB.prepare("SELECT m.user_id, u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all(),
+    owner ? c.env.DB.prepare("SELECT id, invitee_email, target_participant_id FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] },
+    csrfInput(c, user),
+    readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
+  ]);
+  const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
+  const content = `${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", below: people })}`;
+  return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
 });
 
 app.post("/spaces/:spaceId/participants", async (c) => {
@@ -681,24 +682,21 @@ app.post("/invitations/:invitationId", async (c) => {
   }
 });
 
+function spaceRow(space) {
+  return `<div class="person-row">${avatar(space.name, { seed: space.id })}<div class="grow"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div></div>`;
+}
+
 app.get("/cuentas-claras", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
   const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
   if (listed.length === 1) return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
-  const spaces = listed.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("") || "<p>No tenés espacios todavía.</p>";
+  const spaces = listed.map((space) => spaceRow(space)).join("") || "<p>No tenés espacios todavía.</p>";
   return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
 });
 
-const LEDGER_STYLES = `
-select,textarea{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:8px;background:#fff;font:inherit;color:#20342a}
-button{cursor:pointer}.ledger-section{border-top:1px solid #d9d0c0;padding:28px 0;margin-top:28px}.ledger-section h2{font-size:1.65rem}.section-top,.form-actions,.quick-actions,.export-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.section-top .eyebrow{margin:0}.section-top .button{margin:0}.quick-actions{justify-content:flex-start;margin-top:18px}.quick-actions a,.export-actions a{color:#206447;font-weight:700}.balance-table{width:100%;border-collapse:collapse;text-align:left}.balance-table th,.balance-table td{padding:12px 8px;border-bottom:1px solid #ded7ca}.balance-table th:last-child,.balance-table td:last-child{text-align:right}.money{font-variant-numeric:tabular-nums;white-space:nowrap}.owes{color:#a0352d}.owed{color:#206447}.entry-list{list-style:none;padding:0;margin:0}.entry-row{border-bottom:1px solid #ded7ca}.entry-row a{display:flex;justify-content:space-between;gap:16px;padding:14px 0;color:inherit;text-decoration:none}.entry-row small{display:block;color:#68766d;margin-top:4px}.entry-voided{opacity:.7}.entry-amount{font-size:1.5rem;color:#20342a}.ledger-form{display:grid;gap:18px;margin-top:24px}.ledger-form label{display:grid;gap:7px;font-weight:700}.ledger-form fieldset{border:1px solid #d9d0c0;padding:15px}.ledger-form legend{font-weight:800}.form-grid,.share-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ledger-form .check-row{display:flex;align-items:center;gap:9px;margin:8px 0;font-weight:400}.check-row input{width:auto}.ledger-form .button{margin:0}.form-actions{justify-content:flex-start}.form-feedback{margin:0}.pending-entry{border:1px solid #d9d0c0;padding:12px;color:#52665b}.ledger-section ol{padding-left:20px;line-height:1.8}
-.search-form{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:10px;margin:16px 0}.search-form label{font-weight:700}.search-form .button{margin:0}.incident-row{display:grid;grid-template-columns:auto 1fr minmax(170px,230px);gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #ded7ca}.incident-row span{min-width:0;overflow-wrap:anywhere}.table-scroll{overflow-x:auto}.table-scroll .balance-table{min-width:650px}.ledger-form input[type=file]{font:inherit}.ledger-form .check-row input[type=checkbox]{width:auto}
-@media(max-width:560px){.shell{padding:20px 16px 56px}.section-top{align-items:flex-start}.section-top .button{width:100%;text-align:center}.balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.form-grid,.share-grid{grid-template-columns:1fr}.entry-row a{align-items:flex-start}.entry-row .money{font-size:.9rem}.form-actions .button{flex:1;text-align:center}.search-form{grid-template-columns:1fr}.incident-row{grid-template-columns:1fr}}
-`;
-
-app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}${LEDGER_STYLES}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
+app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; charset=utf-8" }));
 
 app.get("/ledger-ui.js", (c) => c.body(`document.querySelectorAll("form[data-optimistic]").forEach(form=>form.addEventListener("submit",async event=>{if(!form.reportValidity())return;event.preventDefault();const button=form.querySelector('button[type="submit"]');const feedback=form.querySelector(".form-feedback");const data=new FormData(form);const preview=document.createElement("p");preview.className="pending-entry";preview.textContent=[data.get("description"),data.get("amount"),data.get("currency"),"pendiente"].filter(Boolean).join(" · ");feedback.before(preview);feedback.textContent="Guardando movimiento…";button.disabled=true;try{const response=await fetch(form.action,{method:"POST",body:data,headers:{Accept:"application/json"},credentials:"same-origin"});const result=await response.json();if(!response.ok)throw new Error(result.error||"No pudimos guardar el movimiento.");location.assign(result.location)}catch(error){preview.remove();feedback.textContent=error.message;button.disabled=false}}));`, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
@@ -713,7 +711,7 @@ app.get("/", async (c) => {
     const spaces = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(session.user_id).all();
     const pending = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM invitations WHERE invitee_email = ? AND status = 'pending'").bind(session.email).first();
     const listed = await Promise.all(spaces.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
-    const list = listed.length ? listed.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === 'owner' ? 'Titular' : 'Integrante'}</span></div>`).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
+    const list = listed.length ? listed.map((space) => spaceRow(space)).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
     return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post">${await csrfInput(c, session)}<button class="button secondary">Cerrar sesión</button></form>`));
   }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
