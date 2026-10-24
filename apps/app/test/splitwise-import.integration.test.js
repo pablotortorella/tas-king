@@ -41,6 +41,9 @@ describe("importación de Splitwise", () => {
     expect(searchLedger(imported.entries, imported.participants, "POSADA")[0].matchReason).toBe("Descripción");
     expect(searchLedger(imported.entries, imported.participants, "quijote").length).toBeGreaterThan(0);
     expect(searchLedger(imported.entries, imported.participants, "80.000,00")[0].matchReason).toBe("Importe total");
+    expect(searchLedger(imported.entries, imported.participants, "80000")[0].matchReason).toBe("Importe total");
+    expect(searchLedger(imported.entries, imported.participants, "8.000")[0].matchReason).toBe("Importe total");
+    expect(searchLedger(imported.entries, imported.participants, "80")[0].matchReason).toBe("Importe total");
     await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: {
       type: "expense", currency: "COP", totalMinor: 10000, description: "Nueva compra", note: "", occurredAt: "2026-10-23",
       cashParties: [{ participantId: ownerId, direction: "out", amountMinor: 10000 }],

@@ -16,6 +16,12 @@
 5. El titular confirma. Una diferencia o la ausencia de saldo fuente exige
    reconocimiento explícito. HomeSuite no crea ajustes ocultos.
 
+Un **incidente** es una fila que no puede importarse automáticamente, por
+ejemplo porque no indica moneda, contiene una fecha imposible o sus efectos no
+suman cero. La pantalla muestra el número de fila y el motivo. Sólo la ausencia
+de moneda admite usar explícitamente la moneda predeterminada; los demás casos
+se excluyen y esa decisión queda registrada en el lote.
+
 Un movimiento importado guarda fecha, descripción, categoría, coste, moneda,
 fila original, lote y efectos firmados por participante. Se muestra en la misma
 cronología, búsqueda, balance y exportación que los movimientos nuevos. Una
@@ -28,8 +34,9 @@ y que `Cost` es el total de la transacción.
 ## Límites de esta entrega
 
 - CSV de hasta 2 MiB, con las cinco columnas base en español o inglés y después
-  una columna por participante. Se admiten COP, USD, EUR, JPY y KWD, con 0, 2 o 3
-  decimales según la moneda.
+  una columna por participante. Se admiten las monedas de Sudamérica (ARS, BOB,
+  BRL, CLP, COP, FKP, GYD, PEN, PYG, SRD, UYU y VES), MXN, USD, EUR, JPY y KWD,
+  con 0, 2 o 3 decimales según ISO 4217.
 - Una importación confirmada por libro. Repetir exactamente el mismo archivo
   devuelve el lote existente; archivos incrementales distintos se bloquean para
   impedir solapamientos hasta diseñar una reimportación controlada.

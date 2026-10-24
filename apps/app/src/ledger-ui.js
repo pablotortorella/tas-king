@@ -14,6 +14,24 @@ function searchable(value) {
   return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
 }
 
+function numericNeedle(query, currency) {
+  const text = String(query ?? "").trim();
+  if (!/^\d[\d.,\s]*$/u.test(text)) return null;
+  const units = CURRENCY_MINOR_UNITS[currency];
+  const decimal = text.match(/[.,](\d+)$/u);
+  const usesDecimals = decimal && decimal[1].length === units && !(text.includes(".") && decimal[1].length === 3);
+  return { digits: text.replace(/\D/gu, ""), usesDecimals };
+}
+
+function amountMatches(amountMinor, currency, query) {
+  const needle = numericNeedle(query, currency);
+  if (!needle?.digits) return false;
+  const units = CURRENCY_MINOR_UNITS[currency];
+  const digits = String(Math.abs(amountMinor)).padStart(units + 1, "0");
+  const whole = units ? digits.slice(0, -units) : digits;
+  return (needle.usesDecimals ? digits : whole).includes(needle.digits);
+}
+
 export function searchLedger(entries, participants, query) {
   const needle = searchable(query);
   if (!needle) return entries.map(entry => ({ ...entry, matchReason: null }));
@@ -22,11 +40,11 @@ export function searchLedger(entries, participants, query) {
     let reason = null;
     if (searchable(entry.description).includes(needle)) reason = "Descripción";
     else if (entry.category && searchable(entry.category).includes(needle)) reason = "Categoría";
-    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle)) reason = "Importe total";
+    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, query)) reason = "Importe total";
     else for (const effect of entry.effects) {
       const name = names.get(effect.participantId) ?? "";
       if (searchable(name).includes(needle)) { reason = `Participante: ${name}`; break; }
-      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle)) { reason = `Efecto de ${name}`; break; }
+      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, query)) { reason = `Efecto de ${name}`; break; }
     }
     return reason ? [{ ...entry, matchReason: reason }] : [];
   });

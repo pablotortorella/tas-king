@@ -11,9 +11,11 @@ export class LedgerError extends Error {
 export async function getLedgerAccess(db, spaceId, userId) {
   const row = await db.prepare(`
     SELECT l.id, l.space_id, l.default_currency, l.archived_at, l.revision, m.role
-    FROM expense_ledgers l JOIN memberships m ON m.space_id = l.space_id
-    WHERE l.space_id = ? AND m.user_id = ?
-  `).bind(spaceId, userId).first();
+    FROM expense_ledgers l
+    JOIN spaces s ON s.id = l.space_id
+    JOIN memberships m ON m.space_id = l.space_id
+    WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?
+  `).bind(spaceId, spaceId, userId).first();
   if (!row) throw new LedgerError("No tenés acceso a este libro.", 404);
   return row;
 }

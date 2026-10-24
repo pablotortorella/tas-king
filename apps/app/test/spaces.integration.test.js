@@ -3,6 +3,27 @@ import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { createSession, currentSession, revokeSession } from "../src/sessions.js";
+import { createSpaceForUser, ensureLocalUser, renameSpace, resolveSpace } from "../src/spaces.js";
+
+describe("URLs estables de grupos", () => {
+  it("normaliza acentos, numera duplicados y conserva la URL al renombrar", async () => {
+    const owner = await ensureLocalUser(env.DB, "slugs-owner@example.test");
+    const first = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    const second = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    const third = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    expect([first.slug, second.slug, third.slug]).toEqual(["casa-bogota", "casa-bogota-2", "casa-bogota-3"]);
+    const renamed = await renameSpace(env.DB, { spaceId: first.slug, userId: owner.id, name: "Otra casa" });
+    expect(renamed.slug).toBe(first.slug);
+    expect((await resolveSpace(env.DB, first.id)).slug).toBe(first.slug);
+    const reserved = await createSpaceForUser(env.DB, { userId: owner.id, name: "New" });
+    expect(reserved.slug).toBe("new-2");
+  });
+
+  it("asigna una URL legible al primer acceso de un grupo previo", async () => {
+    await env.DB.prepare("INSERT INTO spaces (id, name) VALUES ('space_legacy_slug', 'Viaje al Perú')").run();
+    expect((await resolveSpace(env.DB, "space_legacy_slug")).slug).toBe("viaje-al-peru");
+  });
+});
 
 describe("D1: invariantes de espacios", () => {
   it("permite un solo titular por espacio", async () => {
@@ -161,12 +182,19 @@ describe("recorrido web con sesión real", () => {
     const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Casa+Hyrule" });
     expect(created.status).toBe(303);
     const location = created.headers.get("location");
-    expect(location).toMatch(/^\/spaces\/space_/);
+    expect(location).toBe("/spaces/casa-hyrule");
     const page = await authenticatedRequest(owner, `https://app.test${location}`);
     expect(await page.text()).toContain("Casa Hyrule");
     const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
     expect(renamed.status).toBe(303);
-    const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE space_id = ? ORDER BY created_at DESC LIMIT 1").bind(location.split("/").at(-1)).first();
+    expect(renamed.headers.get("location")).toBe(location);
+    const space = await env.DB.prepare("SELECT id, name, slug FROM spaces WHERE slug = ?").bind(location.split("/").at(-1)).first();
+    expect(space.name).toBe("Hyrule compartido");
+    expect(space.slug).toBe("casa-hyrule");
+    const legacy = await authenticatedRequest(owner, `https://app.test/spaces/${space.id}`);
+    expect(legacy.status).toBe(308);
+    expect(legacy.headers.get("location")).toBe(location);
+    const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE space_id = ? ORDER BY created_at DESC LIMIT 1").bind(space.id).first();
     expect(audit.action).toBe("space_renamed");
     const outsider = await realIdentity("ganon-real");
     const forbidden = await authenticatedRequest(outsider, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Nope" });
@@ -185,7 +213,7 @@ describe("recorrido web con sesión real", () => {
     expect(invitationHtml).toContain("Viaje Kakariko");
     expect(invitationHtml).toContain("link-real");
     expect(invitationHtml).not.toContain("Participantes");
-    const invitation = await env.DB.prepare("SELECT id FROM invitations WHERE space_id = ? AND invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN spaces s ON s.id = i.space_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
     const accepted = await authenticatedRequest(invitee, `https://app.test/invitations/${invitation.id}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" });
     expect(accepted.headers.get("location")).toBe(location);
     const joined = await authenticatedRequest(invitee, `https://app.test${location}`);
@@ -201,7 +229,7 @@ describe("recorrido web con sesión real", () => {
     const location = created.headers.get("location");
     const invitee = await realIdentity("frodo-real");
     await authenticatedRequest(owner, `https://app.test${location}/invitations`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `email=${encodeURIComponent(invitee.email)}` });
-    const invitation = await env.DB.prepare("SELECT id FROM invitations WHERE space_id = ? AND invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN spaces s ON s.id = i.space_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
     const denied = await authenticatedRequest(invitee, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });
     expect(denied.status).toBe(403);
     const canceled = await authenticatedRequest(owner, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });
