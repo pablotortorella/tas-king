@@ -110,10 +110,10 @@ export function applySavedCard(boardId, card) {
     estado.state.cards.push(card);
   }
   // Mismo criterio que goalsWithProgress() del servidor, usando los datos cargados.
-  const doneColumn = estado.COLUMNS.find(c => c.isDone)?.id || "terminado";
+  const doneColumnIds = getDoneColumnIds();
   estado.boardGoals = estado.boardGoals.map(goal => {
     const linked = estado.state.cards.filter(c => !c.archived && (c.goals || []).some(g => g.id === goal.id));
-    const done = linked.filter(c => c.column === doneColumn).length;
+    const done = linked.filter(c => doneColumnIds.has(c.column)).length;
     return { ...goal, total: linked.length, done, pct: linked.length ? Math.round(done / linked.length * 100) : 0 };
   });
   // No adelantar lastKnownVersion con una escritura individual: podría ocultar

@@ -100,3 +100,38 @@ test("panel lateral: selecciona objetivo y resalta sus tarjetas", async ({ page 
   await expect(page.locator("#goalsDrawer")).not.toHaveClass(/open/);
   await expect(page.locator(".card", { hasText: other })).not.toHaveClass(/card-dimmed/);
 });
+
+test("al guardar una tarjeta, el progreso cuenta todas las columnas de cierre", async ({ page }) => {
+  const boardPath = "/api/boards/board-e2e";
+  const multiGoal = `E2E cierre múltiple ${runId}`;
+  const doneCard = `E2E ya terminada ${runId}`;
+  const movingCard = `E2E se mueve ${runId}`;
+
+  // Dos columnas de cierre: "Terminado" y "Por revisar".
+  expect((await page.request.patch(`${boardPath}/columns/por_revisar`, { data: { isDone: true } })).ok()).toBe(true);
+  try {
+    const goal = await (await page.request.post(`${boardPath}/goals`, { data: { title: multiGoal } })).json();
+    for (const [title, column] of [[doneCard, "terminado"], [movingCard, "pendiente"]]) {
+      const card = await (await page.request.post(`${boardPath}/cards`, { data: { title, column } })).json();
+      expect((await page.request.post(`/api/cards/${card.id}/goals/${goal.id}`)).ok()).toBe(true);
+    }
+
+    // Sin sondeo, el único cálculo que puede cambiar el porcentaje es el del
+    // cliente al guardar; de lo contrario el servidor lo corregiría a los 5 s.
+    await page.route("**/api/boards/*/version", route => route.abort());
+    await page.reload();
+    await expect(page.locator("#board .column")).toHaveCount(5);
+
+    await page.locator(".card", { hasText: movingCard }).click();
+    await page.locator("#fColumn").selectOption("por_revisar");
+    await page.locator("#saveBtn").click();
+    await expect(page.locator('.cards[data-col="por_revisar"] .card', { hasText: movingCard })).toBeVisible();
+
+    await page.locator("#goalsBtn").click();
+    const stats = page.locator("#goalsDrawerList .goal-card", { hasText: multiGoal }).locator(".goal-stats");
+    await expect(stats).toContainText("2/2");
+    await expect(stats).toContainText("100%");
+  } finally {
+    await page.request.patch(`${boardPath}/columns/por_revisar`, { data: { isDone: false } });
+  }
+});
