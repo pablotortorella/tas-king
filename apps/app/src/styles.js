@@ -75,6 +75,11 @@ const BOOK = `
 .hero.neg{background:var(--hero-neg)}.hero p{margin:0;color:var(--on-accent-2)}
 .hero .hero-label{font-size:.8rem;font-weight:600}.hero .hero-amount{color:var(--on-accent);font-size:clamp(1.7rem,7vw,2.2rem);font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:2px 0 4px}
 .hero .hero-note{font-size:.95rem}
+.hero a.why{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;padding:0 16px;border:1.5px solid var(--on-accent-2);border-radius:999px;color:var(--on-accent);text-decoration:none;font-weight:700}.hero a.why:hover{background:rgba(255,253,248,.14);color:var(--on-accent)}
+.balance-row .who a{color:inherit;text-decoration:none}.balance-row .who a:hover{text-decoration:underline}
+.suggest-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line-soft)}.suggest-row:first-child{border-top:0}.suggest-row strong{display:block}.suggest-row .button{margin:0;flex:none}
+.imported-group summary{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:start;padding:14px 0;cursor:pointer;list-style:none}.imported-group summary::-webkit-details-marker{display:none}.imported-group .entry-list{margin-left:8px;border-left:2px solid var(--line-soft);padding-left:8px}
+.archive-tool{margin-top:20px;border-top:1px solid var(--line-soft);padding-top:12px}.archive-tool summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--neg)}
 .group-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:6px 18px 6px;margin-top:12px}
 .group-card .head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 0 6px}.group-card .head h3{margin:0;font-size:1.05rem}
 .sum-zero{font-size:.85rem;font-weight:700;color:var(--accent-text)}
@@ -104,7 +109,6 @@ const BOOK = `
 @media(min-width:900px){
 .shell.has-tabbar{padding-bottom:56px}.tabbar{display:none}
 .book-grid{grid-template-columns:minmax(320px,400px) minmax(0,1fr);gap:24px}
-.book-grid .panel.side{position:sticky;top:12px}
 .book-wide{grid-column:1/-1}
 }
 `;

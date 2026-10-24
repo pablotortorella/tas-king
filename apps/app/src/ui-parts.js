@@ -47,6 +47,8 @@ const NOTICES = Object.freeze({
   renombrado: "Nombre del grupo guardado.",
   guardado: "Movimiento guardado.",
   anulado: "Movimiento anulado. Sigue visible en el historial y ya no cuenta en los saldos.",
+  archivado: "Grupo archivado. Queda de sólo lectura y podés restaurarlo cuando quieras.",
+  restaurado: "Grupo restaurado. Vuelve a aceptar movimientos.",
   "importacion-cancelada": "Importación cancelada. No se guardó nada.",
 });
 

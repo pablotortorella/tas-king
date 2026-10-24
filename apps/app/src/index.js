@@ -1,9 +1,11 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
-import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError } from "./finance.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError, normalizeCurrency } from "./finance.js";
 import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
 import { ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm } from "./ledger-ui.js";
+import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
+import { renderBalanceExplanation } from "./balance-ui.js";
 import { renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { LEDGER_CLIENT_JS } from "./client.js";
 import { appCss } from "./styles.js";
@@ -449,7 +451,7 @@ app.get("/spaces/:spaceId/ledger/import", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   try {
-    const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
+    const ledger = await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
     if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede importar.", 403);
     return c.html(page("Importar Splitwise", renderImportUpload({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user) })));
   } catch (error) { return ledgerFailure(c, error); }
@@ -458,6 +460,7 @@ app.get("/spaces/:spaceId/ledger/import", async (c) => {
 app.post("/spaces/:spaceId/ledger/import/preview", async (c) => {
   const user = c.get("protectedUser");
   try {
+    await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
     const form = await c.req.formData();
     const file = form.get("file");
     if (!(file instanceof File) || !file.size || file.size > 2 * 1024 * 1024) throw new LedgerError("Seleccioná un CSV de hasta 2 MiB.", 413);
@@ -512,6 +515,7 @@ app.post("/spaces/:spaceId/ledger/import/previews/:previewId/cancel", async (c) 
 app.post("/spaces/:spaceId/ledger/import/previews/:previewId/confirm", async (c) => {
   const user = c.get("protectedUser");
   try {
+    await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
     const form = await c.req.formData();
     const batchId = await commitImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), acknowledgeDifference: form.get("acknowledgeDifference") === "yes" });
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(batchId)}`, 303);
@@ -527,6 +531,15 @@ app.get("/spaces/:spaceId/ledger/import/batches/:batchId", async (c) => {
   } catch (error) { return ledgerFailure(c, error); }
 });
 
+app.get("/spaces/:spaceId/ledger/balance", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    return c.html(page("Por qué", renderBalanceExplanation(data, { spaceId: c.req.param("spaceId"), userId: user.user_id, currency: c.req.query("moneda") ?? "", personId: c.req.query("persona") ?? "" })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
 app.get("/spaces/:spaceId/ledger/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
@@ -534,7 +547,14 @@ app.get("/spaces/:spaceId/ledger/new", async (c) => {
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
     if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
     const type = ["expense", "income", "transfer"].includes(c.req.query("type")) ? c.req.query("type") : "expense";
-    return c.html(page("Agregar movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, type })));
+    const ids = new Set(data.participants.filter(person => person.active).map(person => person.id));
+    const prefill = {
+      from: ids.has(c.req.query("from")) ? c.req.query("from") : undefined,
+      to: ids.has(c.req.query("to")) ? c.req.query("to") : undefined,
+      amount: /^\d{1,15}(?:[.,]\d{1,3})?$/u.test(c.req.query("amount") ?? "") ? c.req.query("amount") : undefined,
+      currency: normalizeCurrency(c.req.query("currency")) ?? undefined,
+    };
+    return c.html(page("Agregar movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, type, prefill })));
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -626,6 +646,16 @@ app.get("/spaces/:spaceId/ledger/export.csv", async (c) => {
   } catch (error) { return ledgerFailure(c, error); }
 });
 
+for (const [action, archived, notice] of [["archive", true, "archivado"], ["restore", false, "restaurado"]]) {
+  app.post(`/spaces/:spaceId/ledger/${action}`, async (c) => {
+    const user = c.get("protectedUser");
+    try {
+      await setLedgerArchived(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, archived });
+      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=${notice}`, 303);
+    } catch (error) { return ledgerFailure(c, error); }
+  });
+}
+
 app.post("/spaces/:spaceId/rename", async (c) => {
   const user = c.get("protectedUser");
   try {
@@ -640,6 +670,7 @@ app.post("/spaces/:spaceId/invitations", async (c) => {
   const user = c.get("protectedUser");
   const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN spaces s ON s.id = m.space_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
+  try { await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id); } catch (error) { return ledgerFailure(c, error); }
   try {
     const body = await c.req.parseBody();
     await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });

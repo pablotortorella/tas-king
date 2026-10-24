@@ -166,3 +166,40 @@ test("las acciones confirman con un aviso y la URL no puede inyectar texto", asy
   await page.goto(`${book}?aviso=%3Cb%3Ehola%3C/b%3E`);
   await expect(page.locator(".notice")).toHaveCount(0);
 });
+
+test("se explica el saldo y se registra una sugerencia hasta quedar a mano", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(book);
+  await page.getByRole("link", { name: "¿Por qué?" }).click();
+  await expect(page.getByRole("heading", { name: "Por qué te deben" })).toBeVisible();
+  await expect(page.getByText("Coincide con el saldo del grupo")).toBeVisible();
+  await expect(page.getByText("acumulado COP 50,00")).toBeVisible();
+  await page.getByRole("link", { name: "← Volver al libro" }).click();
+  await expect(page.getByText("Para quedar a mano")).toBeVisible();
+  await page.getByRole("link", { name: /^Registrar:/u }).click();
+  await expect(page.getByRole("heading", { name: "Agregar transferencia" })).toBeVisible();
+  await expect(page.getByLabel("Importe", { exact: true })).toHaveValue("50.00");
+  await page.getByLabel("Descripción").fill("Pago de Beto");
+  await page.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("heading", { name: "Pago de Beto" })).toBeVisible();
+  await page.getByRole("link", { name: "Volver al libro" }).click();
+  await expect(page.getByText("Estás a mano.")).toBeVisible();
+  await expect(page.getByText("Para quedar a mano")).toHaveCount(0);
+});
+
+test("archivar deja el grupo de sólo lectura y restaurar lo reabre", async ({ page }) => {
+  const { book } = await seededBook(page);
+  await page.goto(book);
+  await page.getByText("Archivar este grupo").click();
+  await page.getByRole("button", { name: "Archivar grupo" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Grupo archivado." })).toBeVisible();
+  await expect(page.getByText("Este grupo está archivado")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Agregar movimiento" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Gasto", exact: true })).toHaveCount(0);
+  await page.goto(`${book}/ledger/new`);
+  await expect(page.getByRole("alert")).toContainText("El libro está archivado.");
+  await page.goto(book);
+  await page.getByRole("button", { name: "Restaurar grupo" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Grupo restaurado." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Agregar movimiento" }).first()).toBeVisible();
+});
