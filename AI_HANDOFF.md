@@ -1,5 +1,7 @@
 # AI_HANDOFF
 
+**Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
+
 ## Última sesión - HomeSuite listo para integrar diseño (2026-10-23)
 
 ### Empezar por aquí
@@ -77,7 +79,7 @@ Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs
   se cruzó con `integration/homesuite-design-base` ni con la importación Splitwise ya implementada (#76).
   Antes de aplicar los changes, comparar contra ese código (ver Open Questions de cada `design.md`).
 
-## Estado actual
+## Snapshot de contexto — 2026-10-23
 **FUN TasKing!** está en producción como v2.3.2. **HomeSuite** tiene el sitio
 público en producción y la aplicación autenticada en staging; el siguiente corte
 de producto es Cuentas Claras.
@@ -108,7 +110,7 @@ completo en staging.
    diseño contra el `main` resultante.
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
-Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deben cumplirse en cada feature nueva.
+Consultar el método común para cómo trabajar y la ficha de TasKing para sus estándares de UI.
 
 ## Stack
 - **Runtime**: Cloudflare Workers
@@ -151,62 +153,13 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 - `e2e/`: suites Playwright (attachments, checklists, critical-flows, history)
 - `test/fixtures/seed.sql`: estado inicial de la DB para E2E
 
-## Al finalizar cada sesión
+## Proceso vigente
 
-**1. Actualizar `docs/STATUS.md`**: (SIEMPRE, incluso si "no pasó nada")
-   - Agregar la feature completada en la sección correspondiente (✅ o ❌)
-   - Incluir: qué hace, dónde está implementado, qué tests tiene
-   - Actualizar fecha "Última actualización" y "Próxima feature"
-   - Si algo quedó a mitad, marcarlo con ⚠️ y notas de qué falta
+Las instrucciones de sesión se mantienen en el [método común](docs/homesuite/METODO.md). Comandos actuales en las fichas de producto; las secciones siguientes son referencias históricas.
 
-**2. Actualizar otros archivos si corresponde**:
-   - **`AI_HANDOFF.md`**: sección "Último handoff" con resumen de lo que se hizo
-   - **`README.md`**: si se agregaron funcionalidades, secrets, comandos o cambió el stack
-   - **`TESTING.md`**: si cambió la estrategia o se agregaron nuevos requisitos de testing
+## Comandos vigentes
 
-**3. Correr tests antes de commit**:
-   ```bash
-   npm run test:all
-   ```
-
-**4. Commit y push**:
-   - Incluir `docs/STATUS.md` en el commit (la razón principal)
-   - Mensaje: describe qué feature se completó o qué cambió
-   - Ejemplo: `Agregar tests E2E para deep-link: URL válida, inexistente, archivada`
-
-## Comandos útiles
-```bash
-# Inicio de sesión
-npm run check:env                  # diagnóstico rápido del ambiente (recomendado al iniciar)
-
-# Desarrollo
-npm install                        # instalar dependencias
-npm run dev                        # servidor local → http://localhost:8787
-npm run test:all                   # suite completa (unitarios + E2E)
-
-# Base de datos local
-npm run db:migrate:local           # aplicar migraciones pendientes en D1 local
-npm run db:reset:local             # borrar DB local y re-aplicar desde cero ⚠️
-npm run db:seed:local              # cargar datos de ejemplo (idempotente)
-
-# E2E
-npm run e2e:reset                  # limpiar estado E2E + re-aplicar seed (ante estado corrupto)
-npm run e2e:server                 # servidor E2E solo (para debugging de tests)
-
-# Deploy
-npm run deploy:staging             # deploy a staging (con tests)
-npm run deploy                     # deploy a producción (con tests) ⚠️ requiere aprobación
-npm run db:migrate:remote          # aplicar migraciones en D1 producción
-
-# Operación manual
-npm run operator                   # menú interactivo (solo para humanos — no usar en scripts)
-npx wrangler secret put <NOMBRE>   # cargar un secret en producción
-npx wrangler d1 execute tas-king --remote --command "SELECT ..."  # consulta SQL en prod
-```
-
-Hay tests unitarios y de API con Vitest ejecutándose en Workerd con D1/R2 emulados, más tests
-E2E con Playwright. `npm run test:all` ejecuta la suite completa. La estrategia y el checklist
-manual complementario para IAs y personas están en `TESTING.md`.
+Consultar las fichas de [TasKing](docs/productos/TASKING.md) y [plataforma](docs/productos/PLATAFORMA.md). Las tablas históricas siguientes no redefinen el estado registrado en STATUS.
 
 ## Estado de features del backlog
 
@@ -243,13 +196,9 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - [ ] #7 📊 Lead time y tasa de completitud
 - [ ] Búsqueda avanzada (full-text en título + detalles)
 
-## No hacer
-- No usar Cloudflare Access (no funciona en `*.workers.dev` sin dominio propio)
-- No introducir un framework JS ni paso de build en el frontend (decisión de producto)
-- No reemplazar datos al importar (import siempre agrega)
-- No hardcodear emails de usuarios/admins en el código fuente
-- No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
-- No borrar el tablero personal de un usuario (`is_personal=1`)
+## Reglas vigentes
+
+Consultar [la base común](docs/homesuite/README.md) y las particularidades del producto.
 
 ## Último handoff (2026-09-07, Deploy v2.1.1 + fix tarjeta duplicada al arrastrar (v2.1.2) — Sonnet 5)
 

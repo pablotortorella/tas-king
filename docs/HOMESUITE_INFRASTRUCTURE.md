@@ -1,5 +1,7 @@
 # HomeSuite — infraestructura, dominios y repositorio
 
+**Política operativa:** [Operación común](homesuite/OPERACION.md). Los estados y recursos descritos abajo son snapshots fechados; consultar STATUS y configuración antes de ejecutar cambios remotos.
+
 **Estado:** sitio público en producción; app autenticada y migración de TasKing pendientes
 
 **Fecha:** 2026-09-21

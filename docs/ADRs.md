@@ -1,5 +1,7 @@
 # Architecture Decision Records (ADRs)
 
+Las reglas transversales vigentes se consultan en la [base común](homesuite/README.md). Los ADR conservan contexto y evolución; su estado debe leerse junto a STATUS.
+
 Documento vivo que registra decisiones arquitectónicas importantes: **qué**, **por qué**, **consecuencias**, y **cuándo cambió**.
 
 Formato: [ADR0001](https://adr.github.io/) adaptado.
