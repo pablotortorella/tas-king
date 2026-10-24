@@ -36,7 +36,7 @@ Diseño de las pantallas de Cuentas Claras, el producto financiero de HomeSuite.
 
 ## Datos de demostración
 
-Todas las pantallas comparten el mismo conjunto, para que los números cierren entre sí. Son inventados, salvo el correo del titular en la pantalla 10.
+Todas las pantallas comparten el mismo conjunto, para que los números cierren entre sí. Son inventados, incluido el correo del titular en la pantalla 10.
 
 - **Personas**: Pablo (titular), Laura (miembro con cuenta), Ana (invitación pendiente), Mateo (sin cuenta).
 - **COP**: saldo de Pablo +$1.748.350; Mateo −$122.050; Laura −$389.050; Ana −$1.237.250 (suman $0). USD aparte: Laura +US$80, Mateo 0, Ana −US$40, Pablo −US$40.
