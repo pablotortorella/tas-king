@@ -153,3 +153,16 @@ test("un error del servidor al guardar se muestra en el formulario y permite rei
   await expect(page.locator(".form-feedback.error")).toContainText("Este movimiento cambió");
   await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
 });
+
+test("las acciones confirman con un aviso y la URL no puede inyectar texto", async ({ page }) => {
+  const { book, detail } = await seededBook(page);
+  await page.goto(book);
+  await page.getByLabel("Participante sin cuenta").fill("Carla");
+  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Participante agregado." })).toBeVisible();
+  await page.goto(`${detail}/void`);
+  await page.getByRole("button", { name: "Confirmar anulación" }).click();
+  await expect(page.getByText("Movimiento anulado.", { exact: false }).first()).toBeVisible();
+  await page.goto(`${book}?aviso=%3Cb%3Ehola%3C/b%3E`);
+  await expect(page.locator(".notice")).toHaveCount(0);
+});

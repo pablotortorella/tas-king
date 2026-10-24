@@ -187,7 +187,11 @@ describe("recorrido web con sesión real", () => {
     expect(await page.text()).toContain("Casa Hyrule");
     const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
     expect(renamed.status).toBe(303);
-    expect(renamed.headers.get("location")).toBe(location);
+    expect(renamed.headers.get("location")).toBe(`${location}?aviso=renombrado`);
+    const confirmed = await authenticatedRequest(owner, `https://app.test${renamed.headers.get("location")}`);
+    expect(await confirmed.text()).toContain("Nombre del grupo guardado.");
+    const forged = await authenticatedRequest(owner, `https://app.test${location}?aviso=%3Cscript%3Ealert(1)%3C/script%3E`);
+    expect(await forged.text()).not.toContain("<script>alert(1)");
     const space = await env.DB.prepare("SELECT id, name, slug FROM spaces WHERE slug = ?").bind(location.split("/").at(-1)).first();
     expect(space.name).toBe("Hyrule compartido");
     expect(space.slug).toBe("casa-hyrule");

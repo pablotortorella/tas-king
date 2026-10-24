@@ -40,6 +40,21 @@ export function avatar(name, { seed = name, noAccount = false } = {}) {
   return `<span class="${classes}" aria-hidden="true">${escapeHtml(initials(name))}</span>`;
 }
 
+const NOTICES = Object.freeze({
+  participante: "Participante agregado.",
+  invitacion: "Invitación creada. Hasta que se acepte, la persona no puede ver el libro.",
+  cancelada: "Invitación cancelada.",
+  renombrado: "Nombre del grupo guardado.",
+  guardado: "Movimiento guardado.",
+  anulado: "Movimiento anulado. Sigue visible en el historial y ya no cuenta en los saldos.",
+  "importacion-cancelada": "Importación cancelada. No se guardó nada.",
+});
+
+// Sólo mensajes de la lista: el parámetro de la URL nunca se muestra tal cual.
+export function noticeFor(key) {
+  return Object.hasOwn(NOTICES, key ?? "") ? `<p class="notice" role="status">${escapeHtml(NOTICES[key])}</p>` : "";
+}
+
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 export function shortDate(isoDate) {
