@@ -80,7 +80,7 @@ const BOOK = `
 .sum-zero{font-size:.85rem;font-weight:700;color:var(--accent-text)}
 .balance-list{list-style:none;margin:0;padding:0}.balance-row{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line-soft)}
 .balance-row:first-child{border-top:0}.balance-row .who{min-width:0;overflow-wrap:anywhere}.balance-row .who strong{font-weight:700;color:var(--ink)}.balance-row .who .tag{color:var(--ink-3);font-weight:500}
-.balance-row .amount{text-align:right;font-weight:800;color:var(--ink)}
+.balance-row .amount{display:flex;flex-direction:column-reverse;align-items:flex-end;text-align:right;font-weight:800}.balance-row .amount .word{font-size:.75rem;font-weight:600}.balance-row .amount.owed .word,.balance-row .amount.owes .word{color:var(--ink-3)}.balance-row .amount:not(.owed):not(.owes){color:var(--ink)}
 .bar{position:relative;height:8px;border-radius:999px;background:var(--chip);margin-top:8px}.bar::after{content:"";position:absolute;left:50%;top:-2px;width:2px;height:12px;background:var(--field);border-radius:1px}
 .bar .fill{position:absolute;top:0;height:8px;border-radius:999px}.bar .pos{left:50%;background:var(--accent-bg)}.bar .neg{right:50%;background:var(--bar-neg)}
 .entry-list{list-style:none;padding:0;margin:0}.entry-row{border-top:1px solid var(--line-soft)}.entry-row:first-child{border-top:0}

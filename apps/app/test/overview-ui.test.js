@@ -33,8 +33,8 @@ describe("libro: vista general", () => {
 
   it("muestra el saldo propio, la palabra del saldo, la suma cero y el efecto propio", () => {
     const html = renderLedgerOverview(data(), { spaceId: "casa", userId: "u1" });
-    expect(html).toContain("Le deben COP 50,00");
-    expect(html).toContain("Debe COP 50,00");
+    expect(html.replace(/<[^>]+>/gu, "")).toContain("Le deben COP 50,00");
+    expect(html.replace(/<[^>]+>/gu, "")).toContain("Debe COP 50,00");
     expect(html).toContain("Suman 0");
     expect(html).toContain("Tu saldo · COP");
     expect(html).toContain("Te corresponde recibir.");

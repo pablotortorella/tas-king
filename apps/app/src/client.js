@@ -52,7 +52,6 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
     var units = Number(option.getAttribute("data-units"));
     var currency = option.value;
     var type = form.querySelector('input[name="type"]').value;
-    var own = form.getAttribute("data-own");
     var names = {};
     form.querySelectorAll(".choice input").forEach(function (input) { names[input.value] = label(input); });
     var amountInput = form.querySelector('input[name="amount"]');
@@ -112,7 +111,7 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
       if (!effects[id]) return;
       var item = document.createElement("li");
       var name = document.createElement("span");
-      name.textContent = (names[id] || "Participante") + (id === own ? " · vos" : "");
+      name.textContent = (names[id] || "Participante");
       var amount = document.createElement("strong");
       amount.className = "money " + (effects[id] > 0 ? "owed" : "owes");
       amount.textContent = format(effects[id], units, currency, true);
