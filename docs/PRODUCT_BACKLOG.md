@@ -138,6 +138,12 @@ conciliación, importación idempotente y búsqueda conjunta. Falta integrar y
 validar ambas ramas en staging antes de cambiar el estado de estas historias a
 completado.
 
+**Ajustes de revisión 2026-10-23:** la rama apilada
+`feature/homesuite-review-feedback` amplía monedas a Sudamérica y México,
+incorpora URLs de grupo legibles pero estables, lleva a la segunda cuenta
+directamente a sus invitaciones pendientes y permite buscar fragmentos de
+montos ignorando separadores de miles.
+
 ---
 
 ## ✅ Completado

@@ -88,6 +88,22 @@
   se desplegó. Producción y datos financieros reales siguen bloqueados por las
   condiciones de recuperación y ciclo de vida existentes.
 
+### Cuentas Claras: ajustes de la revisión local — 2026-10-23
+
+- La selección monetaria incorpora todas las monedas vigentes de Sudamérica,
+  MXN y las monedas ya admitidas. CLP y PYG usan cero decimales; KWD usa tres.
+- Cada grupo recibe una URL legible y estable al crearse, con sufijos `-2`, `-3`
+  ante nombres repetidos. Renombrar el grupo no modifica su URL; los grupos
+  existentes reciben una al primer acceso y sus rutas antiguas redirigen.
+- En desarrollo local, una segunda cuenta con invitaciones pendientes entra
+  directamente a la pantalla para aceptar o rechazar. La importación explica
+  dentro de la interfaz qué filas requieren decisión.
+- La búsqueda monetaria ignora los separadores de miles y encuentra fragmentos
+  del importe entero: `1000`, `1.000`, `10` y `100` encuentran `1.000`; `14`,
+  `45` y `145` encuentran `145`. Las monedas siguen sin convertirse entre sí.
+- Los ajustes viven en `feature/homesuite-review-feedback`, apilada sobre la
+  importación; no fueron desplegados en staging ni producción.
+
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 
 **Version ID:** `e20ace17-9736-4c7a-b1e0-13138d4074de` · **SHA:** `fb8eb81` · producción pasó de v2.2.1 a v2.3.0.

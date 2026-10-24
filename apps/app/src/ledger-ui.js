@@ -1,4 +1,4 @@
-import { CURRENCY_MINOR_UNITS, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
 import { LedgerError } from "./ledger.js";
 
 export function escapeHtml(value) {
@@ -14,6 +14,24 @@ function searchable(value) {
   return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
 }
 
+function numericNeedle(query, currency) {
+  const text = String(query ?? "").trim();
+  if (!/^\d[\d.,\s]*$/u.test(text)) return null;
+  const units = CURRENCY_MINOR_UNITS[currency];
+  const decimal = text.match(/[.,](\d+)$/u);
+  const usesDecimals = decimal && decimal[1].length === units && !(text.includes(".") && decimal[1].length === 3);
+  return { digits: text.replace(/\D/gu, ""), usesDecimals };
+}
+
+function amountMatches(amountMinor, currency, query) {
+  const needle = numericNeedle(query, currency);
+  if (!needle?.digits) return false;
+  const units = CURRENCY_MINOR_UNITS[currency];
+  const digits = String(Math.abs(amountMinor)).padStart(units + 1, "0");
+  const whole = units ? digits.slice(0, -units) : digits;
+  return (needle.usesDecimals ? digits : whole).includes(needle.digits);
+}
+
 export function searchLedger(entries, participants, query) {
   const needle = searchable(query);
   if (!needle) return entries.map(entry => ({ ...entry, matchReason: null }));
@@ -22,11 +40,11 @@ export function searchLedger(entries, participants, query) {
     let reason = null;
     if (searchable(entry.description).includes(needle)) reason = "Descripción";
     else if (entry.category && searchable(entry.category).includes(needle)) reason = "Categoría";
-    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle)) reason = "Importe total";
+    else if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, query)) reason = "Importe total";
     else for (const effect of entry.effects) {
       const name = names.get(effect.participantId) ?? "";
       if (searchable(name).includes(needle)) { reason = `Participante: ${name}`; break; }
-      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle)) { reason = `Efecto de ${name}`; break; }
+      if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, query)) { reason = `Efecto de ${name}`; break; }
     }
     return reason ? [{ ...entry, matchReason: reason }] : [];
   });
@@ -93,7 +111,7 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   const fields = currentType === "transfer"
     ? `<div class="form-grid"><label>De<select name="from" required>${selectedOptions(data.participants, entry?.cashParties.find(p => p.direction === "out")?.participantId ?? ownId)}</select></label><label>Para<select name="to" required>${selectedOptions(data.participants, entry?.cashParties.find(p => p.direction === "in")?.participantId ?? data.participants.find(p => p.active && p.id !== ownId)?.id)}</select></label></div>`
     : `<label>${currentType === "income" ? "Recibió" : "Pagó"}<select name="payer" required>${selectedOptions(data.participants, singleParty ?? ownId)}</select></label><fieldset><legend>Se reparte entre</legend>${data.participants.filter(p => p.active || selected.has(p.id)).map(p => `<label class="check-row"><input type="checkbox" name="beneficiary" value="${escapeHtml(p.id)}"${selected.has(p.id) ? " checked" : ""}>${escapeHtml(p.displayName)}</label>`).join("")}</fieldset><fieldset><legend>Reparto</legend><label class="check-row"><input type="radio" name="splitMethod" value="equal"${equallySplit ? " checked" : ""}>Igual</label><label class="check-row"><input type="radio" name="splitMethod" value="exact"${equallySplit ? "" : " checked"}>Importes exactos</label><div class="share-grid">${data.participants.filter(p => p.active || selected.has(p.id)).map(p => `<label>${escapeHtml(p.displayName)}<input name="share_${escapeHtml(p.id)}" inputmode="decimal" placeholder="0,00" value="${escapeHtml(shares.has(p.id) ? inputAmount(shares.get(p.id), currency) : "")}"></label>`).join("")}</div></fieldset>`;
-  return `<p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(entryLabel(currentType).toLowerCase())}</h1><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus></label><div class="form-grid"><label>Importe<input name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : "")}" placeholder="0,00"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => option(code, code, code === currency)).join("")}</select></label><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label></div>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><div class="form-actions"><button class="button" type="submit">Guardar</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div><p class="form-feedback" role="status" aria-live="polite"></p></form>`;
+  return `<p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(entryLabel(currentType).toLowerCase())}</h1><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus></label><div class="form-grid"><label>Importe<input name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : "")}" placeholder="0,00"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => option(code, currencyLabel(code), code === currency)).join("")}</select></label><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label></div>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><div class="form-actions"><button class="button" type="submit">Guardar</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div><p class="form-feedback" role="status" aria-live="polite"></p></form>`;
 }
 
 export function renderLedgerOverview(data, { spaceId, userId, query = "" }) {

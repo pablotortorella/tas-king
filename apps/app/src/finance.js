@@ -1,10 +1,28 @@
 export const CURRENCY_MINOR_UNITS = Object.freeze({
+  ARS: 2,
+  BOB: 2,
+  BRL: 2,
+  CLP: 0,
   COP: 2,
   EUR: 2,
+  FKP: 2,
+  GYD: 2,
   JPY: 0,
   KWD: 3,
+  MXN: 2,
+  PEN: 2,
+  PYG: 0,
+  SRD: 2,
   USD: 2,
+  UYU: 2,
+  VES: 2,
 });
+
+const currencyNames = new Intl.DisplayNames("es", { type: "currency" });
+
+export function currencyLabel(code) {
+  return `${code} · ${currencyNames.of(code)}`;
+}
 
 export class FinancialValidationError extends Error {}
 

@@ -16,6 +16,24 @@ function draft(type, totalMinor, a, b, overrides = {}) {
 }
 
 describe("libro financiero compartido", () => {
+  it("separa saldos en monedas sudamericanas y MXN sin conversión", async () => {
+    const owner = await ensureLocalUser(env.DB, "ledger-currencies@example.test");
+    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "Monedas", defaultCurrency: "CLP" });
+    const member = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Beto" });
+    const ownId = (await readLedger(env.DB, { spaceId: space.id, userId: owner.id })).participants.find(p => p.linkedUserId === owner.id).id;
+    await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: draft("expense", 1000, ownId, member.id, { currency: "CLP" }), idempotencyKey: crypto.randomUUID() });
+    await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: draft("expense", 2500, ownId, member.id, { currency: "MXN" }), idempotencyKey: crypto.randomUUID() });
+    const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    expect(data.ledger.default_currency).toBe("CLP");
+    expect(data.balances).toHaveLength(4);
+    expect(data.balances).toEqual(expect.arrayContaining([
+      { currency: "CLP", participantId: ownId, amountMinor: 500 },
+      { currency: "CLP", participantId: member.id, amountMinor: -500 },
+      { currency: "MXN", participantId: ownId, amountMinor: 1250 },
+      { currency: "MXN", participantId: member.id, amountMinor: -1250 },
+    ]));
+  });
+
   it("crea libro y participantes, y vincula una invitación sin mover saldos", async () => {
     const owner = await ensureLocalUser(env.DB, "ledger-owner@example.test");
     const invited = await ensureLocalUser(env.DB, "ledger-invited@example.test");
@@ -95,19 +113,19 @@ describe("libro financiero compartido", () => {
     const session = await createSession(env.DB, { userId: owner.id, secret });
     const cookie = `__Host-homesuite_session=${encodeURIComponent(session.token)}`;
     const csrf = await createCsrfToken({ sessionId: session.id, secret });
-    const url = `https://app.test/spaces/${space.id}/ledger/new`;
+    const url = `https://app.test/spaces/${space.slug}/ledger/new`;
     const page = await app.request(url, { headers: { Cookie: cookie } }, { DB: env.DB, SESSION_SECRET: secret });
     expect(page.status).toBe(200);
     expect(await page.text()).toContain("Agregar gasto");
-    const denied = await app.request(`https://app.test/spaces/${space.id}/participants`, { method: "POST", headers: { Cookie: cookie, Origin: "https://app.test", "Content-Type": "application/x-www-form-urlencoded" }, body: "name=No" }, { DB: env.DB, SESSION_SECRET: secret });
+    const denied = await app.request(`https://app.test/spaces/${space.slug}/participants`, { method: "POST", headers: { Cookie: cookie, Origin: "https://app.test", "Content-Type": "application/x-www-form-urlencoded" }, body: "name=No" }, { DB: env.DB, SESSION_SECRET: secret });
     expect(denied.status).toBe(403);
-    const created = await app.request(`https://app.test/spaces/${space.id}/participants`, { method: "POST", headers: { Cookie: cookie, Origin: "https://app.test", "X-CSRF-Token": csrf, "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Otra" }, { DB: env.DB, SESSION_SECRET: secret });
+    const created = await app.request(`https://app.test/spaces/${space.slug}/participants`, { method: "POST", headers: { Cookie: cookie, Origin: "https://app.test", "X-CSRF-Token": csrf, "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Otra" }, { DB: env.DB, SESSION_SECRET: secret });
     expect(created.status).toBe(303);
-    const response = await app.request(`https://app.test/spaces/${space.id}/ledger/export.json`, { headers: { Cookie: cookie } }, { DB: env.DB, SESSION_SECRET: secret });
+    const response = await app.request(`https://app.test/spaces/${space.slug}/ledger/export.json`, { headers: { Cookie: cookie } }, { DB: env.DB, SESSION_SECRET: secret });
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect((await response.json()).participants).toHaveLength(2);
-    const anonymous = await app.request(`https://app.test/spaces/${space.id}/ledger/export.json`, undefined, { DB: env.DB, SESSION_SECRET: secret });
+    const anonymous = await app.request(`https://app.test/spaces/${space.slug}/ledger/export.json`, undefined, { DB: env.DB, SESSION_SECRET: secret });
     expect(anonymous.status).toBe(303);
   });
 });

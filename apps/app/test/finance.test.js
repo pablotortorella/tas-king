@@ -3,7 +3,13 @@ import { CURRENCY_MINOR_UNITS, FinancialValidationError, formatMoney, normalizeC
 
 describe("núcleo monetario", () => {
   it("reconoce exponentes monetarios 0, 2 y 3 sin convertir importes", () => {
+    expect(Object.keys(CURRENCY_MINOR_UNITS)).toEqual([
+      "ARS", "BOB", "BRL", "CLP", "COP", "EUR", "FKP", "GYD", "JPY", "KWD",
+      "MXN", "PEN", "PYG", "SRD", "USD", "UYU", "VES",
+    ]);
     expect(CURRENCY_MINOR_UNITS.JPY).toBe(0);
+    expect(CURRENCY_MINOR_UNITS.CLP).toBe(0);
+    expect(CURRENCY_MINOR_UNITS.PYG).toBe(0);
     expect(CURRENCY_MINOR_UNITS.COP).toBe(2);
     expect(CURRENCY_MINOR_UNITS.KWD).toBe(3);
     expect(normalizeCurrency(" kwd ")).toBe("KWD");
@@ -22,8 +28,11 @@ describe("núcleo monetario", () => {
     expect(parseMoney("1.234", "KWD")).toBe(1234);
     expect(parseMoney("12,50", "COP")).toBe(1250);
     expect(parseMoney("300", "JPY")).toBe(300);
+    expect(parseMoney("2500", "CLP")).toBe(2500);
+    expect(parseMoney("42,75", "MXN")).toBe(4275);
     expect(formatMoney(1250, "COP")).toBe("COP 12,50");
     expect(() => parseMoney("1,20", "JPY")).toThrow(FinancialValidationError);
+    expect(() => parseMoney("1,20", "PYG")).toThrow(FinancialValidationError);
     expect(() => parseMoney("9007199254740992", "COP")).toThrow(FinancialValidationError);
   });
 

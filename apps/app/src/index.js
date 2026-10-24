@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
-import { CURRENCY_MINOR_UNITS, FinancialValidationError } from "./finance.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError } from "./finance.js";
 import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
 import { escapeHtml, ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm, renderLedgerOverview } from "./ledger-ui.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
-import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation } from "./spaces.js";
+import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation, resolveSpace } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 import { buildImportPlan, cancelImportPreview, commitImportPreview, createImportPreview, readImportBatch, readImportPreview, reviewImportPreview } from "./splitwise-import.js";
 import { renderImportBatch, renderImportPreview, renderImportReview, renderImportUpload } from "./splitwise-ui.js";
@@ -221,7 +221,8 @@ app.get("/api/local/session", async (c) => {
   const user = await ensureLocalUser(c.env.DB, email);
   const session = await createSession(c.env.DB, { userId: user.id, secret });
   setCookie(c, sessionCookie(session.token, true));
-  return c.redirect("/spaces/new", 303);
+  const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
+  return c.redirect(invitation ? "/invitations" : "/spaces/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {
@@ -382,10 +383,27 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
 
 
 
+async function canonicalSpacePath(c, next) {
+  const key = c.req.param("spaceId");
+  if (c.req.method !== "GET" || !key?.startsWith("space_")) return next();
+  const user = await signedInUser(c);
+  if (!user) return next();
+  const membership = await c.env.DB.prepare("SELECT 1 FROM memberships WHERE space_id = ? AND user_id = ?").bind(key, user.user_id).first();
+  if (!membership) return next();
+  const space = await resolveSpace(c.env.DB, key);
+  if (!space) return next();
+  const url = new URL(c.req.url);
+  const prefix = `/spaces/${encodeURIComponent(key)}`;
+  return c.redirect(`/spaces/${encodeURIComponent(space.slug)}${url.pathname.slice(prefix.length)}${url.search}`, 308);
+}
+
+app.use("/spaces/:spaceId", canonicalSpacePath);
+app.use("/spaces/:spaceId/*", canonicalSpacePath);
+
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${currency}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<p class="eyebrow">Cuentas Claras</p><h1>Nuevo grupo</h1><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="organization"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
@@ -393,7 +411,7 @@ app.post("/spaces", async (c) => {
   try {
     const body = await c.req.parseBody();
     const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
-    return c.redirect(`/spaces/${encodeURIComponent(space.id)}`, 303);
+    return c.redirect(`/spaces/${encodeURIComponent(space.slug)}`, 303);
   } catch {
     return c.html(formError("No pudimos crear el espacio", "Elegí un nombre de hasta 120 caracteres."), 400);
   }
@@ -402,17 +420,18 @@ app.post("/spaces", async (c) => {
 app.get("/spaces/:spaceId", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const space = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  const space = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
   const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all();
   const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT id, invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] };
   const csrf = await csrfInput(c, user);
   const ledger = await readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id });
+  const spaceHref = `/spaces/${encodeURIComponent(space.slug)}`;
   const participants = members.results.map((member) => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
-  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="/spaces/${encodeURIComponent(space.id)}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
+  const pending = invitations.results.map((invitation) => `<div class="person"><strong>${html(invitation.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><form action="${spaceHref}/invitations/${encodeURIComponent(invitation.id)}/cancel" method="post">${csrf}<button class="button secondary">Cancelar invitación</button></form></div>`).join("");
   const nominalOptions = ledger.participants.filter(person => !person.linkedUserId && person.active).map(person => `<option value="${html(person.id)}">${html(person.displayName)}</option>`).join("");
-  const ownerTools = space.role === "owner" ? `<section class="ledger-section"><h2>Administrar grupo</h2><form action="/spaces/${encodeURIComponent(space.id)}/participants" method="post">${csrf}<label class="label" for="participant-name">Participante sin cuenta</label><input id="participant-name" name="name" required maxlength="120"><button class="button secondary">Agregar participante</button></form><form action="/spaces/${encodeURIComponent(space.id)}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><form action="/spaces/${encodeURIComponent(space.id)}/invitations" method="post">${csrf}<label class="label" for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email"><label class="label" for="target-participant">Vincular con participante (opcional)</label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominalOptions}</select><button class="button">Invitar</button></form>${pending}</section>` : "";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.id, userId: user.user_id, query: c.req.query("q") ?? "" })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
+  const ownerTools = space.role === "owner" ? `<section class="ledger-section"><h2>Administrar grupo</h2><form action="${spaceHref}/participants" method="post">${csrf}<label class="label" for="participant-name">Participante sin cuenta</label><input id="participant-name" name="name" required maxlength="120"><button class="button secondary">Agregar participante</button></form><form action="${spaceHref}/rename" method="post">${csrf}<label class="label" for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${html(space.name)}"><button class="button secondary">Guardar nombre</button></form><form action="${spaceHref}/invitations" method="post">${csrf}<label class="label" for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email"><label class="label" for="target-participant">Vincular con participante (opcional)</label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominalOptions}</select><button class="button">Invitar</button></form>${pending}</section>` : "";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.role === "owner" ? "Titular" : "Integrante")}</p><h1>${html(space.name)}</h1>${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "" })}<section class="ledger-section"><h2>Integrantes</h2>${participants}</section>${ownerTools}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`));
 });
 
 app.post("/spaces/:spaceId/participants", async (c) => {
@@ -616,7 +635,7 @@ app.post("/spaces/:spaceId/rename", async (c) => {
 
 app.post("/spaces/:spaceId/invitations", async (c) => {
   const user = c.get("protectedUser");
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN spaces s ON s.id = m.space_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
   try {
     const body = await c.req.parseBody();
@@ -629,7 +648,7 @@ app.post("/spaces/:spaceId/invitations", async (c) => {
 
 app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
   const user = c.get("protectedUser");
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.user_id).first();
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN spaces s ON s.id = m.space_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
   try {
     await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.user_id });
@@ -655,7 +674,8 @@ app.post("/invitations/:invitationId", async (c) => {
   try {
     const accepted = body.decision === "accept";
     const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.user_id, email: user.email, accepted });
-    return c.redirect(accepted ? `/spaces/${encodeURIComponent(spaceId)}` : "/invitations", 303);
+    const space = accepted ? await resolveSpace(c.env.DB, spaceId) : null;
+    return c.redirect(space ? `/spaces/${encodeURIComponent(space.slug)}` : "/invitations", 303);
   } catch {
     return c.html(formError("Invitación no encontrada", "La invitación no existe, ya fue resuelta o no te corresponde.", 404), 404);
   }
@@ -665,8 +685,9 @@ app.get("/cuentas-claras", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
-  if (rows.results.length === 1) return c.redirect(`/spaces/${encodeURIComponent(rows.results[0].id)}`, 303);
-  const spaces = rows.results.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.id)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("") || "<p>No tenés espacios todavía.</p>";
+  const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
+  if (listed.length === 1) return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
+  const spaces = listed.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("") || "<p>No tenés espacios todavía.</p>";
   return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
 });
 
@@ -691,7 +712,8 @@ app.get("/", async (c) => {
   if (session) {
     const spaces = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(session.user_id).all();
     const pending = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM invitations WHERE invitee_email = ? AND status = 'pending'").bind(session.email).first();
-    const list = spaces.results.length ? spaces.results.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.id)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === 'owner' ? 'Titular' : 'Integrante'}</span></div>`).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
+    const listed = await Promise.all(spaces.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
+    const list = listed.length ? listed.map((space) => `<div class="person"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><br><span class="muted">${space.role === 'owner' ? 'Titular' : 'Integrante'}</span></div>`).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
     return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post">${await csrfInput(c, session)}<button class="button secondary">Cerrar sesión</button></form>`));
   }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
