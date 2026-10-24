@@ -17,6 +17,7 @@ Diseño de las pantallas de Cuentas Claras, el producto financiero de HomeSuite.
 | `tokens.json` | Colores claro y oscuro con su rol, valores fijos, tipografía y tabla de contraste calculada |
 | `herramientas/capturar.js` | Script de Playwright que regenera las capturas |
 | `herramientas/auditar.js` | Auditoría automática de contraste, tamaños táctiles y desbordes en las 10 pantallas |
+| `herramientas/capturar-completas.js` | Capturas de largo completo de las pantallas del celular con scroll interno |
 
 `project/` replica la estructura del artefacto, de modo que esa carpeta se puede volver a publicar tal cual.
 
@@ -56,7 +57,7 @@ Todas las pantallas comparten el mismo conjunto, para que los números cierren e
 2. En esa carpeta: `python3 -m http.server 8899 --bind 127.0.0.1`.
 3. Desde `herramientas/`: `NODE_PATH=$(npm root -g) node capturar.js ../capturas` (requiere Playwright).
 
-Las capturas del repo se generaron con Chromium, a doble resolución y cuantizadas a 256 colores para ocupar ~2,3 MB en total.
+Las capturas del repo se generaron con Chromium, a doble resolución y cuantizadas a 256 colores para ocupar ~3,3 MB en total, con las completas.
 
 ## Decisiones y pendientes
 
@@ -88,7 +89,7 @@ Pasada de verificación del 2026-10-23, hecha con `herramientas/auditar.js` (Chr
 
 **Qué son las pantallas**
 - Son maquetas, no un prototipo completo. Solo Saldos (COP/USD) y Agregar (Gasto/Ingreso/Transferencia) responden; el resto de los botones es estático (reparto, pagadores y moneda de Agregar incluidos).
-- Las pantallas del celular tienen scroll interno y las capturas muestran solo los primeros 844 px. Lo que queda debajo (por ejemplo, el formulario «Agregar a alguien» en Personas) se ve en el lienzo, no en el PNG.
+- Las pantallas del celular tienen scroll interno y las capturas principales muestran solo los primeros 844 px. Las seis que tienen contenido debajo (1, 4, 5, 7, 8 y 10) tienen además una captura de largo completo en `capturas/<tema>/completas/`. Las pantallas 2 y 6 desbordan menos de 40 px y no tienen versión completa.
 - El atributo `aria-pressed` de los alternadores es estático.
 
 **Pendientes del diseño, no de la verificación**
