@@ -1,6 +1,30 @@
 # AI_HANDOFF
 
-## Última sesión — HomeSuite App local (2026-09-22)
+## Última sesión — rediseño y propuestas de Cuentas Claras (2026-10-23)
+
+Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs/STATUS.md`
+(sección «Cuentas Claras: rediseño visual y propuestas OpenSpec»).
+
+- **Rediseño visual**: artifact privado «Cuentas Claras» en Claude Design
+  (https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei, versión 15), 10 pantallas en claro
+  y oscuro. Vive sólo allí, no en el repo. Se hizo sin renderizar ni revisar en pantalla.
+- **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
+  (commit `699b3bc`, empujada a origin, sin PR ni merge): `libro-y-saldos-cuentas-claras`,
+  `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
+  `colaboracion-y-exportacion-del-libro`. Validan con `--strict`.
+- **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
+  pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
+  varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
+- **Al retomar**: (1) abrir el PR de la rama, mejor como borrador; (2) hacer `explore` con
+  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (3) corregir
+  en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
+  «saldos anteriores» activa); (4) recién entonces `propose` definitivo.
+- **Dependencia**: nada de esto puede aplicarse hasta cerrar el grupo 3 de
+  `plataforma-homesuite-minima` (creación de espacios, membresías e invitaciones).
+- La sesión recibió acceso de escritura a `pablotortorella/tas-king` para empujar la rama;
+  no se tocó `main`.
+
+## Sesión anterior — HomeSuite App local (2026-09-22)
 
 Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.
 
