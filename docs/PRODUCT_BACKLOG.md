@@ -163,6 +163,7 @@ importación en un solo change.
 | — | 🚦 Migrar antes de desplegar el Worker | 2026-09-18 — los scripts desplegaban antes de migrar, contra lo que pedía la documentación desde el 15/09. Con la 0015 sin aplicar en producción eso abría una ventana de 500. `test/deploy-scripts.test.js` verifica el orden |
 
 | — | 📱 Tip diario completo en móvil, etiquetas en tarjeta nueva y teclado en checklists | 2026-10-23 — v2.3.1 (PRs #65, #66 y #67). `100dvh` en el `body`; `draftLabels` con el patrón de `draftGoals`; Tab/Enter/Backspace en ítems de checklist (ADR-014). Falta auditar el resto de los campos del modal con el mismo criterio de teclado. Ver `docs/STATUS.md` |
+| — | 🎯 Progreso de objetivos con varias columnas de cierre + validación de columna al guardar tarjetas | 2026-10-23 — v2.3.2 (PRs #77 y #78). El progreso cuenta todas las columnas `is_done` (servidor y cliente); crear/editar/reordenar rechazan columnas inexistentes con 400 y el import manda las tarjetas desconocidas a la primera columna. Ver `docs/STATUS.md` |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
@@ -238,8 +239,6 @@ _Sin ítems pendientes — ver ✅ Completado._
 
 ### 🟠 Alto — bugs funcionales visibles
 
-- **Progreso de objetivos ignora columnas de cierre múltiples** — 🟢 chico. `goalsWithProgress` usa `getDoneColumnId` (una sola columna, `LIMIT 1`), mientras confeti/métricas/urgencia usan todas las `is_done=1` (`getDoneColumnIds`). **Impacto**: con 2+ columnas de cierre, el % de avance queda subestimado — el usuario ve datos incorrectos.
-- **Nadie valida que la columna exista** al crear/editar/importar tarjetas — 🟢 chico. El import usa default `por_conversar`, que puede no existir en tableros con columnas custom. **Impacto**: tarjetas huérfanas en columnas inexistentes, invisibles en la UI y sin error — se percibe como pérdida de datos.
 - **Docs de arranque desactualizadas** — 🟢 chico. `QUICK_START.md` (lectura obligatoria por sesión) congelado al 2026-06-30: menciona PRs "pendientes de merge" ya mergeados y deployados, y "69 unit + 22 E2E" (son 111+36). `STATUS.md`: la sección "Features NO Implementados" está llena de features implementadas, y dice "máx 20 etiquetas / paleta de 20 colores" cuando el código impone 10 y 10. **Impacto**: cada sesión (humana o IA) arranca con un mapa falso del proyecto.
 
 ### 🟡 Medio — endurecimiento y robustez
