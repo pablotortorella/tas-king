@@ -1,0 +1,123 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-24T00:20:00Z"
+  },
+  "title": "Cuentas Claras",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "NuevoGrupo.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1 · Nuevo grupo"
+    },
+    "PuntoDePartida.dc.html": {
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "2 · Punto de partida"
+    },
+    "Importar.dc.html": {
+      "x": 940,
+      "y": 0,
+      "w": 1280,
+      "h": 1512,
+      "title": "3 · Importar desde Splitwise",
+      "expand": "fill"
+    },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 1872,
+      "w": 390,
+      "h": 844,
+      "title": "4 · Saldos",
+      "is_interactive": true
+    },
+    "Movimientos.dc.html": {
+      "x": 470,
+      "y": 1872,
+      "w": 390,
+      "h": 844,
+      "title": "5 · Movimientos y búsqueda"
+    },
+    "Agregar.dc.html": {
+      "x": 940,
+      "y": 1872,
+      "w": 390,
+      "h": 844,
+      "title": "6 · Agregar movimiento",
+      "is_interactive": true
+    },
+    "Detalle.dc.html": {
+      "x": 1410,
+      "y": 1872,
+      "w": 390,
+      "h": 844,
+      "title": "7 · Detalle y revisiones"
+    },
+    "SaldoDe.dc.html": {
+      "x": 1880,
+      "y": 1872,
+      "w": 390,
+      "h": 844,
+      "title": "8 · Por qué te deben $1.748.350"
+    },
+    "Escritorio.dc.html": {
+      "x": 0,
+      "y": 3076,
+      "w": 1280,
+      "h": 1108,
+      "title": "9 · Libro en escritorio",
+      "expand": "fill"
+    },
+    "Personas.dc.html": {
+      "x": 1360,
+      "y": 3076,
+      "w": 390,
+      "h": 844,
+      "title": "10 · Personas y acceso"
+    }
+  },
+  "order": [
+    "NuevoGrupo.dc.html",
+    "PuntoDePartida.dc.html",
+    "Importar.dc.html",
+    "Main.dc.html",
+    "Movimientos.dc.html",
+    "Agregar.dc.html",
+    "Detalle.dc.html",
+    "SaldoDe.dc.html",
+    "Escritorio.dc.html",
+    "Personas.dc.html"
+  ],
+  "notes": {
+    "t1": {
+      "x": 0,
+      "y": -240,
+      "text": "Empezar un grupo",
+      "kind": "title1",
+      "maxW": 2220
+    },
+    "t2": {
+      "x": 0,
+      "y": 1632,
+      "text": "Día a día, en el celular",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "t3": {
+      "x": 0,
+      "y": 2836,
+      "text": "Escritorio y personas",
+      "kind": "title1",
+      "maxW": 1750
+    }
+  }
+}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuentas Claras · Importar desde Splitwise</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
+:root{color-scheme:light dark;--bg:#f7f2e8;--surface:#fffdf8;--ink:#1f2c24;--ink-1:#3d4a41;--ink-2:#4d5950;--ink-3:#5b665e;--accent-bg:#245c43;--accent-text:#245c43;--accent-line:#245c43;--accent-deep:#174b34;--accent-soft:#d9eadc;--ok-bg:#eef6ef;--neg:#a8412c;--coral-soft:#f6d9d1;--coral-text:#7a2e1d;--yel-soft:#f8e7b9;--yel-text:#4a3300;--warn-bg:#fbf4de;--warn-line:#ecd48f;--warn-line-2:#b79b45;--sunken:#fbf7ee;--teal-soft:#e3eeeb;--teal-text:#24504b;--teal-line:#5b8a7f;--line-soft:#efe8db;--line:#e4dccd;--line-strong:#c9c1b2;--line-mid:#d9d2c5;--field:#7d887f;--chip:#ece4d5;--shadow:rgba(31,44,36,.2);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}
+:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg)}
+button,input{font-family:inherit}
+a{color:var(--accent-text)}a:hover{color:var(--accent-deep)}
+</style>
+</helmet>
+<div style="min-height:1100px;box-sizing:border-box;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding-bottom:48px">
+
+  <header style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:1180px;margin:0 auto;padding:16px 28px;box-sizing:border-box">
+    <a href="Main.dc.html" aria-label="HomeSuite, inicio" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-size:17px;font-weight:760;letter-spacing:-.02em">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#245c43"/><path d="M14 30h36v25H14z" fill="#fff8e8"/><path d="M7 31 28 10a6 6 0 0 1 8 0l21 21a4 4 0 0 1-3 7H10a4 4 0 0 1-3-7Z" fill="#d7664f"/><path d="M26 55V45a6 6 0 0 1 12 0v10" fill="#245c43"/><path d="M18 42a3 3 0 0 1 6 0v5h-6Zm22 0a3 3 0 0 1 6 0v5h-6Z" fill="#f2c86b"/></svg>
+      HomeSuite
+    </a>
+    <nav aria-label="Ubicación" style="flex:1;display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:14px;color:var(--ink-2)">
+      <span aria-hidden="true">›</span><span>Cuentas Claras</span><span aria-hidden="true">›</span><span>Casa compartida</span><span aria-hidden="true">›</span><span aria-current="page" style="font-weight:700;color:var(--ink)">Importar</span>
+    </nav>
+    <span aria-label="Sesión de Pablo" style="display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:700">PA</span>
+  </header>
+
+  <main style="max-width:1180px;margin:0 auto;padding:8px 28px 0;box-sizing:border-box">
+
+    <ol aria-label="Pasos de la importación" style="display:flex;flex-wrap:wrap;gap:8px 28px;margin:0 0 22px;padding:0;list-style:none;font-size:14px">
+      <li style="display:flex;align-items:center;gap:8px;color:var(--accent-text);font-weight:600">
+        <span aria-hidden="true" style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent-bg);color:#fffdf8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>Archivo</li>
+      <li style="display:flex;align-items:center;gap:8px;color:var(--accent-text);font-weight:600">
+        <span aria-hidden="true" style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent-bg);color:#fffdf8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>Personas</li>
+      <li aria-current="step" style="display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:800">
+        <span aria-hidden="true" style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--accent-line);background:var(--surface);color:var(--accent-text);font-size:13px">3</span>Revisión y conciliación</li>
+      <li style="display:flex;align-items:center;gap:8px;color:var(--ink-3);font-weight:600">
+        <span aria-hidden="true" style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--line-strong);color:var(--ink-3);font-size:13px">4</span>Confirmar</li>
+    </ol>
+
+    <h1 style="margin:0;max-width:760px;font-family:Georgia,'Times New Roman',serif;font-size:46px;font-weight:500;letter-spacing:-.05em;line-height:1">Revisá antes de guardar.</h1>
+    <p style="margin:12px 0 26px;max-width:700px;font-size:17px;line-height:1.55;color:var(--ink-2)">Todavía no se escribió nada. Mirá cómo quedan las personas, resolvé las filas con incidentes y comprobá que los saldos coincidan con los de Splitwise.</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+
+      <div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+        <div style="display:flex;flex-wrap:wrap;gap:12px">
+          <div style="flex:1 1 170px;padding:16px 18px;border-radius:20px;background:var(--surface);border:1px solid var(--line)">
+            <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent-text);font-variant-numeric:tabular-nums">36</div>
+            <div style="margin-top:6px;font-size:14px;line-height:1.35;color:var(--ink-1)">movimientos válidos para importar</div>
+          </div>
+          <div style="flex:1 1 170px;padding:16px 18px;border-radius:20px;background:var(--yel-soft);border:1px solid var(--warn-line)">
+            <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--yel-text);font-variant-numeric:tabular-nums">2</div>
+            <div style="margin-top:6px;font-size:14px;line-height:1.35;color:var(--yel-text)">filas con incidente que necesitan tu decisión</div>
+          </div>
+          <div style="flex:1 1 170px;padding:16px 18px;border-radius:20px;background:var(--surface);border:1px solid var(--line)">
+            <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink-2);font-variant-numeric:tabular-nums">1</div>
+            <div style="margin-top:6px;font-size:14px;line-height:1.35;color:var(--ink-1)">fila de resumen del archivo; no es un movimiento</div>
+          </div>
+        </div>
+        <p style="margin:-8px 2px 0;font-size:13px;color:var(--ink-3)">Archivo <strong style="font-weight:700;color:var(--ink)">splitwise-casa.csv</strong> · 39 filas · monedas COP y USD</p>
+
+        <section aria-labelledby="personas-h" style="padding:20px 22px;border-radius:24px;background:var(--surface);border:1px solid var(--line)">
+          <h2 id="personas-h" style="margin:0 0 4px;font-size:18px;font-weight:700">Personas del archivo</h2>
+          <p style="margin:0 0 12px;font-size:14px;color:var(--ink-2)">Cada columna del archivo se vincula con una persona del grupo para no duplicar a nadie.</p>
+          <div style="overflow-x:auto">
+          <table style="width:100%;min-width:520px;border-collapse:collapse;font-size:15px">
+            <thead>
+              <tr style="text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)">
+                <th scope="col" style="padding:8px 0;font-weight:700">En el archivo</th>
+                <th scope="col" style="padding:8px 0;font-weight:700">En Cuentas Claras</th>
+                <th scope="col" style="padding:8px 0;font-weight:700">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-top:1px solid var(--line-soft)">
+                <td style="padding:12px 0;font-weight:600">Pablo</td>
+                <td style="padding:12px 0">Pablo · vos</td>
+                <td style="padding:12px 0;color:var(--accent-text);font-weight:600"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vinculado</span></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft)">
+                <td style="padding:12px 0;font-weight:600">Ana</td>
+                <td style="padding:12px 0">Ana · invitación pendiente</td>
+                <td style="padding:12px 0;color:var(--accent-text);font-weight:600"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vinculado</span></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft)">
+                <td style="padding:12px 0;font-weight:600">Laura</td>
+                <td style="padding:12px 0">Laura · con cuenta</td>
+                <td style="padding:12px 0;color:var(--accent-text);font-weight:600"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vinculado</span></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft)">
+                <td style="padding:12px 0;font-weight:600">Mateo</td>
+                <td style="padding:12px 0">Mateo · sin cuenta</td>
+                <td style="padding:12px 0;color:var(--accent-text);font-weight:600"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vinculado</span></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </section>
+
+        <section aria-labelledby="inc-h" style="padding:20px 22px;border-radius:24px;background:var(--surface);border:1px solid var(--line)">
+          <h2 id="inc-h" style="margin:0 0 4px;font-size:18px;font-weight:700">Filas con incidentes</h2>
+          <p style="margin:0 0 16px;font-size:14px;color:var(--ink-2)">Cada incidente dice su fila del archivo y el motivo. Elegí qué hacer; lo que decidas queda en el resumen del lote.</p>
+
+          <div style="padding:16px;border-radius:18px;background:var(--sunken);border:1px solid var(--line)">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+              <span style="padding:4px 10px;border-radius:999px;background:var(--yel-soft);color:var(--yel-text);font-size:13px;font-weight:700">Fila 12</span>
+              <strong style="font-size:16px;font-weight:700">Falta el efecto de Mateo</strong>
+            </div>
+            <div style="overflow-x:auto;margin-top:12px">
+              <table style="min-width:620px;width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums">
+                <thead><tr style="text-align:left;color:var(--ink-3)"><th scope="col" style="padding:6px 8px 6px 0;font-weight:600">Fecha</th><th scope="col" style="padding:6px 8px;font-weight:600">Descripción</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Coste</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Pablo</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Ana</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Laura</th><th scope="col" style="padding:6px 0 6px 8px;font-weight:600;text-align:right">Mateo</th></tr></thead>
+                <tbody><tr style="border-top:1px solid var(--line)"><td style="padding:8px 8px 8px 0">2026-03-14</td><td style="padding:8px">Mercado Plaza</td><td style="padding:8px;text-align:right">45.000,00 COP</td><td style="padding:8px;text-align:right">−11.250</td><td style="padding:8px;text-align:right">+33.750</td><td style="padding:8px;text-align:right">−11.250</td><td style="padding:8px 0 8px 8px;text-align:right;font-weight:700;color:var(--neg)">vacío</td></tr></tbody>
+              </table>
+            </div>
+            <fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0">
+              <legend style="padding:0;margin-bottom:6px;font-size:14px;font-weight:600">¿Qué hacemos con esta fila?</legend>
+              <label style="display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0">
+                <input type="radio" name="fila12" checked style="width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent-line);flex:none">
+                <span style="font-size:15px;line-height:1.4"><strong style="font-weight:700">Importar sin esta fila.</strong> <span style="color:var(--ink-2)">Queda fuera y aparece en el resumen del lote.</span></span>
+              </label>
+              <label style="display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0">
+                <input type="radio" name="fila12" style="width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent-line);flex:none">
+                <span style="font-size:15px;line-height:1.4"><strong style="font-weight:700">Usar un supuesto:</strong> Mateo −$11.250. <span style="color:var(--ink-2)">Hace que la fila sume cero. Queda marcado como supuesto.</span></span>
+              </label>
+            </fieldset>
+          </div>
+
+          <div style="margin-top:14px;padding:16px;border-radius:18px;background:var(--sunken);border:1px solid var(--line)">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+              <span style="padding:4px 10px;border-radius:999px;background:var(--yel-soft);color:var(--yel-text);font-size:13px;font-weight:700">Fila 27</span>
+              <strong style="font-size:16px;font-weight:700">La moneda «COL» no es un código válido</strong>
+            </div>
+            <div style="overflow-x:auto;margin-top:12px">
+              <table style="min-width:620px;width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums">
+                <thead><tr style="text-align:left;color:var(--ink-3)"><th scope="col" style="padding:6px 8px 6px 0;font-weight:600">Fecha</th><th scope="col" style="padding:6px 8px;font-weight:600">Descripción</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Coste</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Pablo</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Ana</th><th scope="col" style="padding:6px 8px;font-weight:600;text-align:right">Laura</th><th scope="col" style="padding:6px 0 6px 8px;font-weight:600;text-align:right">Mateo</th></tr></thead>
+                <tbody><tr style="border-top:1px solid var(--line)"><td style="padding:8px 8px 8px 0">2026-06-02</td><td style="padding:8px">Pago parcial</td><td style="padding:8px;text-align:right;font-weight:700;color:var(--neg)">60.000,00 COL</td><td style="padding:8px;text-align:right">−60.000</td><td style="padding:8px;text-align:right">0</td><td style="padding:8px;text-align:right">+60.000</td><td style="padding:8px 0 8px 8px;text-align:right">0</td></tr></tbody>
+              </table>
+            </div>
+            <fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0">
+              <legend style="padding:0;margin-bottom:6px;font-size:14px;font-weight:600">¿Qué hacemos con esta fila?</legend>
+              <label style="display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0">
+                <input type="radio" name="fila27" checked style="width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent-line);flex:none">
+                <span style="font-size:15px;line-height:1.4"><strong style="font-weight:700">Importar sin esta fila.</strong> <span style="color:var(--ink-2)">Queda fuera y aparece en el resumen del lote.</span></span>
+              </label>
+              <label style="display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0">
+                <input type="radio" name="fila27" style="width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent-line);flex:none">
+                <span style="font-size:15px;line-height:1.4"><strong style="font-weight:700">Usar un supuesto:</strong> leer «COL» como COP. <span style="color:var(--ink-2)">Los importes no cambian. Queda marcado como supuesto.</span></span>
+              </label>
+            </fieldset>
+          </div>
+        </section>
+      </div>
+
+      <aside style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+        <section aria-labelledby="conc-h" style="padding:20px 22px;border-radius:24px;background:var(--surface);border:1px solid var(--line)">
+          <h2 id="conc-h" style="margin:0 0 4px;font-size:18px;font-weight:700">Conciliación de saldos · COP</h2>
+          <p style="margin:0 0 12px;font-size:14px;color:var(--ink-2)">Saldo neto de cada persona según Splitwise y según lo que se va a importar.</p>
+          <div style="overflow-x:auto">
+          <table style="width:100%;min-width:0;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+            <thead>
+              <tr style="text-align:right;font-size:12px;color:var(--ink-3)">
+                <th scope="col" style="padding:6px 0;text-align:left;font-weight:700">Persona</th>
+                <th scope="col" style="padding:6px 4px;font-weight:700">Splitwise</th>
+                <th scope="col" style="padding:6px 4px;font-weight:700">Cuentas Claras</th>
+                <th scope="col" style="padding:6px 0 6px 4px;font-weight:700">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-top:1px solid var(--line-soft);text-align:right">
+                <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Pablo</th>
+                <td style="padding:10px 4px">+412.300</td>
+                <td style="padding:10px 4px">+483.550</td>
+                <td style="padding:10px 0 10px 4px;font-weight:700;color:var(--accent-text)">+71.250<div style="font-size:12px;font-weight:500;color:var(--ink-3)">filas 12 y 27</div></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft);text-align:right">
+                <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Ana</th>
+                <td style="padding:10px 4px">−231.900</td>
+                <td style="padding:10px 4px">−265.650</td>
+                <td style="padding:10px 0 10px 4px;font-weight:700;color:var(--neg)">−33.750<div style="font-size:12px;font-weight:500;color:var(--ink-3)">fila 12</div></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft);text-align:right">
+                <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Laura</th>
+                <td style="padding:10px 4px">−118.700</td>
+                <td style="padding:10px 4px">−167.450</td>
+                <td style="padding:10px 0 10px 4px;font-weight:700;color:var(--neg)">−48.750<div style="font-size:12px;font-weight:500;color:var(--ink-3)">filas 12 y 27</div></td>
+              </tr>
+              <tr style="border-top:1px solid var(--line-soft);text-align:right">
+                <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Mateo</th>
+                <td style="padding:10px 4px">−61.700</td>
+                <td style="padding:10px 4px">−50.450</td>
+                <td style="padding:10px 0 10px 4px;font-weight:700;color:var(--accent-text)">+11.250<div style="font-size:12px;font-weight:500;color:var(--ink-3)">fila 12</div></td>
+              </tr>
+              <tr style="border-top:2px solid var(--line-mid);text-align:right;font-weight:700">
+                <th scope="row" style="padding:10px 0;text-align:left">Suma</th>
+                <td style="padding:10px 4px">$0</td>
+                <td style="padding:10px 4px">$0</td>
+                <td style="padding:10px 0 10px 4px">$0</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--ok-bg);color:var(--accent-deep)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            <p style="margin:0;font-size:13px;line-height:1.5">Toda la diferencia viene de las filas 12 y 27. Con un supuesto en ambas, los saldos coinciden. Nada se corrige con un asiento oculto.</p>
+          </div>
+          <p style="margin:12px 0 0;font-size:14px;color:var(--ink-1)"><strong style="font-weight:700">USD:</strong> coincide con Splitwise, sin diferencias.</p>
+        </section>
+
+        <section aria-labelledby="lote-h" style="padding:20px 22px;border-radius:24px;background:var(--surface);border:1px solid var(--line)">
+          <h2 id="lote-h" style="margin:0 0 12px;font-size:18px;font-weight:700">Resumen del lote</h2>
+          <dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px">
+            <dt style="color:var(--ink-3)">Se importan</dt><dd style="margin:0;font-weight:700;text-align:right">36 movimientos</dd>
+            <dt style="color:var(--ink-3)">Quedan fuera</dt><dd style="margin:0;font-weight:700;text-align:right">2 filas, listadas</dd>
+            <dt style="color:var(--ink-3)">Supuestos</dt><dd style="margin:0;font-weight:700;text-align:right">ninguno</dd>
+            <dt style="color:var(--ink-3)">Origen visible</dt><dd style="margin:0;font-weight:700;text-align:right">«Importado de Splitwise»</dd>
+          </dl>
+          <a href="Main.dc.html" style="display:flex;align-items:center;justify-content:center;min-height:54px;margin-top:18px;border-radius:16px;background:var(--accent-bg);color:#fffdf8;font-size:16px;font-weight:700;text-decoration:none">Confirmar importación</a>
+          <button style="width:100%;min-height:48px;margin-top:8px;border:1.5px solid var(--line-strong);border-radius:16px;background:transparent;color:var(--ink);font-size:15px;font-weight:600">Cancelar y no guardar nada</button>
+          <p style="margin:12px 0 0;font-size:13px;line-height:1.45;color:var(--ink-3)">Si volvés a subir este archivo o reintentás, no se duplica ningún movimiento.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1512}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

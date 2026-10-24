@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuentas Claras · Detalle del movimiento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
+:root{color-scheme:light dark;--bg:#f7f2e8;--surface:#fffdf8;--ink:#1f2c24;--ink-1:#3d4a41;--ink-2:#4d5950;--ink-3:#5b665e;--accent-bg:#245c43;--accent-text:#245c43;--accent-line:#245c43;--accent-deep:#174b34;--accent-soft:#d9eadc;--ok-bg:#eef6ef;--neg:#a8412c;--coral-soft:#f6d9d1;--coral-text:#7a2e1d;--yel-soft:#f8e7b9;--yel-text:#4a3300;--warn-bg:#fbf4de;--warn-line:#ecd48f;--warn-line-2:#b79b45;--sunken:#fbf7ee;--teal-soft:#e3eeeb;--teal-text:#24504b;--teal-line:#5b8a7f;--line-soft:#efe8db;--line:#e4dccd;--line-strong:#c9c1b2;--line-mid:#d9d2c5;--field:#7d887f;--chip:#ece4d5;--shadow:rgba(31,44,36,.2);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}
+:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg)}
+button,input{font-family:inherit}
+a{color:var(--accent-text)}a:hover{color:var(--accent-deep)}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:4px;padding:10px 8px 0 6px">
+    <a href="Movimientos.dc.html" aria-label="Volver a Movimientos" style="width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--ink)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <span style="flex:1;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)">Casa compartida</span>
+    <button aria-label="Más acciones" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;border-radius:12px;color:var(--ink)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    </button>
+  </header>
+
+  <main style="flex:1;min-height:0;overflow-y:auto;padding:0 20px 16px">
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:700">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17M15 17H7V9"/></svg>Ingreso</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line-mid);color:var(--ink-1);font-size:13px;font-weight:600">Vigente · revisión 2</span>
+    </div>
+
+    <h1 style="margin:12px 0 0;font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15">Alquiler apto Laureles</h1>
+    <div style="margin-top:6px;font-size:36px;font-weight:800;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums">$1.800.000 <span style="font-size:16px;font-weight:600;letter-spacing:0;color:var(--ink-3)">COP</span></div>
+    <div style="margin-top:6px;font-size:14px;line-height:1.5;color:var(--ink-2)">20 oct · recibió Ana · de: Inquilino<br>Cargado por vos</div>
+
+    <section aria-labelledby="rep-h" style="margin-top:16px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--line)">
+      <h2 id="rep-h" style="margin:0 0 8px;font-size:16px;font-weight:700">Cómo se repartió</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+        <thead>
+          <tr style="text-align:right;font-size:12px;color:var(--ink-3)">
+            <th scope="col" style="padding:6px 0;text-align:left;font-weight:700">Persona</th>
+            <th scope="col" style="padding:6px 6px;font-weight:700">Recibió</th>
+            <th scope="col" style="padding:6px 6px;font-weight:700">Le toca</th>
+            <th scope="col" style="padding:6px 0 6px 6px;font-weight:700">Efecto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--line-soft);text-align:right">
+            <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Ana</th>
+            <td style="padding:10px 6px">$1.800.000</td>
+            <td style="padding:10px 6px">$900.000</td>
+            <td style="padding:10px 0 10px 6px;font-weight:700;color:var(--neg)">−$900.000</td>
+          </tr>
+          <tr style="border-top:1px solid var(--line-soft);text-align:right">
+            <th scope="row" style="padding:10px 0;text-align:left;font-weight:600">Vos</th>
+            <td style="padding:10px 6px">$0</td>
+            <td style="padding:10px 6px">$900.000</td>
+            <td style="padding:10px 0 10px 6px;font-weight:700;color:var(--accent-text)">+$900.000</td>
+          </tr>
+          <tr style="border-top:2px solid var(--line-mid);text-align:right;font-weight:700">
+            <th scope="row" style="padding:10px 0;text-align:left">Suma</th>
+            <td style="padding:10px 6px">$1.800.000</td>
+            <td style="padding:10px 6px">$1.800.000</td>
+            <td style="padding:10px 0 10px 6px">$0</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--ink-3)">Reparto igual entre 2 personas. Laura y Mateo no participan.</p>
+    </section>
+
+    <section aria-labelledby="his-h" style="margin-top:12px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--line)">
+      <h2 id="his-h" style="margin:0 0 10px;font-size:16px;font-weight:700">Historial</h2>
+      <ol style="margin:0;padding:0;list-style:none">
+        <li style="display:flex;gap:12px;padding-bottom:14px">
+          <span aria-hidden="true" style="flex:none;margin-top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent-bg);box-shadow:0 0 0 4px var(--accent-soft)"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600">Revisión 2 · Pablo corrigió el importe</div>
+            <div style="font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums">De $1.750.000 a $1.800.000 · 21 oct, 10:42</div>
+          </div>
+        </li>
+        <li style="display:flex;gap:12px">
+          <span aria-hidden="true" style="flex:none;margin-top:4px;width:12px;height:12px;border-radius:50%;background:var(--line-strong)"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600">Revisión 1 · Pablo lo creó</div>
+            <div style="font-size:13px;color:var(--ink-2)">20 oct, 18:05</div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="com-h" style="margin-top:12px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--line)">
+      <h2 id="com-h" style="margin:0 0 10px;font-size:16px;font-weight:700">Comentarios</h2>
+      <div style="display:flex;gap:10px">
+        <span aria-hidden="true" style="flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--yel-soft);color:var(--yel-text);font-size:12px;font-weight:700">AN</span>
+        <div style="flex:1;min-width:0;padding:8px 12px;border-radius:14px;background:var(--bg)">
+          <div style="font-size:13px;font-weight:700">Ana <span style="font-weight:500;color:var(--ink-3)">· 21 oct</span></div>
+          <div style="margin-top:2px;font-size:14px;line-height:1.4">Me llegó el sábado. Mañana lo reviso con el inquilino.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <label for="comentario" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Escribir un comentario</label>
+        <input id="comentario" type="text" placeholder="Escribir un comentario" style="flex:1;min-width:0;box-sizing:border-box;height:48px;padding:0 14px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:15px;color:var(--ink)">
+        <button style="min-height:48px;padding:0 16px;border:1.5px solid var(--accent-line);border-radius:14px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Enviar</button>
+      </div>
+    </section>
+  </main>
+
+  <footer style="padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--line)">
+    <div style="display:flex;gap:10px">
+      <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:1.5px solid var(--accent-line);border-radius:16px;background:transparent;color:var(--accent-text);font-size:15px;font-weight:700">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/></svg>Editar</button>
+      <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:1.5px solid var(--neg);border-radius:16px;background:transparent;color:var(--neg);font-size:15px;font-weight:700">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/></svg>Anular</button>
+    </div>
+    <p style="margin:8px 4px 0;font-size:12px;line-height:1.4;color:var(--ink-3);text-align:center">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
