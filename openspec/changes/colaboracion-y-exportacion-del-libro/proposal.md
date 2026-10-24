@@ -7,7 +7,7 @@ movimiento, exportar los datos y archivar el grupo. La plataforma ya invita por
 email; falta conectar esa invitación con un participante del libro sin trasladar
 saldos de forma implícita.
 
-Referencia visual: lienzo «Cuentas Claras» de Claude Design, pantalla 10
+Referencia visual (en `docs/diseno/cuentas-claras/`): lienzo «Cuentas Claras» de Claude Design, pantalla 10
 («Personas y acceso»), el bloque de comentarios de la pantalla 7 y el botón
 «Exportar» de la pantalla 9.
 

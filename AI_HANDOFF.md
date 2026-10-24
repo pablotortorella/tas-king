@@ -5,9 +5,11 @@
 Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs/STATUS.md`
 (sección «Cuentas Claras: rediseño visual y propuestas OpenSpec»).
 
-- **Rediseño visual**: artifact privado «Cuentas Claras» en Claude Design
-  (https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei, versión 15), 10 pantallas en claro
-  y oscuro. Vive sólo allí, no en el repo. Se hizo sin renderizar ni revisar en pantalla.
+- **Rediseño visual**: 10 pantallas en claro y oscuro, guardadas en el repo en
+  `docs/diseno/cuentas-claras/` (fuentes, índice del lienzo, tokens, 26 capturas PNG y un
+  README con cómo retomar y regenerar las capturas). Original en Claude Design, privado:
+  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 16). Se renderizó y revisó en
+  Chromium; no se probó en teléfono real.
 - **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
   (commit `699b3bc`, empujada a origin, sin PR ni merge): `libro-y-saldos-cuentas-claras`,
   `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
@@ -15,7 +17,7 @@ Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs
 - **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
   pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
   varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
-- **Al retomar**: (1) abrir el PR de la rama, mejor como borrador; (2) hacer `explore` con
+- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) abrir el PR de la rama, mejor como borrador; (2) hacer `explore` con
   los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (3) corregir
   en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
   «saldos anteriores» activa); (4) recién entonces `propose` definitivo.

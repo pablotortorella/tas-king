@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuentas Claras · Saldos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{color-scheme:light dark;--bg:#f7f2e8;--surface:#fffdf8;--ink:#1f2c24;--ink-1:#3d4a41;--ink-2:#4d5950;--ink-3:#5b665e;--accent-bg:#245c43;--accent-text:#245c43;--accent-line:#245c43;--accent-deep:#174b34;--accent-soft:#d9eadc;--ok-bg:#eef6ef;--neg:#a8412c;--coral-soft:#f6d9d1;--coral-text:#7a2e1d;--yel-soft:#f8e7b9;--yel-text:#4a3300;--warn-bg:#fbf4de;--warn-line:#ecd48f;--warn-line-2:#b79b45;--sunken:#fbf7ee;--teal-soft:#e3eeeb;--teal-text:#24504b;--teal-line:#5b8a7f;--line-soft:#efe8db;--line:#e4dccd;--line-strong:#c9c1b2;--line-mid:#d9d2c5;--field:#7d887f;--chip:#ece4d5;--shadow:rgba(31,44,36,.2);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}
+:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg)}
+button{font-family:inherit}
+a{color:var(--accent-text)}a:hover{color:var(--accent-deep)}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:8px;padding:10px 8px 4px 12px">
+    <button aria-label="HomeSuite: cambiar de herramienta" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;border-radius:12px">
+      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#245c43"/><path d="M14 30h36v25H14z" fill="#fff8e8"/><path d="M7 31 28 10a6 6 0 0 1 8 0l21 21a4 4 0 0 1-3 7H10a4 4 0 0 1-3-7Z" fill="#d7664f"/><path d="M26 55V45a6 6 0 0 1 12 0v10" fill="#245c43"/><path d="M18 42a3 3 0 0 1 6 0v5h-6Zm22 0a3 3 0 0 1 6 0v5h-6Z" fill="#f2c86b"/></svg>
+    </button>
+    <button aria-label="Cambiar de grupo: Casa compartida" style="flex:1;min-width:0;min-height:44px;padding:0 4px;border:0;background:transparent;text-align:left;color:var(--ink)">
+      <span style="display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)">Cuentas Claras</span>
+      <span style="display:flex;align-items:center;gap:4px;font-size:18px;font-weight:700;letter-spacing:-.01em">Casa compartida
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="stroke:var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </span>
+    </button>
+    <a href="Movimientos.dc.html" aria-label="Buscar movimientos" style="width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--ink)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    </a>
+  </header>
+
+  <main style="flex:1;min-height:0;overflow-y:auto;padding-bottom:14px">
+
+    <sc-if value="{{ isCOP }}" hint-placeholder-val="{{ true }}">
+    <div role="group" aria-label="Moneda" style="margin:8px 16px 0;padding:4px;border-radius:14px;background:var(--chip);display:flex;gap:4px">
+      <button aria-pressed="true" style="flex:1;min-height:44px;border:0;border-radius:11px;background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-size:14px;font-weight:700;color:var(--ink)">COP · Pesos</button>
+      <button aria-pressed="false" onClick="{{ pickUSD }}" style="flex:1;min-height:44px;border:0;border-radius:11px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">USD · Dólares</button>
+    </div>
+
+    <section aria-label="Tu saldo en pesos" style="margin:12px 16px 0;padding:16px 18px 16px;border-radius:22px;background:var(--accent-bg);color:#fffdf8">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#e3efe6">Tu saldo · COP</div>
+          <div style="font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums">+$1.748.350</div>
+        </div>
+        <a href="SaldoDe.dc.html" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid rgba(255,253,248,.6);color:#fffdf8;text-decoration:none;font-size:13px;font-weight:600">¿Por qué?
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <p style="margin:4px 0 0;font-size:14px;line-height:1.4;color:#e3efe6">Te corresponde recibir. Lo explican 38 movimientos.</p>
+    </section>
+
+    <section aria-label="Saldos del grupo en pesos" style="margin:12px 16px 0;border-radius:22px;background:var(--surface);border:1px solid var(--line);overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px">
+        <h2 style="margin:0;font-size:15px;font-weight:700">Saldos del grupo</h2>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--accent-text)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          Suman $0
+        </span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:700;display:grid;place-items:center">PA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Pablo <span style="font-size:13px;font-weight:500;color:var(--ink-3)">· vos</span></div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%"></div>
+            <div style="width:50%"><div style="width:100%;height:6px;border-radius:0 3px 3px 0;background:var(--accent-bg)"></div></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+$1.748.350</div>
+          <div style="font-size:12px;color:var(--ink-3)">te deben</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--teal-line);background:var(--teal-soft);color:var(--teal-text);font-size:13px;font-weight:700;display:grid;place-items:center">MA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Mateo <span style="font-size:13px;font-weight:500;color:var(--ink-3)">· sin cuenta</span></div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%;display:flex;justify-content:flex-end"><div style="width:7%;height:6px;border-radius:3px 0 0 3px;background:#d7664f"></div></div>
+            <div style="width:50%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neg)">−$122.050</div>
+          <div style="font-size:12px;color:var(--ink-3)">debe</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--coral-soft);color:var(--coral-text);font-size:13px;font-weight:700;display:grid;place-items:center">LA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Laura</div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%;display:flex;justify-content:flex-end"><div style="width:22%;height:6px;border-radius:3px 0 0 3px;background:#d7664f"></div></div>
+            <div style="width:50%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neg)">−$389.050</div>
+          <div style="font-size:12px;color:var(--ink-3)">debe</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--yel-soft);color:var(--yel-text);font-size:13px;font-weight:700;display:grid;place-items:center">AN</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Ana</div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%;display:flex;justify-content:flex-end"><div style="width:71%;height:6px;border-radius:3px 0 0 3px;background:#d7664f"></div></div>
+            <div style="width:50%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neg)">−$1.237.250</div>
+          <div style="font-size:12px;color:var(--ink-3)">debe</div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Sugerencias para quedar a mano en pesos" style="margin:14px 16px 0">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 2px">
+        <h2 style="margin:0;font-size:15px;font-weight:700">Para quedar a mano</h2>
+        <span style="font-size:12px;color:var(--ink-3)">3 sugerencias</span>
+      </div>
+      <p style="margin:0 2px 8px;font-size:12px;line-height:1.4;color:var(--ink-3)">Se recalculan desde los saldos. No son deudas guardadas.</p>
+
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;margin-bottom:8px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">Ana le paga a Pablo</div>
+          <div style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-2)">$1.237.250</div>
+        </div>
+        <button style="min-height:44px;min-width:92px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:12px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Registrar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;margin-bottom:8px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">Laura le paga a Pablo</div>
+          <div style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-2)">$389.050</div>
+        </div>
+        <button style="min-height:44px;min-width:92px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:12px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Registrar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">Mateo le paga a Pablo</div>
+          <div style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-2)">$122.050</div>
+        </div>
+        <button style="min-height:44px;min-width:92px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:12px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Registrar</button>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{ isUSD }}" hint-placeholder-val="{{ false }}">
+    <div role="group" aria-label="Moneda" style="margin:8px 16px 0;padding:4px;border-radius:14px;background:var(--chip);display:flex;gap:4px">
+      <button aria-pressed="false" onClick="{{ pickCOP }}" style="flex:1;min-height:44px;border:0;border-radius:11px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">COP · Pesos</button>
+      <button aria-pressed="true" style="flex:1;min-height:44px;border:0;border-radius:11px;background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-size:14px;font-weight:700;color:var(--ink)">USD · Dólares</button>
+    </div>
+
+    <section aria-label="Tu saldo en dólares" style="margin:12px 16px 0;padding:16px 18px 16px;border-radius:22px;background:#8f3b2a;color:#fffdf8">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#f8e4dd">Tu saldo · USD</div>
+          <div style="font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums">−US$ 40,00</div>
+        </div>
+        <a href="SaldoDe.dc.html" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid rgba(255,253,248,.6);color:#fffdf8;text-decoration:none;font-size:13px;font-weight:600">¿Por qué?
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <p style="margin:4px 0 0;font-size:14px;line-height:1.4;color:#f8e4dd">Te corresponde aportar. Lo explica 1 movimiento. Las monedas no se suman ni se convierten.</p>
+    </section>
+
+    <section aria-label="Saldos del grupo en dólares" style="margin:12px 16px 0;border-radius:22px;background:var(--surface);border:1px solid var(--line);overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px">
+        <h2 style="margin:0;font-size:15px;font-weight:700">Saldos del grupo</h2>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--accent-text)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          Suman US$ 0
+        </span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--coral-soft);color:var(--coral-text);font-size:13px;font-weight:700;display:grid;place-items:center">LA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Laura</div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%"></div>
+            <div style="width:50%"><div style="width:100%;height:6px;border-radius:0 3px 3px 0;background:var(--accent-bg)"></div></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+US$ 80,00</div>
+          <div style="font-size:12px;color:var(--ink-3)">le deben</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--teal-line);background:var(--teal-soft);color:var(--teal-text);font-size:13px;font-weight:700;display:grid;place-items:center">MA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Mateo <span style="font-size:13px;font-weight:500;color:var(--ink-3)">· sin cuenta</span></div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft)">
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)">US$ 0,00</div>
+          <div style="font-size:12px;color:var(--ink-3)">a mano</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--yel-soft);color:var(--yel-text);font-size:13px;font-weight:700;display:grid;place-items:center">AN</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Ana</div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%;display:flex;justify-content:flex-end"><div style="width:50%;height:6px;border-radius:3px 0 0 3px;background:#d7664f"></div></div>
+            <div style="width:50%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neg)">−US$ 40,00</div>
+          <div style="font-size:12px;color:var(--ink-3)">debe</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:36px 1fr auto;column-gap:12px;align-items:center;padding:8px 16px;min-height:56px;border-top:1px solid var(--line-soft)">
+        <span aria-hidden="true" style="width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:700;display:grid;place-items:center">PA</span>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:600">Pablo <span style="font-size:13px;font-weight:500;color:var(--ink-3)">· vos</span></div>
+          <div style="position:relative;height:6px;margin-top:6px;border-radius:3px;background:var(--line-soft);display:flex">
+            <div style="width:50%;display:flex;justify-content:flex-end"><div style="width:50%;height:6px;border-radius:3px 0 0 3px;background:#d7664f"></div></div>
+            <div style="width:50%"></div>
+            <div style="position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--field)"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--neg)">−US$ 40,00</div>
+          <div style="font-size:12px;color:var(--ink-3)">debés</div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Sugerencias para quedar a mano en dólares" style="margin:14px 16px 0">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 2px">
+        <h2 style="margin:0;font-size:15px;font-weight:700">Para quedar a mano</h2>
+        <span style="font-size:12px;color:var(--ink-3)">2 sugerencias</span>
+      </div>
+      <p style="margin:0 2px 8px;font-size:12px;line-height:1.4;color:var(--ink-3)">Se recalculan desde los saldos. No son deudas guardadas.</p>
+
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;margin-bottom:8px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">Vos le pagás a Laura</div>
+          <div style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-2)">US$ 40,00</div>
+        </div>
+        <button style="min-height:44px;min-width:92px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:12px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Registrar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">Ana le paga a Laura</div>
+          <div style="font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink-2)">US$ 40,00</div>
+        </div>
+        <button style="min-height:44px;min-width:92px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:12px;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600">Registrar</button>
+      </div>
+    </section>
+    </sc-if>
+
+  </main>
+
+  <nav aria-label="Cuentas Claras" style="display:grid;grid-template-columns:repeat(5,1fr);align-items:center;height:72px;padding:0 6px;box-sizing:border-box;background:var(--surface);border-top:1px solid var(--line)">
+    <a href="Main.dc.html" aria-current="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;text-decoration:none;font-size:12px;font-weight:700;color:var(--ink)">
+      <span style="display:grid;place-items:center;width:52px;height:30px;border-radius:15px;background:var(--accent-soft);color:var(--accent-deep)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M6 20h12M5 8h14M5 8l-2.5 6a3 3 0 0 0 5 0L5 8Zm14 0-2.5 6a3 3 0 0 0 5 0L19 8Z"/></svg>
+      </span>Saldos
+    </a>
+    <a href="Movimientos.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;text-decoration:none;font-size:12px;font-weight:600;color:var(--ink-2)">
+      <span style="display:grid;place-items:center;width:52px;height:30px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>
+      </span>Movimientos
+    </a>
+    <a href="Agregar.dc.html" aria-label="Agregar movimiento" style="justify-self:center;display:grid;place-items:center;width:56px;height:56px;margin-top:-18px;border-radius:50%;background:var(--accent-bg);color:#fffdf8;box-shadow:0 8px 18px rgba(36,92,67,.35);border:3px solid var(--surface)">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+    <a href="Personas.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;text-decoration:none;font-size:12px;font-weight:600;color:var(--ink-2)">
+      <span style="display:grid;place-items:center;width:52px;height:30px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5M16 5.5a3 3 0 0 1 0 5.5M18 14.2c1.8.6 3 2.1 3 4.8"/></svg>
+      </span>Personas
+    </a>
+    <button style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;border:0;background:transparent;font-size:12px;font-weight:600;color:var(--ink-2)">
+      <span style="display:grid;place-items:center;width:52px;height:30px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+      </span>Más
+    </button>
+  </nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { cur: 'COP' };
+}
+renderVals() {
+return {
+isCOP: this.state.cur === 'COP',
+isUSD: this.state.cur === 'USD',
+pickCOP: () => this.setState({ cur: 'COP' }),
+pickUSD: () => this.setState({ cur: 'USD' })
+};
+}
+}
+</script>
+</body>
+</html>

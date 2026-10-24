@@ -6,7 +6,7 @@ físico y varias decisiones (sección 17). `apps/app/` ya tiene Worker Hono, D1,
 usuarios, sesiones y espacios; este change agrega el dominio financiero sobre
 `spaces` y `memberships` sin tocar su contrato.
 
-Referencia visual: lienzo «Cuentas Claras» (Claude Design, privado), pantallas 1,
+Referencia visual (en `docs/diseno/cuentas-claras/`): lienzo «Cuentas Claras» (Claude Design), pantallas 1,
 4, 6, 7, 8 y 9. Datos de demostración sintéticos: Pablo, Ana, Laura y Mateo.
 
 ## Goals / Non-Goals

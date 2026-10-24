@@ -13,7 +13,7 @@ pide `docs/PRODUCT_BACKLOG.md` («no se mezclarán autenticación, modelo financ
 y parser de importación en un solo change»).
 
 La forma visual y el recorrido salen del rediseño «Cuentas Claras» hecho en
-Claude Design (lienzo privado de 10 pantallas); este change usa las pantallas 1, 4,
+Claude Design (10 pantallas guardadas en `docs/diseno/cuentas-claras/`); este change usa las pantallas 1, 4,
 6, 7, 8 y 9. Ese lienzo es referencia de intención, no un contrato de píxeles.
 
 ## What Changes

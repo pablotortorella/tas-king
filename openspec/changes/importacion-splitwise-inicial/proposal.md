@@ -6,7 +6,7 @@ Con `libro-y-saldos-cuentas-claras` el libro puede registrar movimientos nuevos,
 pero un grupo real llega con años de historia. Este change cubre las historias
 HG-03, HG-04 y HG-05 del backlog y la elección del punto de partida del libro.
 
-Referencia visual: lienzo «Cuentas Claras» de Claude Design, pantallas 2
+Referencia visual (en `docs/diseno/cuentas-claras/`): lienzo «Cuentas Claras» de Claude Design, pantallas 2
 (punto de partida) y 3 (importar desde Splitwise).
 
 ## What Changes

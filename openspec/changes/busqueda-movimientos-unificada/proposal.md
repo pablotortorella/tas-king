@@ -5,7 +5,7 @@ movimientos importados de Splitwise. Encontrar uno viejo no debe exigir saber de
 dónde viene ni en qué lista está (HG-07). El MVP exige una única búsqueda libre por
 nombre, monto o palabra, con la coincidencia explicada y el origen visible.
 
-Referencia visual: lienzo «Cuentas Claras» de Claude Design, pantalla 5
+Referencia visual (en `docs/diseno/cuentas-claras/`): lienzo «Cuentas Claras» de Claude Design, pantalla 5
 («Movimientos y búsqueda») y el panel de movimientos de la pantalla 9.
 
 ## What Changes
