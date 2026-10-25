@@ -103,6 +103,23 @@ Con un archivo sintético de la misma forma (2.485 filas, dos personas, resumen 
 
 Lo que **no** dicen estos números: son de un SQLite local, así que no incluyen la latencia de red de D1 remoto ni sus límites (sentencias por lote, tamaño de sentencia, subconsultas por petición, CPU por petición), que siguen **sin verificar**. Lo que sí fija la medición es el orden de magnitud de las llamadas: unas 5 por tanda y unas 125 en total para el archivo completo, contra las 7.456 sentencias en unos 125 lotes del diseño anterior. Antes de importar datos reales hay que repetir esta medición contra D1 en staging.
 
+### Medición de una recategorización de 1.000 movimientos (2026-10-25)
+
+Mismo entorno que la medición anterior (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- recategorize`.
+
+| Dato | Valor |
+|---|---|
+| Movimientos por operación (tope) | 1.000 |
+| Escritura | 10 tandas de 100; 3 sentencias por tanda (revisiones, un UPDATE por categoría de destino y elementos del lote) y 3 de cierre |
+| Tamaño del JSON de una tanda | unos 68 KB (100 movimientos con su instantánea completa) |
+| Vista previa | 13 ms |
+| Aplicar | 52 ms |
+| Deshacer | 53 ms |
+
+Una versión anterior del UPDATE recorría el JSON por cada fila del libro (el plan elegía `ledger_entries` como tabla externa) y tardaba unos 4 s para las mismas 1.000 filas; se corrigió agrupando por categoría de destino y guardando el cambio con «existe nuestra revisión como la siguiente del movimiento» (búsqueda por clave primaria), más `CROSS JOIN` para fijar el orden de las uniones. Es un recordatorio para cualquier escritura nueva con `json_each`: mirar el plan.
+
+**Sin verificar:** el tamaño máximo de una sentencia en D1 remoto (68 KB por tanda queda cerca de los 100 KB que se recuerdan), las sentencias por lote y la CPU por petición.
+
 ## 8. Qué informa esto
 
 | Decisión | Qué dice el caso real | Estado |

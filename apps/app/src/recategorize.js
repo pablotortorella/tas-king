@@ -1,0 +1,201 @@
+import { categoryForEntry, readCategories, resolveCategory } from "./categories.js";
+import { LedgerError } from "./errors.js";
+import { getLedgerAccess, readLedger } from "./ledger.js";
+import { filterByCategory, searchLedger } from "./ledger-ui.js";
+import { createPlatformId } from "./platform.js";
+import { isPending } from "./suggest.js";
+
+export { isPending };
+
+// Máximo de movimientos por operación y tamaño de cada escritura. Se fijaron midiendo con D1 local (ver
+// CASO-REAL-INTERNO.md); los límites de D1 remoto siguen sin verificarse.
+export const MAX_BATCH = 1000;
+export const WRITE_CHUNK = 100;
+const KEY_PATTERN = /^[A-Za-z0-9_-]{16,120}$/u;
+const SAMPLE_SIZE = 8;
+
+// Resuelve el conjunto con el mismo código que usa la lista: ids explícitos, o la búsqueda y el filtro vigentes.
+export function selectEntries(data, criteria) {
+  if (criteria?.all) return filterByCategory(searchLedger(data.entries, data.participants, criteria.query ?? ""), criteria.category ?? "");
+  const ids = new Set((criteria?.ids ?? []).map(String));
+  return data.entries.filter(entry => ids.has(entry.id));
+}
+
+function mayChange(ledger, userId, entry) {
+  return entry.status === "active" && entry.type !== "transfer" && (ledger.role === "owner" || entry.createdByUserId === userId);
+}
+
+function money(value) { return new Intl.NumberFormat("es-CO").format(value); }
+
+async function loadContext(db, { spaceId, userId, criteria, categoryId, currentCategoryId = null }) {
+  const data = await readLedger(db, { spaceId, userId });
+  if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  const category = await categoryForEntry(db, { ledgerId: data.ledger.id, userId, categoryId, currentCategoryId });
+  if (!category) throw new LedgerError("Elegí la categoría que querés aplicar.");
+  const selected = selectEntries(data, criteria);
+  if (!selected.length) throw new LedgerError("No hay movimientos seleccionados.");
+  const eligible = [];
+  const skipped = { voided: 0, permission: 0, unchanged: 0, transfers: 0 };
+  for (const entry of selected) {
+    if (entry.status !== "active") skipped.voided += 1;
+    else if (entry.type === "transfer") skipped.transfers += 1;
+    else if (!mayChange(data.ledger, userId, entry)) skipped.permission += 1;
+    else if (entry.categoryInfo?.id === category.id) skipped.unchanged += 1;
+    else eligible.push(entry);
+  }
+  return { data, category, selected, eligible, skipped };
+}
+
+function tooMany(count) {
+  return new LedgerError(`Una operación admite hasta ${money(MAX_BATCH)} movimientos y este conjunto tiene ${money(count)}. Aplicala en partes: quedarían ${money(count - MAX_BATCH)} para repetirla.`, 413);
+}
+
+// Paso 1: cuántos cambiarían, una muestra y la revisión actual del libro. No escribe nada.
+export async function previewRecategorization(db, { spaceId, userId, criteria, categoryId }) {
+  const { data, category, selected, eligible, skipped } = await loadContext(db, { spaceId, userId, criteria, categoryId });
+  if (eligible.length > MAX_BATCH) throw tooMany(eligible.length);
+  return {
+    count: eligible.length,
+    selected: selected.length,
+    sample: eligible.slice(0, SAMPLE_SIZE).map(entry => ({ id: entry.id, description: entry.description, occurredAt: entry.occurredAt, currency: entry.currency, totalMinor: entry.totalMinor, current: entry.categoryInfo?.name ?? null })),
+    skipped,
+    category: { id: category.id, name: category.name },
+    ledgerRevision: data.ledger.revision,
+  };
+}
+
+async function latestSnapshots(db, ledgerId, ids) {
+  const found = new Map();
+  for (let start = 0; start < ids.length; start += WRITE_CHUNK) {
+    const part = ids.slice(start, start + WRITE_CHUNK);
+    const rows = (await db.prepare("SELECT r.entry_id, r.snapshot_json FROM entry_revisions r JOIN ledger_entries e ON e.ledger_id = r.ledger_id AND e.id = r.entry_id AND e.current_revision = r.revision WHERE r.ledger_id = ? AND r.entry_id IN (SELECT value FROM json_each(?))").bind(ledgerId, JSON.stringify(part)).all()).results;
+    for (const row of rows) found.set(row.entry_id, JSON.parse(row.snapshot_json));
+  }
+  return found;
+}
+
+// Escribe una revisión por movimiento y un solo UPDATE por tanda. Las tres sentencias de cada tanda comparten la guarda
+// «el movimiento sigue en la revisión que se vio», así que un movimiento corregido a mitad de camino simplemente no se toca.
+async function writeChanges(db, { ledger, userId, batchId, changes, categoryName }) {
+  const snapshots = await latestSnapshots(db, ledger.id, changes.map(change => change.entry.id));
+  for (let start = 0; start < changes.length; start += WRITE_CHUNK) {
+    const part = changes.slice(start, start + WRITE_CHUNK).map(change => {
+      const entry = change.entry;
+      const previous = snapshots.get(entry.id) ?? { description: entry.description, note: entry.note, occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations };
+      const name = categoryName(change.categoryId);
+      return {
+        id: entry.id, rev: entry.revision, next: entry.revision + 1, categoryId: change.categoryId, previous: entry.categoryId ?? null,
+        snapshot: { ...previous, categoryId: change.categoryId, categoryName: name, status: "active", recategorizationBatch: batchId },
+      };
+    });
+    const json = JSON.stringify(part);
+    // El UPDATE va agrupado por categoría de destino y se guarda con «existe nuestra revisión como la siguiente del
+    // movimiento»: así busca por clave primaria en lugar de recorrer el JSON por cada fila del libro.
+    const targets = [...new Set(part.map(item => item.categoryId))];
+    await db.batch([
+      db.prepare("INSERT OR IGNORE INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) SELECT ?, e.id, json_extract(j.value, '$.next'), ?, 'revised', json_extract(j.value, '$.snapshot') FROM json_each(?) j CROSS JOIN ledger_entries e ON e.ledger_id = ? AND e.id = json_extract(j.value, '$.id') AND e.current_revision = json_extract(j.value, '$.rev') AND e.status = 'active'").bind(ledger.id, userId, json, ledger.id),
+      ...targets.map(target => db.prepare("UPDATE ledger_entries SET category_id = ?, current_revision = current_revision + 1, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND status = 'active' AND id IN (SELECT json_extract(value, '$.id') FROM json_each(?)) AND EXISTS (SELECT 1 FROM entry_revisions r WHERE r.ledger_id = ledger_entries.ledger_id AND r.entry_id = ledger_entries.id AND r.revision = ledger_entries.current_revision + 1 AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?)").bind(target, ledger.id, JSON.stringify(part.filter(item => item.categoryId === target)), batchId)),
+      db.prepare("INSERT OR IGNORE INTO recategorization_items (ledger_id, batch_id, entry_id, revision, previous_category_id) SELECT ?, ?, json_extract(j.value, '$.id'), json_extract(j.value, '$.next'), json_extract(j.value, '$.previous') FROM json_each(?) j CROSS JOIN entry_revisions r ON r.ledger_id = ? AND r.entry_id = json_extract(j.value, '$.id') AND r.revision = json_extract(j.value, '$.next') AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?").bind(ledger.id, batchId, json, ledger.id, batchId),
+    ]);
+  }
+}
+
+// Cierra la operación: marca el lote como aplicado y, solo para quien ganó esa transición, escribe el evento y sube la
+// revisión del libro (repetir la confirmación o dos pestañas no las duplican).
+async function finish(db, { ledger, userId, batchId, skipped, extra = [] }) {
+  const token = createPlatformId("finish");
+  const mine = "EXISTS (SELECT 1 FROM recategorization_batches WHERE ledger_id = ? AND id = ? AND status = 'applied' AND token = ?)";
+  await db.batch([
+    db.prepare("UPDATE recategorization_batches SET status = 'applied', token = ?, skipped = ?, changed = (SELECT COUNT(*) FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?) WHERE ledger_id = ? AND id = ? AND status = 'applying'").bind(token, skipped, ledger.id, batchId, ledger.id, batchId),
+    db.prepare(`INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id, metadata_json) SELECT ?, ?, ?, 'recategorization_applied', 'recategorization', ?, json_object('changed', (SELECT changed FROM recategorization_batches WHERE ledger_id = ? AND id = ?), 'skipped', ?) WHERE ${mine}`).bind(createPlatformId("event"), ledger.id, userId, batchId, ledger.id, batchId, skipped, ledger.id, batchId, token),
+    db.prepare(`UPDATE expense_ledgers SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND ${mine}`).bind(ledger.id, ledger.id, batchId, token),
+    ...extra.map(statement => statement(token, mine)),
+  ]);
+  return db.prepare("SELECT id, kind, category_id, status, planned, changed, skipped, undo_of, undone_at, created_at FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, batchId).first();
+}
+
+function summarize(batch) {
+  return { id: batch.id, kind: batch.kind, status: batch.status, planned: batch.planned, changed: batch.changed, skipped: batch.skipped, undoOf: batch.undo_of, undone: Boolean(batch.undone_at) };
+}
+
+// Paso 2: aplica. La clave de la confirmación es el identificador del lote: repetirla (o enviarla en simultáneo) devuelve el
+// lote ya aplicado y, si se había cortado a la mitad, lo completa sin duplicar nada.
+export async function applyRecategorization(db, { spaceId, userId, criteria, categoryId, expectedRevision = null, key, kind = "bulk", hooks = {} }) {
+  if (typeof key !== "string" || !KEY_PATTERN.test(key)) throw new LedgerError("Recargá la pantalla y volvé a intentar.");
+  const ledgerAccess = await getLedgerAccess(db, spaceId, userId);
+  const batchId = `recat_${key}`;
+  const existing = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledgerAccess.id, batchId).first();
+  if (existing && existing.actor_user_id !== userId) throw new LedgerError("Esta solicitud ya fue usada.", 409);
+  const resuming = Boolean(existing && existing.status === "applying");
+  if (existing && !resuming) return summarize(existing);
+  const { data, category, eligible, skipped } = await loadContext(db, { spaceId, userId, criteria, categoryId });
+  if (eligible.length > MAX_BATCH) throw tooMany(eligible.length);
+  if (!resuming) {
+    if (expectedRevision !== null && Number(expectedRevision) !== data.ledger.revision) throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+    if (!eligible.length) throw new LedgerError("No hay movimientos para cambiar: ya tienen esa categoría o no podés modificarlos.");
+    const insert = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned) SELECT ?, ?, ?, ?, ?, ? WHERE (? IS NULL OR (SELECT revision FROM expense_ledgers WHERE id = ?) = ?)").bind(data.ledger.id, batchId, userId, kind, category.id, eligible.length, expectedRevision, data.ledger.id, expectedRevision === null ? 0 : Number(expectedRevision)).run();
+    if (!insert.meta?.changes) {
+      const raced = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(data.ledger.id, batchId).first();
+      if (raced) return summarize(raced);
+      throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+    }
+  }
+  const skippedCount = skipped.voided + skipped.permission + skipped.transfers + skipped.unchanged;
+  const done = new Set((await db.prepare("SELECT entry_id FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?").bind(data.ledger.id, batchId).all()).results.map(row => row.entry_id));
+  const pending = eligible.filter(entry => !done.has(entry.id)).map(entry => ({ entry, categoryId: category.id }));
+  await hooks.beforeWrite?.();
+  await writeChanges(db, { ledger: data.ledger, userId, batchId, changes: pending, categoryName: () => category.name });
+  return summarize(await finish(db, { ledger: data.ledger, userId, batchId, skipped: skippedCount }));
+}
+
+export async function readRecategorizationBatch(db, { spaceId, userId, batchId }) {
+  const ledger = await getLedgerAccess(db, spaceId, userId);
+  const batch = await db.prepare("SELECT b.*, u.display_name AS actor_name FROM recategorization_batches b JOIN users u ON u.id = b.actor_user_id WHERE b.ledger_id = ? AND b.id = ?").bind(ledger.id, batchId).first();
+  if (!batch) throw new LedgerError("Operación no encontrada.", 404);
+  const categories = await readCategories(db, ledger.id);
+  return { ...summarize(batch), actorName: batch.actor_name, actorUserId: batch.actor_user_id, createdAt: batch.created_at, categoryName: resolveCategory(categories, batch.category_id)?.name ?? null, canUndo: batch.status === "applied" && batch.kind !== "undo" && !batch.undone_at && (ledger.role === "owner" || batch.actor_user_id === userId) };
+}
+
+// Deshacer: restaura la categoría anterior solo de los movimientos cuya revisión vigente sigue siendo la del lote. Los
+// que se modificaron después quedan como están y se informan.
+export async function undoRecategorization(db, { spaceId, userId, batchId, key = null }) {
+  const ledger = await getLedgerAccess(db, spaceId, userId);
+  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  const batch = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, batchId).first();
+  if (!batch) throw new LedgerError("Operación no encontrada.", 404);
+  if (batch.kind === "undo") throw new LedgerError("Un deshacer no se deshace: volvé a aplicar la categoría.", 409);
+  if (ledger.role !== "owner" && batch.actor_user_id !== userId) throw new LedgerError("Sólo quien aplicó la operación o la persona titular puede deshacerla.", 403);
+  if (batch.status !== "applied") throw new LedgerError("La operación todavía no terminó.", 409);
+  if (batch.undone_at) throw new LedgerError("Esta operación ya se deshizo.", 409);
+  const undoId = `recat_undo_${batchId.replace(/^recat_/u, "").slice(0, 80)}`;
+  const existingUndo = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, undoId).first();
+  if (existingUndo?.status === "applied") return { ...summarize(existingUndo), kept: [] };
+  const items = (await db.prepare("SELECT entry_id, revision, previous_category_id FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?").bind(ledger.id, batchId).all()).results;
+  const data = await readLedger(db, { spaceId, userId });
+  const byId = new Map(data.entries.map(entry => [entry.id, entry]));
+  const categories = data.categories;
+  const changes = [];
+  const kept = [];
+  for (const item of items) {
+    const entry = byId.get(item.entry_id);
+    if (!entry || entry.revision !== item.revision || entry.status !== "active") { kept.push({ id: item.entry_id, description: entry?.description ?? "Movimiento", reason: entry?.status === "voided" ? "se anuló después" : "se modificó después" }); continue; }
+    changes.push({ entry: { ...entry, categoryId: entry.categoryId }, categoryId: item.previous_category_id });
+  }
+  if (!existingUndo) {
+    const inserted = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned, undo_of) VALUES (?, ?, ?, 'undo', NULL, ?, ?)").bind(ledger.id, undoId, userId, changes.length, batchId).run();
+    if (!inserted.meta?.changes) {
+      const raced = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, undoId).first();
+      if (raced?.status === "applied") return { ...summarize(raced), kept: [] };
+    }
+  }
+  const nameOf = id => (id ? resolveCategory(categories, id)?.name ?? null : null);
+  await writeChanges(db, { ledger, userId, batchId: undoId, changes, categoryName: nameOf });
+  const markUndone = (token, mine) => db.prepare(`UPDATE recategorization_batches SET undone_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND undone_at IS NULL AND ${mine}`).bind(ledger.id, batchId, ledger.id, undoId, token);
+  const done = await finish(db, { ledger, userId, batchId: undoId, skipped: kept.length, extra: [markUndone] });
+  return { ...summarize(done), kept };
+}
+
+// Clasificar rápido: asigna una categoría a un solo movimiento con el mismo mecanismo (tipo «quick»), así se puede deshacer.
+export async function classifyOne(db, { spaceId, userId, entryId, categoryId, key }) {
+  return applyRecategorization(db, { spaceId, userId, criteria: { ids: [entryId] }, categoryId, expectedRevision: null, key, kind: "quick" });
+}
