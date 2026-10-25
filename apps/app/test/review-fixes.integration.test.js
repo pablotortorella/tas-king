@@ -64,7 +64,8 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const form = formOf(html);
     form.set("description", "Pagaron dos (corregido)");
     const input = parseEntryForm(form);
-    expect(input.cashParties).toEqual([{ participantId: t.ownerId, direction: "out", amountMinor: 9000 }, { participantId: t.memberId, direction: "out", amountMinor: 6000 }]);
+    const byPerson = list => [...list].sort((a, b) => a.participantId.localeCompare(b.participantId));
+    expect(byPerson(input.cashParties)).toEqual(byPerson([{ participantId: t.ownerId, direction: "out", amountMinor: 9000 }, { participantId: t.memberId, direction: "out", amountMinor: 6000 }]));
     await saveEntry(env.DB, { ...as(t), entryId: saved.id, expectedRevision: 1, idempotencyKey: key(), input });
     const after = await view(t);
     expect(after.balances).toEqual(before.balances);

@@ -1,32 +1,24 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
-import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
-import { CURRENCY_MINOR_UNITS, currencyLabel, FinancialValidationError, normalizeCurrency } from "./finance.js";
-import { addParticipant, exportLedger, getLedgerAccess, LedgerError, readLedger, saveEntry, voidEntry } from "./ledger.js";
-import { ledgerCsv, parseEntryForm, renderEntryDetail, renderEntryForm } from "./ledger-ui.js";
+import { inspectCsrfRequest } from "./csrf.js";
+import { registerAssetRoutes } from "./routes/assets.js";
+import { registerCategoryRoutes } from "./routes/categories.js";
+import { registerEntryRoutes, recentFor } from "./routes/entries.js";
+import { registerImportRoutes } from "./routes/import.js";
+import { recategorizationNoticeFor, registerRecategorizeRoutes } from "./routes/recategorize.js";
+import { csrfInput, formError, ledgerFailure, page, requestId, sessionSecret, signedInUser, signInRequired } from "./route-kit.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel } from "./finance.js";
+import { addParticipant, exportLedger, readLedger } from "./ledger.js";
+import { ledgerCsv } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
-import { renderBalanceExplanation } from "./balance-ui.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
-import { LEDGER_CLIENT_JS } from "./client.js";
-import { renderCategories } from "./categories-ui.js";
-import { applyRecategorization, classifyOne, isPending, previewRecategorization, readRecategorizationBatch, undoRecategorization } from "./recategorize.js";
-import { recategorizationNotice, renderClassify, renderRecategorizePreview } from "./recategorize-ui.js";
-import { CLASSIFY_JS } from "./classify-client.js";
-import { suggestCategory } from "./suggest.js";
 import { slowBookEvent } from "./perf.js";
-import { createCategory, mergeCategory, setCategoryArchived, updateCategory } from "./categories.js";
-import { SPLIT_MODULE_SOURCE } from "./split.js";
-import { TEXT_MODULE_SOURCE } from "./text.js";
-import { appCss } from "./styles.js";
-import { avatar, escapeHtml, noticeFor, renderPage } from "./ui-parts.js";
+import { avatar, escapeHtml, noticeFor } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation, resolveSpace } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
-import { cancelImportBatch, cancelImportPreview, confirmImportPreview, createImportPreview, loadImportChunk, readImportBatch, readImportPlan, readImportPreview, readImportProgress, readPreviewSummary, reviewImportPreview } from "./splitwise-import.js";
-import { renderImportBatch, renderImportPreview, renderImportProgress, renderImportReview, renderImportUpload } from "./splitwise-ui.js";
-import { IMPORT_PROGRESS_JS } from "./import-client.js";
 
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
@@ -67,9 +59,6 @@ const OAUTH_COOKIE = "homesuite_oauth";
 const MAX_MUTATION_BODY_BYTES = 16 * 1024;
 const MAX_IMPORT_BODY_BYTES = 2 * 1024 * 1024 + 16 * 1024;
 
-function sessionSecret(env = {}) {
-  return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
-}
 
 function authConfig(env = {}) {
   const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret } = env;
@@ -79,29 +68,10 @@ function authConfig(env = {}) {
     : null;
 }
 
-async function signedInUser(c) {
-  const secret = sessionSecret(c.env);
-  return secret ? currentSession(c.env.DB, c.req.raw, secret) : null;
-}
 
-function signInRequired(c) {
-  return c.redirect(`/auth/google?returnTo=${encodeURIComponent(new URL(c.req.url).pathname)}`, 303);
-}
 
-function formError(title, message, status = 400) {
-  return page(title, `<p class="eyebrow">Cuentas Claras</p><h1>${html(title)}</h1><p class="notice" role="alert">${html(message)}</p><a class="button secondary" href="/">Volver</a>`);
-}
 
-function ledgerFailure(c, error) {
-  if (!(error instanceof LedgerError) && !(error instanceof FinancialValidationError)) throw error;
-  const status = error.status ?? 400;
-  if (c.req.header("Accept")?.includes("application/json")) return c.json({ error: error.message }, status);
-  return c.html(formError("No pudimos guardar", error.message), status);
-}
 
-function requestId(c) {
-  return c.get("requestId") ?? "unknown";
-}
 
 function logFailure(c, event, error) {
   console.error("[homesuite-app]", JSON.stringify({
@@ -125,16 +95,9 @@ function oauthCookie(value, secure, maxAge = 10 * 60) {
   return cookie(OAUTH_COOKIE, value, { maxAge, secure });
 }
 
-function page(title, content, options) {
-  return renderPage(title, content, options);
-}
 
 const html = escapeHtml;
 
-async function csrfInput(c, user) {
-  const token = await createCsrfToken({ sessionId: user.id, secret: sessionSecret(c.env) });
-  return `<input type="hidden" name="_csrf" value="${html(token)}">`;
-}
 
 function isProtectedMutation(c) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) return false;
@@ -433,31 +396,6 @@ app.post("/spaces", async (c) => {
   }
 });
 
-const RECENT_TITLES = Object.freeze({ guardado: "Recién agregado", corregido: "Recién corregido", anulado: "Recién anulado" });
-
-// La franja «Recién agregado» existe solo con ?nuevo=<id> de un movimiento de este libro; un identificador ajeno o
-// inexistente se ignora, y abrir la lista sin el parámetro no la muestra.
-function recentFor(data, id, kind) {
-  if (typeof id !== "string" || !id) return null;
-  const entry = data.entries.find(row => row.id === id);
-  return entry ? { entry, title: Object.hasOwn(RECENT_TITLES, kind ?? "") ? RECENT_TITLES[kind] : RECENT_TITLES.guardado } : null;
-}
-
-// Tras guardar, corregir o anular se vuelve a la lista del libro con un aviso y el movimiento afectado.
-function listAfter(spaceId, entryId, notice) {
-  return `/spaces/${encodeURIComponent(spaceId)}?aviso=${notice}&nuevo=${encodeURIComponent(entryId)}#movimientos`;
-}
-
-// Aviso con el botón «Deshacer» después de una recategorización o de deshacerla; el parámetro nunca se muestra tal cual.
-async function recategorizationNoticeFor(c, user, space, csrf) {
-  const aviso = c.req.query("aviso");
-  const lote = c.req.query("lote");
-  if (!["recategorizado", "deshecho"].includes(aviso) || typeof lote !== "string" || !/^recat_[A-Za-z0-9_-]{8,200}$/u.test(lote)) return "";
-  try {
-    const batch = await readRecategorizationBatch(c.env.DB, { spaceId: space.id, userId: user.user_id, batchId: lote });
-    return recategorizationNotice({ spaceId: space.slug, csrf, batch });
-  } catch { return ""; }
-}
 
 app.get("/spaces/:spaceId", async (c) => {
   const started = Date.now();
@@ -488,343 +426,13 @@ app.post("/spaces/:spaceId/participants", async (c) => {
   } catch (error) { return ledgerFailure(c, error); }
 });
 
-app.get("/spaces/:spaceId/ledger/import", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const ledger = await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
-    if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede importar.", 403);
-    return c.html(page("Importar Splitwise", renderImportUpload({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user) })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
+registerImportRoutes(app);
 
-app.post("/spaces/:spaceId/ledger/import/preview", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
-    const form = await c.req.formData();
-    const file = form.get("file");
-    if (!(file instanceof File) || !file.size || file.size > 2 * 1024 * 1024) throw new LedgerError("Seleccioná un CSV de hasta 2 MiB.", 413);
-    const result = await createImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, fileName: file.name, csvText: await file.text() });
-    const base = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import`;
-    return c.redirect(result.batchId ? `${base}/batches/${encodeURIComponent(result.batchId)}` : `${base}/previews/${encodeURIComponent(result.previewId)}`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
+registerEntryRoutes(app);
 
-app.get("/spaces/:spaceId/ledger/import/previews/:previewId", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
-    if (preview.batchId) return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(preview.batchId)}`, 303);
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    const summary = await readPreviewSummary(c.env.DB, preview.id, preview.meta, { page: Number.parseInt(c.req.query("pagina") ?? "1", 10) || 1 });
-    return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, summary, ledger: data.ledger, participants: data.participants.filter(person => person.active) })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
+registerCategoryRoutes(app);
 
-app.post("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
-    const form = await c.req.formData();
-    const mapping = preview.meta.participantNames.map((_, index) => form.get(`mapping_${index}`));
-    const decisions = {};
-    for (const [key, value] of form.entries()) if (key.startsWith("decision_")) decisions[key.slice("decision_".length)] = value;
-    const base = { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") };
-    // Siempre se guarda lo de esta página primero, así una página con faltantes no pierde lo ya decidido.
-    await reviewImportPreview(c.env.DB, { ...base, mapping, decisions, partial: true });
-    const action = String(form.get("accion") ?? "revisar");
-    const root = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/previews/${encodeURIComponent(c.req.param("previewId"))}`;
-    if (action.startsWith("pagina:")) return c.redirect(`${root}?pagina=${Number.parseInt(action.slice(7), 10) || 1}`, 303);
-    await reviewImportPreview(c.env.DB, { ...base, mapping });
-    return c.redirect(`${root}/review`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const { preview, plan } = await readImportPlan(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    return c.html(page("Confirmar Splitwise", renderImportReview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, plan, participants: data.participants })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/import/previews/:previewId/cancel", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    await cancelImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=importacion-cancelada`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/import/previews/:previewId/confirm", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
-    const form = await c.req.formData();
-    const batchId = await confirmImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), acknowledgeDifference: form.get("acknowledgeDifference") === "yes" });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(batchId)}`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/import/batches/:batchId", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const args = { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") };
-    const ledger = await getLedgerAccess(c.env.DB, args.spaceId, args.userId);
-    if (ledger.role === "owner") {
-      const progress = await readImportProgress(c.env.DB, args);
-      if (progress.status === "pending") return c.html(page("Importando Splitwise", renderImportProgress({ spaceId: args.spaceId, csrf: await csrfInput(c, user), progress })));
-    }
-    const batch = await readImportBatch(c.env.DB, args);
-    return c.html(page("Importación Splitwise", renderImportBatch({ spaceId: args.spaceId, batch })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-// Una tanda por petición: con JavaScript la pantalla las encadena; sin él, cada clic en «Continuar» carga una.
-app.post("/spaces/:spaceId/ledger/import/batches/:batchId/load", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const progress = await loadImportChunk(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
-    if (c.req.header("Accept")?.includes("application/json")) return c.json(progress);
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(c.req.param("batchId"))}`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/import/batches/:batchId/cancel", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    await cancelImportBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=importacion-cancelada`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/balance", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    return c.html(page("Por qué", renderBalanceExplanation(data, { spaceId: c.req.param("spaceId"), userId: user.user_id, currency: c.req.query("moneda") ?? "", personId: c.req.query("persona") ?? "" })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/new", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
-    const type = ["expense", "income", "transfer"].includes(c.req.query("type")) ? c.req.query("type") : "expense";
-    const ids = new Set(data.participants.filter(person => person.active).map(person => person.id));
-    const prefill = {
-      from: ids.has(c.req.query("from")) ? c.req.query("from") : undefined,
-      to: ids.has(c.req.query("to")) ? c.req.query("to") : undefined,
-      amount: /^\d{1,15}(?:[.,]\d{1,3})?$/u.test(c.req.query("amount") ?? "") ? c.req.query("amount") : undefined,
-      currency: normalizeCurrency(c.req.query("currency")) ?? undefined,
-    };
-    return c.html(page("Agregar movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, type, prefill })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/entries", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
-    const location = listAfter(c.req.param("spaceId"), saved.id, "guardado");
-    return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }, 201) : c.redirect(location, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/entries/:entryId", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
-    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
-    const revisions = await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
-    return c.html(page(entry.description, noticeFor(c.req.query("aviso")) + renderEntryDetail(entry, data, { spaceId: c.req.param("spaceId"), userId: user.user_id, revisions: revisions.results })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
-    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
-    if (entry.status !== "active" || (data.ledger.role !== "owner" && entry.createdByUserId !== user.user_id)) throw new LedgerError("No podés corregir este movimiento.", 403);
-    // El método de reparto y sus datos viven en la instantánea de la revisión vigente (no hay columna propia).
-    const revision = await c.env.DB.prepare("SELECT snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ? AND revision = ?").bind(data.ledger.id, entry.id, entry.revision).first();
-    const split = revision ? JSON.parse(revision.snapshot_json).split ?? null : null;
-    return c.html(page("Corregir movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, entry, split })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
-    const location = listAfter(c.req.param("spaceId"), saved.id, "corregido");
-    return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }) : c.redirect(location, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    const entry = data.entries.find(row => row.id === c.req.param("entryId"));
-    if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
-    if (entry.status !== "active" || (data.ledger.role !== "owner" && entry.createdByUserId !== user.user_id)) throw new LedgerError("No podés anular este movimiento.", 403);
-    const spacePath = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}`;
-    return c.html(page("Anular movimiento", `<p class="eyebrow">Cuentas Claras</p><h1>Anular ${escapeHtml(entry.description)}</h1><p>El movimiento dejará de afectar los saldos y seguirá visible en el historial.</p><form class="ledger-form" method="post" action="${spacePath}/ledger/entries/${encodeURIComponent(entry.id)}/void">${await csrfInput(c, user)}<input type="hidden" name="expectedRevision" value="${entry.revision}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}"><label>Motivo (opcional)<textarea name="reason" maxlength="1000" rows="2"></textarea></label><div class="form-actions"><button class="button" type="submit">Confirmar anulación</button><a class="button secondary" href="${spacePath}/ledger/entries/${encodeURIComponent(entry.id)}">Cancelar</a></div></form>`));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    await voidEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), idempotencyKey: form.get("idempotencyKey"), reason: form.get("reason") });
-    return c.redirect(listAfter(c.req.param("spaceId"), c.req.param("entryId"), "anulado"), 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/categories", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    return c.html(page("Categorías", noticeFor(c.req.query("aviso")) + renderCategories(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), owner: data.ledger.role === "owner" })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-// Gestión de categorías: sólo la persona titular (la regla vive en categories.js, no en la ruta).
-const categoryActions = [
-  ["", async (db, base, form) => createCategory(db, { ledgerId: base.ledger.id, userId: base.userId, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-creada", false],
-  ["/:categoryId", (db, base, form, id) => updateCategory(db, { ...base, categoryId: id, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-guardada", true],
-  ["/:categoryId/archive", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: true }), "categoria-archivada", true],
-  ["/:categoryId/restore", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: false }), "categoria-restaurada", true],
-  ["/:categoryId/merge", (db, base, form, id) => mergeCategory(db, { ...base, categoryId: id, intoId: form.get("into") }), "categoria-fusionada", true],
-];
-for (const [suffix, action, notice, needsOwner] of categoryActions) {
-  app.post(`/spaces/:spaceId/ledger/categories${suffix}`, async (c) => {
-    const user = c.get("protectedUser");
-    try {
-      const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
-      if (!needsOwner && ledger.role !== "owner") throw new LedgerError("Sólo el titular puede gestionar las categorías.", 403);
-      if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
-      await action(c.env.DB, { ledger, ledgerId: ledger.id, userId: user.user_id }, await c.req.formData(), c.req.param("categoryId"));
-      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/categories?aviso=${notice}`, 303);
-    } catch (error) { return ledgerFailure(c, error); }
-  });
-}
-
-// Recategorización: vista previa (nada se escribe), confirmación, deshacer y «clasificar rápido».
-function criteriaFrom(form) {
-  return form.get("all") === "1"
-    ? { all: true, query: String(form.get("query") ?? ""), category: String(form.get("categoria") ?? ""), person: String(form.get("quien") ?? "") }
-    : { ids: form.getAll("ids").map(String).slice(0, 2000) };
-}
-
-const PREVIEW_IDS_LIMIT = 150;
-
-// La vista previa es una página GET (POST → redirección → GET): así volver atrás no pide reenviar el formulario.
-app.post("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    const criteria = criteriaFrom(form);
-    const categoryId = String(form.get("categoryId") ?? "");
-    await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId });
-    if (!criteria.all && criteria.ids.length > PREVIEW_IDS_LIMIT) throw new LedgerError(`Marcaste ${criteria.ids.length} movimientos: para más de ${PREVIEW_IDS_LIMIT} usá «Todos los resultados» de la búsqueda o el filtro.`);
-    const query = new URLSearchParams(criteria.all ? [["all", "1"], ["query", criteria.query], ["categoria", criteria.category], ["quien", criteria.person]] : criteria.ids.map(id => ["ids", id]));
-    query.set("categoryId", categoryId);
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/recategorize/preview?${query.toString()}`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.get("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const params = new URL(c.req.url).searchParams;
-    const criteria = criteriaFrom(params);
-    const preview = await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId: params.get("categoryId") ?? "" });
-    return c.html(page("Cambiar categoría", renderRecategorizePreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, criteria, key: crypto.randomUUID() })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/recategorize", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    const batch = await applyRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria: criteriaFrom(form), categoryId: String(form.get("categoryId") ?? ""), expectedRevision: form.get("expectedRevision"), key: String(form.get("key") ?? "") });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=recategorizado&lote=${encodeURIComponent(batch.id)}#movimientos`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/recategorize/:batchId/undo", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    const undone = await undoRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
-    const root = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}`;
-    if (form.get("volver") === "classify") {
-      const skipped = String(form.get("saltar") ?? "");
-      return c.redirect(`${root}/ledger/classify${skipped ? `?saltar=${encodeURIComponent(skipped)}` : ""}`, 303);
-    }
-    return c.redirect(`${root}?aviso=deshecho&lote=${encodeURIComponent(undone.id)}#movimientos`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-function skippedIds(value) {
-  return String(value ?? "").split(",").map(item => item.trim()).filter(item => /^[A-Za-z0-9_-]{8,120}$/u.test(item)).slice(0, 200);
-}
-
-app.get("/spaces/:spaceId/ledger/classify", async (c) => {
-  const user = await signedInUser(c);
-  if (!user) return signInRequired(c);
-  try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
-    const skipped = skippedIds(c.req.query("saltar"));
-    const own = entry => data.ledger.role === "owner" || entry.createdByUserId === user.user_id;
-    const pendingEntries = data.entries.filter(entry => isPending(entry) && own(entry));
-    const fresh = pendingEntries.filter(entry => !skipped.includes(entry.id));
-    const later = skipped.map(id => pendingEntries.find(entry => entry.id === id)).filter(Boolean);
-    const current = [...fresh, ...later][0] ?? null;
-    const categorized = data.entries.filter(entry => entry.status === "active" && entry.categoryInfo && !isPending(entry));
-    const recent = (await c.env.DB.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY rowid DESC LIMIT 40").bind(data.ledger.id, user.user_id).all()).results.map(row => row.category_id);
-    const usage = new Map();
-    for (const entry of categorized) usage.set(entry.categoryInfo.id, (usage.get(entry.categoryInfo.id) ?? 0) + 1);
-    const ranked = [...new Set([...recent, ...[...usage].sort((a, b) => b[1] - a[1]).map(([id]) => id)])];
-    const active = new Map(data.categories.filter(category => category.status === "active").map(category => [category.id, category]));
-    const recents = ranked.map(id => active.get(id)).filter(Boolean).slice(0, 5);
-    const lastRow = await c.env.DB.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY rowid DESC LIMIT 1").bind(data.ledger.id, user.user_id).first();
-    const last = lastRow ? await readRecategorizationBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: lastRow.id }) : null;
-    return c.html(page("Clasificar rápido", renderClassify({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), current, names: new Map(data.participants.map(person => [person.id, person.displayName])), remaining: pendingEntries.length, suggestion: current ? suggestCategory(current, categorized) : null, recents, categories: data.categories, skipped, last, key: crypto.randomUUID() })));
-  } catch (error) { return ledgerFailure(c, error); }
-});
-
-app.post("/spaces/:spaceId/ledger/classify", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    const form = await c.req.formData();
-    await classifyOne(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: String(form.get("entryId") ?? ""), categoryId: String(form.get("categoryId") ?? ""), key: String(form.get("key") ?? "") });
-    const skipped = skippedIds(form.get("saltar")).join(",");
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/classify${skipped ? `?saltar=${encodeURIComponent(skipped)}` : ""}`, 303);
-  } catch (error) { return ledgerFailure(c, error); }
-});
+registerRecategorizeRoutes(app);
 
 app.get("/spaces/:spaceId/ledger/export.json", async (c) => {
   const user = await signedInUser(c);
@@ -931,13 +539,7 @@ app.get("/cuentas-claras", async (c) => {
   return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
 });
 
-app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; charset=utf-8" }));
-
-app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
-app.get("/split.js", (c) => c.body(SPLIT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
-app.get("/classify.js", (c) => c.body(CLASSIFY_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
-app.get("/import-progress.js", (c) => c.body(IMPORT_PROGRESS_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
-app.get("/text.js", (c) => c.body(TEXT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+registerAssetRoutes(app);
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {

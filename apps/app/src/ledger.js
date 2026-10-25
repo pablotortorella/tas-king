@@ -206,8 +206,8 @@ export async function readLedger(db, { spaceId, userId }) {
   const [categories, entryRows, cashRows, allocationRows] = await Promise.all([
     readCategories(db, ledger.id),
     db.prepare(`SELECT e.*, u.display_name AS creator_name FROM ledger_entries e JOIN users u ON u.id = e.created_by_user_id WHERE e.ledger_id = ? AND ${VISIBLE_ENTRY_SQL} ORDER BY e.occurred_at DESC, e.created_at DESC, e.rowid DESC`).bind(ledger.id).all(),
-    db.prepare(`SELECT entry_id, participant_id, direction, amount_minor FROM entry_cash_parties WHERE ledger_id = ? AND entry_id IN (${visible})`).bind(ledger.id, ledger.id).all(),
-    db.prepare(`SELECT entry_id, participant_id, amount_minor FROM entry_allocations WHERE ledger_id = ? AND entry_id IN (${visible})`).bind(ledger.id, ledger.id).all(),
+    db.prepare(`SELECT entry_id, participant_id, direction, amount_minor FROM entry_cash_parties WHERE ledger_id = ? AND entry_id IN (${visible}) ORDER BY rowid`).bind(ledger.id, ledger.id).all(),
+    db.prepare(`SELECT entry_id, participant_id, amount_minor FROM entry_allocations WHERE ledger_id = ? AND entry_id IN (${visible}) ORDER BY rowid`).bind(ledger.id, ledger.id).all(),
   ]);
   const cashByEntry = new Map();
   const sharesByEntry = new Map();
