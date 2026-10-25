@@ -18,17 +18,17 @@
 
 ## 4. Selección sobre búsqueda
 
-- [ ] 4.1 Agregar casillas de verificación y «seleccionar todos los N resultados» a la lista, con barra de selección y selector de categoría, sin estilos en línea, y verificar con una prueba E2E que se selecciona, se previsualiza, se confirma y se ve el cambio.
-- [ ] 4.2 Garantizar el funcionamiento sin script (formulario con confirmación) y verificar con una prueba E2E con el script deshabilitado.
-- [ ] 4.3 Agregar la pantalla de confirmación con la muestra y el botón de deshacer en el aviso posterior, y verificar con una prueba E2E del recorrido completo y del deshacer.
+- [x] 4.1 Agregar casillas de verificación y «seleccionar todos los N resultados» a la lista, con barra de selección y selector de categoría, sin estilos en línea, y verificar con una prueba E2E que se selecciona, se previsualiza, se confirma y se ve el cambio.
+- [x] 4.2 Garantizar el funcionamiento sin script (formulario con confirmación) y verificar con una prueba E2E con el script deshabilitado.
+- [x] 4.3 Agregar la pantalla de confirmación con la muestra y el botón de deshacer en el aviso posterior, y verificar con una prueba E2E del recorrido completo y del deshacer.
 
 ## 5. Clasificar rápido
 
 - [x] 5.1 Implementar `suggestCategory` como función pura con la regla del diseño y verificar con pruebas unitarias de los tres escenarios del spec (descripción conocida, sin evidencia y evidencia dividida) y con una prueba sobre un conjunto sintético que verifica que nunca sugiere con menos de dos votos o menos del 70 %.
-- [ ] 5.2 Crear la pantalla de clasificar rápido (pendiente actual, contador, sugerencia con su causa, categorías recientes, selector completo, saltar y deshacer lo último), y verificar con pruebas de integración y una E2E que asignar baja el contador y muestra el siguiente.
-- [ ] 5.3 Agregar los atajos de teclado (números, Enter para aceptar, S para saltar, U para deshacer) con un script propio compatible con la CSP, y verificar con una prueba E2E que se completa una secuencia de asignaciones solo con el teclado.
-- [ ] 5.4 Verificar con una prueba E2E a 390 px, en claro y oscuro, que las pantallas de selección y de clasificar rápido no desbordan, los controles miden al menos 44 px y el contraste del texto cumple.
+- [x] 5.2 Crear la pantalla de clasificar rápido (pendiente actual, contador, sugerencia con su causa, categorías recientes, selector completo, saltar y deshacer lo último), y verificar con pruebas de integración y una E2E que asignar baja el contador y muestra el siguiente.
+- [x] 5.3 Agregar los atajos de teclado (números, Enter para aceptar, S para saltar, U para deshacer) con un script propio compatible con la CSP, y verificar con una prueba E2E que se completa una secuencia de asignaciones solo con el teclado.
+- [x] 5.4 Verificar con una prueba E2E a 390 px, en claro y oscuro, que las pantallas de selección y de clasificar rápido no desbordan, los controles miden al menos 44 px y el contraste del texto cumple.
 
 ## 6. Cierre
 
-- [ ] 6.1 Verificar con `openspec validate recategorizacion-masiva --strict` y ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` hasta que pasen completos.
+- [x] 6.1 Verificar con `openspec validate recategorizacion-masiva --strict` y ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` hasta que pasen completos.

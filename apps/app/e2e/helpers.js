@@ -40,3 +40,21 @@ export async function openBook(page, prefix = "rec") {
   await page.getByRole("button", { name: "Agregar participante" }).click();
   return { book, suffix };
 }
+
+// Carga movimientos con el mismo formulario que usa la persona, pero desde la propia página (así viajan las cookies de la
+// sesión y el origen es el real). items: [{ description, amount?, occurredAt?, categoryId? }]
+export async function seedEntriesViaForm(page, book, items) {
+  await page.evaluate(async ({ book: path, items: list }) => {
+    const html = await (await fetch(`${path}/ledger/new?type=expense`, { credentials: "same-origin" })).text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const csrf = doc.querySelector('input[name="_csrf"]').value;
+    const payer = doc.querySelector('input[name="payer"]').value;
+    const people = [...doc.querySelectorAll('input[name="beneficiary"]')].map(input => input.value);
+    for (const item of list) {
+      const fields = [["_csrf", csrf], ["type", "expense"], ["currency", "COP"], ["amount", item.amount ?? "100,00"], ["description", item.description], ["occurredAt", item.occurredAt ?? "2026-06-01"], ["payer", payer], ["splitMethod", "equal"], ["idempotencyKey", crypto.randomUUID()], ["note", ""], ...people.map(id => ["beneficiary", id])];
+      if (item.categoryId !== undefined) fields.push(["categoryId", item.categoryId]);
+      const response = await fetch(`${path}/ledger/entries`, { method: "POST", body: new URLSearchParams(fields), headers: { Accept: "application/json" }, credentials: "same-origin" });
+      if (!response.ok) throw new Error(`No se pudo cargar «${item.description}»: ${response.status} ${await response.text()}`);
+    }
+  }, { book, items });
+}

@@ -36,6 +36,14 @@ const add = (t, description, extra = {}, who = t.owner) => saveEntry(env.DB, { s
   type: "expense", currency: "COP", totalMinor: 10000, description, note: "", occurredAt: "2026-06-01",
   cashParties: [{ participantId: who === t.owner ? t.ownerId : t.memberId, direction: "out", amountMinor: 10000 }], allocations: [{ participantId: t.ownerId, amountMinor: 5000 }, { participantId: t.memberId, amountMinor: 5000 }], ...extra } });
 const key = () => crypto.randomUUID();
+// La vista previa es POST → 303 → GET: devuelve el resultado final (o el error del POST).
+async function previewPage(who, t, form) {
+  const posted = await request(who, `${t.base}/ledger/recategorize/preview`, { method: "POST", form });
+  if (posted.status !== 303) return { status: posted.status, html: await posted.text(), redirected: false };
+  const location = posted.headers.get("Location");
+  const page = await request(who, location);
+  return { status: page.status, html: await page.text(), redirected: true, location };
+}
 const rev = async t => (await env.DB.prepare("SELECT revision FROM expense_ledgers WHERE id = ?").bind(t.ledger.id).first()).revision;
 const confirmForm = async (t, ids, extra = {}) => ({ categoryId: find(t, "Alimentos").id, expectedRevision: String(await rev(t)), key: key(), ...extra, ids });
 
@@ -44,33 +52,61 @@ describe("cambiar la categoría desde la lista", () => {
     const t = await team("rr-previa");
     const a = await add(t, "Carulla uno");
     const b = await add(t, "Carulla dos");
-    const response = await request(t.owner, `${t.base}/ledger/recategorize/preview`, { method: "POST", form: [["ids", a.id], ["ids", b.id], ["categoryId", find(t, "Alimentos").id]] });
-    expect(response.status).toBe(200);
-    const html = await response.text();
-    expect(html).toContain("Cambiarán 2 movimientos");
-    expect(html).toContain("Carulla uno");
-    expect(html).toContain('name="expectedRevision"');
+    const result = await previewPage(t.owner, t, [["ids", a.id], ["ids", b.id], ["categoryId", find(t, "Alimentos").id]]);
+    expect(result.status).toBe(200);
+    expect(result.location).toMatch(/\/ledger\/recategorize\/preview\?ids=/u);
+    expect(result.html).toContain("Cambiarán 2 movimientos");
+    expect(result.html).toContain("Carulla uno");
+    expect(result.html).toContain('name="expectedRevision"');
     const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id });
     expect(data.entries.every(entry => entry.categoryId === null)).toBe(true);
+  });
+
+  it("volver a la vista previa es una página GET: se puede recargar sin reenviar un formulario", async () => {
+    const t = await team("rr-previa-get");
+    const a = await add(t, "Uno");
+    const { location } = await previewPage(t.owner, t, [["ids", a.id], ["categoryId", find(t, "Taxi").id]]);
+    expect((await request(t.owner, location)).status).toBe(200);
+    expect((await request(t.owner, location)).status).toBe(200);
   });
 
   it("«todos los resultados» usa la búsqueda y no solo las casillas marcadas", async () => {
     const t = await team("rr-todos");
     for (let index = 0; index < 5; index += 1) await add(t, `Carulla ${index}`);
     await add(t, "Otra cosa");
-    const html = await (await request(t.owner, `${t.base}/ledger/recategorize/preview`, { method: "POST", form: [["all", "1"], ["query", "carulla"], ["categoria", ""], ["categoryId", find(t, "Alimentos").id]] })).text();
-    expect(html).toContain("Cambiarán 5 movimientos");
+    const result = await previewPage(t.owner, t, [["all", "1"], ["query", "carulla"], ["categoria", ""], ["categoryId", find(t, "Alimentos").id]]);
+    expect(result.html).toContain("Cambiarán 5 movimientos");
+    expect(result.location).toContain("all=1");
+  });
+
+  it("después de aplicarse, la misma vista previa dice que ya no hay nada para cambiar y no ofrece confirmar", async () => {
+    const t = await team("rr-previa-vacia");
+    const a = await add(t, "Uno");
+    const { location } = await previewPage(t.owner, t, [["ids", a.id], ["categoryId", find(t, "Taxi").id]]);
+    await request(t.owner, `${t.base}/ledger/recategorize`, { method: "POST", form: [["ids", a.id], ["categoryId", find(t, "Taxi").id], ["expectedRevision", String(await rev(t))], ["key", key()]] });
+    const html = await (await request(t.owner, location)).text();
+    expect(html).toContain("Ya no hay nada para cambiar");
+    expect(html).not.toContain("Confirmar el cambio");
+  });
+
+  it("marcar más de 150 movimientos explica que conviene «Todos los resultados»", async () => {
+    const t = await team("rr-demasiadas");
+    const a = await add(t, "Uno");
+    const form = [...Array.from({ length: 151 }, () => ["ids", a.id]), ["categoryId", find(t, "Taxi").id]];
+    const result = await previewPage(t.owner, t, form);
+    expect(result.status).toBe(400);
+    expect(result.html).toContain("Todos los resultados");
   });
 
   it("sin elegir categoría o sin selección responde con el motivo", async () => {
     const t = await team("rr-vacio");
     const a = await add(t, "Uno");
-    const noCategory = await request(t.owner, `${t.base}/ledger/recategorize/preview`, { method: "POST", form: [["ids", a.id], ["categoryId", ""]] });
+    const noCategory = await previewPage(t.owner, t, [["ids", a.id], ["categoryId", ""]]);
     expect(noCategory.status).toBe(400);
-    expect(await noCategory.text()).toContain("Elegí la categoría");
-    const noneSelected = await request(t.owner, `${t.base}/ledger/recategorize/preview`, { method: "POST", form: [["categoryId", find(t, "Taxi").id]] });
+    expect(noCategory.html).toContain("Elegí la categoría");
+    const noneSelected = await previewPage(t.owner, t, [["categoryId", find(t, "Taxi").id]]);
     expect(noneSelected.status).toBe(400);
-    expect(await noneSelected.text()).toContain("No hay movimientos seleccionados");
+    expect(noneSelected.html).toContain("No hay movimientos seleccionados");
   });
 
   it("confirmar cambia los movimientos, redirige con el lote y el libro ofrece deshacer", async () => {

@@ -716,12 +716,30 @@ function criteriaFrom(form) {
     : { ids: form.getAll("ids").map(String).slice(0, 2000) };
 }
 
+const PREVIEW_IDS_LIMIT = 150;
+
+// La vista previa es una página GET (POST → redirección → GET): así volver atrás no pide reenviar el formulario.
 app.post("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
   const user = c.get("protectedUser");
   try {
     const form = await c.req.formData();
     const criteria = criteriaFrom(form);
-    const preview = await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId: String(form.get("categoryId") ?? "") });
+    const categoryId = String(form.get("categoryId") ?? "");
+    await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId });
+    if (!criteria.all && criteria.ids.length > PREVIEW_IDS_LIMIT) throw new LedgerError(`Marcaste ${criteria.ids.length} movimientos: para más de ${PREVIEW_IDS_LIMIT} usá «Todos los resultados» de la búsqueda o el filtro.`);
+    const query = new URLSearchParams(criteria.all ? [["all", "1"], ["query", criteria.query], ["categoria", criteria.category]] : criteria.ids.map(id => ["ids", id]));
+    query.set("categoryId", categoryId);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/recategorize/preview?${query.toString()}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const params = new URL(c.req.url).searchParams;
+    const criteria = criteriaFrom(params);
+    const preview = await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId: params.get("categoryId") ?? "" });
     return c.html(page("Cambiar categoría", renderRecategorizePreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, criteria, key: crypto.randomUUID() })));
   } catch (error) { return ledgerFailure(c, error); }
 });

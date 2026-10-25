@@ -66,6 +66,12 @@ describe("vista previa y confirmación", () => {
     expect(byCriteria).toContain('name="query" value="carulla"');
     expect(byCriteria).not.toContain('name="ids"');
   });
+  it("sin nada para cambiar no ofrece confirmar", () => {
+    const html = renderRecategorizePreview({ spaceId: "casa", csrf, preview: { ...preview, count: 0, sample: [] }, criteria: { ids: ["a"] }, key: "k".repeat(36) });
+    expect(html).toContain("Ya no hay nada para cambiar");
+    expect(html).not.toContain("Confirmar el cambio");
+    expect(html).not.toContain("<form");
+  });
   it("escapa lo que viene del criterio y de los movimientos", () => {
     const html = renderRecategorizePreview({ spaceId: "casa", csrf, preview: { ...preview, sample: [{ ...preview.sample[0], description: "<img src=x onerror=1>" }] }, criteria: { all: true, query: '"><script>', category: "" }, key: "k".repeat(36) });
     expect(html).not.toContain("<img");
