@@ -13,6 +13,7 @@ import { applyRecategorization, classifyOne, isPending, previewRecategorization,
 import { recategorizationNotice, renderClassify, renderRecategorizePreview } from "./recategorize-ui.js";
 import { CLASSIFY_JS } from "./classify-client.js";
 import { suggestCategory } from "./suggest.js";
+import { slowBookEvent } from "./perf.js";
 import { createCategory, mergeCategory, setCategoryArchived, updateCategory } from "./categories.js";
 import { SPLIT_MODULE_SOURCE } from "./split.js";
 import { TEXT_MODULE_SOURCE } from "./text.js";
@@ -432,6 +433,21 @@ app.post("/spaces", async (c) => {
   }
 });
 
+const RECENT_TITLES = Object.freeze({ guardado: "Recién agregado", corregido: "Recién corregido", anulado: "Recién anulado" });
+
+// La franja «Recién agregado» existe solo con ?nuevo=<id> de un movimiento de este libro; un identificador ajeno o
+// inexistente se ignora, y abrir la lista sin el parámetro no la muestra.
+function recentFor(data, id, kind) {
+  if (typeof id !== "string" || !id) return null;
+  const entry = data.entries.find(row => row.id === id);
+  return entry ? { entry, title: RECENT_TITLES[kind] ?? RECENT_TITLES.guardado } : null;
+}
+
+// Tras guardar, corregir o anular se vuelve a la lista del libro con un aviso y el movimiento afectado.
+function listAfter(spaceId, entryId, notice) {
+  return `/spaces/${encodeURIComponent(spaceId)}?aviso=${notice}&nuevo=${encodeURIComponent(entryId)}#movimientos`;
+}
+
 // Aviso con el botón «Deshacer» después de una recategorización o de deshacerla; el parámetro nunca se muestra tal cual.
 async function recategorizationNoticeFor(c, user, space, csrf) {
   const aviso = c.req.query("aviso");
@@ -444,6 +460,7 @@ async function recategorizationNoticeFor(c, user, space, csrf) {
 }
 
 app.get("/spaces/:spaceId", async (c) => {
+  const started = Date.now();
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   const space = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
@@ -457,7 +474,9 @@ app.get("/spaces/:spaceId", async (c) => {
   ]);
   const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
   const batchNotice = await recategorizationNoticeFor(c, user, space, csrf);
-  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const slow = slowBookEvent({ elapsedMs: Date.now() - started, entries: ledger.entries.length, participants: ledger.participants.length, categories: ledger.categories.length, requestId: requestId(c) }, c.env.SLOW_BOOK_MS);
+  if (slow) console.warn(JSON.stringify(slow));
   return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
 });
 
@@ -615,7 +634,7 @@ app.post("/spaces/:spaceId/ledger/entries", async (c) => {
   try {
     const form = await c.req.formData();
     const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
-    const location = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(saved.id)}?aviso=guardado`;
+    const location = listAfter(c.req.param("spaceId"), saved.id, "guardado");
     return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }, 201) : c.redirect(location, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
@@ -652,7 +671,7 @@ app.post("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
   try {
     const form = await c.req.formData();
     const saved = await saveEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), input: parseEntryForm(form), idempotencyKey: form.get("idempotencyKey") });
-    const location = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(saved.id)}?aviso=guardado`;
+    const location = listAfter(c.req.param("spaceId"), saved.id, "corregido");
     return c.req.header("Accept")?.includes("application/json") ? c.json({ ...saved, location }) : c.redirect(location, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
@@ -675,7 +694,7 @@ app.post("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
   try {
     const form = await c.req.formData();
     await voidEntry(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: c.req.param("entryId"), expectedRevision: Number(form.get("expectedRevision")), idempotencyKey: form.get("idempotencyKey"), reason: form.get("reason") });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/entries/${encodeURIComponent(c.req.param("entryId"))}?aviso=anulado`, 303);
+    return c.redirect(listAfter(c.req.param("spaceId"), c.req.param("entryId"), "anulado"), 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 

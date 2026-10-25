@@ -46,6 +46,7 @@ const NOTICES = Object.freeze({
   cancelada: "Invitación cancelada.",
   renombrado: "Nombre del grupo guardado.",
   guardado: "Movimiento guardado.",
+  corregido: "Movimiento corregido.",
   anulado: "Movimiento anulado. Sigue visible en el historial y ya no cuenta en los saldos.",
   archivado: "Grupo archivado. Queda de sólo lectura y podés restaurarlo cuando quieras.",
   restaurado: "Grupo restaurado. Vuelve a aceptar movimientos.",

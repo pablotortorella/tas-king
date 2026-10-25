@@ -177,6 +177,8 @@ const FORMS = `
 .classify-card{border:1.5px solid var(--line-strong);border-radius:20px;padding:18px;background:var(--surface);margin-top:12px}.classify-card h2{margin:0 0 4px;overflow-wrap:anywhere}.suggestion{border:1.5px dashed var(--accent-line);border-radius:14px;padding:12px;margin:12px 0}.suggestion p{margin:0 0 6px}.suggestion .button{margin:6px 0 0}
 .recents .chips{display:flex;gap:8px;flex-wrap:wrap}.chip-button kbd,.button kbd{font:inherit;font-size:.78rem;border:1px solid currentColor;border-radius:6px;padding:0 6px;margin-left:6px;opacity:.85}
 .all-categories{display:grid;gap:8px;margin-top:14px}.all-categories select{width:100%;min-height:44px}.all-categories .button{margin:0}.classify-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.classify-actions form{margin:0}.classify-actions .button{margin:0}
+.person-filters{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.person-filters .chip-button{display:inline-flex;align-items:center;text-decoration:none}.person-filters .chip-button.active{background:var(--accent-bg);color:var(--on-accent);border-color:transparent}
+.recent-strip{border:1.5px solid var(--accent-line);background:var(--accent-soft);border-radius:16px;padding:8px 14px;margin:0 0 14px}.recent-strip h3{margin:6px 0 0;font-size:.95rem;color:var(--accent-deep)}.recent-strip .entry-list .entry-row{border-top:0}
 `;
 
 export function appCss() {

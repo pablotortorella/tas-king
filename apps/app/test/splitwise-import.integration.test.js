@@ -451,7 +451,7 @@ describe("movimientos importados: lo inferido se marca y se puede corregir", () 
     const data = await view(t);
     const ownerName = data.participants.find(person => person.id === t.ownerId).displayName;
     const found = searchLedger(data.entries, data.participants, ownerName).find(row => row.description === "Posada");
-    expect(found.matchReason).toContain("pagador inferido");
+    expect(found.matchReason).toContain("· inferido");
     expect(ledgerCsv(data)).toContain('"Splitwise"');
     expect(ledgerCsv(data)).toContain(`"${data.entries[0].importBatchId}"`);
   });
