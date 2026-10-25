@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { parseMovement, parseSignedMinor, parseSplitwiseCsv, SplitwiseCsvError } from "../src/splitwise-csv.js";
+import { buildImportPlan } from "../src/splitwise-import.js";
 
 describe("CSV de Splitwise", () => {
   it("lee el fixture sintético y conserva los efectos exactos", async () => {
@@ -28,5 +29,43 @@ describe("CSV de Splitwise", () => {
     const csv = "Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n2026-02-30,Error,Comida,10.00,COP,5.00,-5.00\n";
     expect(parseSplitwiseCsv(csv).incidents[0].reason).toBe("Fecha inválida.");
     expect(() => parseSplitwiseCsv("uno,dos,tres\n1,2,3")).toThrow("encabezado");
+  });
+
+  describe("fila de resumen con la fecha de exportación en la primera celda", () => {
+    const body = "2026-01-01,Comida,Comida,10.00,COP,5.00,-5.00\n2026-01-02,Taxi,Viaje,20.00,COP,-10.00,10.00\n";
+
+    it("la reconoce como resumen, no como movimiento, tras líneas vacías y con celdas en blanco", () => {
+      const csv = `Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n\n${body}\n2026-10-24,Saldo total, , ,COP,-5.00,5.00\n`;
+      const parsed = parseSplitwiseCsv(csv);
+      expect(parsed.movements.map(row => row.description)).toEqual(["Comida", "Taxi"]);
+      expect(parsed.incidents).toEqual([]);
+      expect(parsed.summaries).toHaveLength(1);
+      expect(parsed.summaries[0]).toMatchObject({ currency: "COP", rawEffects: [{ sourceName: "Ana", raw: "-5.00" }, { sourceName: "Beto", raw: "5.00" }] });
+    });
+
+    it("reconoce las variantes en inglés y sin moneda", () => {
+      for (const label of ["Total balance", "Balance total", "Saldo"]) {
+        const csv = `Date,Description,Category,Cost,Currency,Ana,Beto\n${body}2026-10-24,${label},,,COP,-5.00,5.00\n`;
+        const parsed = parseSplitwiseCsv(csv);
+        expect(parsed.summaries, label).toHaveLength(1);
+        expect(parsed.movements, label).toHaveLength(2);
+      }
+    });
+
+    it("no confunde con un resumen a un movimiento que se llama «Saldo» pero tiene coste", () => {
+      const csv = `Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n2026-01-01,Saldo total,General,10.00,COP,5.00,-5.00\n2026-01-02,Saldo,General,20.00,COP,10.00,-10.00\n`;
+      const parsed = parseSplitwiseCsv(csv);
+      expect(parsed.movements).toHaveLength(2);
+      expect(parsed.summaries).toEqual([]);
+    });
+
+    it("concilia sin diferencias cuando el resumen coincide con los efectos y no advierte la falta de resumen", () => {
+      const csv = `Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n${body}2026-10-24,Saldo total, , ,COP,-5.00,5.00\n`;
+      const parsed = parseSplitwiseCsv(csv);
+      const plan = buildImportPlan(parsed, { mapping: ["new", "new"], decisions: [] }, "COP");
+      expect(plan.rows).toHaveLength(2);
+      expect(plan.warnings).toEqual([]);
+      expect(plan.reconciliation.map(row => row.differenceMinor)).toEqual([0, 0]);
+    });
   });
 });
