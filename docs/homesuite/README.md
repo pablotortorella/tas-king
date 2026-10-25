@@ -63,11 +63,12 @@ heredadas son deuda identificada, no excepciones implícitamente aceptadas.
 
 ## Cumplimiento conocido al adoptar la base
 
-Inspección del código versionado en `bdd3b2e`; no es una auditoría del servicio remoto.
+Inspección inicial del código versionado en `bdd3b2e`, con la fila de CI
+actualizada al 2026-10-25. No es una auditoría del servicio remoto.
 
 | Control | Evidencia disponible | Falta / límite |
 |---|---|---|
-| Tests generales en CI | `.github/workflows/test.yml`: Vitest + Playwright | No ejecuta las dos suites específicas de HomeSuite App |
+| Tests generales y de HomeSuite en CI | `.github/workflows/test.yml`: Vitest general, HomeSuite App unitaria e integración D1, sitio y Playwright | El login real con Google y recorridos entre dos cuentas requieren pruebas dirigidas en staging |
 | Migración antes de Worker en TasKing | `package.json` y `test/deploy-scripts.test.js` | Sólo cubre migraciones compatibles; no demuestra restauración completa |
 | Verificación antes de staging HomeSuite App | Script migra y despliega | No encadena tests; ejecutarlos y registrar resultados antes del comando |
 | SHA revisado en staging, revisión y aprobación | Protocolo común | No hay un bloqueo automático que impida desplegar otro SHA |

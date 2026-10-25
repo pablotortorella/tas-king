@@ -4,16 +4,16 @@
 
 Seguimiento de la [matriz de cumplimiento](homesuite/README.md#cumplimiento-conocido-al-adoptar-la-base).
 Responsable de priorización/revisión: Pablo; implementación a asignar al abrir cada cambio.
-No se implementan estos controles en el cambio documental.
+Los ítems restantes no quedan cerrados por el despliegue de staging.
 
-- Incorporar suites específicas de HomeSuite App en CI y en su verificación previa al deploy. Aceptación: fallos de cada suite bloquean su publicación.
+- Automatizar la verificación previa al deploy de HomeSuite App y sitio. Las suites específicas entraron a CI el 2026-10-25; el comando de deploy aún no las encadena. Aceptación: fallos de cada suite bloquean la publicación.
 - Hacer verificable la correspondencia entre SHA revisado, staging y producción; coordinar el uso compartido de staging. Aceptación: rechazo o detección explícita de una versión distinta antes de publicar.
 - Revisar la detección de secretos de `verify-ready` y definir control efectivo. Aceptación: un fixture sintético demuestra detección sin exponer secretos reales.
 - Corregir el aislamiento de `scripts/db-restore.sh` local: hoy elimina `.wrangler/state` completo. Aceptación: restaurar en estado descartable sin borrar D1/R2 ajenos al ensayo.
 - Ensayar restauración aislada completa de TasKing y definir/comprobar recuperación y ciclo de vida de datos de HomeSuite antes de información irreemplazable. Incluir índices, triggers y archivos aplicables; registrar RPO/RTO y resultados.
 - Automatizar enlaces internos de documentación en CI. Aceptación: un enlace local roto falla y los enlaces válidos pasan sin consultar red.
 
-**Última actualización**: 2026-10-24
+**Última actualización**: 2026-10-25
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
