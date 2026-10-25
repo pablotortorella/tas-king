@@ -4,7 +4,7 @@ import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { createCategory, readCategories } from "../src/categories.js";
 import { addParticipant, exportLedger, readLedger, saveEntry } from "../src/ledger.js";
-import { commitImportPreview, createImportPreview, reviewImportPreview } from "../src/splitwise-import.js";
+import { confirmImportPreview, createImportPreview, loadImportChunk, reviewImportPreview } from "../src/splitwise-import.js";
 import { createSession } from "../src/sessions.js";
 import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
 import { TEXT_MODULE_SOURCE } from "../src/text.js";
@@ -249,12 +249,12 @@ describe("exportación con categorías", () => {
   });
 });
 
-describe("importados actuales reconocen la categoría del libro", () => {
+describe("movimientos importados reconocen y crean categorías del libro", () => {
   const csv = "Fecha,Descripción,Categoría,Coste,Moneda,Don Quijote,Sancho Panza\n"
     + "2026-01-03,Posada,restaurantes,80000.00,COP,40000.00,-40000.00\n"
     + "2026-01-05,Forraje,Categoría Que No Existe,30000.00,COP,-15000.00,15000.00\n";
 
-  it("por nombre normalizado adopta grupo e ícono; sin coincidencia queda como texto", async () => {
+  it("por nombre normalizado adopta la categoría, grupo e ícono; la que no existe se crea al publicar", async () => {
     const owner = await ensureLocalUser(env.DB, "cv-import-owner@example.test");
     const member = await ensureLocalUser(env.DB, "cv-import-member@example.test");
     const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "cv-import" });
@@ -262,15 +262,14 @@ describe("importados actuales reconocen la categoría del libro", () => {
     await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
     const people = (await readLedger(env.DB, { spaceId: space.id, userId: owner.id })).participants;
     const preview = await createImportPreview(env.DB, { spaceId: space.id, userId: owner.id, fileName: "s.csv", csvText: csv });
-    await reviewImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: preview.previewId, mapping: [people.find(p => p.linkedUserId === owner.id).id, people.find(p => p.linkedUserId === member.id).id], decisions: [] });
-    await commitImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: preview.previewId, acknowledgeDifference: true });
+    await reviewImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: preview.previewId, mapping: [people.find(p => p.linkedUserId === owner.id).id, people.find(p => p.linkedUserId === member.id).id] });
+    const batchId = await confirmImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: preview.previewId, acknowledgeDifference: true });
+    await loadImportChunk(env.DB, { spaceId: space.id, userId: owner.id, batchId });
     const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
     const posada = data.entries.find(row => row.description === "Posada");
     const forraje = data.entries.find(row => row.description === "Forraje");
     expect(posada.categoryInfo).toMatchObject({ name: "Restaurantes", group: "Comidas y bebidas", icon: "food" });
-    expect(posada.category).toBe("restaurantes");
-    expect(forraje.categoryInfo).toBeNull();
-    expect(forraje.category).toBe("Categoría Que No Existe");
-    expect((await readCategories(env.DB, data.ledger.id))).toHaveLength(data.categories.length);
+    expect(forraje.categoryInfo).toMatchObject({ name: "Categoría Que No Existe", group: "Importadas de Splitwise" });
+    expect(data.categories.filter(category => category.name === "Categoría Que No Existe")).toHaveLength(1);
   });
 });

@@ -19,8 +19,9 @@ import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation, resolveSpace } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
-import { buildImportPlan, cancelImportPreview, commitImportPreview, createImportPreview, readImportBatch, readImportPreview, reviewImportPreview } from "./splitwise-import.js";
-import { renderImportBatch, renderImportPreview, renderImportReview, renderImportUpload } from "./splitwise-ui.js";
+import { cancelImportBatch, cancelImportPreview, confirmImportPreview, createImportPreview, loadImportChunk, readImportBatch, readImportPlan, readImportPreview, readImportProgress, readPreviewSummary, reviewImportPreview } from "./splitwise-import.js";
+import { renderImportBatch, renderImportPreview, renderImportProgress, renderImportReview, renderImportUpload } from "./splitwise-ui.js";
+import { IMPORT_PROGRESS_JS } from "./import-client.js";
 
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
@@ -480,7 +481,8 @@ app.get("/spaces/:spaceId/ledger/import/previews/:previewId", async (c) => {
   try {
     const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-    return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, participants: data.participants.filter(person => person.active) })));
+    const summary = await readPreviewSummary(c.env.DB, preview.id, preview.meta, { page: Number.parseInt(c.req.query("pagina") ?? "1", 10) || 1 });
+    return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, summary, ledger: data.ledger, participants: data.participants.filter(person => person.active) })));
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -489,10 +491,17 @@ app.post("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) 
   try {
     const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
     const form = await c.req.formData();
-    const mapping = preview.parsed.participantNames.map((_, index) => form.get(`mapping_${index}`));
-    const decisions = preview.parsed.incidents.map((_, index) => form.get(`decision_${index}`));
-    await reviewImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), mapping, decisions });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/previews/${encodeURIComponent(c.req.param("previewId"))}/review`, 303);
+    const mapping = preview.meta.participantNames.map((_, index) => form.get(`mapping_${index}`));
+    const decisions = {};
+    for (const [key, value] of form.entries()) if (key.startsWith("decision_")) decisions[key.slice("decision_".length)] = value;
+    const base = { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") };
+    // Siempre se guarda lo de esta página primero, así una página con faltantes no pierde lo ya decidido.
+    await reviewImportPreview(c.env.DB, { ...base, mapping, decisions, partial: true });
+    const action = String(form.get("accion") ?? "revisar");
+    const root = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/previews/${encodeURIComponent(c.req.param("previewId"))}`;
+    if (action.startsWith("pagina:")) return c.redirect(`${root}?pagina=${Number.parseInt(action.slice(7), 10) || 1}`, 303);
+    await reviewImportPreview(c.env.DB, { ...base, mapping });
+    return c.redirect(`${root}/review`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -500,9 +509,7 @@ app.get("/spaces/:spaceId/ledger/import/previews/:previewId/review", async (c) =
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   try {
-    const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
-    if (!preview.review) throw new LedgerError("Revisá el archivo antes de confirmar.");
-    const plan = buildImportPlan(preview.parsed, preview.review, preview.ledger.default_currency);
+    const { preview, plan } = await readImportPlan(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
     return c.html(page("Confirmar Splitwise", renderImportReview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, plan, participants: data.participants })));
   } catch (error) { return ledgerFailure(c, error); }
@@ -521,7 +528,7 @@ app.post("/spaces/:spaceId/ledger/import/previews/:previewId/confirm", async (c)
   try {
     await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id);
     const form = await c.req.formData();
-    const batchId = await commitImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), acknowledgeDifference: form.get("acknowledgeDifference") === "yes" });
+    const batchId = await confirmImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId"), acknowledgeDifference: form.get("acknowledgeDifference") === "yes" });
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(batchId)}`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
@@ -530,8 +537,32 @@ app.get("/spaces/:spaceId/ledger/import/batches/:batchId", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   try {
-    const batch = await readImportBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
-    return c.html(page("Importación Splitwise", renderImportBatch({ spaceId: c.req.param("spaceId"), batch })));
+    const args = { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") };
+    const ledger = await getLedgerAccess(c.env.DB, args.spaceId, args.userId);
+    if (ledger.role === "owner") {
+      const progress = await readImportProgress(c.env.DB, args);
+      if (progress.status === "pending") return c.html(page("Importando Splitwise", renderImportProgress({ spaceId: args.spaceId, csrf: await csrfInput(c, user), progress })));
+    }
+    const batch = await readImportBatch(c.env.DB, args);
+    return c.html(page("Importación Splitwise", renderImportBatch({ spaceId: args.spaceId, batch })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+// Una tanda por petición: con JavaScript la pantalla las encadena; sin él, cada clic en «Continuar» carga una.
+app.post("/spaces/:spaceId/ledger/import/batches/:batchId/load", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const progress = await loadImportChunk(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
+    if (c.req.header("Accept")?.includes("application/json")) return c.json(progress);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(c.req.param("batchId"))}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/import/batches/:batchId/cancel", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    await cancelImportBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=importacion-cancelada`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -579,7 +610,7 @@ app.get("/spaces/:spaceId/ledger/entries/:entryId", async (c) => {
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
     const entry = data.entries.find(row => row.id === c.req.param("entryId"));
     if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
-    const revisions = entry.imported ? { results: [] } : await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
+    const revisions = await c.env.DB.prepare("SELECT r.revision, r.action, r.created_at, r.snapshot_json, u.display_name AS actor_name FROM entry_revisions r JOIN users u ON u.id = r.actor_user_id WHERE r.ledger_id = ? AND r.entry_id = ? ORDER BY r.revision").bind(data.ledger.id, entry.id).all();
     return c.html(page(entry.description, noticeFor(c.req.query("aviso")) + renderEntryDetail(entry, data, { spaceId: c.req.param("spaceId"), userId: user.user_id, revisions: revisions.results })));
   } catch (error) { return ledgerFailure(c, error); }
 });
@@ -770,6 +801,7 @@ app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; ch
 
 app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/split.js", (c) => c.body(SPLIT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+app.get("/import-progress.js", (c) => c.body(IMPORT_PROGRESS_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/text.js", (c) => c.body(TEXT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
 app.get("/", async (c) => {
