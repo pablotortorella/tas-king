@@ -1,5 +1,7 @@
 # HomeSuite — visión de producto y plataforma
 
+**Reglas de trabajo y calidad:** [base común de HomeSuite](homesuite/README.md). Este documento describe visión y dirección; el estado implementado y desplegado se registra en STATUS.
+
 **Estado:** dirección acordada; dominio base activo y landing implementada localmente
 
 **Fecha:** 2026-09-17

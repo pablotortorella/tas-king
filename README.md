@@ -1,8 +1,10 @@
 # FUN TasKing! 👑
 
+**Documentación común:** empezar por la [base de HomeSuite](docs/homesuite/README.md). Este README conserva el setup de TasKing; las políticas compartidas se mantienen en los documentos madre.
+
 Tablero Kanban minimalista **multiusuario** sobre **Cloudflare**: Workers + Hono para la
-API, **D1** (SQLite) para los datos y **R2** para los archivos. El frontend es un único
-`public/index.html` sin build. Cada persona entra con su cuenta de Google (OAuth directo
+API, **D1** (SQLite) para los datos y **R2** para los archivos. El frontend usa
+`public/index.html`, CSS y módulos ES en `public/js/`, sin build. Cada persona entra con su cuenta de Google (OAuth directo
 en el Worker), tiene su tablero personal y puede crear tableros compartidos.
 
 ## Evolución hacia HomeSuite
@@ -14,8 +16,8 @@ mejor experiencia de listas de compras, reutilizando identidad e infraestructura
 mezclar sus dominios.
 
 La primera pieza ya está publicada: [homesuite.info](https://homesuite.info/) sirve la
-landing pública desde un Worker separado. La suite autenticada y las aplicaciones
-de Cuentas Claras y Compras siguen en planificación:
+landing pública desde un Worker separado. Para el avance de la app autenticada,
+Cuentas Claras y Compras consultar [STATUS](docs/STATUS.md); las fuentes de dirección son:
 
 - [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
 - [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)
@@ -24,7 +26,7 @@ de Cuentas Claras y Compras siguen en planificación:
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 22 (versión usada por la CI versionada)
 - Wrangler 4 (instalado como dependencia de desarrollo)
 - Cuenta de Cloudflare (para el deploy)
 - Proyecto OAuth de Google (para el login)
@@ -34,7 +36,7 @@ de Cuentas Claras y Compras siguen en planificación:
 `wrangler dev` emula D1 y R2 en tu máquina (no toca tu cuenta de Cloudflare):
 
 ```bash
-npm install
+npm ci
 npm run db:migrate:local     # aplica todas las migraciones en la D1 local
 npm run dev                  # → http://localhost:8787
 ```
@@ -48,7 +50,7 @@ D1/R2 emulados, y recorridos de navegador con Playwright:
 npm test                     # unitarios + API
 npx playwright install chromium  # solo la primera vez
 npm run test:e2e             # navegador + wrangler dev
-npm run test:all             # suite completa
+npm run test:all             # suite de TasKing; HomeSuite App tiene suites propias
 ```
 
 La cobertura, los criterios para agregar casos y el checklist manual complementario para IAs y
@@ -166,7 +168,10 @@ echo "usuario1@email.com,usuario2@email.com" | npx wrangler secret put ALLOWED_E
 wrangler.jsonc        # config de Workers, D1 y R2
 src/index.js          # Worker (Hono): API + OAuth + servido de /uploads
 migrations/           # esquema D1
-public/index.html     # frontend
+public/index.html     # markup del frontend
+public/js/            # módulos ES de TasKing
+docs/homesuite/       # documentos madre de la suite
+docs/productos/       # particularidades por producto
 test/                 # tests unitarios y de API (Vitest + Workers)
 e2e/                  # recorridos críticos de navegador (Playwright)
 TESTING.md             # estrategia automatizada y manual
@@ -179,7 +184,7 @@ TESTING.md             # estrategia automatizada y manual
 - **Tarjetas**: título, detalles, fecha límite, comentarios, adjuntos y **responsable**
   (asignación a un miembro, con filtro por persona).
 - **Perfiles**: nombre y avatar (emoji + color) editables desde el header.
-- 5 columnas; drag & drop con orden exacto; mover el tablero arrastrando el fondo;
+- Columnas configurables; drag & drop con orden exacto; mover el tablero arrastrando el fondo;
   archivar/restaurar/eliminar; buscador; export CSV y Copia JSON; importar (agrega).
 - **Atajos de teclado**: `F` mis tareas · `U` urgentes · `N` nueva tarjeta.
 - **Panel de administración**:

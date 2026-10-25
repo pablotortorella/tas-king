@@ -1,6 +1,8 @@
 # HomeSuite Cuentas Claras — especificación funcional del MVP
 
-**Estado:** especificación de producto inicial actualizada; implementación no iniciada
+**Base heredada:** [documentos madre de HomeSuite](homesuite/README.md) y [ficha de Cuentas Claras](productos/CUENTAS-CLARAS.md). Este documento define el contrato funcional; el estado de implementación se consulta en STATUS, no se infiere de esta especificación.
+
+**Estado del documento:** especificación funcional; ver STATUS para avance por rama y entorno.
 
 **Fecha:** 2026-09-21
 

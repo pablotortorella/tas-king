@@ -1,11 +1,26 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-23
+**Última actualización**: 2026-10-24
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Base común de buenas prácticas — 2026-10-24
+
+**Alcance:** documentación común de la suite; sin cambios de aplicación,
+despliegue ni recursos remotos. La integración se comprueba en el historial Git.
+
+- [Documentos madre](homesuite/README.md): método, arquitectura, verificación,
+  operación y registro de aprendizajes. Cada producto referencia la base y
+  conserva sólo particularidades; excepciones requieren justificación y revisión.
+- Guías de entrada y enlaces históricos actualizados; eliminadas políticas
+  duplicadas, resets indiscriminados y recomendación de pegar secretos en el chat.
+- Matriz de controles distingue lo automatizado de lo manual o pendiente. La
+  revisión documental no demuestra cumplimiento productivo ni corrige código.
+- Validación: enlaces locales y comandos documentados contra scripts versionados;
+  revisión del diff. No se ejecutan suites de aplicación por este cambio documental.
 
 ## HomeSuite: corte para integración visual - 2026-10-23
 
