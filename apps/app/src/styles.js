@@ -171,6 +171,12 @@ const FORMS = `
 @media(max-width:360px){.type-tabs a{font-size:.85rem;gap:3px}.type-tabs a svg{display:none}}
 .button.big{min-height:60px;font-size:1.15rem;padding:0 32px;margin-top:18px}.first-run{text-align:center;padding:24px 8px}.first-run .button.big{display:flex;max-width:420px;margin-left:auto;margin-right:auto}.first-run-import{margin-top:18px;color:var(--ink-2)}
 .start-choice{display:grid;gap:8px;margin:12px 0}.start-choice .choice input:disabled+span{color:var(--ink-3)}
+.entry-row.selectable{display:flex;gap:4px;align-items:flex-start}.entry-row.selectable>a{flex:1;min-width:0}.select-box{display:grid;place-items:center;min-width:44px;min-height:44px;cursor:pointer}.select-box input{width:22px;height:22px;accent-color:var(--accent-bg)}
+.selection-bar{border:1.5px solid var(--line-strong);border-radius:16px;padding:12px 14px;margin:12px 0;background:var(--surface)}.selection-bar h3{margin:0 0 4px;font-size:1rem}.selection-controls{display:grid;gap:10px;align-items:end}.selection-controls select{width:100%;min-height:44px}.selection-controls .button{margin:0}.selection-count{margin:4px 0 0;min-height:1.2em;font-weight:700}
+.notice form.inline-form{display:inline;margin-left:12px}.notice .button{margin:0;min-height:44px}
+.classify-card{border:1.5px solid var(--line-strong);border-radius:20px;padding:18px;background:var(--surface);margin-top:12px}.classify-card h2{margin:0 0 4px;overflow-wrap:anywhere}.suggestion{border:1.5px dashed var(--accent-line);border-radius:14px;padding:12px;margin:12px 0}.suggestion p{margin:0 0 6px}.suggestion .button{margin:6px 0 0}
+.recents .chips{display:flex;gap:8px;flex-wrap:wrap}.chip-button kbd,.button kbd{font:inherit;font-size:.78rem;border:1px solid currentColor;border-radius:6px;padding:0 6px;margin-left:6px;opacity:.85}
+.all-categories{display:grid;gap:8px;margin-top:14px}.all-categories select{width:100%;min-height:44px}.all-categories .button{margin:0}.classify-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.classify-actions form{margin:0}.classify-actions .button{margin:0}
 `;
 
 export function appCss() {

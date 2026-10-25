@@ -1,6 +1,8 @@
 import { formatMoney } from "./finance.js";
 import { categoryChip, entryLabel, filterByCategory, inputAmount, searchLedger } from "./ledger-ui.js";
 import { categoryGroups } from "./categories.js";
+import { isPending } from "./suggest.js";
+import { selectionBar } from "./recategorize-ui.js";
 import { suggestTransfers } from "./settlement.js";
 import { avatar, escapeHtml, ICONS, shortDate } from "./ui-parts.js";
 
@@ -49,7 +51,7 @@ function balanceBlock(currency, data, ownId, spaceId) {
   return `<div class="currency-block"><div class="hero${own < 0 ? " neg" : ""}"><p class="hero-label">Tu saldo · ${escapeHtml(currency)}</p><p class="hero-amount money">${escapeHtml(signed(own, currency))}</p><p class="hero-note">${note}</p><a class="why" href="${path(spaceId)}/ledger/balance?moneda=${currency}">¿Por qué?</a></div><div class="group-card"><div class="head"><h3>Saldos del grupo · ${escapeHtml(currency)}</h3>${total === 0n ? '<span class="sum-zero">✓ Suman 0</span>' : ""}</div><ul class="balance-list">${rows}</ul></div>${suggestionCard(currency, data, amounts, spaceId)}</div>`;
 }
 
-function entryRow(entry, data, ownId, spaceId) {
+function entryRow(entry, data, ownId, spaceId, selectable = false) {
   const names = new Map(data.participants.map(person => [person.id, person.displayName]));
   const list = direction => entry.cashParties.filter(party => party.direction === direction).map(party => names.get(party.participantId) ?? "Participante").join(", ");
   const who = entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
@@ -66,7 +68,8 @@ function entryRow(entry, data, ownId, spaceId) {
   ].join("");
   const icon = voided ? ICONS.voided : ICONS[entry.type] ?? ICONS.expense;
   const iconClass = voided ? "" : ` ico-${entry.type}`;
-  return `<li class="entry-row${voided ? " entry-voided" : ""}"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span class="ico${iconClass}">${icon}</span><span class="entry-main"><strong class="entry-title">${escapeHtml(entry.description)}</strong><small>${escapeHtml(entryLabel(entry.type))} · ${escapeHtml(shortDate(entry.occurredAt))}${who ? ` · ${escapeHtml(who)}` : ""}</small>${chips ? `<span class="entry-chips">${chips}</span>` : ""}</span><span class="entry-side"><strong class="money">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</strong>${effectText}</span></a></li>`;
+  const box = selectable && !voided && entry.type !== "transfer" ? `<label class="select-box"><input type="checkbox" name="ids" value="${escapeHtml(entry.id)}"><span class="sr-only">Seleccionar ${escapeHtml(entry.description)}</span></label>` : "";
+  return `<li class="entry-row${voided ? " entry-voided" : ""}${box ? " selectable" : ""}">${box}<a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span class="ico${iconClass}">${icon}</span><span class="entry-main"><strong class="entry-title">${escapeHtml(entry.description)}</strong><small>${escapeHtml(entryLabel(entry.type))} · ${escapeHtml(shortDate(entry.occurredAt))}${who ? ` · ${escapeHtml(who)}` : ""}</small>${chips ? `<span class="entry-chips">${chips}</span>` : ""}</span><span class="entry-side"><strong class="money">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</strong>${effectText}</span></a></li>`;
 }
 
 export const PAGE_SIZE = 40;
@@ -76,14 +79,15 @@ function categoryFilter(data, selected) {
   return `<label class="sr-only" for="ledger-category">Categoría</label><select id="ledger-category" name="categoria"><option value="">Todas las categorías</option><option value="none"${selected === "none" ? " selected" : ""}>Sin categoría</option>${groups}</select>`;
 }
 
-export function renderLedgerOverview(data, { spaceId, userId, query = "", category = "", below = "", limit = PAGE_SIZE }) {
+export function renderLedgerOverview(data, { spaceId, userId, query = "", category = "", below = "", limit = PAGE_SIZE, csrf = "" }) {
   const own = ownParticipant(data, userId);
   const currencies = [...new Set([data.ledger.default_currency, ...data.balances.map(row => row.currency)])];
   const results = filterByCategory(searchLedger(data.entries, data.participants, query), category);
   const filtering = Boolean(query || category);
   const voidedCount = data.entries.filter(entry => entry.status === "voided").length;
   const shown = results.slice(0, limit);
-  const rows = shown.map(entry => entryRow(entry, data, own?.id, spaceId)).join("");
+  const selecting = Boolean(csrf) && !data.ledger.archived_at && results.some(entry => entry.status === "active" && entry.type !== "transfer");
+  const rows = shown.map(entry => entryRow(entry, data, own?.id, spaceId, selecting)).join("");
   const rest = results.length - shown.length;
   const meta = filtering
     ? `${results.length} de ${plural(data.entries.length, "movimiento", "movimientos")}`
@@ -97,7 +101,7 @@ export function renderLedgerOverview(data, { spaceId, userId, query = "", catego
     ? "<p>No hay coincidencias.</p>"
     : data.ledger.archived_at ? '<div class="empty"><h3>Este grupo no tiene movimientos.</h3></div>' : first;
   const quick = data.ledger.archived_at ? "" : `<div class="quick-actions"><span class="lead">Agregar:</span><a href="${path(spaceId)}/ledger/new?type=expense">Gasto</a><a href="${path(spaceId)}/ledger/new?type=income">Ingreso</a><a href="${path(spaceId)}/ledger/new?type=transfer">Transferencia</a></div>`;
-  return `<div class="book-grid"><div class="panel side"><section id="saldos" aria-labelledby="saldos-title"><h2 id="saldos-title" class="sr-only">Saldos</h2>${currencies.map(currency => balanceBlock(currency, data, own?.id, spaceId)).join("")}${quick}</section></div><div class="panel"><section id="movimientos" class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/categories">Categorías</a><a href="${path(spaceId)}/ledger/export.json">Exportar JSON</a><a href="${path(spaceId)}/ledger/export.csv">Exportar CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form" role="search"><label class="sr-only" for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto" enterkeyhint="search"><button class="button secondary" type="submit">Buscar</button>${categoryFilter(data, category)}${filtering ? `<a class="clear" href="${path(spaceId)}">Quitar ${query && category ? "búsqueda y filtro" : category ? "filtro" : "búsqueda"}</a>` : ""}</form>${data.entries.length ? `<p class="list-meta" aria-live="polite">${meta}${shownNote} · propios e importados</p>` : ""}${rows ? `<ul class="entry-list">${rows}</ul>${more}` : empty}</section></div>${below ? `<div class="book-wide">${below}</div>` : ""}</div>`;
+  return `<div class="book-grid"><div class="panel side"><section id="saldos" aria-labelledby="saldos-title"><h2 id="saldos-title" class="sr-only">Saldos</h2>${currencies.map(currency => balanceBlock(currency, data, own?.id, spaceId)).join("")}${quick}</section></div><div class="panel"><section id="movimientos" class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/categories">Categorías</a>${!data.ledger.archived_at && data.entries.filter(isPending).length ? `<a href="${path(spaceId)}/ledger/classify">Clasificar rápido · ${data.entries.filter(isPending).length}</a>` : ""}<a href="${path(spaceId)}/ledger/export.json">Exportar JSON</a><a href="${path(spaceId)}/ledger/export.csv">Exportar CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form" role="search"><label class="sr-only" for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto" enterkeyhint="search"><button class="button secondary" type="submit">Buscar</button>${categoryFilter(data, category)}${filtering ? `<a class="clear" href="${path(spaceId)}">Quitar ${query && category ? "búsqueda y filtro" : category ? "filtro" : "búsqueda"}</a>` : ""}</form>${data.entries.length ? `<p class="list-meta" aria-live="polite">${meta}${shownNote} · propios e importados</p>` : ""}${rows ? (selecting ? `<form method="post" action="${path(spaceId)}/ledger/recategorize/preview" class="selection-form">${selectionBar({ spaceId, data, query, category, total: results.length, csrf })}<ul class="entry-list">${rows}</ul></form>${more}` : `<ul class="entry-list">${rows}</ul>${more}`) : empty}</section></div>${below ? `<div class="book-wide">${below}</div>` : ""}</div>`;
 }
 
 export function renderPeople({ data, space, members, invitations, csrf, owner, userId }) {

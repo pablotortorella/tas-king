@@ -9,6 +9,10 @@ import { renderBalanceExplanation } from "./balance-ui.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { LEDGER_CLIENT_JS } from "./client.js";
 import { renderCategories } from "./categories-ui.js";
+import { applyRecategorization, classifyOne, isPending, previewRecategorization, readRecategorizationBatch, undoRecategorization } from "./recategorize.js";
+import { recategorizationNotice, renderClassify, renderRecategorizePreview } from "./recategorize-ui.js";
+import { CLASSIFY_JS } from "./classify-client.js";
+import { suggestCategory } from "./suggest.js";
 import { createCategory, mergeCategory, setCategoryArchived, updateCategory } from "./categories.js";
 import { SPLIT_MODULE_SOURCE } from "./split.js";
 import { TEXT_MODULE_SOURCE } from "./text.js";
@@ -428,6 +432,17 @@ app.post("/spaces", async (c) => {
   }
 });
 
+// Aviso con el botón «Deshacer» después de una recategorización o de deshacerla; el parámetro nunca se muestra tal cual.
+async function recategorizationNoticeFor(c, user, space, csrf) {
+  const aviso = c.req.query("aviso");
+  const lote = c.req.query("lote");
+  if (!["recategorizado", "deshecho"].includes(aviso) || typeof lote !== "string" || !/^recat_[A-Za-z0-9_-]{8,200}$/u.test(lote)) return "";
+  try {
+    const batch = await readRecategorizationBatch(c.env.DB, { spaceId: space.id, userId: user.user_id, batchId: lote });
+    return recategorizationNotice({ spaceId: space.slug, csrf, batch });
+  } catch { return ""; }
+}
+
 app.get("/spaces/:spaceId", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
@@ -441,7 +456,8 @@ app.get("/spaces/:spaceId", async (c) => {
     readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
   ]);
   const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
-  const content = `${noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const batchNotice = await recategorizationNoticeFor(c, user, space, csrf);
+  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
   return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
 });
 
@@ -693,6 +709,85 @@ for (const [suffix, action, notice, needsOwner] of categoryActions) {
   });
 }
 
+// Recategorización: vista previa (nada se escribe), confirmación, deshacer y «clasificar rápido».
+function criteriaFrom(form) {
+  return form.get("all") === "1"
+    ? { all: true, query: String(form.get("query") ?? ""), category: String(form.get("categoria") ?? "") }
+    : { ids: form.getAll("ids").map(String).slice(0, 2000) };
+}
+
+app.post("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const criteria = criteriaFrom(form);
+    const preview = await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId: String(form.get("categoryId") ?? "") });
+    return c.html(page("Cambiar categoría", renderRecategorizePreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, criteria, key: crypto.randomUUID() })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/recategorize", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const batch = await applyRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria: criteriaFrom(form), categoryId: String(form.get("categoryId") ?? ""), expectedRevision: form.get("expectedRevision"), key: String(form.get("key") ?? "") });
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=recategorizado&lote=${encodeURIComponent(batch.id)}#movimientos`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/recategorize/:batchId/undo", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    const undone = await undoRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: c.req.param("batchId") });
+    const root = `/spaces/${encodeURIComponent(c.req.param("spaceId"))}`;
+    if (form.get("volver") === "classify") {
+      const skipped = String(form.get("saltar") ?? "");
+      return c.redirect(`${root}/ledger/classify${skipped ? `?saltar=${encodeURIComponent(skipped)}` : ""}`, 303);
+    }
+    return c.redirect(`${root}?aviso=deshecho&lote=${encodeURIComponent(undone.id)}#movimientos`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+function skippedIds(value) {
+  return String(value ?? "").split(",").map(item => item.trim()).filter(item => /^[A-Za-z0-9_-]{8,120}$/u.test(item)).slice(0, 200);
+}
+
+app.get("/spaces/:spaceId/ledger/classify", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+    const skipped = skippedIds(c.req.query("saltar"));
+    const own = entry => data.ledger.role === "owner" || entry.createdByUserId === user.user_id;
+    const pendingEntries = data.entries.filter(entry => isPending(entry) && own(entry));
+    const fresh = pendingEntries.filter(entry => !skipped.includes(entry.id));
+    const later = skipped.map(id => pendingEntries.find(entry => entry.id === id)).filter(Boolean);
+    const current = [...fresh, ...later][0] ?? null;
+    const categorized = data.entries.filter(entry => entry.status === "active" && entry.categoryInfo && !isPending(entry));
+    const recent = (await c.env.DB.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY created_at DESC, id DESC LIMIT 40").bind(data.ledger.id, user.user_id).all()).results.map(row => row.category_id);
+    const usage = new Map();
+    for (const entry of categorized) usage.set(entry.categoryInfo.id, (usage.get(entry.categoryInfo.id) ?? 0) + 1);
+    const ranked = [...new Set([...recent, ...[...usage].sort((a, b) => b[1] - a[1]).map(([id]) => id)])];
+    const active = new Map(data.categories.filter(category => category.status === "active").map(category => [category.id, category]));
+    const recents = ranked.map(id => active.get(id)).filter(Boolean).slice(0, 5);
+    const lastRow = await c.env.DB.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 1").bind(data.ledger.id, user.user_id).first();
+    const last = lastRow ? await readRecategorizationBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: lastRow.id }) : null;
+    return c.html(page("Clasificar rápido", renderClassify({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), current, names: new Map(data.participants.map(person => [person.id, person.displayName])), remaining: pendingEntries.length, suggestion: current ? suggestCategory(current, categorized) : null, recents, categories: data.categories, skipped, last, key: crypto.randomUUID() })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.post("/spaces/:spaceId/ledger/classify", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const form = await c.req.formData();
+    await classifyOne(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, entryId: String(form.get("entryId") ?? ""), categoryId: String(form.get("categoryId") ?? ""), key: String(form.get("key") ?? "") });
+    const skipped = skippedIds(form.get("saltar")).join(",");
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/classify${skipped ? `?saltar=${encodeURIComponent(skipped)}` : ""}`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
 app.get("/spaces/:spaceId/ledger/export.json", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
@@ -802,6 +897,7 @@ app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; ch
 
 app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/split.js", (c) => c.body(SPLIT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+app.get("/classify.js", (c) => c.body(CLASSIFY_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/import-progress.js", (c) => c.body(IMPORT_PROGRESS_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/text.js", (c) => c.body(TEXT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 

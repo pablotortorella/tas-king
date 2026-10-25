@@ -242,6 +242,11 @@ function provenance(entry, spaceId) {
   return `<p class="entry-origin"><span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span> <a href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver el lote</a></p>${inferred}`;
 }
 
+// Las revisiones que vienen de una recategorización en lote lo indican en el historial.
+function batchMark(row) {
+  try { return JSON.parse(row.snapshot_json).recategorizationBatch ? " · recategorización en lote" : ""; } catch { return ""; }
+}
+
 export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const names = new Map(data.participants.map(p => [p.id, p.displayName]));
   const back = `<a class="back-link" href="${path(spaceId)}">← Volver al libro</a>`;
@@ -249,7 +254,7 @@ export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const creator = entry.createdByUserId === userId ? "vos" : entry.creatorName;
   const list = direction => entry.cashParties.filter(p => p.direction === direction).map(p => names.get(p.participantId) ?? "Participante").join(", ");
   const who = entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
-  const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
+  const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))}${batchMark(row)} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
   const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
   return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, spaceId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
