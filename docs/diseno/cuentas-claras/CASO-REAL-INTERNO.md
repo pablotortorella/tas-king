@@ -87,6 +87,22 @@ Mediciones con las 2.485 filas ya parseadas, en Node y sin red:
 - La vista previa guarda el CSV parseado completo en una sola fila de D1: 650 KB para estas 2.485 filas, unos 262 bytes por fila. Si D1 limita las filas a 2 MB (**no verificado**), el techo práctico es de unas 7.600 filas, mucho antes del tope de 2 MiB del archivo (unas 28.500 filas con este formato). Un archivo mayor fallaría sin un mensaje claro.
 - No hay incidentes en el archivo (salvo el resumen), así que el flujo de decisiones por fila no se ejercita con este caso.
 
+### Medición de la carga por etapas (2026-10-25)
+
+Con un archivo sintético de la misma forma (2.485 filas, dos personas, resumen con fecha en la primera celda), ejecutado en el entorno de pruebas de integración con **D1 local** (SQLite en el mismo proceso, sin red). Se corre con `npm run test:homesuite-app:integration -- import-scale`.
+
+| Dato | Valor |
+|---|---|
+| Tanda | 100 filas (25 tandas) |
+| Sentencias por tanda | 5 (movimientos, revisiones, pagadores, reparto y filas de origen, cada una sobre un JSON) |
+| Sentencias de la publicación | 6, en un único lote |
+| Vista previa (2.485 filas) | 27 ms |
+| Mediana por tanda / máxima | 6 ms / 9 ms |
+| Carga completa | 165 ms |
+| Lectura del libro con 2.485 movimientos publicados | 33 ms |
+
+Lo que **no** dicen estos números: son de un SQLite local, así que no incluyen la latencia de red de D1 remoto ni sus límites (sentencias por lote, tamaño de sentencia, subconsultas por petición, CPU por petición), que siguen **sin verificar**. Lo que sí fija la medición es el orden de magnitud de las llamadas: unas 5 por tanda y unas 125 en total para el archivo completo, contra las 7.456 sentencias en unos 125 lotes del diseño anterior. Antes de importar datos reales hay que repetir esta medición contra D1 en staging.
+
 ## 8. Qué informa esto
 
 | Decisión | Qué dice el caso real | Estado |

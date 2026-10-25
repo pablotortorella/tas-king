@@ -64,14 +64,24 @@ INSERT OR IGNORE INTO entry_revisions (ledger_id, entry_id, revision, actor_user
 -- Lote importado de Splitwise (sintético) con dos filas.
 INSERT OR IGNORE INTO splitwise_import_batches (id, ledger_id, actor_user_id, source_hash, file_name, status, imported_count, committed_at) VALUES
   ('batch_demo_casa', 'ledger_demo_casa', 'user_demo_pablo', '0000000000000000000000000000000000000000000000000000000000demo01', 'splitwise-casa-demo.csv', 'committed', 2, '2026-10-16 08:00:00');
-INSERT OR IGNORE INTO splitwise_import_entries (ledger_id, id, batch_id, source_row_number, occurred_at, description, category, currency_code, total_minor) VALUES
-  ('ledger_demo_casa', 'import_demo_internet', 'batch_demo_casa', 33, '2026-10-15', 'Internet Tigo', 'Servicios', 'COP', 9600000),
-  ('ledger_demo_casa', 'import_demo_gas', 'batch_demo_casa', 34, '2026-10-12', 'Gas natural', 'Servicios', 'COP', 6000000);
-INSERT OR IGNORE INTO splitwise_import_effects (ledger_id, entry_id, participant_id, amount_minor) VALUES
-  ('ledger_demo_casa', 'import_demo_internet', 'participant_demo_ana', 6400000),
-  ('ledger_demo_casa', 'import_demo_internet', 'participant_demo_pablo', -3200000),
-  ('ledger_demo_casa', 'import_demo_internet', 'participant_demo_laura', -3200000),
-  ('ledger_demo_casa', 'import_demo_gas', 'participant_demo_laura', 4500000),
-  ('ledger_demo_casa', 'import_demo_gas', 'participant_demo_pablo', -1500000),
-  ('ledger_demo_casa', 'import_demo_gas', 'participant_demo_ana', -1500000),
-  ('ledger_demo_casa', 'import_demo_gas', 'participant_demo_mateo', -1500000);
+-- Los importados son gastos normales: pagadores, reparto, revisión inicial y la fila cruda de origen (sintéticos).
+INSERT OR IGNORE INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, occurred_at, created_by_user_id, import_batch_id, source_row_number, inferred, created_at, updated_at) VALUES
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'expense', 'COP', 9600000, 'Internet Tigo', '2026-10-15', 'user_demo_pablo', 'batch_demo_casa', 33, 1, '2026-10-16 08:00:00', '2026-10-16 08:00:00'),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'expense', 'COP', 6000000, 'Gas natural', '2026-10-12', 'user_demo_pablo', 'batch_demo_casa', 34, 1, '2026-10-16 08:00:00', '2026-10-16 08:00:00');
+INSERT OR IGNORE INTO entry_cash_parties (ledger_id, entry_id, participant_id, direction, amount_minor) VALUES
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'participant_demo_ana', 'out', 9600000),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'participant_demo_laura', 'out', 6000000);
+INSERT OR IGNORE INTO entry_allocations (ledger_id, entry_id, participant_id, amount_minor) VALUES
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'participant_demo_ana', 3200000),
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'participant_demo_pablo', 3200000),
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'participant_demo_laura', 3200000),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'participant_demo_laura', 1500000),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'participant_demo_ana', 1500000),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'participant_demo_pablo', 1500000),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'participant_demo_mateo', 1500000);
+INSERT OR IGNORE INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json, created_at) VALUES
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 1, 'user_demo_pablo', 'created', '{"description":"Internet Tigo","totalMinor":9600000,"currency":"COP","status":"active"}', '2026-10-16 08:00:00'),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 1, 'user_demo_pablo', 'created', '{"description":"Gas natural","totalMinor":6000000,"currency":"COP","status":"active"}', '2026-10-16 08:00:00');
+INSERT OR IGNORE INTO import_source_rows (ledger_id, entry_id, batch_id, source_row_number, raw_json) VALUES
+  ('ledger_demo_casa', 'entry_imp_demo_internet', 'batch_demo_casa', 33, '{"line":33,"description":"Internet Tigo"}'),
+  ('ledger_demo_casa', 'entry_imp_demo_gas', 'batch_demo_casa', 34, '{"line":34,"description":"Gas natural"}');

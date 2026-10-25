@@ -413,7 +413,7 @@ app.use("/spaces/:spaceId/*", canonicalSpacePath);
 app.get("/spaces/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el espacio y su libro en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear espacio", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el espacio y su libro en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear espacio</button></form>`));
 });
 
 app.post("/spaces", async (c) => {
@@ -421,7 +421,8 @@ app.post("/spaces", async (c) => {
   try {
     const body = await c.req.parseBody();
     const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
-    return c.redirect(`/spaces/${encodeURIComponent(space.slug)}`, 303);
+    const target = body.start === "splitwise" ? "/ledger/import" : "";
+    return c.redirect(`/spaces/${encodeURIComponent(space.slug)}${target}`, 303);
   } catch {
     return c.html(formError("No pudimos crear el espacio", "Elegí un nombre de hasta 120 caracteres."), 400);
   }

@@ -169,6 +169,8 @@ const FORMS = `
 .cat-row details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--accent-text)}
 .cat-row input,.cat-row select{width:100%;min-height:44px}
 @media(max-width:360px){.type-tabs a{font-size:.85rem;gap:3px}.type-tabs a svg{display:none}}
+.button.big{min-height:60px;font-size:1.15rem;padding:0 32px;margin-top:18px}.first-run{text-align:center;padding:24px 8px}.first-run .button.big{display:flex;max-width:420px;margin-left:auto;margin-right:auto}.first-run-import{margin-top:18px;color:var(--ink-2)}
+.start-choice{display:grid;gap:8px;margin:12px 0}.start-choice .choice input:disabled+span{color:var(--ink-3)}
 `;
 
 export function appCss() {

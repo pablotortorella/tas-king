@@ -75,8 +75,8 @@ test("previsualiza, resuelve incidentes e importa Splitwise en móvil", async ({
   await page.getByRole("button", { name: "Previsualizar" }).click();
   await expect(page.getByText("1 movimientos válidos · 2 incidentes · 1 filas de resumen.")).toBeVisible();
   await page.locator('[name="mapping_0"]').selectOption({ label: ownerName });
-  await page.locator('[name="decision_0"]').selectOption("assume_default");
-  await page.locator('[name="decision_1"]').selectOption("exclude");
+  await page.locator('[name="decision_3"]').selectOption("assume_default");
+  await page.locator('[name="decision_4"]').selectOption("exclude");
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
   await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
   await expect(page.getByText("Fila 3: Moneda COP elegida explícitamente")).toBeVisible();

@@ -70,16 +70,32 @@ describe("libro: vista general", () => {
     expect(filtered).toContain("Quitar búsqueda");
   });
 
-  it("muestra un estado vacío con la acción disponible según el rol", () => {
+  it("el libro vacío muestra el botón destacado y, para el titular, la opción de importar", () => {
     const owner = renderLedgerOverview(data([]), { spaceId: "casa", userId: "u1" });
     expect(owner).toContain("Todavía no hay movimientos.");
-    expect(owner).toContain("Traer mis movimientos de Splitwise");
-    expect(owner).toContain("Empezar en cero");
-    expect(owner).toContain("Todavía no disponible");
-    expect(owner.match(/Importar Splitwise/gu) ?? []).toHaveLength(0);
+    expect(owner).toMatch(/<a class="button big" href="\/spaces\/casa\/ledger\/new">Agregá tu primer movimiento<\/a>/u);
+    expect(owner).toContain('href="/spaces/casa/ledger/import"');
     const member = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "member" } }, { spaceId: "casa", userId: "u1" });
-    expect(member).not.toContain("Traer mis movimientos de Splitwise");
-    expect(member).toContain("Empezar en cero");
+    expect(member).toContain("Agregá tu primer movimiento");
+    expect(member).not.toContain("/ledger/import");
+  });
+
+  it("con movimientos ya no muestra las ayudas de inicio", () => {
+    const html = renderLedgerOverview(data([entry()]), { spaceId: "casa", userId: "u1" });
+    expect(html).not.toContain("Agregá tu primer movimiento");
+    expect(html).not.toContain("Traé tu historial");
+  });
+
+  it("un libro archivado y vacío no ofrece empezar", () => {
+    const archived = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "owner", archived_at: "2026-01-01" } }, { spaceId: "casa", userId: "u1" });
+    expect(archived).toContain("Este grupo no tiene movimientos.");
+    expect(archived).not.toContain("Agregá tu primer movimiento");
+  });
+
+  it("una búsqueda sin resultados no muestra la guía de inicio", () => {
+    const html = renderLedgerOverview(data([entry()]), { spaceId: "casa", userId: "u1", query: "zzz" });
+    expect(html).toContain("No hay coincidencias.");
+    expect(html).not.toContain("Agregá tu primer movimiento");
   });
 });
 

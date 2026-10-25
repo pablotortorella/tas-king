@@ -35,7 +35,7 @@ export function renderImportPreview({ spaceId, csrf, preview, participants, summ
 export function renderImportReview({ spaceId, csrf, preview, plan, participants }) {
   const base = basePath(spaceId);
   const people = new Map(participants.map(person => [person.id, person.displayName]));
-  const mapping = preview.parsed.participantNames.map((name, index) => `<li>${escapeHtml(name)} → ${escapeHtml(preview.review.mapping[index] === "new" ? "Participante nuevo" : people.get(preview.review.mapping[index]) ?? "Desconocido")}</li>`).join("");
+  const mapping = preview.meta.participantNames.map((name, index) => `<li>${escapeHtml(name)} → ${escapeHtml(preview.review.mapping[index] === "new" ? "Participante nuevo" : people.get(preview.review.mapping[index]) ?? "Desconocido")}</li>`).join("");
   const balances = plan.totals.map(row => `<tr><td>${escapeHtml(row.sourceName)}</td><td>${escapeHtml(formatMoney(row.amountMinor, row.currency))}</td></tr>`).join("");
   const comparison = plan.reconciliation.map(row => `<tr><td>${escapeHtml(row.sourceName)}</td><td>${escapeHtml(row.currency)}</td><td>${escapeHtml(formatMoney(row.sourceMinor, row.currency))}</td><td>${escapeHtml(formatMoney(row.importedMinor, row.currency))}</td><td>${escapeHtml(formatMoney(row.differenceMinor, row.currency))}</td></tr>`).join("");
   const hasGap = plan.reconciliation.some(row => row.differenceMinor !== 0) || plan.warnings.length > 0;
