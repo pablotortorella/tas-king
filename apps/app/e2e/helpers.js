@@ -76,3 +76,9 @@ export async function emulateScheme(page, scheme) {
   if (page.url() === "about:blank") await page.goto("/healthz");
   await page.emulateMedia({ colorScheme: scheme });
 }
+
+// Una descripción por esquema de color: aplica la opción del contexto y la emulación que Firefox sí respeta.
+export function useScheme(test, scheme, viewport = null) {
+  test.use({ colorScheme: scheme, ...(viewport ? { viewport } : {}) });
+  test.beforeEach(({ page }) => emulateScheme(page, scheme));
+}

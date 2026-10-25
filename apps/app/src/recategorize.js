@@ -96,14 +96,16 @@ async function writeChanges(db, { ledger, userId, batchId, changes, categoryName
         snapshot: { ...previous, categoryId: change.categoryId, categoryName: name, status: "active", recategorizationBatch: batchId },
       };
     });
+    // Solo las revisiones llevan la instantánea completa; el UPDATE y los elementos del lote reciben únicamente lo que usan.
     const json = JSON.stringify(part);
+    const slim = JSON.stringify(part.map(({ id, next, previous }) => ({ id, next, previous })));
     // El UPDATE va agrupado por categoría de destino y se guarda con «existe nuestra revisión como la siguiente del
     // movimiento»: así busca por clave primaria en lugar de recorrer el JSON por cada fila del libro.
     const targets = [...new Set(part.map(item => item.categoryId))];
     await db.batch([
       db.prepare("INSERT OR IGNORE INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) SELECT ?, e.id, json_extract(j.value, '$.next'), ?, 'revised', json_extract(j.value, '$.snapshot') FROM json_each(?) j CROSS JOIN ledger_entries e ON e.ledger_id = ? AND e.id = json_extract(j.value, '$.id') AND e.current_revision = json_extract(j.value, '$.rev') AND e.status = 'active'").bind(ledger.id, userId, json, ledger.id),
-      ...targets.map(target => db.prepare("UPDATE ledger_entries SET category_id = ?, current_revision = current_revision + 1, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND status = 'active' AND id IN (SELECT json_extract(value, '$.id') FROM json_each(?)) AND EXISTS (SELECT 1 FROM entry_revisions r WHERE r.ledger_id = ledger_entries.ledger_id AND r.entry_id = ledger_entries.id AND r.revision = ledger_entries.current_revision + 1 AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?)").bind(target, ledger.id, JSON.stringify(part.filter(item => item.categoryId === target)), batchId)),
-      db.prepare("INSERT OR IGNORE INTO recategorization_items (ledger_id, batch_id, entry_id, revision, previous_category_id) SELECT ?, ?, json_extract(j.value, '$.id'), json_extract(j.value, '$.next'), json_extract(j.value, '$.previous') FROM json_each(?) j CROSS JOIN entry_revisions r ON r.ledger_id = ? AND r.entry_id = json_extract(j.value, '$.id') AND r.revision = json_extract(j.value, '$.next') AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?").bind(ledger.id, batchId, json, ledger.id, batchId),
+      ...targets.map(target => db.prepare("UPDATE ledger_entries SET category_id = ?, current_revision = current_revision + 1, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND status = 'active' AND id IN (SELECT json_extract(value, '$.id') FROM json_each(?)) AND EXISTS (SELECT 1 FROM entry_revisions r WHERE r.ledger_id = ledger_entries.ledger_id AND r.entry_id = ledger_entries.id AND r.revision = ledger_entries.current_revision + 1 AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?)").bind(target, ledger.id, JSON.stringify(part.filter(item => item.categoryId === target).map(({ id }) => ({ id }))), batchId)),
+      db.prepare("INSERT OR IGNORE INTO recategorization_items (ledger_id, batch_id, entry_id, revision, previous_category_id) SELECT ?, ?, json_extract(j.value, '$.id'), json_extract(j.value, '$.next'), json_extract(j.value, '$.previous') FROM json_each(?) j CROSS JOIN entry_revisions r ON r.ledger_id = ? AND r.entry_id = json_extract(j.value, '$.id') AND r.revision = json_extract(j.value, '$.next') AND json_extract(r.snapshot_json, '$.recategorizationBatch') = ?").bind(ledger.id, batchId, slim, ledger.id, batchId),
     ]);
   }
 }
@@ -128,6 +130,7 @@ function summarize(batch) {
 
 // Paso 2: aplica. La clave de la confirmación es el identificador del lote: repetirla (o enviarla en simultáneo) devuelve el
 // lote ya aplicado y, si se había cortado a la mitad, lo completa sin duplicar nada.
+// `hooks.beforeWrite` es un punto de enganche solo para pruebas (simula un corte o una edición concurrente justo antes de escribir).
 export async function applyRecategorization(db, { spaceId, userId, criteria, categoryId, expectedRevision = null, key, kind = "bulk", hooks = {} }) {
   if (typeof key !== "string" || !KEY_PATTERN.test(key)) throw new LedgerError("Recargá la pantalla y volvé a intentar.");
   const ledgerAccess = await getLedgerAccess(db, spaceId, userId);
@@ -177,7 +180,7 @@ export async function undoRecategorization(db, { spaceId, userId, batchId, key =
   if (ledger.role !== "owner" && batch.actor_user_id !== userId) throw new LedgerError("Sólo quien aplicó la operación o la persona titular puede deshacerla.", 403);
   if (batch.status !== "applied") throw new LedgerError("La operación todavía no terminó.", 409);
   if (batch.undone_at) throw new LedgerError("Esta operación ya se deshizo.", 409);
-  const undoId = `recat_undo_${batchId.replace(/^recat_/u, "").slice(0, 80)}`;
+  const undoId = `recat_undo_${batchId.replace(/^recat_/u, "")}`;
   const existingUndo = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, undoId).first();
   if (existingUndo?.status === "applied") return { ...summarize(existingUndo), kept: [] };
   const items = (await db.prepare("SELECT entry_id, revision, previous_category_id FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?").bind(ledger.id, batchId).all()).results;
@@ -189,7 +192,7 @@ export async function undoRecategorization(db, { spaceId, userId, batchId, key =
   for (const item of items) {
     const entry = byId.get(item.entry_id);
     if (!entry || entry.revision !== item.revision || entry.status !== "active") { kept.push({ id: item.entry_id, description: entry?.description ?? "Movimiento", reason: entry?.status === "voided" ? "se anuló después" : "se modificó después" }); continue; }
-    changes.push({ entry: { ...entry, categoryId: entry.categoryId }, categoryId: item.previous_category_id });
+    changes.push({ entry, categoryId: item.previous_category_id });
   }
   if (!existingUndo) {
     const inserted = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned, undo_of) VALUES (?, ?, ?, 'undo', NULL, ?, ?)").bind(ledger.id, undoId, userId, changes.length, batchId).run();

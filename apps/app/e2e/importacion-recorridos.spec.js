@@ -153,3 +153,24 @@ test("en 320 px la vista previa, la revisión y el progreso no desbordan y se le
   await expect(page.locator("[data-progress-error]")).toContainText("Podés reintentar", { timeout: 30_000 });
   await audit("progreso");
 });
+
+test("ante un límite de escrituras (429) la carga espera lo que indica el servidor y sigue sola", async ({ page }) => {
+  const { book } = await openBook(page, "rec-limite");
+  const { csv } = syntheticSplitwiseCsv({ rows: 150 });
+  await upload(page, book, csv);
+  await confirmFlow(page);
+  let blocked = 0;
+  await page.route("**/ledger/import/batches/*/load", async route => {
+    if (blocked < 2) {
+      blocked += 1;
+      await route.fulfill({ status: 429, headers: { "Retry-After": "1", "Content-Type": "application/json" }, body: JSON.stringify({ error: "Demasiadas solicitudes." }) });
+      return;
+    }
+    await route.continue();
+  });
+  await page.getByRole("button", { name: "Confirmar importación" }).click();
+  await expect(page.locator("[data-progress-text]")).toContainText("Pausa de 1 s");
+  await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 60_000 });
+  expect(blocked).toBe(2);
+  expect(await entryCount(page, book)).toBe(150);
+});

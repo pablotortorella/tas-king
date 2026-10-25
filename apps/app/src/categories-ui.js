@@ -1,9 +1,7 @@
 import { CATEGORY_ICON_KEYS, CATEGORY_ICON_LABELS, categoryIcon } from "./category-data.js";
 import { resolveCategory } from "./categories.js";
-import { escapeHtml } from "./ui-parts.js";
+import { escapeHtml, plural, spacePath as path } from "./ui-parts.js";
 
-function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 function iconSelect(selected) {
   return `<label>Ícono<select name="icon">${CATEGORY_ICON_KEYS.map(key => `<option value="${key}"${key === selected ? " selected" : ""}>${escapeHtml(CATEGORY_ICON_LABELS[key])}</option>`).join("")}</select></label>`;

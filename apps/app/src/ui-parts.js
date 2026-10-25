@@ -2,6 +2,9 @@
 
 import { DARK, LIGHT } from "./theme.js";
 
+export const spacePath = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
+export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
 export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
@@ -51,6 +54,7 @@ const NOTICES = Object.freeze({
   archivado: "Grupo archivado. Queda de sólo lectura y podés restaurarlo cuando quieras.",
   restaurado: "Grupo restaurado. Vuelve a aceptar movimientos.",
   "categoria-creada": "Categoría creada.",
+  "categoria-existente": "Esa categoría ya existía (con otro nombre escrito): no se creó una nueva.",
   "categoria-guardada": "Categoría guardada.",
   "categoria-archivada": "Categoría archivada. Ya no se ofrece para movimientos nuevos y los existentes la siguen mostrando.",
   "categoria-restaurada": "Categoría restaurada.",

@@ -1,9 +1,8 @@
 import { formatMoney } from "./finance.js";
 import { entryLabel } from "./ledger-ui.js";
 import { explainBalance } from "./settlement.js";
-import { escapeHtml, ICONS, shortDate } from "./ui-parts.js";
+import { escapeHtml, ICONS, shortDate, spacePath as path } from "./ui-parts.js";
 
-const path = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
 const signed = (amountMinor, currency) => `${amountMinor > 0 ? "+" : ""}${formatMoney(amountMinor, currency)}`;
 
 function story(entry, target, names, isOwn) {

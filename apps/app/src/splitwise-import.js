@@ -147,7 +147,6 @@ export async function readImportPreview(db, { spaceId, userId, previewId }) {
 
 // Totales por persona y las filas problemáticas de una página, sin cargar el archivo completo en la vista.
 export async function readPreviewSummary(db, previewId, meta, { page = 1 } = {}) {
-  const totals = (await db.prepare("SELECT json_extract(payload_json, '$.currency') AS currency, COUNT(*) AS rows FROM splitwise_import_rows WHERE owner_id = ? AND kind = 'movement' GROUP BY 1").bind(previewId).all()).results;
   const pages = Math.max(1, Math.ceil(meta.counts.incidents / INCIDENTS_PAGE_SIZE));
   const current = Math.min(Math.max(1, page), pages);
   const incidents = (await db.prepare("SELECT line, payload_json FROM splitwise_import_rows WHERE owner_id = ? AND kind = 'incident' ORDER BY line LIMIT ? OFFSET ?").bind(previewId, INCIDENTS_PAGE_SIZE, (current - 1) * INCIDENTS_PAGE_SIZE).all()).results.map(row => ({ line: row.line, ...JSON.parse(row.payload_json) }));
@@ -156,7 +155,7 @@ export async function readPreviewSummary(db, previewId, meta, { page = 1 } = {})
     const rows = (await db.prepare("SELECT json_extract(payload_json, '$.currency') AS currency, SUM(json_extract(payload_json, ?)) AS amount FROM splitwise_import_rows WHERE owner_id = ? AND kind = 'movement' GROUP BY 1 ORDER BY 1").bind(`$.amounts[${index}]`, previewId).all()).results;
     for (const row of rows) balances.push({ sourceName: name, currency: row.currency, amountMinor: row.amount });
   }
-  return { currencies: totals, incidents, balances, page: current, pages };
+  return { incidents, balances, page: current, pages };
 }
 
 async function validateMapping(db, ledgerId, names, mapping) {
@@ -281,7 +280,7 @@ export async function confirmImportPreview(db, { spaceId, userId, previewId, ack
   const fresh = newCategories(plan.rows, categories);
   const stored = { mapping: mappedIds, participantNames: preview.meta.participantNames, layout: preview.meta.layout, decisions: preview.review.decisions, defaultCurrency: preview.ledger.default_currency };
   const statements = [
-    db.prepare("INSERT INTO splitwise_import_batches (id, ledger_id, actor_user_id, source_hash, file_name, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, review_json, planned_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(batchId, ledgerId, userId, preview.sourceHash, preview.fileName, JSON.stringify([]), JSON.stringify({ rows: plan.reconciliation, warnings: plan.warnings }), JSON.stringify(plan.assumptions), JSON.stringify(plan.excluded), JSON.stringify(stored), plan.rows.length),
+    db.prepare("INSERT INTO splitwise_import_batches (id, ledger_id, actor_user_id, source_hash, file_name, reconciliation_json, assumptions_json, excluded_rows_json, review_json, planned_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(batchId, ledgerId, userId, preview.sourceHash, preview.fileName, JSON.stringify({ rows: plan.reconciliation, warnings: plan.warnings }), JSON.stringify(plan.assumptions), JSON.stringify(plan.excluded), JSON.stringify(stored), plan.rows.length),
     ...setup,
   ];
   if (fresh.length) {
@@ -430,5 +429,5 @@ export async function readImportBatch(db, { spaceId, userId, batchId }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);
   const row = await db.prepare("SELECT * FROM splitwise_import_batches WHERE id = ? AND ledger_id = ? AND status = 'committed'").bind(batchId, ledger.id).first();
   if (!row) throw new LedgerError("Lote no encontrado.", 404);
-  return { id: row.id, fileName: row.file_name, importedCount: row.imported_count, summaries: JSON.parse(row.source_summary_json), reconciliation: JSON.parse(row.reconciliation_json), assumptions: JSON.parse(row.assumptions_json), excluded: JSON.parse(row.excluded_rows_json), committedAt: row.committed_at };
+  return { id: row.id, fileName: row.file_name, importedCount: row.imported_count, reconciliation: JSON.parse(row.reconciliation_json), assumptions: JSON.parse(row.assumptions_json), excluded: JSON.parse(row.excluded_rows_json), committedAt: row.committed_at };
 }

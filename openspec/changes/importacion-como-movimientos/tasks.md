@@ -40,7 +40,7 @@
 ## 7. Datos anteriores, exportación y cierre
 
 - [ ] 7.1 Contar los lotes publicados del modelo anterior en desarrollo y staging, y convertirlos con `inferComponents` mediante un script de una sola vez cuando existan, verificando que los saldos por persona coinciden antes y después.
-- [ ] 7.2 Retirar `splitwise_import_entries` y `splitwise_import_effects` con una migración posterior a esa verificación, y verificar que no quedan referencias en el código ni en las pruebas.
+- [ ] 7.2 Retirar `splitwise_import_entries` y `splitwise_import_effects` en un release posterior a esa verificación (`apps/app/ops/retire-legacy-import-tables.sql`, con guarda), y verificar que no quedan referencias en el código ni en las pruebas.
 - [x] 7.3 Subir la versión del esquema de la exportación JSON e incluir la procedencia, la conciliación y las filas de origen, y verificar con pruebas de la exportación.
 - [x] 7.4 Medir con D1 local la carga de 2.485 filas por etapas (tiempo total y por tanda, sentencias por lote) y dejar los números registrados en `docs/diseno/cuentas-claras/CASO-REAL-INTERNO.md` sin datos personales.
 - [x] 7.5 Eliminar el borrador `importacion-splitwise-inicial` y verificar con `openspec validate importacion-como-movimientos --strict` y `openspec list`.

@@ -1,11 +1,36 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-24
+**Última actualización**: 2026-10-25
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Cuentas Claras: repartos, categorías, importación, recategorización y lista - 2026-10-25
+
+**Alcance:** cinco cambios OpenSpec implementados en ramas apiladas sobre la pila de diseño (PR #94 a #98), más el
+arreglo de Firefox (#100) y una revisión integral de código. **Nada desplegado**: ni staging ni producción.
+
+- **Repartos** (`repartos-del-libro`): cinco métodos con una sola regla (`split.js`) compartida por el servidor y la vista
+  previa; el método y lo ingresado se guardan en la revisión.
+- **Categorías** (`categorias-del-libro`): lista propia por libro, nombres normalizados, categoría en el movimiento,
+  gestión por la persona titular (renombrar, reagrupar, archivar, fusionar con alias), filtro y exportación.
+- **Importación** (`importacion-como-movimientos`): las filas de Splitwise son gastos normales con pagadores inferidos;
+  carga por tandas, reanudable y de publicación atómica; punto de partida del grupo. Las tareas 7.1 y 7.2 siguen abiertas:
+  la conversión de lotes del modelo anterior corre sola en el mantenimiento diario y el retiro de las tablas viejas
+  (`apps/app/ops/retire-legacy-import-tables.sql`) va en un release posterior, con la guarda que se detiene si queda algo.
+- **Recategorización** (`recategorizacion-masiva`): cambio en lote con auditoría y deshacer, y «Clasificar rápido» con
+  sugerencias conservadoras y atajos (con interruptor).
+- **Lista y búsqueda** (`lista-y-busqueda-del-libro`): índice por petición (de ~337 ms a ~6 ms con 2.500 movimientos),
+  criterios por persona, regreso a la lista con franja «Recién agregado» y aviso `slow_book_open`.
+- **Revisión integral:** corrige varios pagadores al corregir un movimiento, «todos los resultados» con filtro de persona,
+  categorías genéricas, exportación que no mostraba lo oculto, huella de las solicitudes idempotentes, orden de «deshacer la
+  última», nombres de categoría largos en la importación y confirmación repetida; parte `index.js` en módulos de rutas.
+- **Pruebas:** unitarias, de integración (D1 local) y E2E en Chromium y Firefox, con recorridos exploratorios por cambio.
+- **Sin verificar:** límites de D1 remoto (tamaño de sentencia, sentencias por lote, CPU por petición); las mediciones de
+  `CASO-REAL-INTERNO.md` son contra D1 local. Sin WebKit ni dispositivo físico. Antes de producción: cadena operativa
+  (respaldo, migraciones `0008`–`0010`, Worker) y smoke en staging del mismo SHA.
 
 ## Base común de buenas prácticas — 2026-10-24
 

@@ -5,7 +5,7 @@ export const SLOW_BOOK_MS = 300;
 export const SQL_TRIGGER_ENTRIES = 5000;
 
 export function slowBookEvent({ elapsedMs, entries, participants, categories, requestId = null }, threshold = SLOW_BOOK_MS) {
-  const limit = Number.isFinite(Number(threshold)) ? Number(threshold) : SLOW_BOOK_MS;
+  const limit = threshold === "" || threshold === null || threshold === undefined || !Number.isFinite(Number(threshold)) ? SLOW_BOOK_MS : Number(threshold);
   if (!(elapsedMs >= limit) || elapsedMs < 0) return null;
   return { event: "slow_book_open", elapsedMs: Math.round(elapsedMs), thresholdMs: limit, entries, participants, categories, overSqlTrigger: entries >= SQL_TRIGGER_ENTRIES, requestId };
 }

@@ -1,15 +1,13 @@
 import { formatMoney } from "./finance.js";
 import { categoryChip, entryLabel, inputAmount } from "./ledger-ui.js";
 import { filterByCategory, filterByPerson, personCounts, personsInQuery, searchLedger } from "./search.js";
-import { categoryGroups } from "./categories.js";
+import { categoryOptionGroups } from "./category-options.js";
 import { isPending } from "./suggest.js";
 import { selectionBar } from "./recategorize-ui.js";
 import { suggestTransfers } from "./settlement.js";
-import { avatar, escapeHtml, ICONS, shortDate } from "./ui-parts.js";
+import { avatar, escapeHtml, ICONS, plural, shortDate, spacePath as path } from "./ui-parts.js";
 
-const path = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
 const signed = (amountMinor, currency) => `${amountMinor > 0 ? "+" : ""}${formatMoney(amountMinor, currency)}`;
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 function ownParticipant(data, userId) {
   return data.participants.find(person => person.linkedUserId === userId) ?? null;
@@ -76,7 +74,10 @@ function entryRow(entry, data, ownId, spaceId, selectable = false) {
 export const PAGE_SIZE = 40;
 
 function categoryFilter(data, selected) {
-  const groups = categoryGroups(data.categories ?? []).map(group => `<optgroup label="${escapeHtml(group.name)}"><option value="g:${escapeHtml(group.key)}"${selected === `g:${group.key}` ? " selected" : ""}>Todo ${escapeHtml(group.name)}</option>${group.categories.map(category => `<option value="${escapeHtml(category.id)}"${selected === category.id ? " selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}</optgroup>`).join("");
+  const groups = categoryOptionGroups(data.categories ?? [], {
+    groupOption: group => `<option value="g:${escapeHtml(group.key)}"${selected === `g:${group.key}` ? " selected" : ""}>Todo ${escapeHtml(group.name)}</option>`,
+    option: category => `<option value="${escapeHtml(category.id)}"${selected === category.id ? " selected" : ""}>${escapeHtml(category.name)}</option>`,
+  });
   return `<label class="sr-only" for="ledger-category">Categoría</label><select id="ledger-category" name="categoria"><option value="">Todas las categorías</option><option value="none"${selected === "none" ? " selected" : ""}>Sin categoría</option>${groups}</select>`;
 }
 

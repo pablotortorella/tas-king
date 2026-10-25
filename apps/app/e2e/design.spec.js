@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { emulateScheme, lowContrast, openRecent } from "./helpers.js";
+import { emulateScheme, useScheme, lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const TAP_TARGETS = [
@@ -39,8 +39,7 @@ test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ pag
 
 for (const scheme of ["light", "dark"]) {
   test.describe(`esquema ${scheme}`, () => {
-    test.use({ colorScheme: scheme });
-    test.beforeEach(({ page }) => emulateScheme(page, scheme));
+    useScheme(test, scheme);
 
     test("aplica la paleta del dispositivo", async ({ page }) => {
       await page.goto("/");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
-import { splitAmount } from "../src/split.js";
+import { SPLIT_MODULE_SOURCE, splitAmount } from "../src/split.js";
 
 async function servedSource() {
   const response = await app.request("https://app.test/split.js");
@@ -58,5 +58,15 @@ describe("regla de reparto servida al navegador", () => {
       expect(source, from).toContain(from);
       expect(mismatches(load(source.replace(from, to)), requests), from).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("los módulos servidos al navegador conservan sus nombres", () => {
+  it("el texto servido exporta las funciones por su nombre y no depende de variables externas", async () => {
+    const { TEXT_MODULE_SOURCE } = await import("../src/text.js");
+    expect(SPLIT_MODULE_SOURCE).toMatch(/export function splitAmount\(/u);
+    expect(TEXT_MODULE_SOURCE).toMatch(/export function searchable\(/u);
+    // Si un empaquetador renombrara la función, el `import { splitAmount }` del navegador dejaría de resolverse.
+    for (const source of [SPLIT_MODULE_SOURCE, TEXT_MODULE_SOURCE]) expect(source.match(/export /gu)).toHaveLength(1);
   });
 });

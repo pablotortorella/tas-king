@@ -1,15 +1,13 @@
 import { formatMoney } from "./finance.js";
-import { categoryGroups } from "./categories.js";
+import { categoryOptionGroups } from "./category-options.js";
 import { categoryIcon } from "./category-data.js";
-import { escapeHtml, shortDate } from "./ui-parts.js";
+import { escapeHtml, plural, shortDate, spacePath as path } from "./ui-parts.js";
 import { MAX_BATCH } from "./recategorize.js";
 
-function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 // Selector de categoría agrupado (solo categorías vigentes).
 export function categorySelect(categories, { name = "categoryId", selected = "", label = "Categoría", required = true, id = "" } = {}) {
-  const groups = categoryGroups(categories).map(group => `<optgroup label="${escapeHtml(group.name)}">${group.categories.map(category => `<option value="${escapeHtml(category.id)}"${category.id === selected ? " selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}</optgroup>`).join("");
+  const groups = categoryOptionGroups(categories, { option: category => `<option value="${escapeHtml(category.id)}"${category.id === selected ? " selected" : ""}>${escapeHtml(category.name)}</option>` });
   return `<label${id ? ` for="${id}"` : ""}>${escapeHtml(label)}<select${id ? ` id="${id}"` : ""} name="${name}"${required ? " required" : ""}><option value="">Elegí una categoría</option>${groups}</select></label>`;
 }
 

@@ -17,23 +17,24 @@ export function registerCategoryRoutes(app) {
     } catch (error) { return ledgerFailure(c, error); }
   });
 
-  // Gestión de categorías: sólo la persona titular (la regla vive en categories.js, no en la ruta).
-  const categoryActions = [
-    ["", async (db, base, form) => createCategory(db, { ledgerId: base.ledger.id, userId: base.userId, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-creada", false],
-    ["/:categoryId", (db, base, form, id) => updateCategory(db, { ...base, categoryId: id, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-guardada", true],
-    ["/:categoryId/archive", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: true }), "categoria-archivada", true],
-    ["/:categoryId/restore", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: false }), "categoria-restaurada", true],
-    ["/:categoryId/merge", (db, base, form, id) => mergeCategory(db, { ...base, categoryId: id, intoId: form.get("into") }), "categoria-fusionada", true],
+  // Gestión de categorías: solo la persona titular. La ruta lo comprueba para todas las acciones y el dominio lo vuelve a
+  // exigir (categories.js), así ninguna acción nueva queda abierta por olvido.
+  const actions = [
+    { path: "", notice: result => (result.created ? "categoria-creada" : "categoria-existente"), run: (db, { ledger, userId }, form) => createCategory(db, { ledgerId: ledger.id, userId, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }) },
+    { path: "/:categoryId", notice: () => "categoria-guardada", run: (db, ctx, form, id) => updateCategory(db, { ...ctx, categoryId: id, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }) },
+    { path: "/:categoryId/archive", notice: () => "categoria-archivada", run: (db, ctx, form, id) => setCategoryArchived(db, { ...ctx, categoryId: id, archived: true }) },
+    { path: "/:categoryId/restore", notice: () => "categoria-restaurada", run: (db, ctx, form, id) => setCategoryArchived(db, { ...ctx, categoryId: id, archived: false }) },
+    { path: "/:categoryId/merge", notice: () => "categoria-fusionada", run: (db, ctx, form, id) => mergeCategory(db, { ...ctx, categoryId: id, intoId: form.get("into") }) },
   ];
-  for (const [suffix, action, notice, needsOwner] of categoryActions) {
-    app.post(`/spaces/:spaceId/ledger/categories${suffix}`, async (c) => {
+  for (const action of actions) {
+    app.post(`/spaces/:spaceId/ledger/categories${action.path}`, async (c) => {
       const user = c.get("protectedUser");
       try {
         const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
-        if (!needsOwner && ledger.role !== "owner") throw new LedgerError("Sólo el titular puede gestionar las categorías.", 403);
+        if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede gestionar las categorías.", 403);
         if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
-        await action(c.env.DB, { ledger, ledgerId: ledger.id, userId: user.user_id }, await c.req.formData(), c.req.param("categoryId"));
-        return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/categories?aviso=${notice}`, 303);
+        const result = await action.run(c.env.DB, { ledger, userId: user.user_id }, await c.req.formData(), c.req.param("categoryId"));
+        return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/categories?aviso=${action.notice(result)}`, 303);
       } catch (error) { return ledgerFailure(c, error); }
     });
   }

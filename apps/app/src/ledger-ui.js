@@ -1,21 +1,20 @@
 import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
 import { LedgerError } from "./errors.js";
-import { escapeHtml, ICONS, shortDate } from "./ui-parts.js";
+import { escapeHtml, ICONS, shortDate, spacePath as path } from "./ui-parts.js";
 import { searchable } from "./text.js";
 import { categoryIcon } from "./category-data.js";
-import { categoryGroups, resolveCategory } from "./categories.js";
+import { resolveCategory } from "./categories.js";
+import { categoryOptionGroups } from "./category-options.js";
 
 export { escapeHtml };
 
-function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
-export function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia", imported: "Importado" })[type] ?? type; }
+export function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia" })[type] ?? type; }
 
 export { filterByCategory, listResults, searchLedger } from "./search.js";
 
 export function categoryChip(entry) {
   const info = entry.categoryInfo;
   if (info) return `<span class="chip cat">${categoryIcon(info.icon)}${escapeHtml(info.name)}</span>`;
-  if (entry.category) return `<span class="chip cat">${categoryIcon("tag")}${escapeHtml(entry.category)}</span>`;
   return entry.type === "transfer" ? "" : '<span class="chip cat none">Sin categoría</span>';
 }
 
@@ -29,7 +28,7 @@ function categorySection(data, entry) {
   const keepArchived = current && target && target.status === "archived" ? target : null;
   const selectedId = target?.status === "active" ? target.id : keepArchived ? keepArchived.id : "";
   const option = (category, suffix = "") => `<option value="${escapeHtml(category.id)}" data-key="${escapeHtml(category.nameKey)}"${category.id === selectedId ? " selected" : ""}>${escapeHtml(category.name)}${suffix}</option>`;
-  const groups = categoryGroups(categories).map(group => `<optgroup label="${escapeHtml(group.name)}">${group.categories.map(category => option(category)).join("")}</optgroup>`).join("");
+  const groups = categoryOptionGroups(categories, { option: category => option(category) });
   const archived = keepArchived ? option(keepArchived, " (archivada)") : "";
   return `<fieldset class="category-field"><legend>Categoría (opcional)</legend><label>Elegí una<select name="categoryId"><option value="">Sin categoría</option>${archived}${groups}</select></label><label>O escribí una nueva<input name="categoryNew" maxlength="60" autocomplete="off" placeholder="Ej.: Peluquería"></label><p class="hint category-hint" role="status" aria-live="polite"></p></fieldset>`;
 }

@@ -139,7 +139,7 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
     const target = resolveCategory(categories, found.id);
     const same = keepCurrent(categories, currentCategoryId, target.id);
     if (same) return same;
-    if (target.status !== "active" && target.id !== currentCategoryId) throw new CategoryError("Esa categoría está archivada: elegí otra o pedile al titular que la restaure.", 409);
+    if (target.status !== "active") throw new CategoryError("Esa categoría está archivada: elegí otra o pedile al titular que la restaure.", 409);
     return target;
   }
   if (!categoryId) return null;

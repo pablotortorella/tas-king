@@ -85,6 +85,8 @@ describe("aviso de apertura lenta", () => {
   it("acepta un umbral propio y descarta valores inválidos", () => {
     expect(slowBookEvent({ ...base, elapsedMs: 5 }, "0")).not.toBeNull();
     expect(slowBookEvent({ ...base, elapsedMs: 5 }, "abc")).toBeNull();
+    expect(slowBookEvent({ ...base, elapsedMs: 5 }, "")).toBeNull();
+    expect(slowBookEvent({ ...base, elapsedMs: 450 }, "")).not.toBeNull();
     expect(slowBookEvent({ ...base, elapsedMs: -1 }, 0)).toBeNull();
   });
   it("solo lleva cantidades y tiempos", () => expect(Object.keys(slowBookEvent(base)).sort()).toEqual(["categories", "elapsedMs", "entries", "event", "overSqlTrigger", "participants", "requestId", "thresholdMs"]));

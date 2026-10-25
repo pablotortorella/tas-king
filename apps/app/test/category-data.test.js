@@ -19,7 +19,7 @@ describe("normalización compartida", () => {
   it("la búsqueda y las categorías producen la misma forma para las mismas variantes", () => {
     const variants = ["Casa - Otro", "casa otro", "CASA   -   OTRO", "Cása, otro"];
     expect(new Set(variants.map(searchable)).size).toBe(1);
-    const entry = { id: "e1", description: "x", note: "", category: "Casa - Otro", currency: "COP", totalMinor: 100, effects: [] };
+    const entry = { id: "e1", description: "x", note: "", categoryInfo: { name: "Casa - Otro" }, currency: "COP", totalMinor: 100, effects: [] };
     for (const variant of variants) expect(searchLedger([entry], [], variant)).toHaveLength(1);
   });
 

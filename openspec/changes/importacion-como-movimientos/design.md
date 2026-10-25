@@ -122,7 +122,7 @@ Ajustes que salieron al aplicar el cambio, sin cambiar los requisitos:
 - Una fila sin efecto en nadie se guarda como gasto de la primera persona del archivo (determinista) y queda marcada como inferida.
 - Si el archivo trae columnas de notas (`Notas`, `Comentarios`, `Notes`, `Comments`) después de las personas, su texto se importa como nota del movimiento; no cuentan como personas.
 - El mantenimiento descarta una carga pendiente a partir del último movimiento cargado (o de la creación del lote si no cargó ninguno), no de la fecha de creación.
-- `splitwise-legacy.js` convierte los lotes del modelo anterior y borra sus filas; la migración `0009` se detiene en una guarda si queda alguna. Ese módulo y su prueba se eliminan después de convertir o descartar los lotes de staging.
+- `splitwise-legacy.js` convierte los lotes del modelo anterior y borra sus filas; la corre el mantenimiento diario mientras las tablas existan. El retiro de las tablas viejas **no** va como migración de este despliegue (la regla de expansión, transición y retiro lo prohíbe): queda en `apps/app/ops/retire-legacy-import-tables.sql`, con su guarda que se detiene si queda algún lote, para aplicarlo en un release posterior, ya verificado el Worker nuevo. Ese módulo, su prueba y el SQL se eliminan después.
 
 ## Open Questions
 

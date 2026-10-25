@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { emulateScheme, lowContrast, openBook, openRecent, seedEntriesViaForm } from "./helpers.js";
+import { useScheme, lowContrast, openBook, openRecent, seedEntriesViaForm } from "./helpers.js";
 
 const rows = page => page.locator(".entry-list .entry-title");
 const listRows = page => page.locator("#movimientos .entry-list").last().locator(".entry-title");
@@ -122,8 +122,7 @@ test("el movimiento que pagó otra persona se encuentra con «Pagó X»", async 
 
 for (const scheme of ["light", "dark"]) {
   test.describe(`lista en el teléfono, ${scheme}`, () => {
-    test.use({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
-    test.beforeEach(({ page }) => emulateScheme(page, scheme));
+    useScheme(test, scheme, { width: 390, height: 844 });
 
     test("la lista, los filtros y la franja no desbordan, los controles miden 44 px y el contraste cumple", async ({ page }) => {
       const book = await bookWith(page, "ls-movil", ["Compra uno", "Compra dos"]);

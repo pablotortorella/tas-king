@@ -33,8 +33,8 @@ export function registerRecategorizeRoutes(app) {
       const form = await c.req.formData();
       const criteria = criteriaFrom(form);
       const categoryId = String(form.get("categoryId") ?? "");
-      await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId });
       if (!criteria.all && criteria.ids.length > PREVIEW_IDS_LIMIT) throw new LedgerError(`Marcaste ${criteria.ids.length} movimientos: para más de ${PREVIEW_IDS_LIMIT} usá «Todos los resultados» de la búsqueda o el filtro.`);
+      await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId });
       const query = new URLSearchParams(criteria.all ? [["all", "1"], ["query", criteria.query], ["categoria", criteria.category], ["quien", criteria.person]] : criteria.ids.map(id => ["ids", id]));
       query.set("categoryId", categoryId);
       return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/recategorize/preview?${query.toString()}`, 303);

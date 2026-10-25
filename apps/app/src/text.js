@@ -2,7 +2,7 @@
 // convertido en un espacio y los espacios colapsados. La usan la búsqueda y los nombres de categoría, así
 // «Casa - Otro» y «casa otro» se tratan igual en los dos lugares.
 export function searchable(value) {
-  return String(value ?? "").normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
+  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
 }
 
 // Texto del módulo que se sirve al navegador en /text.js, como con /split.js: la misma función, sin copias.

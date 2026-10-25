@@ -130,7 +130,6 @@ describe("equivalencia con la implementación de referencia", () => {
       const split = ["p1", "p2", "p3"].filter(() => random() < 0.7);
       const members = split.length ? split : ["p1"];
       const base = expense(`g${index}`, `${pick(WORDS)} ${pick(WORDS)}`, { payer, split: members, total, currency, note: pick(NOTES), category: random() < 0.4 ? pick(WORDS) : null, status: random() < 0.1 ? "voided" : "active", inferred: random() < 0.2 });
-      if (random() < 0.08) return { ...base, category: pick(WORDS), categoryInfo: null };
       return base;
     });
   }

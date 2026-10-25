@@ -1,5 +1,6 @@
 // Módulo del navegador que sirve /import-progress.js: encadena las tandas de carga de una importación. Sin él la pantalla
-// sigue funcionando con el botón «Continuar» (cada clic carga una tanda). La CSP sólo admite scripts del mismo origen.
+// sigue funcionando con el botón «Continuar» (cada clic carga una tanda). Ante un 429 espera el Retry-After y sigue. La CSP sólo
+// admite scripts del mismo origen.
 export const IMPORT_PROGRESS_JS = String.raw`(function () {
   "use strict";
   var root = document.querySelector("[data-import-progress]");
@@ -24,6 +25,13 @@ export const IMPORT_PROGRESS_JS = String.raw`(function () {
     try {
       for (;;) {
         var response = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { Accept: "application/json" }, credentials: "same-origin" });
+        if (response.status === 429) {
+          // Límite de escrituras por minuto: se espera lo que indique el servidor y se sigue, sin perder lo cargado.
+          var wait = Math.min(Math.max(Number(response.headers.get("Retry-After")) || 15, 1), 120);
+          if (text) text.textContent = "Pausa de " + wait + " s por el límite de escrituras; se retoma sola.";
+          await new Promise(function (resolve) { setTimeout(resolve, wait * 1000); });
+          continue;
+        }
         var result = await response.json();
         if (!response.ok) throw new Error(result.error || "No pudimos continuar la importación.");
         show(result);

@@ -1,5 +1,5 @@
 // Implementación de referencia de la búsqueda, tal como era antes del índice por petición. Solo la usan las pruebas de
-// equivalencia: no se debe «mejorar». La única diferencia intencional del código nuevo es el texto del motivo cuando coincide
+// equivalencia: no se debe «mejorar». (Se retiró la rama del texto de categoría de los importados del modelo viejo: ya no existe.) La única diferencia intencional del código nuevo es el texto del motivo cuando coincide
 // el nombre de una persona (antes «Participante: X», ahora «Pagó X» / «Participa X» / «Entregó X» / «Recibió X»).
 import { CURRENCY_MINOR_UNITS, formatMoney } from "../../src/finance.js";
 import { searchable } from "../../src/text.js";
@@ -26,7 +26,7 @@ function matchTerm(entry, names, raw) {
   const needle = searchable(raw);
   if (!needle) return null;
   if (searchable(entry.description).includes(needle)) return "Descripción";
-  if ((entry.categoryInfo && searchable(entry.categoryInfo.name).includes(needle)) || (entry.category && searchable(entry.category).includes(needle))) return "Categoría";
+  if (entry.categoryInfo && searchable(entry.categoryInfo.name).includes(needle)) return "Categoría";
   if (entry.note && searchable(entry.note).includes(needle)) return "Nota";
   if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, raw)) return "Importe total";
   for (const effect of entry.effects) {

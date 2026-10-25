@@ -75,15 +75,14 @@ export function searchLedger(entries, participants, query) {
     return item;
   };
   const description = entry => { const item = index(entry); return item.desc ??= searchable(entry.description); };
-  const category = entry => { const item = index(entry); return item.cat ??= `${entry.categoryInfo ? searchable(entry.categoryInfo.name) : ""}\u0000${entry.category ? searchable(entry.category) : ""}`; };
+  const category = entry => { const item = index(entry); return item.cat ??= (entry.categoryInfo ? searchable(entry.categoryInfo.name) : ""); };
   const note = entry => { const item = index(entry); return item.note ??= (entry.note ? searchable(entry.note) : ""); };
 
   const matchTerm = (entry, term) => {
     const needle = term.needle;
     if (!needle) return null;
     if (description(entry).includes(needle)) return "Descripción";
-    const [fromInfo, fromText] = category(entry).split("\u0000");
-    if ((entry.categoryInfo && fromInfo.includes(needle)) || (entry.category && fromText.includes(needle))) return "Categoría";
+    if (entry.categoryInfo && category(entry).includes(needle)) return "Categoría";
     if (entry.note && note(entry).includes(needle)) return "Nota";
     if (amountHit(term, entry.totalMinor, entry.currency)) return "Importe total";
     for (const effect of entry.effects) {

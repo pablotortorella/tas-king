@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { emulateScheme, lowContrast, openBook, seedEntriesViaForm } from "./helpers.js";
+import { useScheme, lowContrast, openBook, seedEntriesViaForm } from "./helpers.js";
 
 const rows = page => page.locator(".entry-title");
 const chipOf = (page, description) => page.locator(".entry-row", { hasText: description }).locator(".chip.cat");
@@ -188,8 +188,7 @@ test.describe("clasificar rápido", () => {
 
 for (const scheme of ["light", "dark"]) {
   test.describe(`recategorización en el teléfono, ${scheme}`, () => {
-    test.use({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
-    test.beforeEach(({ page }) => emulateScheme(page, scheme));
+    useScheme(test, scheme, { width: 390, height: 844 });
 
     test("la lista con selección, la confirmación y clasificar rápido no desbordan, miden 44 px y tienen contraste", async ({ page }) => {
       const book = await bookWith(page, "rc-movil", ["Compra uno", "Compra dos", "Compra tres"]);
