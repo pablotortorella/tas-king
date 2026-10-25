@@ -2,7 +2,7 @@
 
 **Política operativa:** [Operación común](homesuite/OPERACION.md). Los estados y recursos descritos abajo son snapshots fechados; consultar STATUS y configuración antes de ejecutar cambios remotos.
 
-**Estado:** sitio público en producción; app autenticada y migración de TasKing pendientes
+**Estado:** sitio público en producción; app autenticada en staging; migración de TasKing pendiente. Consultar STATUS para versiones.
 
 **Fecha:** 2026-09-21
 
@@ -82,6 +82,7 @@ se debe volver a comprobar DNS, certificados y Worker.
 | `www.homesuite.info` | Redirección 308 al apex | `homesuite-site` |
 | `app.homesuite.info` | Suite autenticada de producción | `homesuite-app` |
 | `staging.homesuite.info` | Suite autenticada de prueba | `homesuite-app-staging` |
+| `site-staging.homesuite.info` | Home y landings públicas de prueba | `homesuite-site-staging` |
 
 Todos son apex o subdominios de primer nivel, cubiertos por Universal SSL de
 Cloudflare una vez que la zona esté activa.
@@ -227,6 +228,18 @@ solo por escala, seguridad, retención o cadencia comprobadas.
 ## Ambientes
 
 ### Decisión para el sitio público y la futura app (2026-09-21)
+
+**Actualización 2026-10-25:** Pablo pidió un staging equivalente a las dos
+superficies previstas para producción, con home, landings y funcionalidades. Se
+añade `site-staging.homesuite.info` como sitio público de staging y se conserva
+`staging.homesuite.info` para la app y su callback OAuth. Ambos Workers se
+publican por separado desde el mismo repo; el sitio no recibe D1, sesión ni
+secretos de la app. La landing de Cuentas Claras de staging enlaza a la ruta
+autenticada del mismo entorno. Se descartó usar un solo host para ambos Workers
+porque rompería la frontera pública/privada y el callback ya configurado; una
+preview por versión no ofrece una URL estable para recorrer la suite completa.
+Esta actualización sustituye la antigua opción de evaluar un segundo entorno
+público sólo si hiciera falta QA frecuente, descrita abajo como antecedente.
 
 - **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
   producción. Desde 2026-09-23, `staging.homesuite.info` está asociado al

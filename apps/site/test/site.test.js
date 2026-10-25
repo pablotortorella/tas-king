@@ -58,6 +58,23 @@ describe("homesuite-site", () => {
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
 
+  it("conecta la landing de Cuentas Claras con la app del mismo staging", async () => {
+    const body = '<p>En preparación.</p><!-- staging-app-entry -->';
+    const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/cuentas-claras"),
+      { ...assetEnvironment(body), SITE_ENV: "staging" });
+    expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    expect(staging.headers.get("Cache-Control")).toBe("no-store");
+    expect(await staging.text()).toContain('href="https://staging.homesuite.info/cuentas-claras"');
+    const production = await worker.fetch(new Request("https://homesuite.info/cuentas-claras"), assetEnvironment(body));
+    expect(await production.text()).not.toContain('href="https://staging.homesuite.info/cuentas-claras"');
+  });
+
+  it("en la landing de Tareas apunta al TasKing de staging", async () => {
+    const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/tareas"),
+      { ...assetEnvironment('<a href="https://tas-king.pablotortorella.workers.dev">Tareas</a>'), SITE_ENV: "staging" });
+    expect(await staging.text()).toContain('href="https://tas-king-staging.pablotortorella.workers.dev"');
+  });
+
   it("mantiene la portada sin JavaScript y enlaza las tres landings", async () => {
     const html = await readFile(
       new URL("../public/index.html", import.meta.url),

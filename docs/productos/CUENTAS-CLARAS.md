@@ -7,6 +7,12 @@ Su especificación funcional vive en el [MVP](../HOMESUITE_CUENTAS_CLARAS_MVP.md
 [story map](../HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md). Ver STATUS para distinguir
 propuesta, implementación en rama, integración y despliegue.
 
+La landing pública se abre desde la portada de HomeSuite; en staging enlaza a
+`/cuentas-claras` de la app. Allí se inicia sesión con Google o se ve el aviso
+«Muy pronto». La edición del perfil global usa la [capacidad común de la
+plataforma](../HOMESUITE_PROFILE_API.md), accesible desde el avatar/nombre y el
+menú general; el apodo sigue siendo contextual a cada espacio.
+
 ## Invariantes y riesgos propios
 
 Los contratos funcionales gobiernan signos, precisión y redondeo de importes,

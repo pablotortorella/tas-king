@@ -2,7 +2,7 @@
 
 **Estado:** contrato implementado en `main` y publicado en staging el 2026-10-25. La integración con la actividad financiera se hará cuando ese módulo entre en `main`.
 
-Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y a los demás productos de la suite. El nombre y el avatar se guardan una vez por persona. El apodo pertenece a una membresía de espacio y comienza vacío. Las interfaces visuales de edición y presentación quedan para un cambio posterior.
+Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y a los demás productos de la suite. El nombre y el avatar se guardan una vez por persona. El apodo pertenece a una membresía de espacio y comienza vacío. La edición del perfil global se ofrece en `/perfil` desde el avatar/nombre y el menú general; la edición del apodo por espacio espera la interfaz de espacios.
 
 ## Modelo y migración
 
@@ -10,7 +10,7 @@ Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y
 
 El nombre tiene fuente `google` o `custom`. Un login actualiza el nombre y la referencia de foto recibidos de Google, pero sólo cambia el nombre visible cuando la fuente es `google`. La acción explícita `nameSource: "google"` retoma el último nombre válido del proveedor; si falta, muestra «Usuario». La URL de foto sólo se acepta por HTTPS desde los hosts permitidos de Google. No se copia ni sube una imagen.
 
-El avatar guarda el modo `google`, `emoji` o `initial`, independientemente de la fuente del nombre. En modo Google, `photoUrl` puede ser nula y `initial` es la alternativa; el cliente también debe usarla si la imagen no carga. Emoji y color se conservan aunque se vuelva a mostrar la foto. El color es un token del catálogo entregado por la API.
+El avatar guarda el modo `google`, `emoji` o `initial`, independientemente de la fuente del nombre. En modo Google, `photoUrl` puede ser nula y `initial` es la alternativa; la interfaz también la usa si la imagen no carga. Emoji y color se conservan aunque se vuelva a mostrar la foto. El color es un token del catálogo entregado por la API. La lectura propia incluye `avatar.savedEmoji` para recuperar la elección anterior al cambiar de modo; las presentaciones ajenas sólo incluyen el emoji visible.
 
 ## Rutas autenticadas
 
@@ -44,7 +44,7 @@ Un apodo compuesto sólo de espacios se transforma en `null`. El cliente debe en
 
 ## Consumo en Cuentas Claras
 
-El primer consumo es el acceso con Google: tras autenticarse, la persona ve «Muy pronto» y su nombre de perfil. El libro financiero sigue en ramas de integración. Cuando entre en `main`, deberá agregar presentación actual de autoría sin cambiar participantes contables, vínculos, saldos, revisiones ni snapshots. La rama funcional `feature/homesuite-profile` ya contiene esa adaptación y sus pruebas; no forma parte de este corte de staging.
+El primer consumo es el acceso con Google: la raíz autenticada presenta la suite y la ruta `/cuentas-claras` muestra «Muy pronto» y el nombre de perfil. El menú y el avatar llevan a `/perfil`, que edita el dato global mediante la API existente, con CSRF y revisión. El libro financiero sigue en ramas de integración. Cuando entre en `main`, deberá agregar presentación actual de autoría sin cambiar participantes contables, vínculos, saldos, revisiones ni snapshots. La rama funcional `feature/homesuite-profile` ya contiene esa adaptación y sus pruebas; no forma parte de este corte de staging.
 
 ## Verificación y despliegue
 
