@@ -31,7 +31,7 @@ describe("búsqueda con varios términos", () => {
   it("exige que cada término coincida en algún campo, ignorando acentos y mayúsculas", () => {
     const found = searchLedger([gas, mercado], participants, "GAS laura");
     expect(found.map(row => row.id)).toEqual(["1"]);
-    expect(found[0].matchReason).toBe("Descripción + Participante: Laura");
+    expect(found[0].matchReason).toBe("Descripción + Participa Laura");
     expect(searchLedger([gas, mercado], participants, "gas pablo mercado")).toEqual([]);
   });
 

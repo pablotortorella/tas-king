@@ -1,12 +1,12 @@
 ## 1. Búsqueda más rápida y equivalente
 
-- [ ] 1.1 Conservar la implementación actual de `searchLedger` como referencia solo en las pruebas y verificar que las pruebas existentes de búsqueda siguen pasando contra ella.
-- [ ] 1.2 Reescribir `searchLedger` con el índice por petición (textos normalizados una vez, importes solo con términos numéricos) y verificar con una prueba de propiedades que devuelve los mismos movimientos y motivos que la referencia sobre miles de libros y consultas generados, con acentos, separadores, decimales, notas y anulados.
-- [ ] 1.3 Agregar la prueba de rendimiento con libros sintéticos de 2.500 y 5.000 movimientos y verificar que una palabra se resuelve en menos de 100 ms con 5.000 y que el costo crece de forma lineal.
+- [x] 1.1 Conservar la implementación actual de `searchLedger` como referencia solo en las pruebas y verificar que las pruebas existentes de búsqueda siguen pasando contra ella.
+- [x] 1.2 Reescribir `searchLedger` con el índice por petición (textos normalizados una vez, importes solo con términos numéricos) y verificar con una prueba de propiedades que devuelve los mismos movimientos y motivos que la referencia sobre miles de libros y consultas generados, con acentos, separadores, decimales, notas y anulados.
+- [x] 1.3 Agregar la prueba de rendimiento con libros sintéticos de 2.500 y 5.000 movimientos y verificar que una palabra se resuelve en menos de 100 ms con 5.000 y que el costo crece de forma lineal.
 
 ## 2. Criterios por persona
 
-- [ ] 2.1 Derivar «Pagó», «Recibió», «Participa», «Entregó» y «Recibió» con la marca de inferido a partir de pagadores, asignaciones y transferencias, reemplazando «Participante» y «Efecto de», y verificar con pruebas unitarias de los escenarios del spec.
+- [x] 2.1 Derivar «Pagó», «Recibió», «Participa», «Entregó» y «Recibió» con la marca de inferido a partir de pagadores, asignaciones y transferencias, reemplazando «Participante» y «Efecto de», y verificar con pruebas unitarias de los escenarios del spec.
 - [ ] 2.2 Ofrecer los filtros rápidos «Pagó X (N)» y «Participa X (M)» cuando un término coincide con una persona, codificados en la URL, y verificar con una prueba de la vista y una E2E de filtrar y quitar el filtro con dos personas.
 - [ ] 2.3 Verificar con una prueba que en un libro de dos personas el filtro «Pagó X» reduce los resultados y que con tres personas los filtros siguen siendo coherentes.
 

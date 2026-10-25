@@ -10,52 +10,7 @@ export { escapeHtml };
 function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
 export function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia", imported: "Importado" })[type] ?? type; }
 
-function numericNeedle(query, currency) {
-  const text = String(query ?? "").trim();
-  if (!/^\d[\d.,\s]*$/u.test(text)) return null;
-  const units = CURRENCY_MINOR_UNITS[currency];
-  const decimal = text.match(/[.,](\d+)$/u);
-  const usesDecimals = decimal && decimal[1].length === units && !(text.includes(".") && decimal[1].length === 3);
-  return { digits: text.replace(/\D/gu, ""), usesDecimals };
-}
-
-function amountMatches(amountMinor, currency, query) {
-  const needle = numericNeedle(query, currency);
-  if (!needle?.digits) return false;
-  const units = CURRENCY_MINOR_UNITS[currency];
-  const digits = String(Math.abs(amountMinor)).padStart(units + 1, "0");
-  const whole = units ? digits.slice(0, -units) : digits;
-  return (needle.usesDecimals ? digits : whole).includes(needle.digits);
-}
-
-function matchTerm(entry, names, raw) {
-  const needle = searchable(raw);
-  if (!needle) return null;
-  if (searchable(entry.description).includes(needle)) return "Descripción";
-  if ((entry.categoryInfo && searchable(entry.categoryInfo.name).includes(needle)) || (entry.category && searchable(entry.category).includes(needle))) return "Categoría";
-  if (entry.note && searchable(entry.note).includes(needle)) return "Nota";
-  if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, raw)) return "Importe total";
-  for (const effect of entry.effects) {
-    const name = names.get(effect.participantId) ?? "";
-    if (searchable(name).includes(needle)) return `Participante: ${name}${entry.inferred && entry.cashParties.some(party => party.participantId === effect.participantId) ? " (pagador inferido)" : ""}`;
-    if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, raw)) return `Efecto de ${name}`;
-  }
-  return null;
-}
-
-// Una frase que coincide tal cual gana; si no, cada término de la consulta debe coincidir en algún campo.
-export function searchLedger(entries, participants, query) {
-  if (!searchable(query)) return entries.map(entry => ({ ...entry, matchReason: null }));
-  const names = new Map(participants.map(p => [p.id, p.displayName]));
-  const terms = String(query).trim().split(/\s+/u).filter(Boolean);
-  return entries.flatMap(entry => {
-    const whole = matchTerm(entry, names, query);
-    if (whole) return [{ ...entry, matchReason: whole }];
-    if (terms.length < 2) return [];
-    const reasons = terms.map(term => matchTerm(entry, names, term));
-    return reasons.every(Boolean) ? [{ ...entry, matchReason: [...new Set(reasons)].join(" + ") }] : [];
-  });
-}
+export { searchLedger } from "./search.js";
 
 // Filtro por categoría: «none» (sin categoría), «g:<grupo>» (todas las del grupo) o el identificador de una categoría.
 // Se aplica sobre la categoría ya resuelta, así que los movimientos de una categoría fusionada cuentan en la destino.
