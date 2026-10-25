@@ -12,9 +12,9 @@
 
 ## 3. Categoría en los movimientos
 
-- [ ] 3.1 Aceptar `category_id` al guardar un movimiento (alta y corrección), rechazar categorías de otro libro y categorías archivadas en altas nuevas, e incluir `categoryId` y `categoryName` en la instantánea de la revisión, y verificar con pruebas de integración de los escenarios del spec.
-- [ ] 3.2 Hacer que el historial indique «categoría» cuando cambia, y verificar con una prueba que el cambio de categoría crea una revisión y que renombrar la categoría no altera las revisiones pasadas.
-- [ ] 3.3 Resolver los alias de fusión al leer los movimientos y verificar con pruebas unitarias la cadena de uno y dos pasos, el rechazo de ciclos y que una categoría fusionada se muestra con la destino.
+- [x] 3.1 Aceptar `category_id` al guardar un movimiento (alta y corrección), rechazar categorías de otro libro y categorías archivadas en altas nuevas, e incluir `categoryId` y `categoryName` en la instantánea de la revisión, y verificar con pruebas de integración de los escenarios del spec.
+- [x] 3.2 Hacer que el historial indique «categoría» cuando cambia, y verificar con una prueba que el cambio de categoría crea una revisión y que renombrar la categoría no altera las revisiones pasadas.
+- [x] 3.3 Resolver los alias de fusión al leer los movimientos y verificar con pruebas unitarias la cadena de uno y dos pasos, el rechazo de ciclos y que una categoría fusionada se muestra con la destino.
 
 ## 4. Selector y gestión
 

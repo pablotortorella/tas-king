@@ -1,5 +1,5 @@
 import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
-import { LedgerError } from "./ledger.js";
+import { LedgerError } from "./errors.js";
 import { escapeHtml, ICONS, shortDate } from "./ui-parts.js";
 import { searchable } from "./text.js";
 
@@ -55,7 +55,7 @@ export function searchLedger(entries, participants, query) {
   });
 }
 
-function revisionSummary(row, previous) {
+export function revisionSummary(row, previous) {
   const snapshot = JSON.parse(row.snapshot_json);
   if (row.action === "created") return "Movimiento creado";
   if (row.action === "voided") return snapshot.reason ? `Motivo: ${snapshot.reason}` : "Sin motivo indicado";
@@ -66,6 +66,8 @@ function revisionSummary(row, previous) {
   }
   // Los movimientos anteriores a este campo no guardan el método: sólo se compara cuando ambas revisiones lo tienen.
   if (before.split !== undefined && JSON.stringify(snapshot.split) !== JSON.stringify(before.split)) changed.push("forma de reparto");
+  // La categoría se compara por identificador: renombrarla después no cuenta como un cambio de este movimiento.
+  if ((snapshot.categoryId ?? null) !== (before.categoryId ?? null)) changed.push("categoría");
   return changed.length ? `Cambió: ${changed.join(", ")}` : "Sin cambios de contenido";
 }
 
@@ -104,6 +106,7 @@ export function parseEntryForm(form) {
   const inputs = {};
   if (prefix) for (const participantId of beneficiaries) inputs[participantId] = String(form.get(`${prefix}${participantId}`) ?? "").trim();
   return { type, currency, totalMinor, description, note, occurredAt,
+    categoryId: form.has("categoryId") ? String(form.get("categoryId")) : undefined, categoryName: form.has("categoryNew") ? String(form.get("categoryNew")) : undefined,
     split: { method, beneficiaries, inputs },
     cashParties: [{ participantId: form.get("payer"), direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }], allocations: [] };
 }

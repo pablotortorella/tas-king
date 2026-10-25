@@ -43,3 +43,16 @@ describe("lectura del formulario de movimientos", () => {
     expect(parsed.cashParties.map(party => party.direction)).toEqual(["out", "in"]);
   });
 });
+
+describe("categoría en el formulario", () => {
+  const base = [["type", "expense"], ["currency", "COP"], ["amount", "100"], ["description", "x"], ["occurredAt", "2026-10-24"], ["payer", "a"], ["splitMethod", "equal"], ["beneficiary", "a"]];
+  const read = extra => parseEntryForm(new URLSearchParams([...base, ...extra]));
+
+  it("lee el identificador y el nombre escrito", () => {
+    expect(read([["categoryId", "category_1"], ["categoryNew", " Café "]])).toMatchObject({ categoryId: "category_1", categoryName: " Café " });
+  });
+  it("un campo vacío significa «sin categoría» y la ausencia del campo significa «no tocar»", () => {
+    expect(read([["categoryId", ""]])).toMatchObject({ categoryId: "", categoryName: undefined });
+    expect(read([])).toMatchObject({ categoryId: undefined, categoryName: undefined });
+  });
+});

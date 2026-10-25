@@ -1,13 +1,9 @@
 import { CATEGORY_ICON_KEYS, FALLBACK_CATEGORY_GROUP, defaultCategoriesJson } from "./category-data.js";
+import { LedgerError } from "./errors.js";
 import { createPlatformId } from "./platform.js";
 import { searchable } from "./text.js";
 
-export class CategoryError extends Error {
-  constructor(message, status = 400) {
-    super(message);
-    this.status = status;
-  }
-}
+export class CategoryError extends LedgerError {}
 
 // Sentencia única que copia la lista inicial a un libro. INSERT OR IGNORE sobre (ledger_id, name_key) la vuelve
 // idempotente: dos accesos simultáneos al mismo libro anterior no duplican nada.
@@ -121,17 +117,17 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
   const typed = typeof categoryName === "string" ? categoryName.trim() : "";
   if (typed) {
     const found = findCategoryByName(categories, typed);
-    if (!found) return (await createCategory(db, { ledgerId, userId, name: typed })).category.id;
+    if (!found) return (await createCategory(db, { ledgerId, userId, name: typed })).category;
     const target = resolveCategory(categories, found.id);
     if (target.status !== "active" && target.id !== currentCategoryId) throw new CategoryError("Esa categoría está archivada: elegí otra o pedile al titular que la restaure.", 409);
-    return target.id;
+    return target;
   }
   if (!categoryId) return null;
   const chosen = categories.find(category => category.id === categoryId);
   if (!chosen) throw new CategoryError("La categoría no existe en este libro.");
-  if (chosen.id === currentCategoryId) return chosen.id;
+  if (chosen.id === currentCategoryId) return chosen;
   if (chosen.status !== "active") throw new CategoryError("Esa categoría está archivada: elegí otra.", 409);
-  return chosen.id;
+  return chosen;
 }
 
 function assertOwner(ledger) {

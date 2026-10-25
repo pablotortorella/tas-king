@@ -1,13 +1,10 @@
 import { CURRENCY_MINOR_UNITS, FinancialValidationError, normalizeCurrency, validateEntryDraft } from "./finance.js";
 import { splitAmount } from "./split.js";
 import { createPlatformId } from "./platform.js";
+import { categoryForEntry, findCategoryByName, readCategories, resolveCategory } from "./categories.js";
+import { LedgerError } from "./errors.js";
 
-export class LedgerError extends Error {
-  constructor(message, status = 400) {
-    super(message);
-    this.status = status;
-  }
-}
+export { LedgerError };
 
 export async function getLedgerAccess(db, spaceId, userId) {
   const row = await db.prepare(`
@@ -112,13 +109,20 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
   try { draft = validateEntryDraft(resolved.input, allowedIds); }
   catch (error) { if (error instanceof FinancialValidationError) throw new LedgerError(error.message); throw error; }
   const details = validateDetails(input);
-  const existing = entryId ? await db.prepare("SELECT id, created_by_user_id, current_revision, status FROM ledger_entries WHERE ledger_id = ? AND id = ?").bind(ledger.id, entryId).first() : null;
+  const existing = entryId ? await db.prepare("SELECT id, created_by_user_id, current_revision, status, category_id FROM ledger_entries WHERE ledger_id = ? AND id = ?").bind(ledger.id, entryId).first() : null;
   if (entryId && !existing) throw new LedgerError("Movimiento no encontrado.", 404);
   if (existing && ledger.role !== "owner" && existing.created_by_user_id !== userId) throw new LedgerError("Sólo podés corregir tus movimientos.", 403);
   const id = entryId || createPlatformId("entry");
   const revision = existing ? expectedRevision + 1 : 1;
   const action = existing ? "revised" : "created";
-  const snapshot = { ...details, ...draft, split: resolved.split, status: "active" };
+  // Sin campo de categoría en la solicitud (llamadas internas) se conserva la que ya tenía; las transferencias no llevan.
+  const wantsCategory = input.categoryId !== undefined || input.categoryName !== undefined;
+  const category = draft.type === "transfer" || (!wantsCategory && !existing) ? null
+    : !wantsCategory ? { id: existing.category_id }
+    : await categoryForEntry(db, { ledgerId: ledger.id, userId, categoryId: input.categoryId, categoryName: input.categoryName, currentCategoryId: existing?.category_id ?? null });
+  const categoryId = category?.id ?? null;
+  const categoryName = categoryId ? (await readCategories(db, ledger.id)).find(row => row.id === categoryId)?.name ?? null : null;
+  const snapshot = { ...details, ...draft, split: resolved.split, categoryId, categoryName, status: "active" };
   const hash = await requestHash({ entryId, expectedRevision, snapshot });
   const replay = await db.prepare("SELECT request_hash, response_json FROM idempotency_keys WHERE ledger_id = ? AND actor_user_id = ? AND idempotency_key = ?").bind(ledger.id, userId, idempotencyKey).first();
   if (replay) {
@@ -133,11 +137,11 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
   ];
   if (existing) {
     statements.push(db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, ?, ?, 'revised', ?)").bind(ledger.id, id, revision, userId, JSON.stringify(snapshot)));
-    statements.push(db.prepare("UPDATE ledger_entries SET entry_type = ?, currency_code = ?, total_minor = ?, description = ?, note = ?, occurred_at = ?, current_revision = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND current_revision = ?").bind(draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, revision, ledger.id, id, expectedRevision));
+    statements.push(db.prepare("UPDATE ledger_entries SET entry_type = ?, currency_code = ?, total_minor = ?, description = ?, note = ?, occurred_at = ?, category_id = ?, current_revision = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND current_revision = ?").bind(draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, categoryId, revision, ledger.id, id, expectedRevision));
     statements.push(db.prepare("DELETE FROM entry_cash_parties WHERE ledger_id = ? AND entry_id = ?").bind(ledger.id, id));
     statements.push(db.prepare("DELETE FROM entry_allocations WHERE ledger_id = ? AND entry_id = ?").bind(ledger.id, id));
   } else {
-    statements.push(db.prepare("INSERT INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, note, occurred_at, created_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(ledger.id, id, draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, userId));
+    statements.push(db.prepare("INSERT INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, note, occurred_at, created_by_user_id, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(ledger.id, id, draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, userId, categoryId));
     statements.push(db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, 1, ?, 'created', ?)").bind(ledger.id, id, userId, JSON.stringify(snapshot)));
   }
   appendComponents(db, statements, ledger.id, id, draft);
@@ -177,10 +181,17 @@ export async function voidEntry(db, { spaceId, userId, entryId, expectedRevision
   } catch (error) { return replayOrThrow(db, ledger.id, userId, idempotencyKey, hash, error, entryId, expectedRevision); }
 }
 
+// La categoría que se muestra: sigue las fusiones hasta una vigente. Una archivada sin fusionar se sigue mostrando.
+function categoryInfoFor(categories, id) {
+  const category = id ? resolveCategory(categories, id) : null;
+  return category ? { id: category.id, name: category.name, group: category.group, groupKey: category.groupKey, icon: category.icon, archived: category.status === "archived" } : null;
+}
+
 export async function readLedger(db, { spaceId, userId }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);
   const participants = await participantsFor(db, ledger.id);
-  const [entryRows, cashRows, allocationRows, importedRows, importedEffects] = await Promise.all([
+  const [categories, entryRows, cashRows, allocationRows, importedRows, importedEffects] = await Promise.all([
+    readCategories(db, ledger.id),
     db.prepare("SELECT e.*, u.display_name AS creator_name FROM ledger_entries e JOIN users u ON u.id = e.created_by_user_id WHERE e.ledger_id = ? ORDER BY e.occurred_at DESC, e.created_at DESC, e.id DESC").bind(ledger.id).all(),
     db.prepare("SELECT entry_id, participant_id, direction, amount_minor FROM entry_cash_parties WHERE ledger_id = ?").bind(ledger.id).all(),
     db.prepare("SELECT entry_id, participant_id, amount_minor FROM entry_allocations WHERE ledger_id = ?").bind(ledger.id).all(),
@@ -209,7 +220,7 @@ export async function readLedger(db, { spaceId, userId }) {
     const allocations = sharesByEntry.get(row.id) ?? [];
     const validated = validateEntryDraft({ type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, cashParties, allocations }, participants.map(p => p.id));
     if (row.status === "active") for (const effect of validated.effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
-    return { id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
+    return { categoryId: row.category_id, categoryInfo: categoryInfoFor(categories, row.category_id), id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
   });
   const importedEffectsByEntry = new Map();
   for (const row of importedEffects.results) {
@@ -220,10 +231,10 @@ export async function readLedger(db, { spaceId, userId }) {
     const effects = importedEffectsByEntry.get(row.id) ?? [];
     if (effects.reduce((total, effect) => total + BigInt(effect.amountMinor), 0n) !== 0n) throw new LedgerError("Un movimiento importado está desequilibrado.", 500);
     for (const effect of effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
-    entries.push({ id: row.id, type: "imported", imported: true, importBatchId: row.batch_id, sourceRowNumber: row.source_row_number, category: row.category, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: "", occurredAt: row.occurred_at, status: "active", revision: 1, createdByUserId: row.actor_user_id, creatorName: row.creator_name, cashParties: [], allocations: [], effects });
+    entries.push({ categoryId: null, categoryInfo: categoryInfoFor(categories, findCategoryByName(categories, row.category)?.id), id: row.id, type: "imported", imported: true, importBatchId: row.batch_id, sourceRowNumber: row.source_row_number, category: row.category, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: "", occurredAt: row.occurred_at, status: "active", revision: 1, createdByUserId: row.actor_user_id, creatorName: row.creator_name, cashParties: [], allocations: [], effects });
   }
   entries.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt) || b.id.localeCompare(a.id));
-  return { ledger, participants, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
+  return { ledger, participants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }
 
 export async function exportLedger(db, { spaceId, userId }) {

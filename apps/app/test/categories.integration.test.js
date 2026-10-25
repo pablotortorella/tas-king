@@ -191,7 +191,7 @@ describe("gestión por la persona titular", () => {
     expect((await readCategories(env.DB, ledger.id)).find(category => category.id === food.id).status).toBe("archived");
     await expect(categoryForEntry(env.DB, { ledgerId: ledger.id, userId: owner.id, categoryId: food.id })).rejects.toThrow(/archivada/u);
     await setCategoryArchived(env.DB, { ledger, userId: owner.id, categoryId: food.id, archived: false });
-    await expect(categoryForEntry(env.DB, { ledgerId: ledger.id, userId: owner.id, categoryId: food.id })).resolves.toBe(food.id);
+    await expect(categoryForEntry(env.DB, { ledgerId: ledger.id, userId: owner.id, categoryId: food.id })).resolves.toMatchObject({ id: food.id });
   });
 
   it("fusionar archiva la origen con un alias a la destino y no toca otras categorías", async () => {
