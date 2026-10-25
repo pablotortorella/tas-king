@@ -1,6 +1,6 @@
 # HomeSuite: contrato común de perfil y presentación
 
-**Estado:** contrato implementado en `main` para la plataforma básica; publicación en staging pendiente. La integración con la actividad financiera se hará cuando ese módulo entre en `main`.
+**Estado:** contrato implementado en `main` y publicado en staging el 2026-10-25. La integración con la actividad financiera se hará cuando ese módulo entre en `main`.
 
 Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y a los demás productos de la suite. El nombre y el avatar se guardan una vez por persona. El apodo pertenece a una membresía de espacio y comienza vacío. Las interfaces visuales de edición y presentación quedan para un cambio posterior.
 
@@ -14,7 +14,7 @@ El avatar guarda el modo `google`, `emoji` o `initial`, independientemente de la
 
 ## Rutas autenticadas
 
-Todas las respuestas `/api/` usan `Cache-Control: private, no-store`. Las mutaciones requieren sesión, origen confiable y `X-CSRF-Token` ligado a la sesión. En desarrollo, el modo local sólo se admite en `localhost` y `127.0.0.1`. Las rutas reciben y devuelven JSON; los cuerpos de edición se limitan a 8 KiB. Errores de validación: 400; sin sesión: 401; sin membresía: 404; revisión obsoleta: 409; cuerpo excesivo: 413; tipo de contenido distinto de JSON: 415.
+Todas las respuestas `/api/` usan `Cache-Control: private, no-store` y el Worker entrega `X-Request-Id` para rastrear solicitudes. Las mutaciones requieren sesión, origen confiable y `X-CSRF-Token` ligado a la sesión. En staging, los inicios de autenticación y las ediciones de perfil tienen límites de peticiones; si falta un binding obligatorio, la ruta protegida responde 503. En desarrollo, el modo local sólo se admite en `localhost` y `127.0.0.1`. Las rutas reciben y devuelven JSON; los cuerpos de edición se limitan a 8 KiB y las mutaciones con `Content-Length` declarado se rechazan por encima de 16 KiB. Errores de validación: 400; sin sesión: 401; sin membresía: 404; revisión obsoleta: 409; cuerpo excesivo: 413; tipo de contenido distinto de JSON: 415; límite de peticiones: 429.
 
 | Ruta | Uso |
 |---|---|
@@ -48,4 +48,4 @@ El primer consumo es el acceso con Google: tras autenticarse, la persona ve «Mu
 
 ## Verificación y despliegue
 
-Las pruebas unitarias e integraciones D1 cubren validación, Google, perfil previo, CSRF, privacidad, conflictos, auditoría, apodo, reingreso y la pantalla autenticada. Falta verificar un login real y la foto en staging. Para desplegar, seguir el orden operativo de HomeSuite: respaldo D1 → migración `0007` → Worker nuevo. La migración es aditiva y el Worker anterior puede continuar escribiendo usuarios; el Worker nuevo los materializa al leerlos. Este corte no habilita datos financieros reales ni producción.
+Las pruebas unitarias e integraciones D1 cubren validación, Google, perfil previo, CSRF, privacidad, conflictos, auditoría, apodo, reingreso y la pantalla autenticada. En staging se comprobó el inicio del flujo OAuth, las rutas sin sesión y la integridad de D1; falta verificar un login real y la foto. Para futuras instalaciones, seguir el orden operativo de HomeSuite: punto de recuperación D1 → migración `0007` → Worker nuevo. En este despliegue se registró un bookmark de D1 Time Travel previo a la migración; no se exportó un dump SQL. La migración es aditiva y el Worker anterior puede continuar escribiendo usuarios; el Worker nuevo los materializa al leerlos. Este corte no habilita datos financieros reales ni producción.

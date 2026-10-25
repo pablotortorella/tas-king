@@ -9,8 +9,9 @@
 
 ## Perfil compartido de HomeSuite — primer corte (2026-10-25)
 
-**Estado:** implementación local para `main`; staging pendiente de respaldo,
-migración y despliegue. La integración y el SHA final se comprueban en Git.
+**Estado:** perfil y aviso «Muy pronto» integrados en `main` y publicados en
+`staging.homesuite.info` el 2026-10-25. Código: `883727e`; Worker
+`homesuite-app-staging`, Version ID `955c8bf9-e892-4c21-8c85-b3d904cdf122`.
 
 - Exploración conversada: nombre y avatar globales, origen Google/personalización,
   modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
@@ -23,10 +24,20 @@ migración y despliegue. La integración y el SHA final se comprueban en Git.
   Cuentas Claras muestra «Muy pronto» y el nombre resuelto del perfil.
 - La integración del perfil con la cronología financiera sigue en la rama funcional
   `feature/homesuite-profile` porque el libro todavía no está en `main`.
-- Verificación local: 15 pruebas unitarias de HomeSuite App, 14 integraciones D1,
-  230 pruebas generales, `wrangler deploy --dry-run` para staging y migración
-  `0001`+`0002`→`0007` con usuario y membresía preexistentes. El login real y la
-  foto requieren comprobarse tras el despliegue de staging.
+- Antes de migrar D1 se registró el bookmark de Time Travel
+  `00000011-00000000-0000510f-0055f876f63fac55706083c98e5bc762`. No se hizo
+  una exportación SQL completa; la recuperación por ese punto depende de la
+  retención de Time Travel del plan. La migración `0007` conservó 2 usuarios y
+  2 membresías, creó 2 perfiles y dejó los apodos vacíos; `quick_check` dio `ok`,
+  `foreign_key_check` no encontró errores y no hay migraciones pendientes.
+- Verificación: 18 pruebas unitarias de HomeSuite App, 14 integraciones D1,
+  230 pruebas generales y [CI de `main`](https://github.com/pablotortorella/tas-king/actions/runs/40204299087)
+  en verde con 101 recorridos Playwright. Smoke remoto: `/healthz` y `/` 200,
+  `/api/me` y `/api/me/profile` 401 sin sesión, `/auth/google` 302 hacia Google;
+  todas esas respuestas incluyeron `X-Request-Id`. Los limitadores de auth y
+  mutaciones y la observabilidad están vinculados al Worker de staging.
+- El login real y la foto de Google requieren comprobación interactiva por una
+  persona con su cuenta; el smoke sólo comprobó el inicio del flujo OAuth.
 - No hay UI de edición de perfil ni migración de TasKing. No habilita producción
   ni datos financieros reales.
 
