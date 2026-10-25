@@ -1,5 +1,6 @@
 import { createPlatformId, normalizeEmail, normalizeSpaceName } from "./platform.js";
 import { normalizeCurrency } from "./finance.js";
+import { seedCategoriesStatement } from "./categories.js";
 
 const RESERVED_SLUGS = new Set(["new"]);
 
@@ -60,6 +61,7 @@ export async function createSpaceForUser(db, { userId, name, defaultCurrency = "
         db.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES (?, ?, ?)").bind(ledgerId, spaceId, currency),
         db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES (?, ?, ?, ?)").bind(ledgerId, createPlatformId("participant"), user.display_name, userId),
         db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'space_created', 'space', ?)").bind(eventId, userId, spaceId, spaceId),
+        seedCategoriesStatement(db, ledgerId),
       ]);
       return { id: spaceId, name: spaceName, slug, role: "owner", ledgerId, defaultCurrency: currency };
     } catch (error) {

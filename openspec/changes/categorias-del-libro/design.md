@@ -24,7 +24,7 @@ Ver `proposal.md` para el motivo y `specs/categorias-de-movimientos/spec.md` par
 
 ### D1. Tabla `ledger_categories` y columna `category_id`
 
-`ledger_categories(ledger_id, id, name, name_key, group_key, icon, status, merged_into, created_at, updated_at)` con clave primaria `(ledger_id, id)` y restricción única `(ledger_id, name_key)`. `ledger_entries` suma `category_id` nulo, con clave foránea compuesta `(ledger_id, category_id)`. `status` admite `active` y `archived`.
+`ledger_categories(ledger_id, id, name, name_key, group_key, icon, status, merged_into, created_at, updated_at)` con clave primaria `(ledger_id, id)` y restricción única `(ledger_id, name_key)`. `ledger_entries` suma `category_id` nulo, con clave foránea compuesta `(ledger_id, category_id)`. `status` admite `active` y `archived`. Se agregan `group_name` (el nombre del grupo tal como se muestra, con `group_key` normalizado para filtrar) y `position` (orden estable de la lista). La clave foránea compuesta de `ledger_entries.category_id` no se puede agregar con `ALTER TABLE` en SQLite, así que la pertenencia al libro se valida en el servidor; los ciclos de fusión los impide un disparador de la base además de la validación del servidor.
 
 - **Por qué.** Cambiar un nombre, un grupo o un ícono es modificar una fila; los movimientos solo guardan un identificador. Es lo que permite la limpieza del histórico sin tocar miles de filas.
 - **Alternativa.** Texto en cada movimiento con una lista de sugerencias: descartada, porque renombrar o fusionar exige reescribir cada movimiento y el grupo y el ícono solo existirían para los nombres que la aplicación reconociera.

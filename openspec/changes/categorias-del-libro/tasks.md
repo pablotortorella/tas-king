@@ -1,14 +1,14 @@
 ## 1. Modelo de datos
 
-- [ ] 1.1 Crear la migración con `ledger_categories` (clave única `(ledger_id, name_key)`, estados y `merged_into`) y la columna `category_id` en `ledger_entries`, y verificar con una prueba de integración que se aplica sobre una base con todas las migraciones y que la restricción única rechaza dos nombres normalizados iguales.
-- [ ] 1.2 Extraer la normalización de nombres de `ledger-ui.js` a un módulo compartido y verificar con pruebas unitarias que búsqueda y categorías producen la misma forma normalizada para mayúsculas, acentos, espacios y puntuación.
-- [ ] 1.3 Definir `DEFAULT_CATEGORIES` (grupo, nombre e ícono) con la lista propuesta y verificar con una prueba que no hay dos nombres con la misma forma normalizada.
+- [x] 1.1 Crear la migración con `ledger_categories` (clave única `(ledger_id, name_key)`, estados y `merged_into`) y la columna `category_id` en `ledger_entries`, y verificar con una prueba de integración que se aplica sobre una base con todas las migraciones y que la restricción única rechaza dos nombres normalizados iguales.
+- [x] 1.2 Extraer la normalización de nombres de `ledger-ui.js` a un módulo compartido y verificar con pruebas unitarias que búsqueda y categorías producen la misma forma normalizada para mayúsculas, acentos, espacios y puntuación.
+- [x] 1.3 Definir `DEFAULT_CATEGORIES` (grupo, nombre e ícono) con la lista propuesta y verificar con una prueba que no hay dos nombres con la misma forma normalizada.
 
 ## 2. Siembra
 
-- [ ] 2.1 Sembrar la lista inicial en `createSpaceForUser` dentro del mismo `db.batch`, con una sola sentencia sobre un JSON, y verificar con una prueba de integración que un libro nuevo tiene todas las categorías activas.
-- [ ] 2.2 Sembrar de forma diferida y con `INSERT OR IGNORE` los libros que no tienen lista, y verificar con una prueba de integración que un libro anterior la recibe una sola vez, también con dos accesos simultáneos.
-- [ ] 2.3 Verificar con una prueba de integración el aislamiento: la lista y las categorías creadas en un libro no aparecen en otro.
+- [x] 2.1 Sembrar la lista inicial en `createSpaceForUser` dentro del mismo `db.batch`, con una sola sentencia sobre un JSON, y verificar con una prueba de integración que un libro nuevo tiene todas las categorías activas.
+- [x] 2.2 Sembrar de forma diferida y con `INSERT OR IGNORE` los libros que no tienen lista, y verificar con una prueba de integración que un libro anterior la recibe una sola vez, también con dos accesos simultáneos.
+- [x] 2.3 Verificar con una prueba de integración el aislamiento: la lista y las categorías creadas en un libro no aparecen en otro.
 
 ## 3. Categoría en los movimientos
 

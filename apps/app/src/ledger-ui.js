@@ -1,15 +1,12 @@
 import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
 import { LedgerError } from "./ledger.js";
 import { escapeHtml, ICONS, shortDate } from "./ui-parts.js";
+import { searchable } from "./text.js";
 
 export { escapeHtml };
 
 function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
 export function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia", imported: "Importado" })[type] ?? type; }
-
-function searchable(value) {
-  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, " ").trim().replace(/\s+/gu, " ");
-}
 
 function numericNeedle(query, currency) {
   const text = String(query ?? "").trim();
