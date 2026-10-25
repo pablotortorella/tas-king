@@ -1,8 +1,8 @@
 ## 1. Inferencia de pagadores y reparto
 
-- [ ] 1.1 Crear `inferComponents` como función pura con la regla del diseño y verificar con pruebas unitarias de los escenarios del spec: reparto parejo, todo a cargo de una persona, varias personas a favor, fila sin efecto y efecto mayor que el total.
-- [ ] 1.2 Agregar una prueba de propiedades (miles de vectores de efectos válidos, con 2 a 6 personas y centavos) y verificar que los efectos que resultan de la descomposición, calculados con el validador de la aplicación, son idénticos a los del archivo.
-- [ ] 1.3 Verificar con un CSV sintético de la forma de un export real (2.485 filas y dos personas, generado por script, sin datos reales) que todas las filas se convierten y que los saldos coinciden con la suma de los efectos.
+- [x] 1.1 Crear `inferComponents` como función pura con la regla del diseño y verificar con pruebas unitarias de los escenarios del spec: reparto parejo, todo a cargo de una persona, varias personas a favor, fila sin efecto y efecto mayor que el total.
+- [x] 1.2 Agregar una prueba de propiedades (miles de vectores de efectos válidos, con 2 a 6 personas y centavos) y verificar que los efectos que resultan de la descomposición, calculados con el validador de la aplicación, son idénticos a los del archivo.
+- [x] 1.3 Verificar con un CSV sintético de la forma de un export real (2.485 filas y dos personas, generado por script, sin datos reales) que todas las filas se convierten y que los saldos coinciden con la suma de los efectos.
 
 ## 2. Modelo de datos
 
