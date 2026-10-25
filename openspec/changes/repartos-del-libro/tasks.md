@@ -29,4 +29,4 @@
 ## 5. Cierre
 
 - [x] 5.1 Actualizar el requisito «Repartos exactos con residuo determinista» del borrador `libro-y-saldos-cuentas-claras` para que remita a la capability `reparto-de-movimientos`, y verificar con `openspec validate repartos-del-libro --strict` y la validación del borrador.
-- [ ] 5.2 Ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` y verificar que pasan completos.
+- [x] 5.2 Ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` y verificar que pasan completos.
