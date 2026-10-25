@@ -18,9 +18,9 @@ function mapRow(row) {
 }
 
 export async function readCategories(db, ledgerId) {
-  const query = () => db.prepare("SELECT id, name, name_key, group_name, group_key, icon, position, status, merged_into FROM ledger_categories WHERE ledger_id = ? ORDER BY position, name_key").bind(ledgerId).all();
+  const query = () => db.prepare("SELECT id, name, name_key, group_name, group_key, icon, position, status, merged_into FROM ledger_categories WHERE ledger_id = ? AND pending_import_batch_id IS NULL ORDER BY position, name_key").bind(ledgerId).all();
   let rows = (await query()).results;
-  if (!rows.length) {
+  if (!rows.length && !(await db.prepare("SELECT 1 AS present FROM ledger_categories WHERE ledger_id = ? LIMIT 1").bind(ledgerId).first())) {
     await seedCategoriesStatement(db, ledgerId).run();
     rows = (await query()).results;
   }
@@ -105,6 +105,7 @@ export async function createCategory(db, { ledgerId, userId, name, group, icon }
     // Otra persona creó el mismo nombre al mismo tiempo: la restricción única decide y se devuelve la ganadora.
     const winner = findCategoryByName(await readCategories(db, ledgerId), displayName);
     if (winner) return { category: winner, created: false, existing: winner };
+    if (/UNIQUE/iu.test(String(error?.message))) throw new CategoryError("Hay una importación en curso que usa ese nombre de categoría. Probá de nuevo cuando termine.", 409);
     throw error;
   }
   return { category: { id, name: displayName, nameKey: searchable(displayName), group: groupName, groupKey: searchable(groupName), icon: cleanIcon(icon), position, status: "active", mergedInto: null }, created: true };

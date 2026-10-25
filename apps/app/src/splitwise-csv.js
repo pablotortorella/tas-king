@@ -26,8 +26,17 @@ function validDate(value) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-export function parseMovement(cells, participantNames, line, fallbackCurrency = null) {
-  const [dateRaw, descriptionRaw, categoryRaw, costRaw, currencyRaw, ...effectRaw] = cells;
+// Columnas de notas opcionales que algunos exports traen después de las personas (Notas, Comentarios…).
+const NOTE_HEADER = /^(notas?|notes?|comentarios?|comments?)$/u;
+export const MAX_NOTE_LENGTH = 1000;
+
+// layout: posiciones de las columnas de personas y de notas en cada fila. Por defecto, personas desde la sexta columna.
+export function defaultLayout(participantNames) {
+  return { participantIndexes: participantNames.map((_, index) => index + 5), noteIndexes: [] };
+}
+
+export function parseMovement(cells, participantNames, line, fallbackCurrency = null, layout = defaultLayout(participantNames)) {
+  const [dateRaw, descriptionRaw, categoryRaw, costRaw, currencyRaw] = cells;
   const occurredAt = String(dateRaw ?? "").trim();
   if (!validDate(occurredAt)) throw new SplitwiseCsvError("Fecha inválida.");
   const description = String(descriptionRaw ?? "").trim();
@@ -36,14 +45,17 @@ export function parseMovement(cells, participantNames, line, fallbackCurrency = 
   if (category.length > 120) throw new SplitwiseCsvError("Categoría demasiado larga.");
   const currency = normalizeCurrency(String(currencyRaw ?? "").trim() || fallbackCurrency);
   if (!currency) throw new SplitwiseCsvError(currencyRaw ? "Moneda no soportada." : "Falta la moneda.");
-  if (effectRaw.length !== participantNames.length) throw new SplitwiseCsvError("La cantidad de columnas no coincide con el encabezado.");
+  if (cells.length !== 5 + layout.participantIndexes.length + layout.noteIndexes.length) throw new SplitwiseCsvError("La cantidad de columnas no coincide con el encabezado.");
   const totalMinor = parseSignedMinor(costRaw, currency);
   if (totalMinor < 0) throw new SplitwiseCsvError("El coste no puede ser negativo.");
-  const effects = effectRaw.map((raw, index) => ({ sourceName: participantNames[index], amountMinor: parseSignedMinor(raw, currency) }));
+  const effects = layout.participantIndexes.map((position, index) => ({ sourceName: participantNames[index], amountMinor: parseSignedMinor(cells[position], currency) }));
   const sum = effects.reduce((total, effect) => total + BigInt(effect.amountMinor), 0n);
   if (sum !== 0n) throw new SplitwiseCsvError("Los efectos de la fila no suman cero.");
   if (totalMinor === 0 && effects.every(effect => effect.amountMinor === 0)) throw new SplitwiseCsvError("Fila sin importe ni efecto.");
-  return { line, occurredAt, description, category, currency, totalMinor, effects };
+  const positive = effects.reduce((total, effect) => total + (effect.amountMinor > 0 ? BigInt(effect.amountMinor) : 0n), 0n);
+  if (positive > BigInt(totalMinor)) throw new SplitwiseCsvError("El efecto a favor supera el total del movimiento.");
+  const note = layout.noteIndexes.map(position => String(cells[position] ?? "").trim()).filter(Boolean).join("\n").slice(0, MAX_NOTE_LENGTH);
+  return { line, occurredAt, description, category, currency, totalMinor, effects, note };
 }
 
 const SUMMARY_LABEL = /^(total balance|balance total|saldo total|balance|saldo|balances|saldos)$/u;
@@ -85,7 +97,12 @@ export function parseSplitwiseCsv(text) {
   if (header.length < 7 || expected.some((choices, index) => !choices.includes(normalized(header[index])))) {
     throw new SplitwiseCsvError("El encabezado no corresponde a una exportación CSV de Splitwise.");
   }
-  const participantNames = header.slice(5);
+  const participantIndexes = [];
+  const noteIndexes = [];
+  header.slice(5).forEach((cell, offset) => (NOTE_HEADER.test(normalized(cell)) ? noteIndexes : participantIndexes).push(offset + 5));
+  const participantNames = participantIndexes.map(position => header[position]);
+  if (participantIndexes.length < 2) throw new SplitwiseCsvError("El encabezado no corresponde a una exportación CSV de Splitwise.");
+  const layout = { participantIndexes, noteIndexes };
   if (participantNames.some(name => !name || name.length > 120) || new Set(participantNames.map(normalized)).size !== participantNames.length) {
     throw new SplitwiseCsvError("Las columnas de participantes deben tener nombres únicos.");
   }
@@ -94,14 +111,14 @@ export function parseSplitwiseCsv(text) {
   const summaries = [];
   for (const record of records) {
     if (isSummary(record.cells)) {
-      summaries.push({ line: record.line, currency: normalizeCurrency(record.cells[4]), rawEffects: participantNames.map((name, index) => ({ sourceName: name, raw: record.cells[index + 5] ?? "" })) });
+      summaries.push({ line: record.line, currency: normalizeCurrency(record.cells[4]), rawEffects: participantNames.map((name, index) => ({ sourceName: name, raw: record.cells[participantIndexes[index]] ?? "" })) });
       continue;
     }
     if (record.errors.length) {
       incidents.push({ line: record.line, reason: "CSV mal formado.", code: "malformed", cells: record.cells });
       continue;
     }
-    try { movements.push(parseMovement(record.cells, participantNames, record.line)); }
+    try { movements.push(parseMovement(record.cells, participantNames, record.line, null, layout)); }
     catch (error) {
       if (!(error instanceof SplitwiseCsvError)) throw error;
       const missingCurrency = error.message === "Falta la moneda.";
@@ -109,5 +126,5 @@ export function parseSplitwiseCsv(text) {
     }
   }
   if (!movements.length && !incidents.length) throw new SplitwiseCsvError("No se encontraron movimientos.");
-  return { participantNames, movements, incidents, summaries, totalRows: records.length };
+  return { participantNames, layout, movements, incidents, summaries, totalRows: records.length };
 }

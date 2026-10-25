@@ -19,7 +19,7 @@ const entries = [
   entry("c", { categoryId: "c-fus", categoryInfo: info("c-alq", "Alquiler") }),
   entry("d"),
   entry("e", { type: "transfer", cashParties: [{ participantId: "p1", direction: "out", amountMinor: 10000 }, { participantId: "p2", direction: "in", amountMinor: 10000 }], allocations: [] }),
-  entry("f", { imported: true, type: "imported", category: "Comida suelta", cashParties: [], allocations: [] }),
+  entry("f", { importBatchId: "import_x", sourceRowNumber: 9, categoryInfo: info("c-suelta", "Comida suelta", "Importadas de Splitwise") }),
 ];
 const ids = list => list.map(row => row.id);
 

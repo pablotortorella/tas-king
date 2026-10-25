@@ -60,7 +60,7 @@ describe("libro: vista general", () => {
 
   it("rotula anulados e importados una sola vez y cuenta resultados", () => {
     const voided = entry({ id: "e2", status: "voided", description: "Cena" });
-    const imported = { ...entry({ id: "e3", description: "Taxi" }), type: "imported", imported: true, sourceRowNumber: 7, cashParties: [], allocations: [] };
+    const imported = { ...entry({ id: "e3", description: "Taxi" }), importBatchId: "import_x", sourceRowNumber: 7 };
     const html = renderLedgerOverview(data([entry(), voided, imported]), { spaceId: "casa", userId: "u1" });
     expect(html).toContain("2 vigentes · 1 anulado");
     expect(html.match(/Importado de Splitwise/gu)).toHaveLength(1);

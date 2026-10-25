@@ -37,7 +37,7 @@ function matchTerm(entry, names, raw) {
   if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, raw)) return "Importe total";
   for (const effect of entry.effects) {
     const name = names.get(effect.participantId) ?? "";
-    if (searchable(name).includes(needle)) return `Participante: ${name}`;
+    if (searchable(name).includes(needle)) return `Participante: ${name}${entry.inferred && entry.cashParties.some(party => party.participantId === effect.participantId) ? " (pagador inferido)" : ""}`;
     if (searchable(formatMoney(effect.amountMinor, entry.currency)).includes(needle) || amountMatches(effect.amountMinor, entry.currency, raw)) return `Efecto de ${name}`;
   }
   return null;
@@ -235,13 +235,16 @@ function splitNote(entry, data) {
   return `<p class="footnote">${equal ? `Reparto igual entre ${ids.length} ${ids.length === 1 ? "persona" : "personas"}.` : "Reparto con importes exactos."}${absent.length ? ` ${escapeHtml(absent.join(" y "))} no ${absent.length === 1 ? "participa" : "participan"}.` : ""}</p>`;
 }
 
+// Origen de un movimiento importado: archivo, fila y, si el pagador y el reparto se dedujeron, cómo corregirlos.
+function provenance(entry, spaceId) {
+  if (!entry.importBatchId) return "";
+  const inferred = entry.inferred ? '<p class="hint inferred">El pagador y el reparto se dedujeron de los saldos del archivo. Si no coinciden con lo que pasó, corregilos: el efecto original no cambia hasta que lo hagas.</p>' : "";
+  return `<p class="entry-origin"><span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span> <a href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver el lote</a></p>${inferred}`;
+}
+
 export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const names = new Map(data.participants.map(p => [p.id, p.displayName]));
   const back = `<a class="back-link" href="${path(spaceId)}">← Volver al libro</a>`;
-  if (entry.imported) {
-    const effects = entry.effects.map(effect => `<tr><td>${escapeHtml(names.get(effect.participantId) ?? "Participante")}</td><td class="money ${effectClass(effect.amountMinor)}">${escapeHtml(signedBare(effect.amountMinor, entry.currency))}</td></tr>`).join("");
-    return `${back}<p class="eyebrow">Importado de Splitwise · fila ${entry.sourceRowNumber}</p><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</p><p class="muted">${escapeHtml(shortDate(entry.occurredAt))}</p>${entry.categoryInfo ? `<p class="entry-category">${categoryChip(entry)} <span class="muted">${escapeHtml(entry.categoryInfo.group)} · categoría original: ${escapeHtml(entry.category)}</span></p>` : entry.category ? `<p>Categoría original: ${escapeHtml(entry.category)}</p>` : ""}<section class="ledger-section"><h2>Efecto en el saldo</h2><div class="table-scroll"><table class="balance-table"><thead><tr><th scope="col">Persona</th><th scope="col">Efecto</th></tr></thead><tbody>${effects}</tbody></table></div><p class="footnote">Importes en ${escapeHtml(entry.currency)}.</p></section><a class="button secondary" href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver lote de importación</a>`;
-  }
   const voided = entry.status === "voided";
   const creator = entry.createdByUserId === userId ? "vos" : entry.creatorName;
   const list = direction => entry.cashParties.filter(p => p.direction === direction).map(p => names.get(p.participantId) ?? "Participante").join(", ");
@@ -249,7 +252,7 @@ export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
   const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
-  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
+  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, spaceId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
 }
 export function ledgerCsv(data) {
   const quote = value => {
@@ -258,6 +261,6 @@ export function ledgerCsv(data) {
     return `"${safe.replaceAll('"', '""')}"`;
   };
   const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "categoria", "participante_id", "efecto_menor", "origen", "lote", "fila_origen"]];
-  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, entry.categoryInfo?.name ?? entry.category ?? "", effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.imported ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
+  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, entry.categoryInfo?.name ?? entry.category ?? "", effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.importBatchId ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
   return `\uFEFF${lines.map(row => row.map(quote).join(",")).join("\r\n")}\r\n`;
 }

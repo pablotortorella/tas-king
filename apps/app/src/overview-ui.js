@@ -52,14 +52,15 @@ function balanceBlock(currency, data, ownId, spaceId) {
 function entryRow(entry, data, ownId, spaceId) {
   const names = new Map(data.participants.map(person => [person.id, person.displayName]));
   const list = direction => entry.cashParties.filter(party => party.direction === direction).map(party => names.get(party.participantId) ?? "Participante").join(", ");
-  const who = entry.imported ? "" : entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
+  const who = entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
   const effect = ownId ? entry.effects.find(row => row.participantId === ownId)?.amountMinor : undefined;
   const voided = entry.status === "voided";
   const effectText = voided ? '<small class="muted">No cuenta en los saldos</small>'
     : effect ? `<small class="${effect > 0 ? "owed" : "owes"}">Tu efecto ${escapeHtml(signed(effect, entry.currency))}</small>` : "";
   const chips = [
     categoryChip(entry),
-    entry.imported ? `<span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span>` : "",
+    entry.importBatchId ? `<span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span>` : "",
+    entry.inferred ? '<span class="chip warn">Pagador inferido</span>' : "",
     voided ? '<span class="chip void">Anulado</span>' : "",
     entry.matchReason ? `<span class="chip match">Coincide: ${escapeHtml(entry.matchReason)}</span>` : "",
   ].join("");

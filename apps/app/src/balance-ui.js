@@ -11,7 +11,6 @@ function story(entry, target, names, isOwn) {
   const sum = (rows, participantId, direction) => rows.filter(row => row.participantId === participantId && (!direction || row.direction === direction)).reduce((total, row) => total + row.amountMinor, 0);
   const list = direction => entry.cashParties.filter(party => party.direction === direction).map(party => names.get(party.participantId) ?? "Participante").join(", ");
   const you = isOwn ? "Vos" : target.displayName;
-  if (entry.imported) return `Importado de Splitwise · fila ${entry.sourceRowNumber}`;
   const share = sum(entry.allocations, target.id);
   if (entry.type === "expense") {
     const paid = sum(entry.cashParties, target.id, "out");
@@ -29,8 +28,8 @@ function story(entry, target, names, isOwn) {
 
 function row(item, data, target, names, isOwn, spaceId) {
   const { entry, effectMinor, accumulatedMinor } = item;
-  const icon = entry.imported ? ICONS.imported : ICONS[entry.type] ?? ICONS.expense;
-  return `<li class="entry-row"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span class="ico ico-${entry.imported ? "imported" : entry.type}">${icon}</span><span class="entry-main"><strong class="entry-title">${escapeHtml(entry.description)}</strong><small>${escapeHtml(entry.imported ? "Importado" : entryLabel(entry.type))} · ${escapeHtml(shortDate(entry.occurredAt))}</small><small>${escapeHtml(story(entry, target, names, isOwn))}</small></span><span class="entry-side"><strong class="money ${effectMinor > 0 ? "owed" : "owes"}">${escapeHtml(signed(effectMinor, entry.currency))}</strong><small class="muted">acumulado ${escapeHtml(formatMoney(accumulatedMinor, entry.currency))}</small></span></a></li>`;
+  const icon = entry.importBatchId ? ICONS.imported : ICONS[entry.type] ?? ICONS.expense;
+  return `<li class="entry-row"><a href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}"><span class="ico ico-${entry.importBatchId ? "imported" : entry.type}">${icon}</span><span class="entry-main"><strong class="entry-title">${escapeHtml(entry.description)}</strong><small>${escapeHtml(entry.importBatchId ? "Importado" : entryLabel(entry.type))} · ${escapeHtml(shortDate(entry.occurredAt))}</small><small>${escapeHtml(story(entry, target, names, isOwn))}</small></span><span class="entry-side"><strong class="money ${effectMinor > 0 ? "owed" : "owes"}">${escapeHtml(signed(effectMinor, entry.currency))}</strong><small class="muted">acumulado ${escapeHtml(formatMoney(accumulatedMinor, entry.currency))}</small></span></a></li>`;
 }
 
 export function renderBalanceExplanation(data, { spaceId, userId, currency, personId }) {
@@ -43,8 +42,8 @@ export function renderBalanceExplanation(data, { spaceId, userId, currency, pers
   const balance = data.balances.find(entry => entry.currency === active && entry.participantId === target.id)?.amountMinor ?? 0;
   const { rows, totalMinor } = explainBalance(data.entries, target.id, active);
   const newestFirst = [...rows].reverse();
-  const own_rows = newestFirst.filter(item => !item.entry.imported);
-  const imported = newestFirst.filter(item => item.entry.imported);
+  const own_rows = newestFirst.filter(item => !item.entry.importBatchId);
+  const imported = newestFirst.filter(item => item.entry.importBatchId);
   const importedTotal = imported.reduce((sum, item) => sum + item.effectMinor, 0);
   const title = isOwn
     ? balance > 0 ? "Por qué te deben" : balance < 0 ? "Por qué debés" : "Cómo se arma tu saldo"
