@@ -3,6 +3,7 @@ import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal,
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
 import { readOwnProfile } from "./profiles.js";
+import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
@@ -43,6 +44,7 @@ function demoQuery(index) {
 export const app = new Hono();
 
 const OAUTH_COOKIE = "homesuite_oauth";
+const MAX_MUTATION_BODY_BYTES = 16 * 1024;
 
 function authConfig(env = {}) {
   const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret, SESSION_SECRET: sessionSecret } = env;
@@ -75,10 +77,41 @@ function html(value) {
   return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 
+function requestId(c) { return c.get("requestId") || "unknown"; }
+
+async function enforceRateLimit(c, binding, key) {
+  const limit = await checkRateLimit(binding, key);
+  if (!limit.configured && c.env?.REQUIRE_RATE_LIMITS === "true") {
+    console.error("[homesuite-app]", JSON.stringify({ event: "rate_limit_binding_missing", requestId: requestId(c) }));
+    return c.json({ error: "Protección temporalmente no disponible.", requestId: requestId(c) }, 503);
+  }
+  if (limit.allowed) return null;
+  c.header("Retry-After", String(RATE_LIMIT_RETRY_SECONDS));
+  return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde.", requestId: requestId(c) }, 429);
+}
+
 app.use("*", async (c, next) => {
+  c.set("requestId", c.req.header("cf-ray") || crypto.randomUUID());
   await next();
+  c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
   if (new URL(c.req.url).pathname.startsWith("/api/") || new URL(c.req.url).pathname === "/") c.header("Cache-Control", "private, no-store");
+});
+
+app.use("*", async (c, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) {
+    const contentLength = Number.parseInt(c.req.header("Content-Length") ?? "0", 10);
+    if (Number.isFinite(contentLength) && contentLength > MAX_MUTATION_BODY_BYTES) {
+      return c.json({ error: "La solicitud es demasiado grande.", requestId: requestId(c) }, 413);
+    }
+  }
+  return next();
+});
+
+app.use("/auth/*", async (c, next) => {
+  const limited = await enforceRateLimit(c, c.env?.AUTH_RATE_LIMITER, c.req.header("CF-Connecting-IP") || "unknown");
+  if (limited) return limited;
+  return next();
 });
 
 async function signedInUser(c) {
@@ -98,6 +131,8 @@ app.use("*", async (c, next) => {
   const secret = sessionSecret(c.env);
   const session = await signedInUser(c);
   if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
+  const limited = await enforceRateLimit(c, c.env?.MUTATION_RATE_LIMITER, session.id);
+  if (limited) return limited;
   const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: session.id, secret });
   if (!csrf.valid) return c.json({ error: "Solicitud no verificada.", code: "csrf_rejected" }, 403);
   c.set("protectedUser", session);

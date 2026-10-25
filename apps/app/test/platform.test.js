@@ -38,6 +38,21 @@ describe("fundaciones de plataforma", () => {
     const root = await app.request("http://app.test/");
     expect(root.status).toBe(200);
     expect(root.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
+    expect(root.headers.get("X-Request-Id")).toBeTruthy();
+  });
+
+  it("exige el limitador de autenticación en staging y responde con trazabilidad", async () => {
+    const response = await app.request("https://staging.homesuite.info/auth/google", undefined, { REQUIRE_RATE_LIMITS: "true" });
+    expect(response.status).toBe(503);
+    expect(response.headers.get("X-Request-Id")).toBeTruthy();
+  });
+
+  it("rechaza cuerpos de mutación demasiado grandes", async () => {
+    const response = await app.request("https://app.test/api/me/profile", {
+      method: "PATCH",
+      headers: { "Content-Length": "16385" },
+    });
+    expect(response.status).toBe(413);
   });
 
   it("escapa los datos que se interpolan en la interfaz local", async () => {
