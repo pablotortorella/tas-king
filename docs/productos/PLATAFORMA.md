@@ -44,10 +44,12 @@ operar con información irreemplazable. Estado actual y dependencias de integrac
 no se copian aquí: consultar STATUS y el change correspondiente. Esta ficha no
 habilita publicar producción ni convierte condiciones pendientes en excepciones.
 
-## Perfil compartido — propuesta
+## Perfil compartido
 
 Acuerdos de nombre, avatar y apodo por espacio en la
 [exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
 [change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
-Estado: planificación, sin implementación. Cuentas Claras consumirá la capacidad
-de plataforma; la migración de TasKing y la UI quedan para cortes posteriores.
+La [API común](../HOMESUITE_PROFILE_API.md) implementa datos y gestión en la
+plataforma. Cuentas Claras muestra el aviso «Muy pronto» tras el acceso con Google;
+la integración financiera, la migración de TasKing y la UI de edición quedan para
+cortes posteriores. Consultar STATUS para el SHA y el estado de staging.

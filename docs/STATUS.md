@@ -1,16 +1,16 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-24
+**Última actualización**: 2026-10-25
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
-## Perfil compartido de HomeSuite — propuesta (2026-10-24)
+## Perfil compartido de HomeSuite — primer corte (2026-10-25)
 
-**Estado:** propuesta OpenSpec; sin implementación ni despliegue de esta capacidad.
-La integración de los documentos se comprueba en el historial Git.
+**Estado:** implementación local para `main`; staging pendiente de respaldo,
+migración y despliegue. La integración y el SHA final se comprueban en Git.
 
 - Exploración conversada: nombre y avatar globales, origen Google/personalización,
   modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
@@ -18,11 +18,17 @@ La integración de los documentos se comprueba en el historial Git.
 - [Change](../openspec/changes/perfil-compartido-homesuite/proposal.md): perfil
   global de plataforma y presentación de membresía separados; contratos propios
   y lecturas autorizadas; migración compatible, revisiones y pruebas planificadas.
-- Contrastado con main `df25195` e integración funcional `973ce4a` mediante refs
-  locales. Antes de implementar, actualizar la comparación y elegir base vigente.
-- Validación: `openspec validate perfil-compartido-homesuite --strict` pasa;
-  artefactos de planificación completos. Escenarios y tareas aún no ejecutados.
-- No hay UI nueva ni migración de TasKing. Validar documentos no implementa la capacidad.
+- `main` conserva la plataforma actual e incorpora perfil global, avatar, apodo de
+  membresía, revisión de escrituras y API autorizada. Tras un login con Google,
+  Cuentas Claras muestra «Muy pronto» y el nombre resuelto del perfil.
+- La integración del perfil con la cronología financiera sigue en la rama funcional
+  `feature/homesuite-profile` porque el libro todavía no está en `main`.
+- Verificación local: 15 pruebas unitarias de HomeSuite App, 14 integraciones D1,
+  230 pruebas generales, `wrangler deploy --dry-run` para staging y migración
+  `0001`+`0002`→`0007` con usuario y membresía preexistentes. El login real y la
+  foto requieren comprobarse tras el despliegue de staging.
+- No hay UI de edición de perfil ni migración de TasKing. No habilita producción
+  ni datos financieros reales.
 
 
 ## Base común de buenas prácticas — 2026-10-24

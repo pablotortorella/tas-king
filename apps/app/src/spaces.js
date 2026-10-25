@@ -7,7 +7,7 @@ export async function createSpaceForUser(db, { userId, name }) {
   const eventId = createPlatformId("audit");
   await db.batch([
     db.prepare("INSERT INTO spaces (id, name) VALUES (?, ?)").bind(spaceId, spaceName),
-    db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'owner')").bind(spaceId, userId),
+    db.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'owner', ?)").bind(spaceId, userId, createPlatformId("membership")),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'space_created', 'space', ?)").bind(eventId, userId, spaceId, spaceId),
   ]);
   return { id: spaceId, name: spaceName, role: "owner" };
@@ -44,7 +44,7 @@ export async function resolveInvitation(db, { invitationId, userId, email, accep
     db.prepare("UPDATE invitations SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?").bind(status, invitationId),
     db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, 'invitation', ?)").bind(createPlatformId("audit"), userId, invitation.space_id, action, invitationId),
   ];
-  if (accepted) statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'member')").bind(invitation.space_id, userId));
+  if (accepted) statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)").bind(invitation.space_id, userId, createPlatformId("membership")));
   await db.batch(statements);
   return invitation.space_id;
 }

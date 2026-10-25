@@ -120,5 +120,5 @@ export async function validateGoogleIdToken({ idToken, audience, nonce, fetcher 
   if (!GOOGLE_ISSUERS.has(payload.iss) || !audiences.includes(audience) || (audiences.length > 1 && payload.azp !== audience) || payload.exp <= currentSeconds || (payload.iat && payload.iat > currentSeconds + 60) || payload.nonce !== nonce || payload.email_verified !== true || typeof payload.sub !== "string" || !payload.sub || typeof payload.email !== "string") {
     throw new Error("Los claims de Google no son válidos.");
   }
-  return { sub: payload.sub, email: payload.email, name: typeof payload.name === "string" ? payload.name : "" };
+  return { sub: payload.sub, email: payload.email, name: typeof payload.name === "string" ? payload.name : "", picture: typeof payload.picture === "string" ? payload.picture : null };
 }

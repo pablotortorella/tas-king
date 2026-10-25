@@ -1,6 +1,6 @@
 # HomeSuite — exploración de Perfil compartido
 
-**Fecha:** 2026-10-24. **Estado:** acuerdos trasladados a propuesta OpenSpec; sin implementación.
+**Fecha:** 2026-10-24. **Estado:** acuerdos trasladados a OpenSpec; primer corte de plataforma implementado. Ver [contrato de API](HOMESUITE_PROFILE_API.md) y [STATUS](STATUS.md) para alcance y despliegue.
 Hereda la [base común](homesuite/README.md) y pertenece a la
 [plataforma](productos/PLATAFORMA.md). Esta nota registra acuerdos y preguntas;
 no fija todavía esquema SQL, API definitiva ni decisiones visuales.

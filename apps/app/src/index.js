@@ -1,11 +1,14 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
+import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
+import { registerProfileRoutes } from "./profile-routes.js";
+import { readOwnProfile } from "./profiles.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
-  "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
+  "Content-Security-Policy": "default-src 'self'; img-src 'self' https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
   "Cross-Origin-Opener-Policy": "same-origin",
   "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
   "Referrer-Policy": "no-referrer",
@@ -48,6 +51,10 @@ function authConfig(env = {}) {
     : null;
 }
 
+function sessionSecret(env = {}) {
+  return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
+}
+
 function setCookie(c, value) {
   c.header("Set-Cookie", value, { append: true });
 }
@@ -71,6 +78,30 @@ function html(value) {
 app.use("*", async (c, next) => {
   await next();
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+  if (new URL(c.req.url).pathname.startsWith("/api/") || new URL(c.req.url).pathname === "/") c.header("Cache-Control", "private, no-store");
+});
+
+async function signedInUser(c) {
+  const secret = sessionSecret(c.env);
+  return secret ? currentSession(c.env.DB, c.req.raw, secret) : null;
+}
+
+app.use("*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/spaces\/[^/]+\/me\/presentation$/u.test(path))) return next();
+  const host = new URL(c.req.url).hostname;
+  const localEmail = (host === "localhost" || host === "127.0.0.1") ? localUser(c) : null;
+  if (localEmail) {
+    c.set("protectedUser", await ensureLocalUser(c.env.DB, localEmail));
+    return next();
+  }
+  const secret = sessionSecret(c.env);
+  const session = await signedInUser(c);
+  if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
+  const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: session.id, secret });
+  if (!csrf.valid) return c.json({ error: "Solicitud no verificada.", code: "csrf_rejected" }, 403);
+  c.set("protectedUser", session);
+  return next();
 });
 
 app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
@@ -80,16 +111,21 @@ function localUser(c) {
   return c.req.query("as") || c.env.DEV_LOCAL_EMAIL || c.req.header("X-HomeSuite-Dev-Email") || null;
 }
 
+registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
+
 app.get("/api/me", async (c) => {
   const email = localUser(c);
   if (email) {
     const user = await ensureLocalUser(c.env.DB, email);
-    return c.json({ id: user.id, email: user.email, displayName: user.display_name, local: true });
+    const profile = await readOwnProfile(c.env.DB, user.id);
+    return c.json({ id: user.id, email: user.email, displayName: profile.displayName, profile, local: true });
   }
-  const config = authConfig(c.env);
-  const session = config ? await currentSession(c.env.DB, c.req.raw, config.sessionSecret) : null;
+  const secret = sessionSecret(c.env);
+  const session = await signedInUser(c);
   if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
-  return c.json({ id: session.user_id, email: session.email, displayName: session.display_name });
+  const profile = await readOwnProfile(c.env.DB, session.user_id);
+  const csrfToken = await createCsrfToken({ sessionId: session.id, secret });
+  return c.json({ id: session.user_id, email: session.email, displayName: profile.displayName, profile, csrfToken });
 });
 
 app.use("/demo/*", async (c, next) => {
@@ -255,8 +291,11 @@ app.get("/", async (c) => {
     return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Este es un recorrido local de prueba: guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
   }
   const config = authConfig(c.env);
-  const session = config ? await currentSession(c.env.DB, c.req.raw, config.sessionSecret) : null;
-  if (session) return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Tu sesión está activa. La creación de espacios e invitaciones se habilitarán en el siguiente corte de la plataforma.</p><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+  const session = await signedInUser(c);
+  if (session) {
+    const profile = await readOwnProfile(c.env.DB, session.user_id);
+    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Muy pronto.</h1><p>Hola, ${html(profile.displayName)}. Ya ingresaste con tu cuenta de Google. Estamos terminando la primera versión de Cuentas Claras; todavía no hay movimientos ni saldos para usar aquí.</p><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+  }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
   return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
 });
