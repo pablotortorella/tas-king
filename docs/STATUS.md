@@ -9,8 +9,8 @@
 
 ## Perfil compartido de HomeSuite — propuesta (2026-10-24)
 
-**Estado:** planificación en `docs/homesuite-profile-explore`, sin implementación,
-integración ni despliegue de esta capacidad.
+**Estado:** propuesta OpenSpec; sin implementación ni despliegue de esta capacidad.
+La integración de los documentos se comprueba en el historial Git.
 
 - Exploración conversada: nombre y avatar globales, origen Google/personalización,
   modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
