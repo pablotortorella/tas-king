@@ -2,7 +2,7 @@
 
 **Política operativa:** [Operación común](homesuite/OPERACION.md). Los estados y recursos descritos abajo son snapshots fechados; consultar STATUS y configuración antes de ejecutar cambios remotos.
 
-**Estado:** sitio público en producción; app autenticada en staging; migración de TasKing pendiente. Consultar STATUS para versiones.
+**Estado:** sitio público en producción y staging; app autenticada en staging; migración de TasKing pendiente. Consultar STATUS para versiones.
 
 **Fecha:** 2026-09-21
 

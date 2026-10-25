@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:homesuite-app": "vitest run --config apps/app/vitest.config.mjs",
     "test:homesuite-app:integration": "vitest run --config apps/app/vitest.integration.config.mjs",
+    "test:homesuite-site": "vitest run --config apps/site/vitest.config.mjs",
     "dev:homesuite-app": "wrangler dev --config apps/app/wrangler.jsonc --var DEV_LOCAL_MODE:true --var DEV_LOCAL_EMAIL:zelda@example.test",
     "db:migrate:homesuite-app:local": "wrangler d1 migrations apply homesuite-app-local --local --config apps/app/wrangler.jsonc",
     "db:migrate:homesuite-app:staging": "wrangler d1 migrations apply homesuite-app-db-staging --remote --env staging --config apps/app/wrangler.jsonc",

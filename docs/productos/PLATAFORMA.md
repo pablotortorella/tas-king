@@ -23,13 +23,15 @@ Desde la raíz, comandos actualmente disponibles:
 - `npm run dev:homesuite-app`
 - `npm run test:homesuite-app`
 - `npm run test:homesuite-app:integration`
+- `npm run test:homesuite-site`
 - `npm run db:migrate:homesuite-app:local`
 - `npm run deploy:homesuite-app:staging`
 
 Ver scripts en `package.json` y configuración en `apps/app/wrangler.jsonc` antes
-de usarlos. El deploy de staging no ejecuta tests: correr las dos suites específicas
-y los checks generales afectados primero. La CI actual sólo ejecuta las suites
-generales. No equiparar `test:all` con verificar toda la suite de productos.
+de usarlos. El deploy de staging no ejecuta tests: correr las suites específicas
+y los checks generales afectados primero. CI ejecuta las suites de app y sitio,
+además de las generales y Playwright; el login real sigue requiriendo prueba
+dirigida. No equiparar `test:all` con verificar toda la suite de productos.
 
 La aceptación de identidad y colaboración requiere dos cuentas reales en staging:
 crear espacio, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
