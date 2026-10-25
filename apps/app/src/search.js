@@ -120,3 +120,19 @@ export function filterByPerson(entries, value) {
 export function personCounts(entries, personId) {
   return { paid: filterByPerson(entries, `pago:${personId}`).length, participates: filterByPerson(entries, `participa:${personId}`).length };
 }
+
+// Filtro por categoría: «none» (sin categoría), «g:<grupo>» (todas las del grupo) o el identificador de una categoría.
+// Se aplica sobre la categoría ya resuelta, así que los movimientos de una categoría fusionada cuentan en la destino.
+export function filterByCategory(entries, value) {
+  const filter = String(value ?? "");
+  if (!filter) return entries;
+  if (filter === "none") return entries.filter(entry => !entry.categoryInfo && entry.type !== "transfer");
+  if (filter.startsWith("g:")) return entries.filter(entry => entry.categoryInfo?.groupKey === filter.slice(2));
+  return entries.filter(entry => entry.categoryInfo?.id === filter);
+}
+
+// «Los resultados de la lista»: búsqueda, filtro de categoría y filtro de persona. Es la única definición: la vista de la
+// lista y la selección para recategorizar la usan, así «todos los resultados» siempre coincide con lo que se ve.
+export function listResults(data, { query = "", category = "", person = "" } = {}) {
+  return filterByPerson(filterByCategory(searchLedger(data.entries, data.participants, query), category), person);
+}

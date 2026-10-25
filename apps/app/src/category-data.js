@@ -35,14 +35,18 @@ const GROUPS = [
   ["Vida", "heart", ["Formación", "Gastos médicos", "Guardería", "Impuestos", "Regalos", "Ropa", "Seguro", "Vida - Otro"]],
   ["Viajes", "plane", ["Avión", "Hotel", "Paseos", "Viajes - Otro"]],
   ["Ingresos", "cash", ["Alquiler cobrado", "Reintegros", "Ingresos - Otro"]],
+  ["Sin categoría", "tag", ["General"]],
 ];
+// Categorías genéricas: un movimiento que solo tiene una de estas sigue pendiente de clasificar.
+const GENERIC_NAMES = new Set(["General"]);
+export const IMPORTED_GROUP = "Importadas de Splitwise";
 const SPECIFIC_ICONS = { Mascotas: "paw", Muebles: "home", Electrónica: "tool", Mantenimiento: "tool", Alimentos: "cart", Regalos: "gift" };
 
-export const DEFAULT_CATEGORIES = Object.freeze(GROUPS.flatMap(([group, icon, names]) => names.map(name => Object.freeze({ group, name, icon: SPECIFIC_ICONS[name] ?? icon }))));
+export const DEFAULT_CATEGORIES = Object.freeze(GROUPS.flatMap(([group, icon, names]) => names.map(name => Object.freeze({ group, name, icon: SPECIFIC_ICONS[name] ?? icon, generic: GENERIC_NAMES.has(name) }))));
 
 // Forma que viaja a la base como un único JSON (una sola sentencia, sin parámetros por fila).
 export function defaultCategoriesJson() {
   return JSON.stringify(DEFAULT_CATEGORIES.map((category, position) => ({
-    name: category.name, name_key: searchable(category.name), group_name: category.group, group_key: searchable(category.group), icon: category.icon, position,
+    name: category.name, name_key: searchable(category.name), group_name: category.group, group_key: searchable(category.group), icon: category.icon, generic: category.generic ? 1 : 0, position,
   })));
 }

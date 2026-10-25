@@ -1,5 +1,5 @@
 import { getLedgerAccess, LedgerError } from "./ledger.js";
-import { createPlatformId } from "./platform.js";
+import { recordLedgerChange } from "./ledger-events.js";
 
 // Archivar deja el libro de sólo lectura (lecturas y exportación siguen funcionando) y es reversible.
 // Lo hace únicamente el titular y queda auditado en ledger_events.
@@ -9,7 +9,7 @@ export async function setLedgerArchived(db, { spaceId, userId, archived }) {
   if (Boolean(ledger.archived_at) === archived) throw new LedgerError(archived ? "El grupo ya está archivado." : "El grupo no está archivado.", 409);
   await db.batch([
     db.prepare(`UPDATE expense_ledgers SET archived_at = ${archived ? "CURRENT_TIMESTAMP" : "NULL"}, revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(ledger.id),
-    db.prepare("INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, 'ledger', ?)").bind(createPlatformId("event"), ledger.id, userId, archived ? "ledger_archived" : "ledger_restored", ledger.id),
+    ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: archived ? "ledger_archived" : "ledger_restored", entityType: "ledger", entityId: ledger.id }),
   ]);
 }
 

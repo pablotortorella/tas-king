@@ -31,7 +31,7 @@ test("el formulario ofrece las categorías agrupadas y el movimiento guardado la
   const { book } = await openBook(page);
   await page.goto(`${book}/ledger/new?type=expense`);
   const select = page.getByLabel("Elegí una");
-  await expect(select.locator("optgroup")).toHaveCount(8);
+  await expect(select.locator("optgroup")).toHaveCount(9);
   await expect(select.locator("optgroup[label='Comidas y bebidas'] option", { hasText: "Restaurantes" })).toHaveCount(1);
   await expect(select.locator("option").first()).toHaveText("Sin categoría");
   await addExpense(page, book, "Cena de prueba", { choose: "Restaurantes" });

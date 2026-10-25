@@ -248,7 +248,7 @@ describe("importación de Splitwise: carga por etapas", () => {
     expect(after.participants).toEqual(before.participants);
     expect(after.categories).toEqual(before.categories);
     expect(await readImportProgress(env.DB, { ...as(t), batchId })).toMatchObject({ status: "pending", planned: 1, loaded: 0 });
-    await expect(readImportPreview(env.DB, { ...as(t), previewId })).rejects.toMatchObject({ status: 404 });
+    expect((await readImportPreview(env.DB, { ...as(t), previewId })).batchId).toBe(batchId);
     expect(await count("SELECT COUNT(*) AS n FROM splitwise_import_rows WHERE owner_id = ?", batchId)).toBe(1);
   });
 
@@ -373,7 +373,9 @@ describe("importación de Splitwise: carga por etapas", () => {
     const a = await preview(t, csvA, [t.ownerId, t.memberId]);
     const b = await preview(t, csvB, [t.ownerId, t.memberId]);
     const batchId = await confirm(t, a.previewId);
-    expect(await confirm(t, a.previewId).catch(error => error.status)).toBeDefined();
+    // Repetir la confirmación (doble clic, reintento) devuelve el mismo lote en lugar de un error.
+    expect(await confirm(t, a.previewId)).toBe(batchId);
+    await expect(cancelImportPreview(env.DB, { ...as(t), previewId: a.previewId })).rejects.toMatchObject({ status: 409 });
     await expect(confirm(t, b.previewId)).rejects.toMatchObject({ status: 409, message: expect.stringContaining("en curso") });
     await loadAll(t, batchId);
     await expect(confirm(t, b.previewId)).rejects.toMatchObject({ status: 409, message: expect.stringContaining("reimportaciones") });

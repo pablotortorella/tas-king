@@ -1,6 +1,7 @@
 import { inferComponents } from "./import-infer.js";
 import { findCategoryByName, readCategories, resolveCategory } from "./categories.js";
 import { createPlatformId } from "./platform.js";
+import { IMPORTED_GROUP } from "./category-data.js";
 import { searchable } from "./text.js";
 
 // Conversión de una sola vez de los lotes publicados con el modelo anterior (tablas splitwise_import_entries y
@@ -22,7 +23,7 @@ export async function convertLegacyImports(db) {
     const statements = [];
     if (wanted.size) {
       const position = categories.reduce((max, category) => Math.max(max, category.position), 0);
-      statements.push(db.prepare("INSERT OR IGNORE INTO ledger_categories (ledger_id, id, name, name_key, group_name, group_key, icon, position) SELECT ?, 'category_' || lower(hex(randomblob(12))), json_extract(value, '$.name'), json_extract(value, '$.name_key'), 'Importadas de Splitwise', 'importadas de splitwise', 'tag', ? + CAST(key AS INTEGER) + 1 FROM json_each(?)").bind(batch.ledger_id, position, JSON.stringify([...wanted].map(([nameKey, name]) => ({ name, name_key: nameKey })))));
+      statements.push(db.prepare("INSERT OR IGNORE INTO ledger_categories (ledger_id, id, name, name_key, group_name, group_key, icon, position) SELECT ?, 'category_' || lower(hex(randomblob(12))), json_extract(value, '$.name'), json_extract(value, '$.name_key'), ?, ?, 'tag', ? + CAST(key AS INTEGER) + 1 FROM json_each(?)").bind(batch.ledger_id, IMPORTED_GROUP, searchable(IMPORTED_GROUP), position, JSON.stringify([...wanted].map(([nameKey, name]) => ({ name, name_key: nameKey })))));
     }
     await db.batch(statements.length ? statements : [db.prepare("SELECT 1")]);
     const all = await readCategories(db, batch.ledger_id);

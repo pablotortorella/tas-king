@@ -90,7 +90,12 @@ import { searchable } from "/text.js";
         if (!result.ok) {
           messages.push(result.error);
         } else {
-          add(payer, type === "income" ? -total : total);
+          if (payer === "__keep__") {
+            // Varios pagadores conservados: sus aportes viajan en campos ocultos.
+            form.querySelectorAll('input[type="hidden"][name^="payerAmount_"]').forEach(function (input) {
+              add(input.name.slice("payerAmount_".length), (type === "income" ? -1 : 1) * Number(input.value));
+            });
+          } else add(payer, type === "income" ? -total : total);
           result.allocations.forEach(function (share) { add(share.participantId, type === "income" ? share.amountMinor : -share.amountMinor); });
           if (result.residue.minor > 0) {
             var unit = units === 2 ? ["centavo", "centavos"] : ["unidad menor", "unidades menores"];

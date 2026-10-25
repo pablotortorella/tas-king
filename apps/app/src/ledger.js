@@ -1,8 +1,10 @@
 import { CURRENCY_MINOR_UNITS, FinancialValidationError, normalizeCurrency, validateEntryDraft } from "./finance.js";
 import { splitAmount } from "./split.js";
 import { createPlatformId } from "./platform.js";
-import { categoryForEntry, readCategories, resolveCategory } from "./categories.js";
+import { categoryForEntry, categoryResolver, readCategories } from "./categories.js";
+import { recordLedgerChange } from "./ledger-events.js";
 import { LedgerError } from "./errors.js";
+import { sha256Hex } from "./hash.js";
 
 export { LedgerError };
 
@@ -31,8 +33,7 @@ export async function addParticipant(db, { spaceId, userId, name }) {
   const id = createPlatformId("participant");
   await db.batch([
     db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name) VALUES (?, ?, ?)").bind(ledger.id, id, displayName),
-    db.prepare("INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'participant_created', 'participant', ?)").bind(createPlatformId("event"), ledger.id, userId, id),
-    db.prepare("UPDATE expense_ledgers SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(ledger.id),
+    ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: "participant_created", entityType: "participant", entityId: id }),
   ]);
   return { id, displayName };
 }
@@ -62,11 +63,7 @@ async function sameComponents(db, ledgerId, entryId, draft) {
     && key(shares.results.map(row => ({ participantId: row.participant_id, amountMinor: row.amount_minor }))) === key(draft.allocations);
 }
 
-async function requestHash(payload) {
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
-}
+const requestHash = payload => sha256Hex(JSON.stringify(payload));
 
 // Si el movimiento trae la especificación del reparto (método y datos ingresados), el servidor calcula las
 // asignaciones con la regla única y descarta cualquier importe calculado por el cliente. Sin especificación
@@ -158,8 +155,7 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
     statements.push(db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, 1, ?, 'created', ?)").bind(ledger.id, id, userId, JSON.stringify(snapshot)));
   }
   appendComponents(db, statements, ledger.id, id, draft);
-  statements.push(db.prepare("INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, 'entry', ?)").bind(createPlatformId("event"), ledger.id, userId, `entry_${action}`, id));
-  statements.push(db.prepare("UPDATE expense_ledgers SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(ledger.id));
+  statements.push(...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: `entry_${action}`, entityType: "entry", entityId: id }));
   try { await db.batch(statements); return response; }
   catch (error) { return replayOrThrow(db, ledger.id, userId, idempotencyKey, hash, error, entryId, expectedRevision); }
 }
@@ -187,20 +183,20 @@ export async function voidEntry(db, { spaceId, userId, entryId, expectedRevision
       db.prepare("INSERT INTO idempotency_keys (ledger_id, actor_user_id, idempotency_key, request_hash, response_json) VALUES (?, ?, ?, ?, ?)").bind(ledger.id, userId, idempotencyKey, hash, JSON.stringify(response)),
       db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, ?, ?, 'voided', ?)").bind(ledger.id, entryId, revision, userId, JSON.stringify({ ...entry, reason: cleanReason, status: "voided" })),
       db.prepare("UPDATE ledger_entries SET status = 'voided', current_revision = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND current_revision = ?").bind(revision, ledger.id, entryId, expectedRevision),
-      db.prepare("INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'entry_voided', 'entry', ?)").bind(createPlatformId("event"), ledger.id, userId, entryId),
-      db.prepare("UPDATE expense_ledgers SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(ledger.id),
+      ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: "entry_voided", entityType: "entry", entityId: entryId }),
     ]);
     return response;
   } catch (error) { return replayOrThrow(db, ledger.id, userId, idempotencyKey, hash, error, entryId, expectedRevision); }
 }
 
 // La categoría que se muestra: sigue las fusiones hasta una vigente. Una archivada sin fusionar se sigue mostrando.
-function categoryInfoFor(categories, id) {
-  const category = id ? resolveCategory(categories, id) : null;
-  return category ? { id: category.id, name: category.name, group: category.group, groupKey: category.groupKey, icon: category.icon, archived: category.status === "archived" } : null;
+function categoryInfoFor(resolve, id) {
+  const category = id ? resolve(id) : null;
+  return category ? { id: category.id, name: category.name, group: category.group, groupKey: category.groupKey, icon: category.icon, generic: category.generic, archived: category.status === "archived" } : null;
 }
 
 // Un movimiento importado solo se ve cuando su lote ya se publicó; mientras se carga permanece oculto en todas las lecturas.
+// Es la única definición de «visible»: toda consulta de movimientos (lista, partes, revisiones, exportación) la reutiliza.
 export const VISIBLE_ENTRY_SQL = "(e.import_batch_id IS NULL OR EXISTS (SELECT 1 FROM splitwise_import_batches b WHERE b.id = e.import_batch_id AND b.status = 'committed'))";
 
 export async function readLedger(db, { spaceId, userId }) {
@@ -231,19 +227,20 @@ export async function readLedger(db, { spaceId, userId }) {
     balances.set(key, next);
   };
   const participantIds = participants.map(p => p.id);
+  const resolveCategory = categoryResolver(categories);
   const entries = entryRows.results.map(row => {
     const cashParties = cashByEntry.get(row.id) ?? [];
     const allocations = sharesByEntry.get(row.id) ?? [];
     const validated = validateEntryDraft({ type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, cashParties, allocations }, participantIds);
     if (row.status === "active") for (const effect of validated.effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
-    return { categoryId: row.category_id, categoryInfo: categoryInfoFor(categories, row.category_id), importBatchId: row.import_batch_id, sourceRowNumber: row.source_row_number, inferred: row.inferred === 1, id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
+    return { categoryId: row.category_id, categoryInfo: categoryInfoFor(resolveCategory, row.category_id), importBatchId: row.import_batch_id, sourceRowNumber: row.source_row_number, inferred: row.inferred === 1, id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
   });
   return { ledger, participants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }
 
 export async function exportLedger(db, { spaceId, userId }) {
   const data = await readLedger(db, { spaceId, userId });
-  const revisions = await db.prepare("SELECT r.* FROM entry_revisions r WHERE r.ledger_id = ? ORDER BY r.entry_id, r.revision").bind(data.ledger.id).all();
+  const revisions = await db.prepare(`SELECT r.* FROM entry_revisions r JOIN ledger_entries e ON e.ledger_id = r.ledger_id AND e.id = r.entry_id WHERE r.ledger_id = ? AND ${VISIBLE_ENTRY_SQL} ORDER BY r.entry_id, r.revision`).bind(data.ledger.id).all();
   const events = await db.prepare("SELECT * FROM ledger_events WHERE ledger_id = ? ORDER BY created_at, id").bind(data.ledger.id).all();
   const imports = await db.prepare("SELECT id, source_hash, file_name, imported_count, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, committed_at FROM splitwise_import_batches WHERE ledger_id = ? AND status = 'committed'").bind(data.ledger.id).all();
   const sourceRows = await db.prepare("SELECT s.entry_id, s.batch_id, s.source_row_number, s.raw_json FROM import_source_rows s JOIN splitwise_import_batches b ON b.id = s.batch_id WHERE s.ledger_id = ? AND b.status = 'committed' ORDER BY s.batch_id, s.source_row_number").bind(data.ledger.id).all();

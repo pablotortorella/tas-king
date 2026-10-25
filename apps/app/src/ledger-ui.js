@@ -10,17 +10,7 @@ export { escapeHtml };
 function path(spaceId) { return `/spaces/${encodeURIComponent(spaceId)}`; }
 export function entryLabel(type) { return ({ expense: "Gasto", income: "Ingreso", transfer: "Transferencia", imported: "Importado" })[type] ?? type; }
 
-export { searchLedger } from "./search.js";
-
-// Filtro por categoría: «none» (sin categoría), «g:<grupo>» (todas las del grupo) o el identificador de una categoría.
-// Se aplica sobre la categoría ya resuelta, así que los movimientos de una categoría fusionada cuentan en la destino.
-export function filterByCategory(entries, value) {
-  const filter = String(value ?? "");
-  if (!filter) return entries;
-  if (filter === "none") return entries.filter(entry => !entry.categoryInfo && !entry.category && entry.type !== "transfer");
-  if (filter.startsWith("g:")) return entries.filter(entry => entry.categoryInfo?.groupKey === filter.slice(2));
-  return entries.filter(entry => entry.categoryInfo?.id === filter);
-}
+export { filterByCategory, listResults, searchLedger } from "./search.js";
 
 export function categoryChip(entry) {
   const info = entry.categoryInfo;
@@ -71,6 +61,22 @@ export function inputAmount(amountMinor, currency) {
 // Prefijo del campo de cada persona según el método de reparto (el reparto igual no tiene campos).
 export const SPLIT_INPUT_PREFIX = Object.freeze({ equal: "", exact: "share_", percent: "percent_", shares: "parts_", fixed: "fixed_" });
 
+// Los pagadores que el formulario conserva tal cual (movimientos con varios pagadores). Deben seguir sumando el total.
+function keptPayers(form, type, totalMinor) {
+  const direction = type === "expense" ? "out" : "in";
+  const parties = [];
+  for (const [name, value] of form.entries()) {
+    if (!name.startsWith("payerAmount_")) continue;
+    const amountMinor = Number(value);
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) throw new LedgerError("Los pagadores del movimiento no son válidos.");
+    parties.push({ participantId: name.slice("payerAmount_".length), direction, amountMinor });
+  }
+  if (!parties.length || parties.reduce((sum, party) => sum + party.amountMinor, 0) !== totalMinor) {
+    throw new LedgerError("Cambiaste el importe de un movimiento con varios pagadores: elegí un solo pagador o dejá el importe como estaba.");
+  }
+  return parties;
+}
+
 export function parseEntryForm(form) {
   const type = form.get("type");
   const currency = normalizeCurrency(form.get("currency"));
@@ -94,10 +100,12 @@ export function parseEntryForm(form) {
   const prefix = SPLIT_INPUT_PREFIX[method];
   const inputs = {};
   if (prefix) for (const participantId of beneficiaries) inputs[participantId] = String(form.get(`${prefix}${participantId}`) ?? "").trim();
+  const payer = form.get("payer");
+  const cashParties = payer === KEEP_PAYERS ? keptPayers(form, type, totalMinor) : [{ participantId: payer, direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }];
   return { type, currency, totalMinor, description, note, occurredAt,
     categoryId: form.has("categoryId") ? String(form.get("categoryId")) : undefined, categoryName: form.has("categoryNew") ? String(form.get("categoryNew")) : undefined,
     split: { method, beneficiaries, inputs },
-    cashParties: [{ participantId: form.get("payer"), direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }], allocations: [] };
+    cashParties, allocations: [] };
 }
 
 const TYPE_HINTS = Object.freeze({
@@ -110,6 +118,23 @@ function choice(input, label) { return `<label class="choice">${input}<span>${es
 function radioChoices(participants, name, selectedId, ownId) {
   return `<div class="choices">${participants.filter(p => p.active).map(p => choice(`<input type="radio" name="${name}" value="${escapeHtml(p.id)}"${selectedId === p.id ? " checked" : ""} required>`, personLabel(p, ownId))).join("")}</div>`;
 }
+export const KEEP_PAYERS = "__keep__";
+
+// Quién pagó (o recibió). Un movimiento con varios pagadores (típico de una importación) no se puede representar con un
+// solo botón: se ofrece «mantener los pagadores actuales», marcado por defecto, y sus importes viajan en campos ocultos para
+// que corregir otra cosa no cambie los saldos sin que nadie lo note.
+function payerFieldset({ type, entry, people, ownId, names, currency }) {
+  const direction = type === "income" ? "in" : "out";
+  const parties = entry?.cashParties.filter(party => party.direction === direction) ?? [];
+  const legend = type === "income" ? "¿Quién recibió?" : "¿Quién pagó?";
+  if (parties.length <= 1) return `<fieldset><legend>${legend}</legend>${radioChoices(people, "payer", parties[0]?.participantId ?? ownId, ownId)}</fieldset>`;
+  const summary = parties.map(party => `${names.get(party.participantId) ?? "Participante"} ${formatMoney(party.amountMinor, currency)}`).join(" · ");
+  const keep = choice(`<input type="radio" name="payer" value="${KEEP_PAYERS}" checked required>`, `Mantener los actuales: ${summary}`);
+  const hidden = parties.map(party => `<input type="hidden" name="payerAmount_${escapeHtml(party.participantId)}" value="${party.amountMinor}">`).join("");
+  const others = people.filter(person => person.active).map(person => choice(`<input type="radio" name="payer" value="${escapeHtml(person.id)}" required>`, `Solo ${personLabel(person, ownId)}`)).join("");
+  return `<fieldset><legend>${legend}</legend><p class="hint">Este movimiento tiene varios (${parties.length}). Si lo dejás así, sus aportes no cambian.</p><div class="choices">${keep}${others}</div>${hidden}</fieldset>`;
+}
+
 function personLabel(person, ownId) { return person.id === ownId ? `${person.displayName} · vos` : person.displayName; }
 
 const SPLIT_METHODS = Object.freeze([["equal", "Igual"], ["exact", "Importes exactos"], ["percent", "Porcentajes"], ["shares", "Partes"], ["fixed", "Algunos fijos"]]);
@@ -144,7 +169,6 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   const spec = split && SPLIT_METHODS.some(([value]) => value === split.method) ? split : null;
   const selected = new Set(spec?.beneficiaries ?? entry?.allocations.map(share => share.participantId) ?? data.participants.filter(p => p.active).map(p => p.id));
   const shares = new Map(entry?.allocations.map(share => [share.participantId, share.amountMinor]) ?? []);
-  const singleParty = entry?.cashParties.find(p => p.direction === (currentType === "income" ? "in" : "out"))?.participantId;
   const splitIds = people.filter(p => selected.has(p.id)).map(p => p.id);
   const equallySplit = !entry || currentType === "transfer" || splitEqually(entry.totalMinor, splitIds).every(share => shares.get(share.participantId) === share.amountMinor);
   const visible = people.filter(p => p.active || selected.has(p.id));
@@ -152,7 +176,7 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   const inputs = spec?.inputs ?? Object.fromEntries([...shares].map(([id, amount]) => [id, inputAmount(amount, currency)]));
   const fields = currentType === "transfer"
     ? `<fieldset><legend>De</legend>${radioChoices(people, "from", entry?.cashParties.find(p => p.direction === "out")?.participantId ?? prefill.from ?? ownId, ownId)}</fieldset><fieldset><legend>Para</legend>${radioChoices(people, "to", entry?.cashParties.find(p => p.direction === "in")?.participantId ?? prefill.to ?? people.find(p => p.active && p.id !== (prefill.from ?? ownId))?.id, ownId)}</fieldset>`
-    : `<fieldset><legend>${currentType === "income" ? "¿Quién recibió?" : "¿Quién pagó?"}</legend>${radioChoices(people, "payer", singleParty ?? ownId, ownId)}</fieldset>${categorySection(data, entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
+    : `${payerFieldset({ type: currentType, entry, people, ownId, names: new Map(data.participants.map(p => [p.id, p.displayName])), currency })}${categorySection(data, entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
   const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(spaceId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
   const label = entryLabel(currentType).toLowerCase();
   return `<a class="back-link" href="${path(spaceId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div></form>`;
@@ -220,7 +244,7 @@ export function ledgerCsv(data) {
     const safe = typeof value === "string" && /^[\s]*[=+@-]/u.test(text) ? `'${text}` : text;
     return `"${safe.replaceAll('"', '""')}"`;
   };
-  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "categoria", "participante_id", "efecto_menor", "origen", "lote", "fila_origen"]];
-  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, entry.categoryInfo?.name ?? entry.category ?? "", effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.importBatchId ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
+  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen", "categoria"]];
+  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.importBatchId ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? "", entry.categoryInfo?.name ?? ""]);
   return `\uFEFF${lines.map(row => row.map(quote).join(",")).join("\r\n")}\r\n`;
 }

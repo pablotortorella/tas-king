@@ -36,7 +36,7 @@ describe("lista inicial de categorías", () => {
 
   it("agrupa por grupo, con íconos permitidos y sin entradas vacías", () => {
     expect(DEFAULT_CATEGORIES.length).toBeGreaterThan(40);
-    expect(new Set(DEFAULT_CATEGORIES.map(category => category.group))).toEqual(new Set(["Casa", "Comidas y bebidas", "Entretenimiento", "Transporte", "Utilidades", "Vida", "Viajes", "Ingresos"]));
+    expect(new Set(DEFAULT_CATEGORIES.map(category => category.group))).toEqual(new Set(["Casa", "Comidas y bebidas", "Entretenimiento", "Transporte", "Utilidades", "Vida", "Viajes", "Ingresos", "Sin categoría"]));
     for (const category of DEFAULT_CATEGORIES) {
       expect(CATEGORY_ICON_KEYS).toContain(category.icon);
       expect(category.name.trim()).toBe(category.name);

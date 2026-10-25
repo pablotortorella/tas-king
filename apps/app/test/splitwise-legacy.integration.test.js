@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import retireSql from "../migrations/0009_retire_legacy_import_tables.sql?raw";
+import retireSql from "../ops/retire-legacy-import-tables.sql?raw";
 import { readLedger } from "../src/ledger.js";
 import { convertLegacyImports } from "../src/splitwise-legacy.js";
 import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";

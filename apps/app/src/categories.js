@@ -1,6 +1,7 @@
 import { CATEGORY_ICON_KEYS, FALLBACK_CATEGORY_GROUP, defaultCategoriesJson } from "./category-data.js";
 import { LedgerError } from "./errors.js";
 import { createPlatformId } from "./platform.js";
+import { recordLedgerChange } from "./ledger-events.js";
 import { searchable } from "./text.js";
 
 export class CategoryError extends LedgerError {}
@@ -8,37 +9,49 @@ export class CategoryError extends LedgerError {}
 // Sentencia única que copia la lista inicial a un libro. INSERT OR IGNORE sobre (ledger_id, name_key) la vuelve
 // idempotente: dos accesos simultáneos al mismo libro anterior no duplican nada.
 export function seedCategoriesStatement(db, ledgerId) {
-  return db.prepare(`INSERT OR IGNORE INTO ledger_categories (ledger_id, id, name, name_key, group_name, group_key, icon, position)
-    SELECT ?, 'category_' || lower(hex(randomblob(12))), json_extract(value, '$.name'), json_extract(value, '$.name_key'), json_extract(value, '$.group_name'), json_extract(value, '$.group_key'), json_extract(value, '$.icon'), json_extract(value, '$.position')
+  return db.prepare(`INSERT OR IGNORE INTO ledger_categories (ledger_id, id, name, name_key, group_name, group_key, icon, position, generic)
+    SELECT ?, 'category_' || lower(hex(randomblob(12))), json_extract(value, '$.name'), json_extract(value, '$.name_key'), json_extract(value, '$.group_name'), json_extract(value, '$.group_key'), json_extract(value, '$.icon'), json_extract(value, '$.position'), json_extract(value, '$.generic')
     FROM json_each(?)`).bind(ledgerId, defaultCategoriesJson());
 }
 
-function mapRow(row) {
-  return { id: row.id, name: row.name, nameKey: row.name_key, group: row.group_name, groupKey: row.group_key, icon: row.icon, position: row.position, status: row.status, mergedInto: row.merged_into };
+// Columnas de una categoría: las comparten la lectura normal y la de la carga de una importación.
+export const CATEGORY_COLUMNS = "id, name, name_key, group_name, group_key, icon, position, status, merged_into, generic";
+
+export function mapCategoryRow(row) {
+  return { id: row.id, name: row.name, nameKey: row.name_key, group: row.group_name, groupKey: row.group_key, icon: row.icon, position: row.position, status: row.status, mergedInto: row.merged_into, generic: row.generic === 1 };
 }
 
-export async function readCategories(db, ledgerId) {
-  const query = () => db.prepare("SELECT id, name, name_key, group_name, group_key, icon, position, status, merged_into FROM ledger_categories WHERE ledger_id = ? AND pending_import_batch_id IS NULL ORDER BY position, name_key").bind(ledgerId).all();
+// Las categorías del libro. Las que trae una importación todavía sin publicar están ocultas; `pendingBatchId` las suma
+// (solo la carga de esa importación las necesita).
+export async function readCategories(db, ledgerId, { pendingBatchId = null } = {}) {
+  const query = () => db.prepare(`SELECT ${CATEGORY_COLUMNS} FROM ledger_categories WHERE ledger_id = ? AND (pending_import_batch_id IS NULL OR pending_import_batch_id = ?) ORDER BY position, name_key`).bind(ledgerId, pendingBatchId).all();
   let rows = (await query()).results;
   if (!rows.length && !(await db.prepare("SELECT 1 AS present FROM ledger_categories WHERE ledger_id = ? LIMIT 1").bind(ledgerId).first())) {
     await seedCategoriesStatement(db, ledgerId).run();
     rows = (await query()).results;
   }
-  return rows.map(mapRow);
+  return rows.map(mapCategoryRow);
 }
 
-// Sigue la cadena de fusiones hasta una categoría vigente. Una cadena con ciclo (que la base impide) se corta sin colgar.
-export function resolveCategory(categories, id) {
+// Devuelve una función que sigue la cadena de fusiones hasta una categoría vigente. Se arma una sola vez por lectura (un
+// Map) en lugar de reconstruirlo por cada movimiento. Una cadena con ciclo (que la base impide) se corta sin colgar.
+export function categoryResolver(categories) {
   const byId = new Map(categories.map(category => [category.id, category]));
-  const seen = new Set();
-  let current = byId.get(id) ?? null;
-  while (current?.mergedInto && !seen.has(current.id)) {
-    seen.add(current.id);
-    const next = byId.get(current.mergedInto);
-    if (!next) break;
-    current = next;
-  }
-  return current;
+  return id => {
+    const seen = new Set();
+    let current = byId.get(id) ?? null;
+    while (current?.mergedInto && !seen.has(current.id)) {
+      seen.add(current.id);
+      const next = byId.get(current.mergedInto);
+      if (!next) break;
+      current = next;
+    }
+    return current;
+  };
+}
+
+export function resolveCategory(categories, id) {
+  return categoryResolver(categories)(id);
 }
 
 export function findCategoryByName(categories, text) {
@@ -54,6 +67,9 @@ export function categoryGroups(categories) {
   }
   return [...groups.values()];
 }
+
+const PENDING_NAME_CLASH = "Hay una importación en curso que usa ese nombre de categoría. Probá de nuevo cuando termine.";
+const isUniqueViolation = error => /UNIQUE/iu.test(String(error?.message));
 
 function cleanName(value) {
   const name = typeof value === "string" ? value.trim() : "";
@@ -80,13 +96,6 @@ function groupNameFor(categories, group) {
   return categories.find(category => category.groupKey === key)?.group ?? group;
 }
 
-async function bump(db, ledgerId, userId, action, categoryId) {
-  return [
-    db.prepare("INSERT INTO ledger_events (id, ledger_id, actor_user_id, action, entity_type, entity_id) VALUES (?, ?, ?, ?, 'category', ?)").bind(createPlatformId("event"), ledgerId, userId, action, categoryId),
-    db.prepare("UPDATE expense_ledgers SET revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(ledgerId),
-  ];
-}
-
 // Alta de una categoría. Si el nombre normalizado ya existe devuelve la existente sin crear nada (created: false).
 export async function createCategory(db, { ledgerId, userId, name, group, icon }) {
   const displayName = cleanName(name);
@@ -99,13 +108,13 @@ export async function createCategory(db, { ledgerId, userId, name, group, icon }
   try {
     await db.batch([
       db.prepare("INSERT INTO ledger_categories (ledger_id, id, name, name_key, group_name, group_key, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(ledgerId, id, displayName, searchable(displayName), groupName, searchable(groupName), cleanIcon(icon), position),
-      ...await bump(db, ledgerId, userId, "category_created", id),
+      ...recordLedgerChange(db, { ledgerId, userId, action: "category_created", entityType: "category", entityId: id }),
     ]);
   } catch (error) {
     // Otra persona creó el mismo nombre al mismo tiempo: la restricción única decide y se devuelve la ganadora.
     const winner = findCategoryByName(await readCategories(db, ledgerId), displayName);
     if (winner) return { category: winner, created: false, existing: winner };
-    if (/UNIQUE/iu.test(String(error?.message))) throw new CategoryError("Hay una importación en curso que usa ese nombre de categoría. Probá de nuevo cuando termine.", 409);
+    if (isUniqueViolation(error)) throw new CategoryError(PENDING_NAME_CLASH, 409);
     throw error;
   }
   return { category: { id, name: displayName, nameKey: searchable(displayName), group: groupName, groupKey: searchable(groupName), icon: cleanIcon(icon), position, status: "active", mergedInto: null }, created: true };
@@ -162,10 +171,16 @@ export async function updateCategory(db, { ledger, userId, categoryId, name, gro
   const clash = findCategoryByName(categories, displayName);
   if (clash && clash.id !== category.id) throw new CategoryError(`Ya existe una categoría llamada «${clash.name}».`, 409);
   const groupName = groupNameFor(categories.filter(row => row.id !== category.id), cleanGroup(group ?? category.group));
-  await db.batch([
-    db.prepare("UPDATE ledger_categories SET name = ?, name_key = ?, group_name = ?, group_key = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ?").bind(displayName, searchable(displayName), groupName, searchable(groupName), cleanIcon(icon ?? category.icon), ledger.id, category.id),
-    ...await bump(db, ledger.id, userId, "category_updated", category.id),
-  ]);
+  try {
+    await db.batch([
+      db.prepare("UPDATE ledger_categories SET name = ?, name_key = ?, group_name = ?, group_key = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ?").bind(displayName, searchable(displayName), groupName, searchable(groupName), cleanIcon(icon ?? category.icon), ledger.id, category.id),
+      ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: "category_updated", entityType: "category", entityId: category.id }),
+    ]);
+  } catch (error) {
+    // Otra persona o una importación en curso (nombres ocultos) ya usan ese nombre: la restricción única decide.
+    if (isUniqueViolation(error)) throw new CategoryError(PENDING_NAME_CLASH, 409);
+    throw error;
+  }
 }
 
 export async function setCategoryArchived(db, { ledger, userId, categoryId, archived }) {
@@ -174,7 +189,7 @@ export async function setCategoryArchived(db, { ledger, userId, categoryId, arch
   if (category.mergedInto) throw new CategoryError("Esta categoría fue fusionada en otra.", 409);
   await db.batch([
     db.prepare("UPDATE ledger_categories SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ?").bind(archived ? "archived" : "active", ledger.id, category.id),
-    ...await bump(db, ledger.id, userId, archived ? "category_archived" : "category_restored", category.id),
+    ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: archived ? "category_archived" : "category_restored", entityType: "category", entityId: category.id }),
   ]);
 }
 
@@ -191,6 +206,6 @@ export async function mergeCategory(db, { ledger, userId, categoryId, intoId }) 
   if (category.mergedInto) throw new CategoryError("Esta categoría ya fue fusionada.", 409);
   await db.batch([
     db.prepare("UPDATE ledger_categories SET status = 'archived', merged_into = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ?").bind(final.id, ledger.id, category.id),
-    ...await bump(db, ledger.id, userId, "category_merged", category.id),
+    ...recordLedgerChange(db, { ledgerId: ledger.id, userId, action: "category_merged", entityType: "category", entityId: category.id }),
   ]);
 }

@@ -1,7 +1,8 @@
 import { categoryForEntry, readCategories, resolveCategory } from "./categories.js";
 import { LedgerError } from "./errors.js";
+import { sha256Hex } from "./hash.js";
 import { getLedgerAccess, readLedger } from "./ledger.js";
-import { filterByCategory, searchLedger } from "./ledger-ui.js";
+import { listResults } from "./search.js";
 import { createPlatformId } from "./platform.js";
 import { isPending } from "./suggest.js";
 
@@ -16,9 +17,15 @@ const SAMPLE_SIZE = 8;
 
 // Resuelve el conjunto con el mismo código que usa la lista: ids explícitos, o la búsqueda y el filtro vigentes.
 export function selectEntries(data, criteria) {
-  if (criteria?.all) return filterByCategory(searchLedger(data.entries, data.participants, criteria.query ?? ""), criteria.category ?? "");
+  if (criteria?.all) return listResults(data, { query: criteria.query, category: criteria.category, person: criteria.person });
   const ids = new Set((criteria?.ids ?? []).map(String));
   return data.entries.filter(entry => ids.has(entry.id));
+}
+
+// La clave de idempotencia identifica una solicitud concreta: la misma clave con otro criterio o categoría se rechaza.
+function requestFingerprint(criteria, categoryId, kind) {
+  const normalized = criteria?.all ? { all: true, query: criteria.query ?? "", category: criteria.category ?? "", person: criteria.person ?? "" } : { ids: [...new Set((criteria?.ids ?? []).map(String))].sort() };
+  return sha256Hex(JSON.stringify({ criteria: normalized, categoryId, kind }));
 }
 
 function mayChange(ledger, userId, entry) {
@@ -124,23 +131,25 @@ export async function applyRecategorization(db, { spaceId, userId, criteria, cat
   if (typeof key !== "string" || !KEY_PATTERN.test(key)) throw new LedgerError("Recargá la pantalla y volvé a intentar.");
   const ledgerAccess = await getLedgerAccess(db, spaceId, userId);
   const batchId = `recat_${key}`;
+  const fingerprint = await requestFingerprint(criteria, categoryId, kind);
   const existing = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledgerAccess.id, batchId).first();
-  if (existing && existing.actor_user_id !== userId) throw new LedgerError("Esta solicitud ya fue usada.", 409);
+  if (existing && (existing.actor_user_id !== userId || (existing.request_hash && existing.request_hash !== fingerprint))) throw new LedgerError("Esta solicitud ya se usó con otros datos. Recargá la pantalla y volvé a intentar.", 409);
   const resuming = Boolean(existing && existing.status === "applying");
   if (existing && !resuming) return summarize(existing);
-  const { data, category, eligible, skipped } = await loadContext(db, { spaceId, userId, criteria, categoryId });
+  const { data, category, selected, eligible } = await loadContext(db, { spaceId, userId, criteria, categoryId });
   if (eligible.length > MAX_BATCH) throw tooMany(eligible.length);
   if (!resuming) {
     if (expectedRevision !== null && Number(expectedRevision) !== data.ledger.revision) throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
     if (!eligible.length) throw new LedgerError("No hay movimientos para cambiar: ya tienen esa categoría o no podés modificarlos.");
-    const insert = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned) SELECT ?, ?, ?, ?, ?, ? WHERE (? IS NULL OR (SELECT revision FROM expense_ledgers WHERE id = ?) = ?)").bind(data.ledger.id, batchId, userId, kind, category.id, eligible.length, expectedRevision, data.ledger.id, expectedRevision === null ? 0 : Number(expectedRevision)).run();
+    const insert = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned, request_hash) SELECT ?, ?, ?, ?, ?, ?, ? WHERE (? IS NULL OR (SELECT revision FROM expense_ledgers WHERE id = ?) = ?)").bind(data.ledger.id, batchId, userId, kind, category.id, eligible.length, fingerprint, expectedRevision, data.ledger.id, expectedRevision === null ? 0 : Number(expectedRevision)).run();
     if (!insert.meta?.changes) {
       const raced = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(data.ledger.id, batchId).first();
       if (raced) return summarize(raced);
       throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
     }
   }
-  const skippedCount = skipped.voided + skipped.permission + skipped.transfers + skipped.unchanged;
+  // Al reanudar, los que ya se escribieron figuran como «ya tienen la categoría»: lo omitido es lo seleccionado menos lo planeado.
+  const skippedCount = selected.length - (resuming ? existing.planned : eligible.length);
   const done = new Set((await db.prepare("SELECT entry_id FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?").bind(data.ledger.id, batchId).all()).results.map(row => row.entry_id));
   const pending = eligible.filter(entry => !done.has(entry.id)).map(entry => ({ entry, categoryId: category.id }));
   await hooks.beforeWrite?.();

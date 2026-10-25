@@ -1,6 +1,8 @@
-import { findCategoryByName, readCategories, resolveCategory } from "./categories.js";
+import { categoryResolver, findCategoryByName, readCategories } from "./categories.js";
+import { IMPORTED_GROUP } from "./category-data.js";
 import { getLedgerAccess, LedgerError } from "./ledger.js";
 import { inferComponents, mergeEffects } from "./import-infer.js";
+import { sha256Hex } from "./hash.js";
 import { createPlatformId } from "./platform.js";
 import { defaultLayout, parseMovement, parseSignedMinor, parseSplitwiseCsv, SplitwiseCsvError } from "./splitwise-csv.js";
 import { searchable } from "./text.js";
@@ -12,13 +14,8 @@ export const IMPORT_CHUNK = 100;
 // Filas del archivo por sentencia al guardar la vista previa.
 const PREVIEW_ROW_CHUNK = 150;
 export const INCIDENTS_PAGE_SIZE = 25;
-const IMPORTED_GROUP = "Importadas de Splitwise";
 const DECISIONS = new Set(["exclude", "assume_default"]);
 
-async function hashText(text) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
-}
 
 function assertOwner(ledger, message = "Sólo el titular puede importar.") {
   if (ledger.role !== "owner") throw new LedgerError(message, 403);
@@ -111,6 +108,8 @@ export function buildImportPlan(parsed, review, defaultCurrency) {
     }
   }
   if (!parsed.summaries.length) warnings.push("El archivo no incluye una fila de saldos para comparar.");
+  const longNames = new Set(rows.filter(row => row.category.trim().length > CATEGORY_NAME_LIMIT).map(row => row.category.trim()));
+  if (longNames.size) warnings.push(`${longNames.size} ${longNames.size === 1 ? "categoría tiene" : "categorías tienen"} más de ${CATEGORY_NAME_LIMIT} caracteres y se acortan al importar.`);
   return { rows, assumptions, excluded, totals: [...totals].map(([key, amountMinor]) => { const separator = key.indexOf(":"); return { currency: key.slice(0, separator), sourceName: key.slice(separator + 1), amountMinor }; }), reconciliation, warnings };
 }
 
@@ -125,7 +124,7 @@ export async function createImportPreview(db, { spaceId, userId, fileName, csvTe
   let parsed;
   try { parsed = parseSplitwiseCsv(csvText); }
   catch (error) { if (error instanceof SplitwiseCsvError) throw new LedgerError(error.message); throw error; }
-  const sourceHash = await hashText(csvText);
+  const sourceHash = await sha256Hex(csvText);
   const existing = await db.prepare("SELECT id, status FROM splitwise_import_batches WHERE ledger_id = ? AND source_hash = ?").bind(ledger.id, sourceHash).first();
   if (existing) return { batchId: existing.id };
   const id = createPlatformId("preview");
@@ -143,7 +142,7 @@ export async function readImportPreview(db, { spaceId, userId, previewId }) {
   assertOwner(ledger, "Sólo el titular puede revisar importaciones.");
   const row = await db.prepare("SELECT * FROM splitwise_import_previews WHERE id = ? AND ledger_id = ? AND actor_user_id = ? AND expires_at > CURRENT_TIMESTAMP").bind(previewId, ledger.id, userId).first();
   if (!row) throw new LedgerError("La previsualización venció. Volvé a cargar el archivo.", 404);
-  return { ledger, id: row.id, sourceHash: row.source_hash, fileName: row.file_name, meta: JSON.parse(row.parsed_json), review: row.review_json ? JSON.parse(row.review_json) : null };
+  return { ledger, id: row.id, batchId: row.batch_id, sourceHash: row.source_hash, fileName: row.file_name, meta: JSON.parse(row.parsed_json), review: row.review_json ? JSON.parse(row.review_json) : null };
 }
 
 // Totales por persona y las filas problemáticas de una página, sin cargar el archivo completo en la vista.
@@ -204,6 +203,7 @@ export async function reviewImportPreview(db, { spaceId, userId, previewId, mapp
 
 export async function readImportPlan(db, { spaceId, userId, previewId }) {
   const preview = await readImportPreview(db, { spaceId, userId, previewId });
+  if (preview.batchId) throw new LedgerError("Esta importación ya se confirmó.", 409);
   if (!preview.review) throw new LedgerError("Revisá el archivo antes de confirmar.");
   const parsed = await loadParsed(db, previewId, preview.meta);
   return { preview, plan: buildImportPlan(parsed, preview.review, preview.ledger.default_currency) };
@@ -211,6 +211,7 @@ export async function readImportPlan(db, { spaceId, userId, previewId }) {
 
 export async function cancelImportPreview(db, { spaceId, userId, previewId }) {
   const preview = await readImportPreview(db, { spaceId, userId, previewId });
+  if (preview.batchId) throw new LedgerError("Esta importación ya se confirmó: cancelala desde su pantalla de avance.", 409);
   await db.batch([
     db.prepare("DELETE FROM splitwise_import_rows WHERE owner_id = ?").bind(previewId),
     db.prepare("DELETE FROM splitwise_import_previews WHERE id = ? AND ledger_id = ?").bind(previewId, preview.ledger.id),
@@ -236,17 +237,26 @@ export async function discardImportBatch(db, batchId) {
   ]);
 }
 
+// Un nombre de categoría del libro admite 60 caracteres; el archivo puede traer más. Se acorta de forma uniforme (al
+// crear y al buscar) y el plan lo advierte, así nada se pierde en silencio.
+const CATEGORY_NAME_LIMIT = 60;
+const importedCategoryName = text => String(text ?? "").trim().slice(0, CATEGORY_NAME_LIMIT).trim();
+
 function newCategories(rows, existing) {
   const known = new Set(existing.map(category => category.nameKey));
   const wanted = new Map();
   for (const row of rows) {
-    const key = searchable(row.category);
-    if (key && !known.has(key) && !wanted.has(key)) wanted.set(key, row.category.trim());
+    const name = importedCategoryName(row.category);
+    const key = searchable(name);
+    if (key && !known.has(key) && !wanted.has(key)) wanted.set(key, name);
   }
   return [...wanted].map(([nameKey, name]) => ({ name, name_key: nameKey }));
 }
 
 export async function confirmImportPreview(db, { spaceId, userId, previewId, acknowledgeDifference = false }) {
+  // Repetir la confirmación (doble clic, reintento) devuelve el lote que ya creó esa vista previa.
+  const confirmed = await readImportPreview(db, { spaceId, userId, previewId });
+  if (confirmed.batchId) return confirmed.batchId;
   const { preview, plan } = await readImportPlan(db, { spaceId, userId, previewId });
   await validateMapping(db, preview.ledger.id, preview.meta.participantNames, preview.review.mapping);
   await assertNoOverlap(db, preview.ledger.id, plan.rows);
@@ -280,7 +290,7 @@ export async function confirmImportPreview(db, { spaceId, userId, previewId, ack
   }
   statements.push(
     db.prepare("UPDATE splitwise_import_rows SET owner_id = ? WHERE owner_id = ?").bind(batchId, previewId),
-    db.prepare("DELETE FROM splitwise_import_previews WHERE id = ? AND ledger_id = ?").bind(previewId, ledgerId),
+    db.prepare("UPDATE splitwise_import_previews SET batch_id = ? WHERE id = ? AND ledger_id = ?").bind(batchId, previewId, ledgerId),
   );
   try {
     await db.batch(statements);
@@ -332,7 +342,7 @@ async function nextRows(db, batchId, review, after, limit) {
   return importable.slice(0, limit);
 }
 
-function chunkStatements(db, { ledgerId, userId, batch, rows, categoryByKey, categories }) {
+function chunkStatements(db, { ledgerId, userId, batch, review, rows, categoryByKey, categoryById }) {
   const entries = [];
   const revisions = [];
   const cash = [];
@@ -340,11 +350,10 @@ function chunkStatements(db, { ledgerId, userId, batch, rows, categoryByKey, cat
   const sources = [];
   for (const row of rows) {
     const id = entryIdFor(batch.id, row.line);
-    const review = JSON.parse(batch.review_json);
     const result = inferComponents({ totalMinor: row.totalMinor, effects: mergeEffects(row.amounts, review.mapping), fallbackParticipantId: review.mapping[0] });
     if (!result.ok) throw new LedgerError(`La fila ${row.line} no se puede importar: ${result.reason}`, 500);
-    const categoryId = categoryByKey.get(searchable(row.category)) ?? null;
-    const categoryName = categoryId ? categories.find(category => category.id === categoryId)?.name ?? null : null;
+    const categoryId = categoryByKey.get(searchable(importedCategoryName(row.category))) ?? null;
+    const categoryName = categoryId ? categoryById.get(categoryId)?.name ?? null : null;
     entries.push({ id, currency: row.currency, total: row.totalMinor, description: row.description, note: row.note, occurredAt: row.occurredAt, categoryId, line: row.line });
     revisions.push({ id, snapshot: { description: row.description, note: row.note, occurredAt: row.occurredAt, type: "expense", currency: row.currency, totalMinor: row.totalMinor, cashParties: result.cashParties, allocations: result.allocations, categoryId, categoryName, status: "active", importedFrom: { batchId: batch.id, line: row.line } } });
     for (const party of result.cashParties) cash.push({ id, participantId: party.participantId, amount: party.amountMinor });
@@ -388,16 +397,17 @@ export async function loadImportChunk(db, { spaceId, userId, batchId, chunk = IM
     const after = (await db.prepare("SELECT COALESCE(MAX(source_row_number), 0) AS cursor FROM ledger_entries WHERE import_batch_id = ?").bind(batch.id).first()).cursor;
     const rows = await nextRows(db, batch.id, review, after, chunk);
     if (rows.length) {
-      const categories = (await db.prepare("SELECT id, name, name_key, group_name, group_key, icon, position, status, merged_into FROM ledger_categories WHERE ledger_id = ? AND (pending_import_batch_id IS NULL OR pending_import_batch_id = ?)").bind(ledger.id, batch.id).all()).results
-        .map(category => ({ id: category.id, name: category.name, nameKey: category.name_key, status: category.status, mergedInto: category.merged_into }));
+      const categories = await readCategories(db, ledger.id, { pendingBatchId: batch.id });
+      const resolve = categoryResolver(categories);
+      const categoryById = new Map(categories.map(category => [category.id, category]));
       const categoryByKey = new Map();
       for (const row of rows) {
-        const key = searchable(row.category);
+        const key = searchable(importedCategoryName(row.category));
         if (!key || categoryByKey.has(key)) continue;
-        const found = findCategoryByName(categories, row.category);
-        if (found) categoryByKey.set(key, resolveCategory(categories, found.id)?.id ?? found.id);
+        const found = findCategoryByName(categories, importedCategoryName(row.category));
+        if (found) categoryByKey.set(key, resolve(found.id)?.id ?? found.id);
       }
-      await db.batch(chunkStatements(db, { ledgerId: ledger.id, userId: batch.actor_user_id, batch, rows, categoryByKey, categories }));
+      await db.batch(chunkStatements(db, { ledgerId: ledger.id, userId: batch.actor_user_id, batch, review, rows, categoryByKey, categoryById }));
       loaded = await loadedCount(db, batch.id);
     }
   }

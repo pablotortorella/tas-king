@@ -88,9 +88,9 @@ describe("suggestCategory: propiedad", () => {
 });
 
 describe("pendientes y selección", () => {
-  it("un movimiento está pendiente sin categoría o con la del grupo «Sin categoría»; no las anuladas ni las transferencias", () => {
+  it("un movimiento está pendiente sin categoría o con una categoría genérica; no las anuladas ni las transferencias", () => {
     expect(isPending(target("x"))).toBe(true);
-    expect(isPending({ ...target("x"), categoryInfo: category("z", "Nada", "sin categoria") })).toBe(true);
+    expect(isPending({ ...target("x"), categoryInfo: { ...category("z", "General"), generic: true } })).toBe(true);
     expect(isPending({ ...target("x"), categoryInfo: comida })).toBe(false);
     expect(isPending({ ...target("x"), status: "voided" })).toBe(false);
     expect(isPending({ ...target("x"), type: "transfer" })).toBe(false);

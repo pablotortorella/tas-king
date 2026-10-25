@@ -57,7 +57,7 @@ describe("siembra de la lista inicial", () => {
     expect(await count(ledger.id)).toBe(DEFAULT_CATEGORIES.length);
     const categories = await readCategories(env.DB, ledger.id);
     expect(categories.every(category => category.status === "active" && category.mergedInto === null)).toBe(true);
-    expect(new Set(categories.map(category => category.group)).size).toBe(8);
+    expect(new Set(categories.map(category => category.group)).size).toBe(9);
     expect(byName(categories, "Restaurantes")).toMatchObject({ group: "Comidas y bebidas", groupKey: "comidas y bebidas" });
   });
 

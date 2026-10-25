@@ -13,7 +13,7 @@ function iconSelect(selected) {
 export function renderCategories(data, { spaceId, csrf, owner }) {
   const categories = data.categories ?? [];
   const counts = new Map();
-  for (const entry of data.entries) if (entry.categoryId) counts.set(entry.categoryId, (counts.get(entry.categoryId) ?? 0) + 1);
+  for (const entry of data.entries) if (entry.categoryInfo) counts.set(entry.categoryInfo.id, (counts.get(entry.categoryInfo.id) ?? 0) + 1);
   const base = `${path(spaceId)}/ledger/categories`;
   const writable = owner && !data.ledger.archived_at;
   const active = categories.filter(category => category.status === "active");

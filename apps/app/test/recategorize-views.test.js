@@ -119,6 +119,9 @@ describe("clasificar rápido", () => {
     expect(renderClassify(base)).not.toContain("data-undo");
     expect(renderClassify({ ...base, last: { id: "recat_1", canUndo: true } })).toContain("data-undo");
   });
+  it("ofrece una casilla para apagar los atajos de una tecla", () => {
+    expect(renderClassify(base)).toMatch(/<input type="checkbox" data-shortcuts-toggle checked>/u);
+  });
   it("sin pendientes lo informa y vuelve al libro", () => {
     const html = renderClassify({ ...base, current: null, remaining: 0 });
     expect(html).toContain("No quedan movimientos pendientes");
@@ -154,5 +157,7 @@ describe("atajos de teclado", () => {
     expect(CLASSIFY_JS).toContain("[data-undo]");
     expect(CLASSIFY_JS).toContain("typing(event.target)");
     expect(CLASSIFY_JS).toContain("event.ctrlKey || event.metaKey || event.altKey");
+    expect(CLASSIFY_JS).toContain("!interactive(event.target)");
+    expect(CLASSIFY_JS).toContain("data-shortcuts-toggle");
   });
 });

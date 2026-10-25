@@ -9,9 +9,10 @@ const STOP_WORDS = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "o"
 export const MIN_VOTES = 2;
 export const MIN_SHARE = 0.7;
 
-// Un movimiento está pendiente de categorizar cuando no tiene categoría o tiene la del grupo «Sin categoría».
+// Un movimiento está pendiente de categorizar cuando no tiene categoría o solo tiene una categoría genérica (la marca
+// `generic` de la propia categoría, como «General» de Splitwise).
 export function isPending(entry) {
-  return entry.status === "active" && entry.type !== "transfer" && (!entry.categoryInfo || entry.categoryInfo.groupKey === "sin categoria");
+  return entry.status === "active" && entry.type !== "transfer" && (!entry.categoryInfo || entry.categoryInfo.generic === true);
 }
 
 export function significantWords(description) {

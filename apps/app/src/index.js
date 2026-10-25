@@ -440,7 +440,7 @@ const RECENT_TITLES = Object.freeze({ guardado: "Recién agregado", corregido: "
 function recentFor(data, id, kind) {
   if (typeof id !== "string" || !id) return null;
   const entry = data.entries.find(row => row.id === id);
-  return entry ? { entry, title: RECENT_TITLES[kind] ?? RECENT_TITLES.guardado } : null;
+  return entry ? { entry, title: Object.hasOwn(RECENT_TITLES, kind ?? "") ? RECENT_TITLES[kind] : RECENT_TITLES.guardado } : null;
 }
 
 // Tras guardar, corregir o anular se vuelve a la lista del libro con un aviso y el movimiento afectado.
@@ -516,6 +516,7 @@ app.get("/spaces/:spaceId/ledger/import/previews/:previewId", async (c) => {
   if (!user) return signInRequired(c);
   try {
     const preview = await readImportPreview(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
+    if (preview.batchId) return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(preview.batchId)}`, 303);
     const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
     const summary = await readPreviewSummary(c.env.DB, preview.id, preview.meta, { page: Number.parseInt(c.req.query("pagina") ?? "1", 10) || 1 });
     return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, summary, ledger: data.ledger, participants: data.participants.filter(person => person.active) })));
@@ -731,7 +732,7 @@ for (const [suffix, action, notice, needsOwner] of categoryActions) {
 // Recategorización: vista previa (nada se escribe), confirmación, deshacer y «clasificar rápido».
 function criteriaFrom(form) {
   return form.get("all") === "1"
-    ? { all: true, query: String(form.get("query") ?? ""), category: String(form.get("categoria") ?? "") }
+    ? { all: true, query: String(form.get("query") ?? ""), category: String(form.get("categoria") ?? ""), person: String(form.get("quien") ?? "") }
     : { ids: form.getAll("ids").map(String).slice(0, 2000) };
 }
 
@@ -746,7 +747,7 @@ app.post("/spaces/:spaceId/ledger/recategorize/preview", async (c) => {
     const categoryId = String(form.get("categoryId") ?? "");
     await previewRecategorization(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, criteria, categoryId });
     if (!criteria.all && criteria.ids.length > PREVIEW_IDS_LIMIT) throw new LedgerError(`Marcaste ${criteria.ids.length} movimientos: para más de ${PREVIEW_IDS_LIMIT} usá «Todos los resultados» de la búsqueda o el filtro.`);
-    const query = new URLSearchParams(criteria.all ? [["all", "1"], ["query", criteria.query], ["categoria", criteria.category]] : criteria.ids.map(id => ["ids", id]));
+    const query = new URLSearchParams(criteria.all ? [["all", "1"], ["query", criteria.query], ["categoria", criteria.category], ["quien", criteria.person]] : criteria.ids.map(id => ["ids", id]));
     query.set("categoryId", categoryId);
     return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/recategorize/preview?${query.toString()}`, 303);
   } catch (error) { return ledgerFailure(c, error); }
@@ -803,13 +804,13 @@ app.get("/spaces/:spaceId/ledger/classify", async (c) => {
     const later = skipped.map(id => pendingEntries.find(entry => entry.id === id)).filter(Boolean);
     const current = [...fresh, ...later][0] ?? null;
     const categorized = data.entries.filter(entry => entry.status === "active" && entry.categoryInfo && !isPending(entry));
-    const recent = (await c.env.DB.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY created_at DESC, id DESC LIMIT 40").bind(data.ledger.id, user.user_id).all()).results.map(row => row.category_id);
+    const recent = (await c.env.DB.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY rowid DESC LIMIT 40").bind(data.ledger.id, user.user_id).all()).results.map(row => row.category_id);
     const usage = new Map();
     for (const entry of categorized) usage.set(entry.categoryInfo.id, (usage.get(entry.categoryInfo.id) ?? 0) + 1);
     const ranked = [...new Set([...recent, ...[...usage].sort((a, b) => b[1] - a[1]).map(([id]) => id)])];
     const active = new Map(data.categories.filter(category => category.status === "active").map(category => [category.id, category]));
     const recents = ranked.map(id => active.get(id)).filter(Boolean).slice(0, 5);
-    const lastRow = await c.env.DB.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 1").bind(data.ledger.id, user.user_id).first();
+    const lastRow = await c.env.DB.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY rowid DESC LIMIT 1").bind(data.ledger.id, user.user_id).first();
     const last = lastRow ? await readRecategorizationBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: lastRow.id }) : null;
     return c.html(page("Clasificar rápido", renderClassify({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), current, names: new Map(data.participants.map(person => [person.id, person.displayName])), remaining: pendingEntries.length, suggestion: current ? suggestCategory(current, categorized) : null, recents, categories: data.categories, skipped, last, key: crypto.randomUUID() })));
   } catch (error) { return ledgerFailure(c, error); }
