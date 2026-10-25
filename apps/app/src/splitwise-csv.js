@@ -46,11 +46,18 @@ export function parseMovement(cells, participantNames, line, fallbackCurrency = 
   return { line, occurredAt, description, category, currency, totalMinor, effects };
 }
 
+const SUMMARY_LABEL = /^(total balance|balance total|saldo total|balance|saldo|balances|saldos)$/u;
+const SUMMARY_LABEL_AFTER_DATE = /^(total balance|balance total|saldo total|balance|saldo)$/u;
+
+// El resumen viene de tres formas: la etiqueta en la primera celda (fixture), la etiqueta en la segunda con la
+// primera vacía, y la del export real, con la fecha de exportación en la primera celda, la etiqueta en la
+// segunda y sin coste. Un movimiento llamado «Saldo» pero con coste no es un resumen.
 function isSummary(cells) {
   const first = normalized(cells[0]);
   const second = normalized(cells[1]);
-  return /^(total balance|balance total|saldo total|balance|saldo|balances|saldos)$/u.test(first)
-    || (!first && /^(total balance|balance total|saldo total|balance|saldo)$/u.test(second));
+  if (SUMMARY_LABEL.test(first)) return true;
+  if (!first && SUMMARY_LABEL_AFTER_DATE.test(second)) return true;
+  return validDate(String(cells[0] ?? "").trim()) && SUMMARY_LABEL_AFTER_DATE.test(second) && !normalized(cells[3]);
 }
 
 export function parseSplitwiseCsv(text) {
