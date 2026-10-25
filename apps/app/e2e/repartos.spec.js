@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { splitAmount } from "../src/split.js";
-import { lowContrast, openRecent } from "./helpers.js";
+import { emulateScheme, lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const METHODS = [
@@ -111,6 +111,7 @@ for (const scheme of ["light", "dark"]) {
   test(`en 390 px con cada método no desborda, los controles miden 44 px y el contraste cumple en ${scheme}`, async ({ browser }) => {
     const context = await browser.newContext({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
+    await emulateScheme(page, scheme);
     await openForm(page);
     for (const [label] of METHODS) {
       await page.getByLabel(label, { exact: true }).check();

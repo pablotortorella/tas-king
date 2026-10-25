@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openRecent } from "./helpers.js";
+import { emulateScheme, lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
@@ -157,6 +157,7 @@ test("corregir un movimiento reabre la categoría elegida y cambiarla queda en e
 for (const scheme of ["light", "dark"]) {
   test.describe(`categorías en el teléfono, ${scheme}`, () => {
     test.use({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
+    test.beforeEach(({ page }) => emulateScheme(page, scheme));
 
     test("el selector y la gestión no desbordan, los controles miden 44 px y el contraste alcanza", async ({ page }) => {
       const { book } = await openBook(page);

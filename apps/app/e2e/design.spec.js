@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openRecent } from "./helpers.js";
+import { emulateScheme, lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const TAP_TARGETS = [
@@ -40,6 +40,7 @@ test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ pag
 for (const scheme of ["light", "dark"]) {
   test.describe(`esquema ${scheme}`, () => {
     test.use({ colorScheme: scheme });
+    test.beforeEach(({ page }) => emulateScheme(page, scheme));
 
     test("aplica la paleta del dispositivo", async ({ page }) => {
       await page.goto("/");
@@ -208,6 +209,7 @@ for (const scheme of ["light", "dark"]) {
   test(`el texto de las pantallas cumple el contraste real en ${scheme}`, async ({ browser }) => {
     const context = await browser.newContext({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
+    await emulateScheme(page, scheme);
     const { pages, book, detail } = await seededBook(page);
     // Estado con saldo en contra, sugerencias, vista previa y aviso para cubrir más colores.
     const targets = [...pages, `${book}?aviso=participante`, `${book}/ledger/balance`, `${detail}?aviso=guardado`];

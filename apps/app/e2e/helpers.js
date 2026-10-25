@@ -68,3 +68,11 @@ export async function openRecent(page, description) {
   await strip.getByRole("link", { name: new RegExp(description.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u") }).click();
   await expect(page.getByRole("heading", { name: description, level: 1 })).toBeVisible();
 }
+
+// Firefox ignora la opción `colorScheme` del contexto y, si `emulateMedia` se llama sobre about:blank, la pierde al navegar.
+// Con un documento real cargado la emulación sí persiste en todas las navegaciones siguientes: se abre /healthz (liviano y
+// sin sesión) y recién entonces se emula. Las pruebas por esquema de color lo llaman además de `test.use({ colorScheme })`.
+export async function emulateScheme(page, scheme) {
+  if (page.url() === "about:blank") await page.goto("/healthz");
+  await page.emulateMedia({ colorScheme: scheme });
+}

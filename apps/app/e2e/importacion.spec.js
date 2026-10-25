@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook, openRecent, uniqueId } from "./helpers.js";
+import { emulateScheme, lowContrast, openBook, openRecent, uniqueId } from "./helpers.js";
 import { syntheticSplitwiseCsv } from "../test/fixtures/synthetic-splitwise.js";
 
 const csvFile = (csv, name = "grupo.csv") => ({ name, mimeType: "text/csv", buffer: Buffer.from(csv) });
@@ -221,6 +221,7 @@ test.describe("punto de partida", () => {
 for (const scheme of ["light", "dark"]) {
   test.describe(`importación en el teléfono, ${scheme}`, () => {
     test.use({ colorScheme: scheme, viewport: { width: 390, height: 844 } });
+    test.beforeEach(({ page }) => emulateScheme(page, scheme));
 
     test("la vista previa, la revisión y el progreso no desbordan, miden 44 px y tienen contraste", async ({ page }) => {
       const { book } = await openBook(page, "imp-movil");

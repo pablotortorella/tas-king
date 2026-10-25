@@ -68,7 +68,7 @@ table{border-collapse:collapse}.balance-table{width:100%;text-align:left}.balanc
 
 const BOOK = `
 .book-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:4px}
-.book-head h1{margin-bottom:4px}.book-head .actions{display:flex;gap:8px;flex-wrap:wrap}.book-head .actions .button{margin:0}
+.book-head>div{min-width:0;max-width:100%}.book-head h1{margin-bottom:4px;overflow-wrap:anywhere}.book-head .actions{display:flex;gap:8px;flex-wrap:wrap}.book-head .actions .button{margin:0}
 .book-grid{display:grid;gap:16px;align-items:start}
 .book-grid>section,.book-grid .panel>section{margin-top:16px}.panel{min-width:0}.panel>.card:first-child,.panel>.ledger-section:first-child{margin-top:16px}
 .currency-block+.currency-block{margin-top:24px}
@@ -78,7 +78,7 @@ const BOOK = `
 .hero .hero-note{font-size:.95rem}
 .hero a.why{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;padding:0 16px;border:1.5px solid var(--on-accent-2);border-radius:999px;color:var(--on-accent);text-decoration:none;font-weight:700}.hero a.why:hover{background:rgba(255,253,248,.14);color:var(--on-accent)}
 .balance-row .who a{color:inherit;text-decoration:none}.balance-row .who a:hover{text-decoration:underline}
-.suggest-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line-soft)}.suggest-row:first-child{border-top:0}.suggest-row strong{display:block}.suggest-row .button{margin:0;flex:none}
+.suggest-row>div{min-width:0;overflow-wrap:anywhere}.suggest-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line-soft)}.suggest-row:first-child{border-top:0}.suggest-row strong{display:block}.suggest-row .button{margin:0;flex:none}
 .imported-group summary{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:start;padding:14px 0;cursor:pointer;list-style:none}.imported-group summary::-webkit-details-marker{display:none}.imported-group .entry-list{margin-left:8px;border-left:2px solid var(--line-soft);padding-left:8px}
 .archive-tool{margin-top:20px;border-top:1px solid var(--line-soft);padding-top:12px}.archive-tool summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--neg)}
 .group-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:6px 18px 6px;margin-top:12px}
@@ -123,9 +123,9 @@ const FORMS = `
 .ledger-form .check-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:500;min-height:44px}.ledger-form .check-row input{flex:none}
 .ledger-form input[type=file]{font:inherit}
 .choices{display:flex;flex-wrap:wrap;gap:8px}
-.choice{position:relative;display:inline-flex!important;font-weight:600!important}
+.choice{position:relative;display:inline-flex!important;font-weight:600!important;max-width:100%;min-width:0}
 .choice input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
-.choice span{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.choice span{display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:0;max-width:100%;overflow-wrap:anywhere;padding:0 16px;border-radius:999px;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink)}
 .choice input:checked+span{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-deep);font-weight:700}
 .choice input:checked+span::before{content:"✓"}
 .choice input:focus-visible+span{outline:3px solid var(--accent-line);outline-offset:2px}
