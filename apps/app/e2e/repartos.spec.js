@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { splitAmount } from "../src/split.js";
-import { lowContrast } from "./helpers.js";
+import { lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const METHODS = [
@@ -58,7 +58,7 @@ test("se guarda con cada método y el detalle muestra los importes que resultan"
     await page.getByLabel(method.label, { exact: true }).check();
     await method.fill();
     await page.getByRole("button", { name: "Guardar" }).click();
-    await expect(page.getByRole("heading", { name: `Cena ${method.label}` })).toBeVisible();
+    await openRecent(page, `Cena ${method.label}`);
     await expect(leToca(page, "Beto")).toHaveText(method.other);
     await expect(page.getByRole("row").filter({ hasNotText: "Beto" }).filter({ hasText: method.own }).first()).toBeVisible();
   }
@@ -83,7 +83,7 @@ test("al corregir, el movimiento se reabre con su método y sus datos, y el hist
   await page.locator(".method-fields.method-percent input").nth(0).fill("60");
   await page.locator(".method-fields.method-percent input").nth(1).fill("40");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Cena corregible" })).toBeVisible();
+  await openRecent(page, "Cena corregible");
   await page.getByRole("link", { name: "Corregir" }).click();
   await expect(page.getByLabel("Porcentajes", { exact: true })).toBeChecked();
   await expect(page.locator(".method-fields.method-percent input").nth(0)).toHaveValue("60");
@@ -91,6 +91,7 @@ test("al corregir, el movimiento se reabre con su método y sus datos, y el hist
   await page.locator(".method-fields.method-percent input").nth(0).fill("50");
   await page.locator(".method-fields.method-percent input").nth(1).fill("50");
   await page.getByRole("button", { name: "Guardar" }).click();
+  await openRecent(page, "Cena corregible");
   await expect(page.locator(".timeline")).toContainText("forma de reparto");
 });
 
@@ -100,7 +101,7 @@ test("el atajo «lo debe todo» deja a una sola persona con todo el importe", as
   await page.getByRole("button", { name: "Lo debe todo Beto" }).click();
   await expect(page.locator('input[name="beneficiary"]:checked')).toHaveCount(1);
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Préstamo a Beto" })).toBeVisible();
+  await expect(page.locator(".recent-strip")).toContainText("Préstamo a Beto");
   await page.goto(book);
   await expect(page.getByText("Le deben COP 100,00")).toBeVisible();
   await expect(page.getByText("Debe COP 100,00")).toBeVisible();
@@ -154,7 +155,7 @@ test("para cada método la vista previa muestra los mismos importes que el movim
     await expect(page.locator(".effect-preview li")).toHaveCount(2);
     const previewed = await previewEffects(page);
     await page.getByRole("button", { name: "Guardar" }).click();
-    await expect(page.getByRole("heading", { name: `Prevista ${method.label}` })).toBeVisible();
+    await openRecent(page, `Prevista ${method.label}`);
     const saved = await detailEffects(page);
     expect(Object.values(previewed).sort(), method.label).toEqual(Object.values(saved).sort());
     expect(Object.keys(previewed).every(name => name in saved), method.label).toBe(true);

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast } from "./helpers.js";
+import { lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
@@ -22,7 +22,7 @@ async function addExpense(page, book, description, { choose, type } = {}) {
   if (choose) await page.getByLabel("Elegí una").selectOption({ label: choose });
   if (type) await page.getByLabel("O escribí una nueva").fill(type);
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: description })).toBeVisible();
+  await openRecent(page, description);
 }
 
 const rows = page => page.locator(".entry-title");
@@ -149,6 +149,7 @@ test("corregir un movimiento reabre la categoría elegida y cambiarla queda en e
   await expect(page.getByLabel("Elegí una")).toHaveValue(await page.getByLabel("Elegí una").locator("option", { hasText: /^Taxi$/u }).getAttribute("value"));
   await page.getByLabel("Elegí una").selectOption({ label: "Hotel" });
   await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await openRecent(page, "Para corregir");
   await expect(page.locator(".entry-category")).toContainText("Hotel");
   await expect(page.getByText("Cambió: categoría")).toBeVisible();
 });

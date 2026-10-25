@@ -120,6 +120,27 @@ Una versión anterior del UPDATE recorría el JSON por cada fila del libro (el p
 
 **Sin verificar:** el tamaño máximo de una sentencia en D1 remoto (68 KB por tanda queda cerca de los 100 KB que se recuerdan), las sentencias por lote y la CPU por petición.
 
+### Búsqueda con índice por petición y disparadores para pasar a SQL (2026-10-25)
+
+Libros sintéticos de la forma del caso real, en Node y sin red (`npm run test:homesuite-app -- search`):
+
+| Consulta | Antes (referencia) | Con el índice por petición |
+|---|---|---|
+| Dos palabras, 2.500 movimientos | unos 337 ms | unos 6 ms |
+| Una palabra, 5.000 movimientos | — | unos 6 ms (presupuesto: menos de 100 ms) |
+| Dos palabras, 5.000 movimientos | — | unos 12 ms (el costo se duplica al duplicar los movimientos) |
+
+Medido en el navegador contra el Worker local con un libro importado de 2.485 movimientos, una búsqueda de extremo a extremo (envío del formulario, servidor, página renderizada) tarda unos 280 ms.
+
+La prueba de equivalencia compara la búsqueda nueva con la anterior sobre miles de consultas y libros generados: encuentra los mismos movimientos con los mismos motivos, salvo el texto de las coincidencias por persona.
+
+**Disparadores para pasar a SQL (búsqueda con filtros en la base y paginación por cursor).** Alcanza con que se cumpla uno:
+
+1. Un libro llega a **5.000 movimientos**. Con el ritmo del caso real (unos 770 por año) ocurre hacia fines de 2029.
+2. El aviso estructurado `slow_book_open` (abrir el libro tarda más de **300 ms** de tiempo transcurrido) aparece de forma repetida en el uso real. El evento solo lleva cantidades y tiempos, sin nombres ni importes, e indica `overSqlTrigger` cuando el libro ya superó los 5.000 movimientos.
+
+Hasta entonces la lectura completa del libro (unas 7.500 filas por vista con 2.485 movimientos) y la búsqueda en JavaScript siguen dentro del presupuesto.
+
 ## 8. Qué informa esto
 
 | Decisión | Qué dice el caso real | Estado |

@@ -1,4 +1,5 @@
 // Utilidades comunes de las pruebas E2E de la aplicación.
+import { expect } from "@playwright/test";
 
 // Contraste real de lo que se ve: color de cada texto contra el primer fondo opaco de sus ancestros.
 export async function lowContrast(page) {
@@ -57,4 +58,13 @@ export async function seedEntriesViaForm(page, book, items) {
       if (!response.ok) throw new Error(`No se pudo cargar «${item.description}»: ${response.status} ${await response.text()}`);
     }
   }, { book, items });
+}
+
+// Tras guardar, corregir o anular se vuelve a la lista con una franja «Recién …» que muestra el movimiento afectado.
+// Esta utilidad comprueba la franja y abre el detalle desde ella (los escenarios que necesitan el detalle siguen desde ahí).
+export async function openRecent(page, description) {
+  const strip = page.locator(".recent-strip");
+  await expect(strip).toBeVisible();
+  await strip.getByRole("link", { name: new RegExp(description.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u") }).click();
+  await expect(page.getByRole("heading", { name: description, level: 1 })).toBeVisible();
 }

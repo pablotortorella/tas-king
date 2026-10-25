@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook } from "./helpers.js";
+import { lowContrast, openBook, openRecent } from "./helpers.js";
 
 // Recorridos «a mano» automatizados: lo que haría una persona curiosa o apurada con un navegador real. No miden un
 // contrato fino sino que nada se rompa de maneras que un humano notaría: teclado solo, toque, doble clic, volver
@@ -27,7 +27,7 @@ test("solo con el teclado: se completa el formulario, se elige la categoría y s
   await expect(page.getByLabel("Elegí una").locator("option:checked")).toHaveText("Taxi");
   await page.getByLabel("Descripción").focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Viaje en taxi" })).toBeVisible();
+  await openRecent(page, "Viaje en taxi");
   await expect(page.locator(".entry-category")).toContainText("Taxi");
 });
 
@@ -58,7 +58,7 @@ test.describe("con una pantalla táctil", () => {
     await page.getByLabel("Importe", { exact: true }).fill("10,00");
     await page.getByLabel("Elegí una").selectOption({ label: "Alimentos" });
     await page.getByRole("button", { name: "Guardar" }).tap();
-    await expect(page.getByRole("heading", { name: "Compra con el dedo" })).toBeVisible();
+    await expect(page.locator(".recent-strip")).toContainText("Compra con el dedo");
     await page.goto(`${book}/ledger/categories`);
     await page.locator(".cat-row summary").first().tap();
     await expect(page.locator(".cat-row details[open]")).toHaveCount(1);
@@ -69,7 +69,7 @@ test("un doble clic en Guardar crea un solo movimiento", async ({ page }) => {
   const { book } = await openBook(page, "doble");
   await fillExpense(page, book, "Doble clic", { type: "Panadería" });
   await page.getByRole("button", { name: "Guardar" }).dblclick();
-  await expect(page.getByRole("heading", { name: "Doble clic" })).toBeVisible();
+  await expect(page.locator(".recent-strip")).toContainText("Doble clic");
   await page.goto(book);
   await expect(entryTitles(page)).toHaveText(["Doble clic"]);
   await page.goto(`${book}/ledger/categories`);
@@ -80,7 +80,7 @@ test("volver atrás después de guardar deja un formulario limpio y usable, sin 
   const { book } = await openBook(page, "atras");
   await fillExpense(page, book, "Atrás y adelante");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Atrás y adelante" })).toBeVisible();
+  await expect(page.locator(".recent-strip")).toContainText("Atrás y adelante");
   await page.goBack();
   await expect(page.getByLabel("Descripción")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
@@ -89,7 +89,7 @@ test("volver atrás después de guardar deja un formulario limpio y usable, sin 
   await page.getByLabel("Descripción").fill("Segundo movimiento");
   await page.getByLabel("Importe", { exact: true }).fill("7,00");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Segundo movimiento" })).toBeVisible();
+  await expect(page.locator(".recent-strip")).toContainText("Segundo movimiento");
   await page.goto(book);
   await expect(entryTitles(page)).toHaveCount(2);
   expect((await entryTitles(page).allTextContents()).sort()).toEqual(["Atrás y adelante", "Segundo movimiento"]);
@@ -104,7 +104,7 @@ test("sin red el formulario avisa, no guarda nada y permite reintentar una sola 
   await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
   await context.setOffline(false);
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Se cortó internet" })).toBeVisible();
+  await expect(page.locator(".recent-strip")).toContainText("Se cortó internet");
   await page.goto(book);
   await expect(entryTitles(page)).toHaveText(["Se cortó internet"]);
 });
@@ -115,7 +115,7 @@ test("con una red lenta se ve que está guardando y termina bien", async ({ page
   await page.route("**/ledger/entries", async route => { await new Promise(resolve => setTimeout(resolve, 1500)); await route.continue(); });
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page.getByRole("button", { name: /Guardar/u })).toBeDisabled();
-  await expect(page.getByRole("heading", { name: "Conexión lenta" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".recent-strip")).toContainText("Conexión lenta", { timeout: 15_000 });
 });
 
 test("nombres raros de categoría: emoji, etiquetas HTML, acentos y largo máximo se muestran como texto y sin romper la pantalla", async ({ page }) => {
@@ -125,7 +125,7 @@ test("nombres raros de categoría: emoji, etiquetas HTML, acentos y largo máxim
   for (const [index, name] of names.entries()) {
     await fillExpense(page, book, `Con nombre raro ${index}`, { type: name });
     await page.getByRole("button", { name: "Guardar" }).click();
-    await expect(page.getByRole("heading", { name: `Con nombre raro ${index}` })).toBeVisible();
+    await openRecent(page, `Con nombre raro ${index}`);
     await expect(page.locator(".entry-category .chip.cat")).toHaveText(name);
   }
   for (const path of [book, `${book}/ledger/categories`, `${book}/ledger/new?type=expense`]) {
@@ -162,8 +162,8 @@ test("dos pestañas que crean la misma categoría al mismo tiempo dejan una sola
   await fillExpense(first, book, "Pestaña uno", { type: "Barbería" });
   await fillExpense(second, book, "Pestaña dos", { type: "barbería" });
   await Promise.all([first.getByRole("button", { name: "Guardar" }).click(), second.getByRole("button", { name: "Guardar" }).click()]);
-  await expect(first.getByRole("heading", { name: "Pestaña uno" })).toBeVisible();
-  await expect(second.getByRole("heading", { name: "Pestaña dos" })).toBeVisible();
+  await expect(first.locator(".recent-strip")).toContainText("Pestaña uno");
+  await expect(second.locator(".recent-strip")).toContainText("Pestaña dos");
   await first.goto(`${book}/ledger/categories`);
   await expect(first.locator(".cat-row", { has: first.locator(".chip.cat", { hasText: /^Barbería$/iu }) })).toHaveCount(1);
   await first.goto(book);

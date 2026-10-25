@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook, seedEntriesViaForm } from "./helpers.js";
+import { lowContrast, openBook, openRecent, seedEntriesViaForm } from "./helpers.js";
 
 // Recorridos «a mano» de la recategorización: impaciencia, pestañas dobles, volver atrás, teclado solo, toque y pantallas
 // angostas. Complementan los escenarios de recategorizacion.spec.js.
@@ -90,7 +90,7 @@ test("deshacer después de corregir algunos movimientos los deja como están y l
   await page.getByRole("link", { name: "Corregir" }).click();
   await page.getByLabel("Descripción").fill("Uno corregido");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByRole("heading", { name: "Uno corregido" })).toBeVisible();
+  await openRecent(page, "Uno corregido");
   await page.goto(noticeUrl);
   await page.getByRole("button", { name: "Deshacer" }).click();
   await expect(page.locator(".notice")).toContainText("2 movimientos volvieron");

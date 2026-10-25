@@ -56,6 +56,15 @@ Tras guardar, corregir o anular, el servidor redirige a la lista con `?aviso=gua
 
 Una prueba de rendimiento con libros sintéticos de 2.500 y 5.000 movimientos fija el presupuesto de la búsqueda (menos de 100 ms de CPU para una palabra con 5.000). En el servidor, abrir el libro registra un evento estructurado cuando supera 300 ms de tiempo transcurrido, con cantidades pero sin datos personales, para decidir con uso real. Los disparadores para pasar a SQL (5.000 movimientos o 300 ms medidos) quedan documentados.
 
+## Notas de implementación
+
+- La búsqueda vive en `search.js` y `ledger-ui.js` la reexporta. El índice es por petición: los textos se normalizan una sola vez por movimiento y por campo; un término sin dígitos no formatea importes (solo puede coincidir con el código de la moneda), y uno con dígitos usa los mismos importes formateados que antes, con una caché por petición.
+- El criterio «Efecto de X» (coincidencia por el importe del efecto de una persona) se conserva porque el spec sigue exigiendo buscar por «el efecto de cada persona»; lo que se reemplaza por «Pagó / Participa / Entregó / Recibió» es el motivo por **nombre** de persona («Participante: X»).
+- El orden por carga usa `rowid` como último desempate (antes del identificador): `created_at` tiene resolución de segundos y varios movimientos pueden compartirlo.
+- Los filtros por persona se codifican como `quien=pago:<id>` o `quien=participa:<id>`. «Pagó» incluye a quien entregó en una transferencia y «Participa» a quien la recibió, para que los dos filtros sirvan también ahí.
+- La franja usa `?nuevo=<id>&aviso=guardado|corregido|anulado`; un identificador que no pertenece al libro se ignora.
+- El aviso de apertura lenta admite el umbral por variable de entorno (`SLOW_BOOK_MS`, 300 por defecto) para probarlo.
+
 ## Risks / Trade-offs
 
 - **El índice cambia lo que se encuentra** → Prueba de equivalencia contra la implementación de referencia con miles de casos; los motivos de persona son la única diferencia intencional y tienen sus propias pruebas.

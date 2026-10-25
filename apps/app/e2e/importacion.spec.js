@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook, uniqueId } from "./helpers.js";
+import { lowContrast, openBook, openRecent, uniqueId } from "./helpers.js";
 import { syntheticSplitwiseCsv } from "../test/fixtures/synthetic-splitwise.js";
 
 const csvFile = (csv, name = "grupo.csv") => ({ name, mimeType: "text/csv", buffer: Buffer.from(csv) });
@@ -163,10 +163,12 @@ test("un movimiento importado se corrige y se anula como cualquier otro, y la ma
   await page.getByRole("link", { name: "Corregir" }).click();
   await page.getByRole("group", { name: /¿Quién pagó\?/u }).getByLabel(/Beto/u).check();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await openRecent(page, "Posada");
   await expect(page.locator(".inferred")).toHaveCount(0);
   await expect(page.getByText("Cambió: quién pagó o recibió")).toBeVisible();
   await page.getByRole("link", { name: "Anular" }).click();
   await page.getByRole("button", { name: "Confirmar anulación" }).click();
+  await openRecent(page, "Posada");
   await expect(page.locator(".entry-amount")).toContainText("Anulado");
 });
 
@@ -178,7 +180,7 @@ test("la búsqueda por pagador de un importado indica que el pagador fue inferid
   await page.getByRole("searchbox").fill("Ana Prueba");
   await page.getByRole("searchbox").fill("Ana");
   await page.getByRole("button", { name: "Buscar" }).click();
-  await expect(page.locator(".chip.match")).toContainText("pagador inferido");
+  await expect(page.locator(".chip.match")).toContainText("· inferido");
 });
 
 test.describe("punto de partida", () => {
@@ -208,7 +210,8 @@ test.describe("punto de partida", () => {
     await page.getByLabel("Descripción").fill("El primero");
     await page.getByLabel("Importe", { exact: true }).fill("10,00");
     await page.getByRole("button", { name: "Guardar" }).click();
-    await expect(page.getByRole("heading", { name: "El primero" })).toBeVisible();
+    await expect(page.locator(".recent-strip")).toContainText("El primero");
+    await expect(page.getByRole("link", { name: "Agregá tu primer movimiento" })).toHaveCount(0);
     await page.goto(book);
     await expect(page.getByRole("link", { name: "Agregá tu primer movimiento" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Traé tu historial" })).toHaveCount(0);

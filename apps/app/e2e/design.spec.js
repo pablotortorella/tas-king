@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast } from "./helpers.js";
+import { lowContrast, openRecent } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const TAP_TARGETS = [
@@ -20,7 +20,7 @@ async function seededBook(page) {
   await page.getByLabel("Descripción").fill("Supermercado");
   await page.getByLabel("Importe", { exact: true }).fill("100,00");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Supermercado" })).toBeVisible();
+  await openRecent(page, "Supermercado");
   const detail = new URL(page.url()).pathname;
   return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/spaces/new", "/cuentas-claras", "/invitations"] };
 }
@@ -182,8 +182,7 @@ test("se explica el saldo y se registra una sugerencia hasta quedar a mano", asy
   await expect(page.getByLabel("Importe", { exact: true })).toHaveValue("50.00");
   await page.getByLabel("Descripción").fill("Pago de Beto");
   await page.getByRole("button", { name: "Guardar" }).click();
-  await expect(page.getByRole("heading", { name: "Pago de Beto" })).toBeVisible();
-  await page.getByRole("link", { name: "Volver al libro" }).click();
+  await expect(page.locator(".recent-strip")).toContainText("Pago de Beto");
   await expect(page.getByText("Estás a mano.")).toBeVisible();
   await expect(page.getByText("Para quedar a mano")).toHaveCount(0);
 });
