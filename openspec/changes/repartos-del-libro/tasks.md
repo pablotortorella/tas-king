@@ -1,9 +1,9 @@
 ## 1. Regla pura de reparto
 
-- [ ] 1.1 Crear `apps/app/src/split.js` con `splitAmount` (métodos `equal`, `exact`, `percent`, `shares` y `fixed`), sin variables libres ni dependencias, y verificar con pruebas unitarias de los ejemplos del spec: 100,00 entre tres, 100,01 entre tres, 50/30/20, 2/1/1 y «fijo de 10,00 con dos personas sin fijo» (10,00 / 45,00 / 45,00).
-- [ ] 1.2 Agregar una prueba de propiedades (miles de casos generados, para monedas de 0, 2 y 3 decimales y para los cinco métodos) y verificar que siempre se cumple: la suma es exactamente el total, ninguna asignación es cero o negativa, y el resultado no depende del orden en que llegan las entradas sino solo del orden del grupo que se declara.
-- [ ] 1.3 Implementar las validaciones con sus mensajes (porcentajes que no suman 100, importes exactos con otra suma, valores negativos o ilegibles con la persona indicada, todas las partes en cero, sin beneficiarias, fijos que superan el total, todos con fijo que no suman el total, y sin resto para repartir) y verificar con una prueba por cada escenario de rechazo del spec.
-- [ ] 1.4 Comprobar que el reparto igual produce los mismos importes que `splitEqually` para el mismo orden, con una prueba de equivalencia sobre casos generados, y que el residuo informado coincide con la unidad menor sobrante.
+- [x] 1.1 Crear `apps/app/src/split.js` con `splitAmount` (métodos `equal`, `exact`, `percent`, `shares` y `fixed`), sin variables libres ni dependencias, y verificar con pruebas unitarias de los ejemplos del spec: 100,00 entre tres, 100,01 entre tres, 50/30/20, 2/1/1 y «fijo de 10,00 con dos personas sin fijo» (10,00 / 45,00 / 45,00).
+- [x] 1.2 Agregar una prueba de propiedades (miles de casos generados, para monedas de 0, 2 y 3 decimales y para los cinco métodos) y verificar que siempre se cumple: la suma es exactamente el total, ninguna asignación es cero o negativa, y el resultado no depende del orden en que llegan las entradas sino solo del orden del grupo que se declara.
+- [x] 1.3 Implementar las validaciones con sus mensajes (porcentajes que no suman 100, importes exactos con otra suma, valores negativos o ilegibles con la persona indicada, todas las partes en cero, sin beneficiarias, fijos que superan el total, todos con fijo que no suman el total, y sin resto para repartir) y verificar con una prueba por cada escenario de rechazo del spec.
+- [x] 1.4 Comprobar que el reparto igual produce los mismos importes que `splitEqually` para el mismo orden, con una prueba de equivalencia sobre casos generados, y que el residuo informado coincide con la unidad menor sobrante.
 
 ## 2. Servidor
 
