@@ -1,0 +1,7 @@
+# Verificación y aceptación
+
+- Código integrado por [PR #99](https://github.com/pablotortorella/tas-king/pull/99), SHA `90bf4b5ab3bf004b00ca166b67f26cefc1b67e48`; seguimiento de CI y estado por [PR #101](https://github.com/pablotortorella/tas-king/pull/101), SHA `4ce07025f46933df2cd727a5471fa234ebe25359`. Este último no cambió código de Workers.
+- Sitio público de staging: `site-staging.homesuite.info`, Version ID `563a6a42-049f-4dff-aac5-f6d0bb948d83`. App: `staging.homesuite.info`, Version ID `d146478c-5ddd-478e-a3fb-5315c21e6091`.
+- [CI final](https://github.com/pablotortorella/tas-king/actions/runs/40231767917): 230 pruebas generales, 18 de HomeSuite App, 14 integraciones D1, 10 del sitio y 101 E2E Playwright. OpenSpec strict y dry-run de ambos Workers pasaron. El smoke HTTP comprobó home, landings, enlace a la app, entrada de suite, acceso OAuth y rechazo de API sin sesión; Chromium recorrió home pública → landing → app en móvil. Localmente se guardó y releyó un cambio de nombre, emoji y color desde la UI.
+- Pablo respondió «Funciona completo» el 2026-10-25 al recorrido de aceptación solicitado: home pública → Cuentas Claras → app → Google; nombre y foto visibles; apertura de «Mi perfil» desde avatar y menú; guardado de un cambio de nombre o avatar. No indicó navegador ni dispositivo para esta revisión.
+- Límite: no se verificó colaboración entre dos cuentas. TasKing conserva Worker y sesión propios; no se incorporaron las ramas financieras, Compras funcional ni producción.
