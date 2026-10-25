@@ -7,6 +7,24 @@
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Perfil compartido de HomeSuite — propuesta (2026-10-24)
+
+**Estado:** planificación en `docs/homesuite-profile-explore`, sin implementación,
+integración ni despliegue de esta capacidad.
+
+- Exploración conversada: nombre y avatar globales, origen Google/personalización,
+  modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
+  defecto, secundario y de edición propia; ciclo de reingreso e historial definidos.
+- [Change](../openspec/changes/perfil-compartido-homesuite/proposal.md): perfil
+  global de plataforma y presentación de membresía separados; contratos propios
+  y lecturas autorizadas; migración compatible, revisiones y pruebas planificadas.
+- Contrastado con main `df25195` e integración funcional `973ce4a` mediante refs
+  locales. Antes de implementar, actualizar la comparación y elegir base vigente.
+- Validación: `openspec validate perfil-compartido-homesuite --strict` pasa;
+  artefactos de planificación completos. Escenarios y tareas aún no ejecutados.
+- No hay UI nueva ni migración de TasKing. Validar documentos no implementa la capacidad.
+
+
 ## Base común de buenas prácticas — 2026-10-24
 
 **Alcance:** documentación común de la suite; sin cambios de aplicación,

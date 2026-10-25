@@ -43,3 +43,11 @@ La política de recuperación y ciclo de vida de datos debe demostrarse antes de
 operar con información irreemplazable. Estado actual y dependencias de integración
 no se copian aquí: consultar STATUS y el change correspondiente. Esta ficha no
 habilita publicar producción ni convierte condiciones pendientes en excepciones.
+
+## Perfil compartido — propuesta
+
+Acuerdos de nombre, avatar y apodo por espacio en la
+[exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
+[change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
+Estado: planificación, sin implementación. Cuentas Claras consumirá la capacidad
+de plataforma; la migración de TasKing y la UI quedan para cortes posteriores.
