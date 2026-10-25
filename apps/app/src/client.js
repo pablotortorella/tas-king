@@ -1,7 +1,9 @@
-// Script del navegador que sirve /ledger-ui.js. La CSP sólo admite scripts del mismo origen, así que vive
-// como texto servido por la app. Dos funciones: envío optimista del formulario de movimientos y vista
-// previa del efecto en los saldos. La vista previa informa; el servidor es quien valida y decide.
-export const LEDGER_CLIENT_JS = String.raw`(function () {
+// Módulo del navegador que sirve /ledger-ui.js. La CSP sólo admite scripts del mismo origen, así que vive como
+// texto servido por la app. Funciones: envío optimista del formulario de movimientos, atajo «lo debe todo» y vista
+// previa del efecto en los saldos. La vista previa usa la misma regla de reparto que el servidor (/split.js):
+// informa, pero el servidor es quien valida y decide.
+export const LEDGER_CLIENT_JS = String.raw`import { splitAmount } from "/split.js";
+(function () {
   "use strict";
   var money = new Intl.NumberFormat("es-CO");
 
@@ -25,14 +27,6 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
     return sign + currency + " " + whole + fraction;
   }
 
-  function splitEqually(total, count) {
-    var base = Math.floor(total / count);
-    var rest = total % count;
-    var shares = [];
-    for (var index = 0; index < count; index++) shares.push(base + (index < rest ? 1 : 0));
-    return shares;
-  }
-
   function label(input) {
     var span = input.parentElement && input.parentElement.querySelector("span");
     return span ? span.textContent : input.value;
@@ -53,7 +47,7 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
     var currency = option.value;
     var type = form.querySelector('input[name="type"]').value;
     var names = {};
-    form.querySelectorAll(".choice input").forEach(function (input) { names[input.value] = label(input); });
+    form.querySelectorAll(".choice input").forEach(function (input) { names[input.value] = input.getAttribute("data-name") || label(input); });
     var amountInput = form.querySelector('input[name="amount"]');
     var total = parseMinor(amountInput.value, units);
     list.textContent = "";
@@ -79,32 +73,30 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
       else { add(from, total); add(to, -total); }
     } else {
       var payer = checkedValue(form, "payer");
-      var beneficiaries = Array.prototype.map.call(form.querySelectorAll('input[name="beneficiary"]:checked'), function (input) { return input.value; });
+      var boxes = Array.prototype.slice.call(form.querySelectorAll('input[name="beneficiary"]:checked'));
       var method = checkedValue(form, "splitMethod");
       if (!payer) messages.push("Elegí " + (type === "income" ? "quién recibió" : "quién pagó") + ".");
-      if (!beneficiaries.length) messages.push("Elegí entre quiénes se reparte.");
-      var shares = null;
-      if (payer && beneficiaries.length) {
-        if (method === "exact") {
-          var sum = 0;
-          var missing = [];
-          shares = beneficiaries.map(function (id) {
-            var input = form.querySelector('input[name="share_' + id + '"]');
-            var value = input ? parseMinor(input.value, units) : null;
-            if (value === null) missing.push(names[id] || id); else sum += value;
-            return value;
-          });
-          if (missing.length) { messages.push("Falta el importe de " + missing.join(", ") + "."); shares = null; }
-          else if (sum !== total) { messages.push("Los importes suman " + format(sum, units, currency, false) + " y el total es " + format(total, units, currency, false) + "."); shares = null; }
+      if (payer) {
+        var prefix = { exact: "share_", percent: "percent_", shares: "parts_", fixed: "fixed_" }[method] || "";
+        var inputs = {};
+        var order = {};
+        boxes.forEach(function (box) {
+          order[box.value] = Number(box.getAttribute("data-order"));
+          var field = prefix ? form.querySelector('input[name="' + prefix + box.value + '"]') : null;
+          inputs[box.value] = field ? field.value : "";
+        });
+        var result = splitAmount({ totalMinor: total, units: units, currency: currency, method: method, beneficiaries: boxes.map(function (box) { return box.value; }), inputs: inputs, order: order, names: names });
+        if (!result.ok) {
+          messages.push(result.error);
         } else {
-          shares = splitEqually(total, beneficiaries.length);
-          var residue = total % beneficiaries.length;
-          if (residue) messages.push("Sobran " + residue + " " + (units ? "centavos" : "unidades") + " del reparto: se asignan de a uno a las primeras personas de la lista.");
+          add(payer, type === "income" ? -total : total);
+          result.allocations.forEach(function (share) { add(share.participantId, type === "income" ? share.amountMinor : -share.amountMinor); });
+          if (result.residue.minor > 0) {
+            var unit = units === 2 ? ["centavo", "centavos"] : ["unidad menor", "unidades menores"];
+            var who = result.residue.to.map(function (id) { return names[id] || "Participante"; }).join(", ");
+            messages.push(result.residue.minor === 1 ? "Queda 1 " + unit[0] + " para " + who + "." : "Quedan " + result.residue.minor + " " + unit[1] + ": uno para cada persona entre " + who + ".");
+          }
         }
-      }
-      if (shares) {
-        add(payer, type === "income" ? -total : total);
-        beneficiaries.forEach(function (id, index) { add(id, type === "income" ? shares[index] : -shares[index]); });
       }
     }
     Object.keys(effects).forEach(function (id) {

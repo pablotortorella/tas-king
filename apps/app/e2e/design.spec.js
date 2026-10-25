@@ -131,7 +131,7 @@ test("la vista previa del movimiento muestra el efecto antes de guardar y avisa 
   // El residuo va a quien aparece primero en la lista (orden por creación y luego por id): el signo se mantiene.
   await expect(preview).toContainText(/\+COP 50,5[01]/u);
   await expect(preview).toContainText(/−COP 50,5[01]/u);
-  await expect(preview).toContainText("Sobran 1 centavos");
+  await expect(preview).toContainText(/Queda 1 centavo para /u);
   await page.getByLabel("Importes exactos").check();
   await expect(preview).toContainText("Falta el importe");
 });

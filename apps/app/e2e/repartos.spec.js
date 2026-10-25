@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { splitAmount } from "../src/split.js";
 import { lowContrast } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -124,3 +125,69 @@ for (const scheme of ["light", "dark"]) {
     await context.close();
   });
 }
+
+// Efecto de cada persona en la vista previa: nombre y importe sin la moneda.
+async function previewEffects(page) {
+  const rows = await page.locator(".effect-preview li").evaluateAll(items => items.map(item => [item.children[0].textContent, item.children[1].textContent.replace("COP ", "")]));
+  return Object.fromEntries(rows);
+}
+// Efecto de cada persona en la tabla «Cómo se repartió» del detalle.
+async function detailEffects(page) {
+  const rows = await page.locator("table.split tbody tr").evaluateAll(trs => trs.map(tr => [tr.children[0].textContent.trim(), tr.children[3].textContent.trim()]));
+  return Object.fromEntries(rows.filter(([, effect]) => effect !== "0,00"));
+}
+
+test("para cada método la vista previa muestra los mismos importes que el movimiento guardado", async ({ page }) => {
+  const { book } = await openForm(page);
+  const cases = [
+    { label: "Igual", fill: async () => {} },
+    { label: "Importes exactos", fill: async () => { const inputs = page.locator(".method-fields.method-exact input"); await inputs.nth(0).fill("33,33"); await inputs.nth(1).fill("66,68"); } },
+    { label: "Porcentajes", fill: async () => { const inputs = page.locator(".method-fields.method-percent input"); await inputs.nth(0).fill("33,33"); await inputs.nth(1).fill("66,67"); } },
+    { label: "Partes", fill: async () => { const inputs = page.locator(".method-fields.method-shares input"); await inputs.nth(0).fill("1"); await inputs.nth(1).fill("2"); } },
+    { label: "Algunos fijos", fill: async () => { await page.locator(".method-fields.method-fixed input").nth(1).fill("12,34"); } },
+  ];
+  for (const method of cases) {
+    await page.goto(`${book}/ledger/new?type=expense`);
+    await fillAndSave(page, `Prevista ${method.label}`, "100,01");
+    await page.getByLabel(method.label, { exact: true }).check();
+    await method.fill();
+    await expect(page.locator(".effect-preview li")).toHaveCount(2);
+    const previewed = await previewEffects(page);
+    await page.getByRole("button", { name: "Guardar" }).click();
+    await expect(page.getByRole("heading", { name: `Prevista ${method.label}` })).toBeVisible();
+    const saved = await detailEffects(page);
+    expect(Object.values(previewed).sort(), method.label).toEqual(Object.values(saved).sort());
+    expect(Object.keys(previewed).every(name => name in saved), method.label).toBe(true);
+    for (const [name, effect] of Object.entries(previewed)) expect(saved[name], `${method.label} ${name}`).toBe(effect);
+  }
+});
+
+test("con datos incompletos la vista previa dice qué falta y no muestra importes", async ({ page }) => {
+  await openForm(page);
+  await fillAndSave(page, "Incompleto", "100,00");
+  await page.getByLabel("Porcentajes", { exact: true }).check();
+  await page.locator(".method-fields.method-percent input").nth(0).fill("50");
+  const preview = page.locator(".effect-preview");
+  await expect(preview).toContainText("Falta el porcentaje");
+  await expect(page.locator(".effect-preview li")).toHaveCount(0);
+  await page.getByLabel("Algunos fijos", { exact: true }).check();
+  await page.locator(".method-fields.method-fixed input").nth(0).fill("150");
+  await expect(preview).toContainText("superan el total");
+  await expect(page.locator(".effect-preview li")).toHaveCount(0);
+});
+
+test("el /split.js que sirve el Worker real coincide con la función del servidor", async ({ request }) => {
+  const response = await request.get("/split.js");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("text/javascript");
+  const served = new Function(`${(await response.text()).replace("export function", "function")}; return splitAmount;`)();
+  const order = { a: 0, b: 1, c: 2 };
+  const requests = [
+    { totalMinor: 10001, units: 2, currency: "COP", method: "equal", beneficiaries: ["c", "a", "b"], inputs: {}, order },
+    { totalMinor: 1000, units: 2, currency: "COP", method: "percent", beneficiaries: ["a", "b", "c"], inputs: { a: "33,33", b: "33,33", c: "33,34" }, order },
+    { totalMinor: 10000, units: 2, currency: "COP", method: "shares", beneficiaries: ["a", "b", "c"], inputs: { a: "2", b: "1", c: "1" }, order },
+    { totalMinor: 10000, units: 2, currency: "COP", method: "fixed", beneficiaries: ["a", "b", "c"], inputs: { a: "10", b: "", c: "" }, order },
+    { totalMinor: 10000, units: 2, currency: "COP", method: "exact", beneficiaries: ["a", "b"], inputs: { a: "20", b: "79" }, order, names: { a: "Ana", b: "Beto" } },
+  ];
+  for (const request of requests) expect(served(request)).toEqual(splitAmount(request));
+});

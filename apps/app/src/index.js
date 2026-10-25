@@ -8,6 +8,7 @@ import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { renderBalanceExplanation } from "./balance-ui.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { LEDGER_CLIENT_JS } from "./client.js";
+import { SPLIT_MODULE_SOURCE } from "./split.js";
 import { appCss } from "./styles.js";
 import { avatar, escapeHtml, noticeFor, renderPage } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
@@ -735,6 +736,7 @@ app.get("/cuentas-claras", async (c) => {
 app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; charset=utf-8" }));
 
 app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+app.get("/split.js", (c) => c.body(SPLIT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {

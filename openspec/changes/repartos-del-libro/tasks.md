@@ -21,10 +21,10 @@
 
 ## 4. Vista previa con la misma regla
 
-- [ ] 4.1 Servir `split.js` en `/split.js` como `text/javascript` publicando el texto de la función pura con `export`, y verificar con una prueba de integración que la respuesta tiene el tipo correcto y que su texto se evalúa de forma aislada.
-- [ ] 4.2 Pasar `client.js` a módulo que importa la regla desde `/split.js`, eliminar su copia del reparto igual y mostrar el efecto previsto, el residuo y los mensajes de datos faltantes, y verificar con una prueba E2E sin errores de consola ni violaciones de CSP.
-- [ ] 4.3 Agregar una prueba de paridad que evalúe el texto servido y compare su resultado con el de la función importada sobre miles de casos de los cinco métodos, y verificar que falla si se altera una sola línea de la función servida.
-- [ ] 4.4 Verificar con una prueba E2E, para cada método, que los importes de la vista previa son los mismos que muestra el movimiento guardado.
+- [x] 4.1 Servir `split.js` en `/split.js` como `text/javascript` publicando el texto de la función pura con `export`, y verificar que la respuesta tiene el tipo correcto y que su texto se evalúa de forma aislada, con una prueba sobre la aplicación en Node y una E2E contra el Worker real (el entorno de integración de Workers no permite evaluar texto como código, por eso la evaluación aislada no va allí).
+- [x] 4.2 Pasar `client.js` a módulo que importa la regla desde `/split.js`, eliminar su copia del reparto igual y mostrar el efecto previsto, el residuo y los mensajes de datos faltantes, y verificar con una prueba E2E sin errores de consola ni violaciones de CSP.
+- [x] 4.3 Agregar una prueba de paridad que evalúe el texto servido y compare su resultado con el de la función importada sobre miles de casos de los cinco métodos, y verificar que falla si se altera una sola línea de la función servida.
+- [x] 4.4 Verificar con una prueba E2E, para cada método, que los importes de la vista previa son los mismos que muestra el movimiento guardado.
 
 ## 5. Cierre
 
