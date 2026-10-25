@@ -4,8 +4,8 @@ import { createPlatformId } from "./platform.js";
 import { IMPORTED_GROUP } from "./category-data.js";
 import { searchable } from "./text.js";
 
-// Conversión de una sola vez de los lotes publicados con el modelo anterior (tablas splitwise_import_entries y
-// splitwise_import_effects, un efecto por persona) a movimientos normales, antes de retirar esas tablas. Verifica que el
+// Conversión (idempotente) de los lotes publicados con el modelo anterior (tablas splitwise_import_entries y
+// splitwise_import_effects, un efecto por persona) a movimientos normales, antes de retirar esas tablas con ops/retire-legacy-import-tables.sql. La corre el mantenimiento diario mientras existan; verifica que el
 // saldo de cada persona sea idéntico antes y después y recién entonces borra las filas viejas.
 export async function convertLegacyImports(db) {
   const batches = (await db.prepare("SELECT id, ledger_id, actor_user_id FROM splitwise_import_batches WHERE status = 'committed' AND EXISTS (SELECT 1 FROM splitwise_import_entries e WHERE e.batch_id = splitwise_import_batches.id)").all()).results;
@@ -15,8 +15,12 @@ export async function convertLegacyImports(db) {
     const effectRows = (await db.prepare("SELECT x.entry_id, x.participant_id, x.amount_minor FROM splitwise_import_effects x JOIN splitwise_import_entries e ON e.ledger_id = x.ledger_id AND e.id = x.entry_id WHERE e.batch_id = ?").bind(batch.id).all()).results;
     const byEntry = new Map();
     for (const row of effectRows) { if (!byEntry.has(row.entry_id)) byEntry.set(row.entry_id, []); byEntry.get(row.entry_id).push({ participantId: row.participant_id, amountMinor: row.amount_minor }); }
+    const currencyOf = new Map(entries.map(entry => [entry.id, entry.currency_code]));
     const before = new Map();
-    for (const row of effectRows) before.set(`${entries.find(entry => entry.id === row.entry_id).currency_code}:${row.participant_id}`, (before.get(`${entries.find(entry => entry.id === row.entry_id).currency_code}:${row.participant_id}`) ?? 0) + row.amount_minor);
+    for (const row of effectRows) {
+      const key = `${currencyOf.get(row.entry_id)}:${row.participant_id}`;
+      before.set(key, (before.get(key) ?? 0) + row.amount_minor);
+    }
     const categories = await readCategories(db, batch.ledger_id);
     const wanted = new Map();
     for (const entry of entries) { const key = searchable(entry.category); if (key && !findCategoryByName(categories, entry.category) && !wanted.has(key)) wanted.set(key, entry.category.trim()); }

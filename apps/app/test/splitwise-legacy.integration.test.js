@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import retireSql from "../ops/retire-legacy-import-tables.sql?raw";
 import { readLedger } from "../src/ledger.js";
+import { runMaintenance } from "../src/maintenance.js";
 import { convertLegacyImports } from "../src/splitwise-legacy.js";
 import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
 
@@ -106,5 +107,16 @@ describe("migración que retira las tablas anteriores", () => {
     await env.DB.exec(executable(retireSql));
     const tables = (await env.DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'splitwise_import_%' ORDER BY name").all()).results.map(row => row.name);
     expect(tables).toEqual(["splitwise_import_batches", "splitwise_import_previews", "splitwise_import_rows"]);
+  });
+});
+
+describe("el mantenimiento diario convierte los lotes del modelo anterior", () => {
+  it("los convierte solo, informa cuántos y no falla si las tablas ya no existen", async () => {
+    const t = await legacyBook("legacy-mantenimiento");
+    const result = await runMaintenance(env.DB);
+    expect(result.convertedLegacyBatches).toBeGreaterThanOrEqual(1);
+    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.id })).entries).toHaveLength(4);
+    await env.DB.exec(executable(retireSql));
+    expect((await runMaintenance(env.DB)).convertedLegacyBatches).toBe(0);
   });
 });

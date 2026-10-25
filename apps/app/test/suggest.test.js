@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPending, selectEntries } from "../src/recategorize.js";
+import { classifyQueue, isPending, rankCategories, selectEntries } from "../src/recategorize.js";
 import { MIN_SHARE, MIN_VOTES, significantWords, suggestCategory } from "../src/suggest.js";
 import { seededRandom } from "./fixtures/synthetic-splitwise.js";
 
@@ -107,4 +107,40 @@ describe("pendientes y selección", () => {
     expect(selectEntries(data, { all: true, query: "", category: "none" }).map(entry => entry.id)).toEqual(["e1", "e2", "e3"]);
   });
   it("sin criterio no selecciona nada", () => expect(selectEntries(data, {})).toEqual([]));
+});
+
+describe("cola de clasificar rápido", () => {
+  const entry = (id, extra = {}) => ({ id, description: id, status: "active", type: "expense", createdByUserId: "u1", categoryInfo: null, ...extra });
+  const data = (entries, role = "owner") => ({ ledger: { role }, entries });
+  it("la persona titular ve todos los pendientes y un integrante solo los suyos", () => {
+    const entries = [entry("a"), entry("b", { createdByUserId: "u2" }), entry("c", { categoryInfo: comida })];
+    expect(classifyQueue(data(entries), "u1").pending.map(item => item.id)).toEqual(["a", "b"]);
+    expect(classifyQueue(data(entries, "member"), "u2").pending.map(item => item.id)).toEqual(["b"]);
+  });
+  it("los saltados van al final en el orden en que se saltaron y siguen contando como pendientes", () => {
+    const entries = ["a", "b", "c", "d"].map(id => entry(id));
+    const queue = classifyQueue(data(entries), "u1", ["b", "a"]);
+    expect(queue.current.id).toBe("c");
+    expect(queue.remaining).toBe(4);
+    expect(classifyQueue(data(entries), "u1", ["c", "d", "a", "b"]).current.id).toBe("c");
+    expect(classifyQueue(data([]), "u1").current).toBeNull();
+  });
+  it("ignora identificadores saltados que no existen", () => expect(classifyQueue(data([entry("a")]), "u1", ["zzz"]).current.id).toBe("a"));
+});
+
+describe("categorías con atajo numérico", () => {
+  const cats = [mascotas, comida, taxi, { ...category("c-arch", "Archivada"), status: "archived" }].map(item => ({ ...item, status: item.status ?? "active" }));
+  const used = [done("1", "x", comida), done("2", "y", comida), done("3", "z", taxi)];
+  it("primero las recientes de la persona y después las más usadas, sin repetir ni ofrecer archivadas", () => {
+    expect(rankCategories({ categories: cats, entries: used, recentIds: ["c-masc", "c-com", "c-arch"] }).map(item => item.id)).toEqual(["c-masc", "c-com", "c-taxi"]);
+  });
+  it("respeta el límite y desempata de forma estable", () => {
+    expect(rankCategories({ categories: cats, entries: used, recentIds: [], limit: 1 }).map(item => item.id)).toEqual(["c-com"]);
+    const tie = [done("1", "x", taxi), done("2", "y", mascotas)];
+    expect(rankCategories({ categories: cats, entries: tie, recentIds: [] }).map(item => item.id)).toEqual(["c-masc", "c-taxi"]);
+  });
+  it("las categorías genéricas no cuentan como uso", () => {
+    const generic = { ...comida, generic: true };
+    expect(rankCategories({ categories: cats, entries: [done("1", "x", generic)], recentIds: [] })).toEqual([]);
+  });
 });

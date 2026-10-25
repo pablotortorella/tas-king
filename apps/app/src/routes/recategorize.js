@@ -1,9 +1,8 @@
-import { applyRecategorization, classifyOne, isPending, previewRecategorization, readRecategorizationBatch, undoRecategorization } from "../recategorize.js";
+import { applyRecategorization, classifyOne, previewRecategorization, readClassifyContext, readRecategorizationBatch, undoRecategorization } from "../recategorize.js";
 import { recategorizationNotice, renderClassify, renderRecategorizePreview } from "../recategorize-ui.js";
 import { LedgerError } from "../errors.js";
 import { readLedger } from "../ledger.js";
 import { csrfInput, ledgerFailure, page, signedInUser, signInRequired } from "../route-kit.js";
-import { suggestCategory } from "../suggest.js";
 
 
   // Aviso con el botón «Deshacer» después de una recategorización o de deshacerla; el parámetro nunca se muestra tal cual.
@@ -84,24 +83,10 @@ export function registerRecategorizeRoutes(app) {
     const user = await signedInUser(c);
     if (!user) return signInRequired(c);
     try {
-      const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-      if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
       const skipped = skippedIds(c.req.query("saltar"));
-      const own = entry => data.ledger.role === "owner" || entry.createdByUserId === user.user_id;
-      const pendingEntries = data.entries.filter(entry => isPending(entry) && own(entry));
-      const fresh = pendingEntries.filter(entry => !skipped.includes(entry.id));
-      const later = skipped.map(id => pendingEntries.find(entry => entry.id === id)).filter(Boolean);
-      const current = [...fresh, ...later][0] ?? null;
-      const categorized = data.entries.filter(entry => entry.status === "active" && entry.categoryInfo && !isPending(entry));
-      const recent = (await c.env.DB.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY rowid DESC LIMIT 40").bind(data.ledger.id, user.user_id).all()).results.map(row => row.category_id);
-      const usage = new Map();
-      for (const entry of categorized) usage.set(entry.categoryInfo.id, (usage.get(entry.categoryInfo.id) ?? 0) + 1);
-      const ranked = [...new Set([...recent, ...[...usage].sort((a, b) => b[1] - a[1]).map(([id]) => id)])];
-      const active = new Map(data.categories.filter(category => category.status === "active").map(category => [category.id, category]));
-      const recents = ranked.map(id => active.get(id)).filter(Boolean).slice(0, 5);
-      const lastRow = await c.env.DB.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY rowid DESC LIMIT 1").bind(data.ledger.id, user.user_id).first();
-      const last = lastRow ? await readRecategorizationBatch(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, batchId: lastRow.id }) : null;
-      return c.html(page("Clasificar rápido", renderClassify({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), current, names: new Map(data.participants.map(person => [person.id, person.displayName])), remaining: pendingEntries.length, suggestion: current ? suggestCategory(current, categorized) : null, recents, categories: data.categories, skipped, last, key: crypto.randomUUID() })));
+      const context = await readClassifyContext(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, skipped });
+      const { data } = context;
+      return c.html(page("Clasificar rápido", renderClassify({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), current: context.current, names: new Map(data.participants.map(person => [person.id, person.displayName])), remaining: context.remaining, suggestion: context.suggestion, recents: context.recents, categories: data.categories, skipped, last: context.last, key: crypto.randomUUID() })));
     } catch (error) { return ledgerFailure(c, error); }
   });
 

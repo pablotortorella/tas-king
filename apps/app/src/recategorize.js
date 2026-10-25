@@ -3,6 +3,7 @@ import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
 import { getLedgerAccess, readLedger } from "./ledger.js";
 import { listResults } from "./search.js";
+import { suggestCategory } from "./suggest.js";
 import { createPlatformId } from "./platform.js";
 import { isPending } from "./suggest.js";
 
@@ -207,4 +208,46 @@ export async function undoRecategorization(db, { spaceId, userId, batchId, key =
 // Clasificar rápido: asigna una categoría a un solo movimiento con el mismo mecanismo (tipo «quick»), así se puede deshacer.
 export async function classifyOne(db, { spaceId, userId, entryId, categoryId, key }) {
   return applyRecategorization(db, { spaceId, userId, criteria: { ids: [entryId] }, categoryId, expectedRevision: null, key, kind: "quick" });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Clasificar rápido: la cola de pendientes, las categorías recientes y lo que necesita la pantalla.
+
+export const RECENT_CATEGORY_LIMIT = 5;
+
+// La cola: los pendientes del usuario (la persona titular ve todos; un integrante, los suyos) en el orden de la lista; los
+// saltados van al final en el orden en que se saltaron.
+export function classifyQueue(data, userId, skipped = []) {
+  const mine = entry => data.ledger.role === "owner" || entry.createdByUserId === userId;
+  const pending = data.entries.filter(entry => isPending(entry) && mine(entry));
+  const fresh = pending.filter(entry => !skipped.includes(entry.id));
+  const later = skipped.map(id => pending.find(entry => entry.id === id)).filter(Boolean);
+  const [current = null] = [...fresh, ...later];
+  return { pending, current, remaining: pending.length };
+}
+
+// Las categorías que se ofrecen con atajo numérico: primero las que esta persona usó hace poco y después las más usadas
+// entre los movimientos ya categorizados. Solo vigentes y sin repetir.
+export function rankCategories({ categories, entries, recentIds, limit = RECENT_CATEGORY_LIMIT }) {
+  const usage = new Map();
+  for (const entry of entries) if (entry.status === "active" && entry.categoryInfo && !isPending(entry)) usage.set(entry.categoryInfo.id, (usage.get(entry.categoryInfo.id) ?? 0) + 1);
+  const ranked = [...new Set([...recentIds, ...[...usage].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]))).map(([id]) => id)])];
+  const active = new Map(categories.filter(category => category.status === "active").map(category => [category.id, category]));
+  return ranked.map(id => active.get(id)).filter(Boolean).slice(0, limit);
+}
+
+// Todo lo que la pantalla necesita para mostrar el siguiente pendiente.
+export async function readClassifyContext(db, { spaceId, userId, skipped = [] }) {
+  const data = await readLedger(db, { spaceId, userId });
+  if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  const { current, remaining } = classifyQueue(data, userId, skipped);
+  const recentIds = (await db.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY rowid DESC LIMIT 40").bind(data.ledger.id, userId).all()).results.map(row => row.category_id);
+  const lastRow = await db.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY rowid DESC LIMIT 1").bind(data.ledger.id, userId).first();
+  const categorized = data.entries.filter(entry => entry.status === "active" && entry.categoryInfo && !isPending(entry));
+  return {
+    data, current, remaining,
+    suggestion: current ? suggestCategory(current, categorized) : null,
+    recents: rankCategories({ categories: data.categories, entries: data.entries, recentIds }),
+    last: lastRow ? await readRecategorizationBatch(db, { spaceId, userId, batchId: lastRow.id }) : null,
+  };
 }
