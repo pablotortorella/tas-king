@@ -7,11 +7,11 @@
 
 ## 2. Servidor
 
-- [ ] 2.1 Hacer que `parseEntryForm` lea `splitMethod`, `percent_<id>`, `parts_<id>`, `fixed_<id>` y `share_<id>` y devuelva la especificación del reparto (método, personas elegidas y texto ingresado) en lugar de asignaciones calculadas, y verificar con pruebas unitarias del lector del formulario para los cinco métodos.
-- [ ] 2.2 En `saveEntry`, calcular las asignaciones con `splitAmount` usando el orden del grupo (`participantsFor`), ignorar cualquier importe calculado que envíe el navegador y conservar la compatibilidad con las llamadas que pasan asignaciones ya resueltas, y verificar con pruebas de integración D1 que un movimiento con importes manipulados se guarda con los que resultan del método.
-- [ ] 2.3 Incorporar `split: { method, beneficiaries, inputs }` a la instantánea de cada revisión (alta y corrección) y verificar con una prueba de integración que la revisión guarda el método y que repetir la misma clave de idempotencia sigue devolviendo la respuesta original.
+- [x] 2.1 Hacer que `parseEntryForm` lea `splitMethod`, `percent_<id>`, `parts_<id>`, `fixed_<id>` y `share_<id>` y devuelva la especificación del reparto (método, personas elegidas y texto ingresado) en lugar de asignaciones calculadas, y verificar con pruebas unitarias del lector del formulario para los cinco métodos.
+- [x] 2.2 En `saveEntry`, calcular las asignaciones con `splitAmount` usando el orden del grupo (`participantsFor`), ignorar cualquier importe calculado que envíe el navegador y conservar la compatibilidad con las llamadas que pasan asignaciones ya resueltas, y verificar con pruebas de integración D1 que un movimiento con importes manipulados se guarda con los que resultan del método.
+- [x] 2.3 Incorporar `split: { method, beneficiaries, inputs }` a la instantánea de cada revisión (alta y corrección) y verificar con una prueba de integración que la revisión guarda el método y que repetir la misma clave de idempotencia sigue devolviendo la respuesta original.
 - [ ] 2.4 Hacer que la pantalla de corrección lea la instantánea de la revisión vigente y reabra el formulario con ese método y esos datos, y deduzca igual o exacto cuando no hay método guardado (movimientos anteriores o importados), y verificar con pruebas de integración de los tres escenarios de reapertura del spec.
-- [ ] 2.5 Hacer que el resumen del historial (`revisionSummary`) incluya «forma de reparto» cuando cambian el método o sus datos, y verificar con una prueba que un cambio de igual a 50 % / 50 % no diga «Sin cambios de contenido».
+- [x] 2.5 Hacer que el resumen del historial (`revisionSummary`) incluya «forma de reparto» cuando cambian el método o sus datos, y verificar con una prueba que un cambio de igual a 50 % / 50 % no diga «Sin cambios de contenido».
 
 ## 3. Formulario
 

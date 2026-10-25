@@ -67,6 +67,8 @@ function revisionSummary(row, previous) {
   for (const [key, label] of [["description", "descripción"], ["occurredAt", "fecha"], ["totalMinor", "importe"], ["currency", "moneda"], ["cashParties", "quién pagó o recibió"], ["allocations", "reparto"], ["note", "nota"]]) {
     if (JSON.stringify(snapshot[key]) !== JSON.stringify(before[key])) changed.push(label);
   }
+  // Los movimientos anteriores a este campo no guardan el método: sólo se compara cuando ambas revisiones lo tienen.
+  if (before.split !== undefined && JSON.stringify(snapshot.split) !== JSON.stringify(before.split)) changed.push("forma de reparto");
   return changed.length ? `Cambió: ${changed.join(", ")}` : "Sin cambios de contenido";
 }
 
@@ -77,6 +79,9 @@ export function inputAmount(amountMinor, currency) {
   const amount = BigInt(amountMinor);
   return `${amount / scale}${units ? `.${String(amount % scale).padStart(units, "0")}` : ""}`;
 }
+
+// Prefijo del campo de cada persona según el método de reparto (el reparto igual no tiene campos).
+export const SPLIT_INPUT_PREFIX = Object.freeze({ equal: "", exact: "share_", percent: "percent_", shares: "parts_", fixed: "fixed_" });
 
 export function parseEntryForm(form) {
   const type = form.get("type");
@@ -93,16 +98,17 @@ export function parseEntryForm(form) {
       ], allocations: [] };
   }
   if (type !== "expense" && type !== "income") throw new LedgerError("Tipo de movimiento inválido.");
-  const beneficiaryIds = form.getAll("beneficiary");
-  if (!beneficiaryIds.length) throw new LedgerError("Elegí al menos un participante.");
+  const beneficiaries = form.getAll("beneficiary");
+  if (!beneficiaries.length) throw new LedgerError("Elegí al menos un participante.");
   const method = form.get("splitMethod");
-  const allocations = method === "equal"
-    ? splitEqually(totalMinor, beneficiaryIds).filter(share => share.amountMinor > 0)
-    : method === "exact"
-      ? beneficiaryIds.map(participantId => ({ participantId, amountMinor: parseMoney(form.get(`share_${participantId}`), currency) }))
-      : (() => { throw new LedgerError("Reparto inválido."); })();
+  if (!Object.hasOwn(SPLIT_INPUT_PREFIX, method)) throw new LedgerError("Reparto inválido.");
+  // El importe de cada persona lo calcula el servidor con la regla única (split.js); aquí sólo se leen los datos.
+  const prefix = SPLIT_INPUT_PREFIX[method];
+  const inputs = {};
+  if (prefix) for (const participantId of beneficiaries) inputs[participantId] = String(form.get(`${prefix}${participantId}`) ?? "").trim();
   return { type, currency, totalMinor, description, note, occurredAt,
-    cashParties: [{ participantId: form.get("payer"), direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }], allocations };
+    split: { method, beneficiaries, inputs },
+    cashParties: [{ participantId: form.get("payer"), direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }], allocations: [] };
 }
 
 const TYPE_HINTS = Object.freeze({

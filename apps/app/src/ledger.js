@@ -1,4 +1,5 @@
-import { FinancialValidationError, validateEntryDraft } from "./finance.js";
+import { CURRENCY_MINOR_UNITS, FinancialValidationError, normalizeCurrency, validateEntryDraft } from "./finance.js";
+import { splitAmount } from "./split.js";
 import { createPlatformId } from "./platform.js";
 
 export class LedgerError extends Error {
@@ -59,6 +60,22 @@ async function requestHash(payload) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+// Si el movimiento trae la especificación del reparto (método y datos ingresados), el servidor calcula las
+// asignaciones con la regla única y descarta cualquier importe calculado por el cliente. Sin especificación
+// (llamadas internas con asignaciones ya resueltas) se conserva el comportamiento anterior.
+function resolveSplit(input, participants) {
+  if (!input.split) return { input, split: undefined };
+  const currency = normalizeCurrency(input.currency);
+  if (!currency) throw new LedgerError("Moneda no soportada.");
+  const order = Object.fromEntries(participants.map((person, index) => [person.id, index]));
+  const names = Object.fromEntries(participants.map(person => [person.id, person.displayName]));
+  const { method, beneficiaries, inputs } = input.split;
+  const result = splitAmount({ totalMinor: input.totalMinor, units: CURRENCY_MINOR_UNITS[currency], currency, method, beneficiaries, inputs, order, names });
+  if (!result.ok) throw new LedgerError(result.error);
+  const ordered = [...new Set(beneficiaries)].sort((a, b) => (order[a] ?? Infinity) - (order[b] ?? Infinity));
+  return { input: { ...input, allocations: result.allocations }, split: { method, beneficiaries: ordered, inputs: inputs ?? {} } };
+}
+
 function validateDetails(input) {
   const description = typeof input.description === "string" ? input.description.trim() : "";
   const note = typeof input.note === "string" ? input.note.trim() : "";
@@ -90,8 +107,9 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
   if (typeof idempotencyKey !== "string" || idempotencyKey.length < 16 || idempotencyKey.length > 200) throw new LedgerError("Recargá el formulario y volvé a intentar.");
   const participants = await participantsFor(db, ledger.id);
   const allowedIds = participants.map(row => row.id);
+  const resolved = resolveSplit(input, participants);
   let draft;
-  try { draft = validateEntryDraft(input, allowedIds); }
+  try { draft = validateEntryDraft(resolved.input, allowedIds); }
   catch (error) { if (error instanceof FinancialValidationError) throw new LedgerError(error.message); throw error; }
   const details = validateDetails(input);
   const existing = entryId ? await db.prepare("SELECT id, created_by_user_id, current_revision, status FROM ledger_entries WHERE ledger_id = ? AND id = ?").bind(ledger.id, entryId).first() : null;
@@ -100,7 +118,7 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
   const id = entryId || createPlatformId("entry");
   const revision = existing ? expectedRevision + 1 : 1;
   const action = existing ? "revised" : "created";
-  const snapshot = { ...details, ...draft, status: "active" };
+  const snapshot = { ...details, ...draft, split: resolved.split, status: "active" };
   const hash = await requestHash({ entryId, expectedRevision, snapshot });
   const replay = await db.prepare("SELECT request_hash, response_json FROM idempotency_keys WHERE ledger_id = ? AND actor_user_id = ? AND idempotency_key = ?").bind(ledger.id, userId, idempotencyKey).first();
   if (replay) {
