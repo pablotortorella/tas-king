@@ -110,6 +110,14 @@ export async function createCategory(db, { ledgerId, userId, name, group, icon }
   return { category: { id, name: displayName, nameKey: searchable(displayName), group: groupName, groupKey: searchable(groupName), icon: cleanIcon(icon), position, status: "active", mergedInto: null }, created: true };
 }
 
+// Si el movimiento ya tenía una categoría que hoy se lee como la elegida (la misma o una fusionada en ella), se conserva
+// el identificador original: corregir otra cosa no debe figurar como un cambio de categoría.
+function keepCurrent(categories, currentId, targetId) {
+  if (!currentId) return null;
+  const current = categories.find(category => category.id === currentId);
+  return current && resolveCategory(categories, current.id)?.id === targetId ? current : null;
+}
+
 // Elige la categoría de un movimiento a partir del identificador o de un nombre escrito. El nombre se compara por su
 // forma normalizada: si existe se usa esa, si no se crea. Una categoría archivada solo se conserva si el movimiento ya la tenía.
 export async function categoryForEntry(db, { ledgerId, userId, categoryId, categoryName, currentCategoryId = null }) {
@@ -119,6 +127,8 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
     const found = findCategoryByName(categories, typed);
     if (!found) return (await createCategory(db, { ledgerId, userId, name: typed })).category;
     const target = resolveCategory(categories, found.id);
+    const same = keepCurrent(categories, currentCategoryId, target.id);
+    if (same) return same;
     if (target.status !== "active" && target.id !== currentCategoryId) throw new CategoryError("Esa categoría está archivada: elegí otra o pedile al titular que la restaure.", 409);
     return target;
   }
@@ -126,6 +136,8 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
   const chosen = categories.find(category => category.id === categoryId);
   if (!chosen) throw new CategoryError("La categoría no existe en este libro.");
   if (chosen.id === currentCategoryId) return chosen;
+  const same = keepCurrent(categories, currentCategoryId, chosen.id);
+  if (same) return same;
   if (chosen.status !== "active") throw new CategoryError("Esa categoría está archivada: elegí otra.", 409);
   return chosen;
 }

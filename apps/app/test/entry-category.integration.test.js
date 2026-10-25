@@ -195,3 +195,28 @@ describe("fusión y lectura", () => {
     expect(shown).toMatchObject({ categoryId: null, categoryInfo: null });
   });
 });
+
+describe("corregir un movimiento tras fusionar su categoría desde el formulario", () => {
+  it("el formulario ofrece la destino y guardarla no cambia el identificador guardado ni figura como cambio", async () => {
+    const b = await book("fl-fusion-formulario");
+    const from = find(b.categories, "Licor");
+    const into = find(b.categories, "Restaurantes");
+    const saved = await save(b, entry(b.people, { categoryId: from.id }));
+    await mergeCategory(env.DB, { ledger: b.ledger, userId: b.owner.id, categoryId: from.id, intoId: into.id });
+    await save(b, entry(b.people, { categoryId: into.id, note: "otra cosa" }), { entryId: saved.id, expectedRevision: 1 });
+    expect((await row(b, saved.id)).category_id).toBe(from.id);
+    const rows = (await env.DB.prepare("SELECT revision, action, snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ? ORDER BY revision").bind(b.ledger.id, saved.id).all()).results;
+    expect(revisionSummary(rows[1], rows[0])).toBe("Cambió: nota");
+  });
+
+  it("elegir una categoría distinta sí cambia y se informa", async () => {
+    const b = await book("fl-fusion-distinta");
+    const from = find(b.categories, "Licor");
+    const into = find(b.categories, "Restaurantes");
+    const saved = await save(b, entry(b.people, { categoryId: from.id }));
+    await mergeCategory(env.DB, { ledger: b.ledger, userId: b.owner.id, categoryId: from.id, intoId: into.id });
+    await save(b, entry(b.people, { categoryId: find(b.categories, "Taxi").id }), { entryId: saved.id, expectedRevision: 1 });
+    const rows = (await env.DB.prepare("SELECT revision, action, snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ? ORDER BY revision").bind(b.ledger.id, saved.id).all()).results;
+    expect(revisionSummary(rows[1], rows[0])).toBe("Cambió: categoría");
+  });
+});

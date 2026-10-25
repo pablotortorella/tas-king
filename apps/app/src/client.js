@@ -3,6 +3,7 @@
 // previa del efecto en los saldos. La vista previa usa la misma regla de reparto que el servidor (/split.js):
 // informa, pero el servidor es quien valida y decide.
 export const LEDGER_CLIENT_JS = String.raw`import { splitAmount } from "/split.js";
+import { searchable } from "/text.js";
 (function () {
   "use strict";
   var money = new Intl.NumberFormat("es-CO");
@@ -126,6 +127,21 @@ export const LEDGER_CLIENT_JS = String.raw`import { splitAmount } from "/split.j
         if (equal) equal.checked = true;
         form.dispatchEvent(new Event("change", { bubbles: true }));
       });
+    });
+  });
+
+  // Categoría: escribir un nombre ofrece la existente (misma forma normalizada que usa el servidor) o avisa que se creará.
+  document.querySelectorAll(".category-field").forEach(function (field) {
+    var select = field.querySelector("select");
+    var typed = field.querySelector('input[name="categoryNew"]');
+    var hint = field.querySelector(".category-hint");
+    if (!select || !typed || !hint) return;
+    typed.addEventListener("input", function () {
+      var key = searchable(typed.value);
+      var match = key && Array.prototype.find.call(select.options, function (option) { return option.getAttribute("data-key") === key; });
+      if (!key) { hint.textContent = ""; return; }
+      if (match) { select.value = match.value; hint.textContent = "Ya existe «" + match.textContent.trim() + "»: se va a usar esa."; }
+      else { hint.textContent = "Se va a crear «" + typed.value.trim() + "» en Mis categorías."; }
     });
   });
 

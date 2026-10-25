@@ -8,7 +8,10 @@ import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { renderBalanceExplanation } from "./balance-ui.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { LEDGER_CLIENT_JS } from "./client.js";
+import { renderCategories } from "./categories-ui.js";
+import { createCategory, mergeCategory, setCategoryArchived, updateCategory } from "./categories.js";
 import { SPLIT_MODULE_SOURCE } from "./split.js";
+import { TEXT_MODULE_SOURCE } from "./text.js";
 import { appCss } from "./styles.js";
 import { avatar, escapeHtml, noticeFor, renderPage } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
@@ -436,7 +439,7 @@ app.get("/spaces/:spaceId", async (c) => {
     readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
   ]);
   const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
-  const content = `${noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const content = `${noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
   return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
 });
 
@@ -628,6 +631,36 @@ app.post("/spaces/:spaceId/ledger/entries/:entryId/void", async (c) => {
   } catch (error) { return ledgerFailure(c, error); }
 });
 
+app.get("/spaces/:spaceId/ledger/categories", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    return c.html(page("Categorías", noticeFor(c.req.query("aviso")) + renderCategories(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), owner: data.ledger.role === "owner" })));
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+// Gestión de categorías: sólo la persona titular (la regla vive en categories.js, no en la ruta).
+const categoryActions = [
+  ["", async (db, base, form) => createCategory(db, { ledgerId: base.ledger.id, userId: base.userId, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-creada", false],
+  ["/:categoryId", (db, base, form, id) => updateCategory(db, { ...base, categoryId: id, name: form.get("name"), group: form.get("group"), icon: form.get("icon") }), "categoria-guardada", true],
+  ["/:categoryId/archive", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: true }), "categoria-archivada", true],
+  ["/:categoryId/restore", (db, base, form, id) => setCategoryArchived(db, { ...base, categoryId: id, archived: false }), "categoria-restaurada", true],
+  ["/:categoryId/merge", (db, base, form, id) => mergeCategory(db, { ...base, categoryId: id, intoId: form.get("into") }), "categoria-fusionada", true],
+];
+for (const [suffix, action, notice, needsOwner] of categoryActions) {
+  app.post(`/spaces/:spaceId/ledger/categories${suffix}`, async (c) => {
+    const user = c.get("protectedUser");
+    try {
+      const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
+      if (!needsOwner && ledger.role !== "owner") throw new LedgerError("Sólo el titular puede gestionar las categorías.", 403);
+      if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+      await action(c.env.DB, { ledger, ledgerId: ledger.id, userId: user.user_id }, await c.req.formData(), c.req.param("categoryId"));
+      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/categories?aviso=${notice}`, 303);
+    } catch (error) { return ledgerFailure(c, error); }
+  });
+}
+
 app.get("/spaces/:spaceId/ledger/export.json", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
@@ -737,6 +770,7 @@ app.get("/app.css", (c) => c.body(appCss(), 200, { "Content-Type": "text/css; ch
 
 app.get("/ledger-ui.js", (c) => c.body(LEDGER_CLIENT_JS, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 app.get("/split.js", (c) => c.body(SPLIT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
+app.get("/text.js", (c) => c.body(TEXT_MODULE_SOURCE, 200, { "Content-Type": "text/javascript; charset=utf-8" }));
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {

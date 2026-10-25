@@ -1,5 +1,6 @@
 import { formatMoney } from "./finance.js";
-import { entryLabel, inputAmount, searchLedger } from "./ledger-ui.js";
+import { categoryChip, entryLabel, filterByCategory, inputAmount, searchLedger } from "./ledger-ui.js";
+import { categoryGroups } from "./categories.js";
 import { suggestTransfers } from "./settlement.js";
 import { avatar, escapeHtml, ICONS, shortDate } from "./ui-parts.js";
 
@@ -57,6 +58,7 @@ function entryRow(entry, data, ownId, spaceId) {
   const effectText = voided ? '<small class="muted">No cuenta en los saldos</small>'
     : effect ? `<small class="${effect > 0 ? "owed" : "owes"}">Tu efecto ${escapeHtml(signed(effect, entry.currency))}</small>` : "";
   const chips = [
+    categoryChip(entry),
     entry.imported ? `<span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span>` : "",
     voided ? '<span class="chip void">Anulado</span>' : "",
     entry.matchReason ? `<span class="chip match">Coincide: ${escapeHtml(entry.matchReason)}</span>` : "",
@@ -68,27 +70,33 @@ function entryRow(entry, data, ownId, spaceId) {
 
 export const PAGE_SIZE = 40;
 
-export function renderLedgerOverview(data, { spaceId, userId, query = "", below = "", limit = PAGE_SIZE }) {
+function categoryFilter(data, selected) {
+  const groups = categoryGroups(data.categories ?? []).map(group => `<optgroup label="${escapeHtml(group.name)}"><option value="g:${escapeHtml(group.key)}"${selected === `g:${group.key}` ? " selected" : ""}>Todo ${escapeHtml(group.name)}</option>${group.categories.map(category => `<option value="${escapeHtml(category.id)}"${selected === category.id ? " selected" : ""}>${escapeHtml(category.name)}</option>`).join("")}</optgroup>`).join("");
+  return `<label class="sr-only" for="ledger-category">Categoría</label><select id="ledger-category" name="categoria"><option value="">Todas las categorías</option><option value="none"${selected === "none" ? " selected" : ""}>Sin categoría</option>${groups}</select>`;
+}
+
+export function renderLedgerOverview(data, { spaceId, userId, query = "", category = "", below = "", limit = PAGE_SIZE }) {
   const own = ownParticipant(data, userId);
   const currencies = [...new Set([data.ledger.default_currency, ...data.balances.map(row => row.currency)])];
-  const results = searchLedger(data.entries, data.participants, query);
+  const results = filterByCategory(searchLedger(data.entries, data.participants, query), category);
+  const filtering = Boolean(query || category);
   const voidedCount = data.entries.filter(entry => entry.status === "voided").length;
   const shown = results.slice(0, limit);
   const rows = shown.map(entry => entryRow(entry, data, own?.id, spaceId)).join("");
   const rest = results.length - shown.length;
-  const meta = query
+  const meta = filtering
     ? `${results.length} de ${plural(data.entries.length, "movimiento", "movimientos")}`
     : `${plural(data.entries.length - voidedCount, "vigente", "vigentes")}${voidedCount ? ` · ${plural(voidedCount, "anulado", "anulados")}` : ""}`;
   const shownNote = results.length > shown.length ? ` · mostrando ${shown.length}` : "";
-  const moreParams = new URLSearchParams({ ...(query ? { q: query } : {}), mostrar: String(limit + PAGE_SIZE) });
+  const moreParams = new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { categoria: category } : {}), mostrar: String(limit + PAGE_SIZE) });
   const more = rest > 0 ? `<a class="button secondary more" href="${path(spaceId)}?${escapeHtml(moreParams.toString())}#movimientos">Ver ${Math.min(rest, PAGE_SIZE)} ${Math.min(rest, PAGE_SIZE) === 1 ? "movimiento" : "movimientos"} más</a>` : "";
   const owner = data.ledger.role === "owner";
   const startOption = (title, text, action) => `<div class="start-option"><h3>${title}</h3><p>${text}</p>${action}</div>`;
-  const empty = query
+  const empty = filtering
     ? "<p>No hay coincidencias.</p>"
     : data.ledger.archived_at ? '<div class="empty"><h3>Este grupo no tiene movimientos.</h3></div>' : `<div class="empty"><h3>Todavía no hay movimientos.</h3><p>El saldo se arma siempre con movimientos que se pueden revisar. Nunca se escribe a mano. ¿Cómo querés empezar?</p></div><div class="start-options">${owner ? startOption("Traer mis movimientos de Splitwise", "Subís el CSV que exportaste. Antes de guardar, ves cuántos movimientos entran y si los saldos coinciden. Subir el mismo archivo dos veces no duplica nada.", `<a class="button secondary" href="${path(spaceId)}/ledger/import">Elegir archivo CSV</a>`) : ""}${startOption("Empezar en cero", "Todas las personas arrancan con saldo 0 en cada moneda. Sumá el primer gasto, ingreso o transferencia.", `<a class="button secondary" href="${path(spaceId)}/ledger/new">Cargar el primero</a>`)}${startOption("Empezar con saldos anteriores", "Registrar una apertura con fecha, personas e importes por moneda.", '<span class="chip">Todavía no disponible</span>')}</div>`;
   const quick = data.ledger.archived_at ? "" : `<div class="quick-actions"><span class="lead">Agregar:</span><a href="${path(spaceId)}/ledger/new?type=expense">Gasto</a><a href="${path(spaceId)}/ledger/new?type=income">Ingreso</a><a href="${path(spaceId)}/ledger/new?type=transfer">Transferencia</a></div>`;
-  return `<div class="book-grid"><div class="panel side"><section id="saldos" aria-labelledby="saldos-title"><h2 id="saldos-title" class="sr-only">Saldos</h2>${currencies.map(currency => balanceBlock(currency, data, own?.id, spaceId)).join("")}${quick}</section></div><div class="panel"><section id="movimientos" class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/export.json">Exportar JSON</a><a href="${path(spaceId)}/ledger/export.csv">Exportar CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form" role="search"><label class="sr-only" for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto" enterkeyhint="search"><button class="button secondary" type="submit">Buscar</button>${query ? `<a class="clear" href="${path(spaceId)}">Quitar búsqueda</a>` : ""}</form>${data.entries.length ? `<p class="list-meta" aria-live="polite">${meta}${shownNote} · propios e importados</p>` : ""}${rows ? `<ul class="entry-list">${rows}</ul>${more}` : empty}</section></div>${below ? `<div class="book-wide">${below}</div>` : ""}</div>`;
+  return `<div class="book-grid"><div class="panel side"><section id="saldos" aria-labelledby="saldos-title"><h2 id="saldos-title" class="sr-only">Saldos</h2>${currencies.map(currency => balanceBlock(currency, data, own?.id, spaceId)).join("")}${quick}</section></div><div class="panel"><section id="movimientos" class="ledger-section"><div class="section-top"><h2>Movimientos</h2><div class="export-actions"><a href="${path(spaceId)}/ledger/categories">Categorías</a><a href="${path(spaceId)}/ledger/export.json">Exportar JSON</a><a href="${path(spaceId)}/ledger/export.csv">Exportar CSV</a></div></div><form method="get" action="${path(spaceId)}" class="search-form" role="search"><label class="sr-only" for="ledger-search">Buscar</label><input id="ledger-search" name="q" type="search" value="${escapeHtml(query)}" placeholder="Texto, persona o monto" enterkeyhint="search"><button class="button secondary" type="submit">Buscar</button>${categoryFilter(data, category)}${filtering ? `<a class="clear" href="${path(spaceId)}">Quitar ${query && category ? "búsqueda y filtro" : category ? "filtro" : "búsqueda"}</a>` : ""}</form>${data.entries.length ? `<p class="list-meta" aria-live="polite">${meta}${shownNote} · propios e importados</p>` : ""}${rows ? `<ul class="entry-list">${rows}</ul>${more}` : empty}</section></div>${below ? `<div class="book-wide">${below}</div>` : ""}</div>`;
 }
 
 export function renderPeople({ data, space, members, invitations, csrf, owner, userId }) {

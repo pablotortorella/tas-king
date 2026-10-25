@@ -2,6 +2,8 @@ import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, pa
 import { LedgerError } from "./errors.js";
 import { escapeHtml, ICONS, shortDate } from "./ui-parts.js";
 import { searchable } from "./text.js";
+import { categoryIcon } from "./category-data.js";
+import { categoryGroups, resolveCategory } from "./categories.js";
 
 export { escapeHtml };
 
@@ -30,7 +32,7 @@ function matchTerm(entry, names, raw) {
   const needle = searchable(raw);
   if (!needle) return null;
   if (searchable(entry.description).includes(needle)) return "Descripción";
-  if (entry.category && searchable(entry.category).includes(needle)) return "Categoría";
+  if ((entry.categoryInfo && searchable(entry.categoryInfo.name).includes(needle)) || (entry.category && searchable(entry.category).includes(needle))) return "Categoría";
   if (entry.note && searchable(entry.note).includes(needle)) return "Nota";
   if (searchable(formatMoney(entry.totalMinor, entry.currency)).includes(needle) || amountMatches(entry.totalMinor, entry.currency, raw)) return "Importe total";
   for (const effect of entry.effects) {
@@ -53,6 +55,38 @@ export function searchLedger(entries, participants, query) {
     const reasons = terms.map(term => matchTerm(entry, names, term));
     return reasons.every(Boolean) ? [{ ...entry, matchReason: [...new Set(reasons)].join(" + ") }] : [];
   });
+}
+
+// Filtro por categoría: «none» (sin categoría), «g:<grupo>» (todas las del grupo) o el identificador de una categoría.
+// Se aplica sobre la categoría ya resuelta, así que los movimientos de una categoría fusionada cuentan en la destino.
+export function filterByCategory(entries, value) {
+  const filter = String(value ?? "");
+  if (!filter) return entries;
+  if (filter === "none") return entries.filter(entry => !entry.categoryInfo && !entry.category && entry.type !== "transfer");
+  if (filter.startsWith("g:")) return entries.filter(entry => entry.categoryInfo?.groupKey === filter.slice(2));
+  return entries.filter(entry => entry.categoryInfo?.id === filter);
+}
+
+export function categoryChip(entry) {
+  const info = entry.categoryInfo;
+  if (info) return `<span class="chip cat">${categoryIcon(info.icon)}${escapeHtml(info.name)}</span>`;
+  if (entry.category) return `<span class="chip cat">${categoryIcon("tag")}${escapeHtml(entry.category)}</span>`;
+  return entry.type === "transfer" ? "" : '<span class="chip cat none">Sin categoría</span>';
+}
+
+// Selector agrupado de categorías con un campo para escribir una nueva. Sin JavaScript funciona igual: el servidor compara
+// lo escrito por su forma normalizada y usa la existente o crea la nueva. La categoría que ya tenía un movimiento se
+// ofrece aunque esté archivada, para que corregirlo no la pierda.
+function categorySection(data, entry) {
+  const categories = data.categories ?? [];
+  const current = entry?.categoryId ? categories.find(category => category.id === entry.categoryId) : null;
+  const target = current ? resolveCategory(categories, current.id) : null;
+  const keepArchived = current && target && target.status === "archived" ? target : null;
+  const selectedId = target?.status === "active" ? target.id : keepArchived ? keepArchived.id : "";
+  const option = (category, suffix = "") => `<option value="${escapeHtml(category.id)}" data-key="${escapeHtml(category.nameKey)}"${category.id === selectedId ? " selected" : ""}>${escapeHtml(category.name)}${suffix}</option>`;
+  const groups = categoryGroups(categories).map(group => `<optgroup label="${escapeHtml(group.name)}">${group.categories.map(category => option(category)).join("")}</optgroup>`).join("");
+  const archived = keepArchived ? option(keepArchived, " (archivada)") : "";
+  return `<fieldset class="category-field"><legend>Categoría (opcional)</legend><label>Elegí una<select name="categoryId"><option value="">Sin categoría</option>${archived}${groups}</select></label><label>O escribí una nueva<input name="categoryNew" maxlength="60" autocomplete="off" placeholder="Ej.: Peluquería"></label><p class="hint category-hint" role="status" aria-live="polite"></p></fieldset>`;
 }
 
 export function revisionSummary(row, previous) {
@@ -163,7 +197,7 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   const inputs = spec?.inputs ?? Object.fromEntries([...shares].map(([id, amount]) => [id, inputAmount(amount, currency)]));
   const fields = currentType === "transfer"
     ? `<fieldset><legend>De</legend>${radioChoices(people, "from", entry?.cashParties.find(p => p.direction === "out")?.participantId ?? prefill.from ?? ownId, ownId)}</fieldset><fieldset><legend>Para</legend>${radioChoices(people, "to", entry?.cashParties.find(p => p.direction === "in")?.participantId ?? prefill.to ?? people.find(p => p.active && p.id !== (prefill.from ?? ownId))?.id, ownId)}</fieldset>`
-    : `<fieldset><legend>${currentType === "income" ? "¿Quién recibió?" : "¿Quién pagó?"}</legend>${radioChoices(people, "payer", singleParty ?? ownId, ownId)}</fieldset>${splitSection({ data, visible, selected, ownId, method, inputs })}`;
+    : `<fieldset><legend>${currentType === "income" ? "¿Quién recibió?" : "¿Quién pagó?"}</legend>${radioChoices(people, "payer", singleParty ?? ownId, ownId)}</fieldset>${categorySection(data, entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
   const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(spaceId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
   const label = entryLabel(currentType).toLowerCase();
   return `<a class="back-link" href="${path(spaceId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div></form>`;
@@ -206,7 +240,7 @@ export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const back = `<a class="back-link" href="${path(spaceId)}">← Volver al libro</a>`;
   if (entry.imported) {
     const effects = entry.effects.map(effect => `<tr><td>${escapeHtml(names.get(effect.participantId) ?? "Participante")}</td><td class="money ${effectClass(effect.amountMinor)}">${escapeHtml(signedBare(effect.amountMinor, entry.currency))}</td></tr>`).join("");
-    return `${back}<p class="eyebrow">Importado de Splitwise · fila ${entry.sourceRowNumber}</p><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</p><p class="muted">${escapeHtml(shortDate(entry.occurredAt))}</p>${entry.category ? `<p>Categoría original: ${escapeHtml(entry.category)}</p>` : ""}<section class="ledger-section"><h2>Efecto en el saldo</h2><div class="table-scroll"><table class="balance-table"><thead><tr><th scope="col">Persona</th><th scope="col">Efecto</th></tr></thead><tbody>${effects}</tbody></table></div><p class="footnote">Importes en ${escapeHtml(entry.currency)}.</p></section><a class="button secondary" href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver lote de importación</a>`;
+    return `${back}<p class="eyebrow">Importado de Splitwise · fila ${entry.sourceRowNumber}</p><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}</p><p class="muted">${escapeHtml(shortDate(entry.occurredAt))}</p>${entry.categoryInfo ? `<p class="entry-category">${categoryChip(entry)} <span class="muted">${escapeHtml(entry.categoryInfo.group)} · categoría original: ${escapeHtml(entry.category)}</span></p>` : entry.category ? `<p>Categoría original: ${escapeHtml(entry.category)}</p>` : ""}<section class="ledger-section"><h2>Efecto en el saldo</h2><div class="table-scroll"><table class="balance-table"><thead><tr><th scope="col">Persona</th><th scope="col">Efecto</th></tr></thead><tbody>${effects}</tbody></table></div><p class="footnote">Importes en ${escapeHtml(entry.currency)}.</p></section><a class="button secondary" href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver lote de importación</a>`;
   }
   const voided = entry.status === "voided";
   const creator = entry.createdByUserId === userId ? "vos" : entry.creatorName;
@@ -215,7 +249,7 @@ export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
   const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
   const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
-  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p><p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
+  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
 }
 export function ledgerCsv(data) {
   const quote = value => {
@@ -223,7 +257,7 @@ export function ledgerCsv(data) {
     const safe = typeof value === "string" && /^[\s]*[=+@-]/u.test(text) ? `'${text}` : text;
     return `"${safe.replaceAll('"', '""')}"`;
   };
-  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen"]];
-  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.imported ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
+  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "categoria", "participante_id", "efecto_menor", "origen", "lote", "fila_origen"]];
+  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, entry.categoryInfo?.name ?? entry.category ?? "", effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.imported ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? ""]);
   return `\uFEFF${lines.map(row => row.map(quote).join(",")).join("\r\n")}\r\n`;
 }

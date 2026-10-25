@@ -52,6 +52,7 @@ input[type=checkbox],input[type=radio]{width:auto;min-height:0}
 .chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:700;background:var(--chip);color:var(--ink-2);white-space:nowrap}
 .chip.ok{background:var(--accent-soft);color:var(--accent-deep)}.chip.imp{background:var(--yel-soft);color:var(--yel-text)}.chip.warn{background:var(--warn-bg);color:var(--yel-text);border:1px solid var(--warn-line)}.chip.void{background:var(--chip);color:var(--ink-2)}
 .chip.match{background:var(--chip);color:var(--ink-2)}
+.chip.cat{background:var(--accent-soft);color:var(--accent-deep)}.chip.cat svg{width:14px;height:14px;flex:none}.chip.cat.none{background:transparent;color:var(--ink-3);border:1px dashed var(--line-strong)}.entry-category{margin:4px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .money{font-variant-numeric:tabular-nums;white-space:nowrap}.owes{color:var(--neg)}.owed{color:var(--accent-text)}
 table{border-collapse:collapse}.balance-table{width:100%;text-align:left}.balance-table th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
 .balance-table th,.balance-table td{padding:12px 8px;border-bottom:1px solid var(--line-soft)}.balance-table th:last-child,.balance-table td:last-child{text-align:right}
@@ -99,7 +100,7 @@ const BOOK = `
 .ico-expense{background:var(--coral-soft);color:var(--coral-text)}.ico-income{background:var(--accent-soft);color:var(--accent-deep)}.ico-transfer{background:var(--teal-soft);color:var(--teal-text)}.ico-imported{background:var(--yel-soft);color:var(--yel-text)}
 .more{width:100%;margin-top:12px}
 .list-meta{font-size:.9rem;color:var(--ink-3);margin:0 0 4px}
-.search-form{display:grid;grid-template-columns:1fr auto;gap:8px;margin:12px 0 8px;align-items:center}.search-form .button{margin:0}.search-form .clear{grid-column:1/-1;font-size:.9rem}
+.search-form{display:grid;grid-template-columns:1fr auto;gap:8px;margin:12px 0 8px;align-items:center}.search-form .button{margin:0}.search-form .clear{grid-column:1/-1;font-size:.9rem}.search-form select{grid-column:1/-1;min-height:44px}
 .start-options{display:grid;gap:12px;margin-top:8px}.start-option{border:1.5px solid var(--line-strong);border-radius:18px;padding:16px;background:var(--surface)}.start-option h3{font-size:1.05rem;margin:0 0 4px}.start-option p{margin:0 0 6px;font-size:.95rem}.start-option .button{margin-top:6px}
 .empty{text-align:center;padding:24px 8px}.empty p{margin-bottom:8px}.empty h3{font-family:Georgia,serif;font-size:1.25rem}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 4px calc(8px + env(safe-area-inset-bottom))}
@@ -161,9 +162,16 @@ const FORMS = `
 .section-top{align-items:flex-start}.book-head .actions{width:100%}.book-head .actions .button{flex:1}
 .entry-row a{grid-template-columns:44px 1fr}.entry-side{grid-column:2;text-align:left;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.entry-side .money,.entry-side small{display:inline}
 }
+.category-field select,.category-field input{width:100%}.category-field .category-hint{min-height:1.2em;margin:4px 0 0}
+.cat-group{margin-top:16px}.cat-group h3{margin:0 0 8px;font-size:1rem}.cat-row{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line-soft)}.cat-row:first-of-type{border-top:0}
+.cat-row .cat-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.cat-row .cat-head .count{margin-left:auto;font-size:.85rem;color:var(--ink-3)}
+.cat-row form{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;margin:0}.cat-row form .button{margin:0}
+.cat-row details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--accent-text)}
+.cat-row input,.cat-row select{width:100%;min-height:44px}
 `;
 
 export function appCss() {
   const widths = Array.from({ length: 51 }, (_, i) => `.w${i}{width:${i}%}`).join("");
   return `${themeCss()}${BASE}${BOOK}${FORMS}${widths}`;
 }
+

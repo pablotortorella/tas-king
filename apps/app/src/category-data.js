@@ -17,6 +17,7 @@ export const CATEGORY_ICONS = Object.freeze({
   paw: svg('<circle cx="7" cy="10" r="1.6"/><circle cx="17" cy="10" r="1.6"/><circle cx="10" cy="6" r="1.6"/><circle cx="14" cy="6" r="1.6"/><path d="M8 17c0-3 2-4 4-4s4 1 4 4c0 2-2 2-4 2s-4 0-4-2Z"/>'),
   tag: svg('<path d="M3 12V4h8l10 10-8 8Zm5-5h.01"/>'),
 });
+export const CATEGORY_ICON_LABELS = Object.freeze({ home: "Casa", food: "Comida", fun: "Ocio", car: "Vehículo", bolt: "Servicios", heart: "Vida", plane: "Viaje", cash: "Dinero", cart: "Compras", gift: "Regalo", tool: "Herramientas", paw: "Mascotas", tag: "Etiqueta" });
 export const CATEGORY_ICON_KEYS = Object.freeze(Object.keys(CATEGORY_ICONS));
 export const FALLBACK_CATEGORY_GROUP = "Mis categorías";
 

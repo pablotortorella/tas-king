@@ -49,6 +49,11 @@ const NOTICES = Object.freeze({
   anulado: "Movimiento anulado. Sigue visible en el historial y ya no cuenta en los saldos.",
   archivado: "Grupo archivado. Queda de sólo lectura y podés restaurarlo cuando quieras.",
   restaurado: "Grupo restaurado. Vuelve a aceptar movimientos.",
+  "categoria-creada": "Categoría creada.",
+  "categoria-guardada": "Categoría guardada.",
+  "categoria-archivada": "Categoría archivada. Ya no se ofrece para movimientos nuevos y los existentes la siguen mostrando.",
+  "categoria-restaurada": "Categoría restaurada.",
+  "categoria-fusionada": "Categorías fusionadas. Los movimientos se muestran con la categoría de destino.",
   "importacion-cancelada": "Importación cancelada. No se guardó nada.",
 });
 

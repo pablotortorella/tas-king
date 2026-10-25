@@ -242,5 +242,5 @@ export async function exportLedger(db, { spaceId, userId }) {
   const revisions = await db.prepare("SELECT r.* FROM entry_revisions r WHERE r.ledger_id = ? ORDER BY r.entry_id, r.revision").bind(data.ledger.id).all();
   const events = await db.prepare("SELECT * FROM ledger_events WHERE ledger_id = ? ORDER BY created_at, id").bind(data.ledger.id).all();
   const imports = await db.prepare("SELECT id, source_hash, file_name, imported_count, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, committed_at FROM splitwise_import_batches WHERE ledger_id = ? AND status = 'committed'").bind(data.ledger.id).all();
-  return { schemaVersion: 2, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: data.participants, entries: data.entries, revisions: revisions.results, events: events.results, imports: imports.results };
+  return { schemaVersion: 2, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: data.participants, categories: data.categories, entries: data.entries, revisions: revisions.results, events: events.results, imports: imports.results };
 }
