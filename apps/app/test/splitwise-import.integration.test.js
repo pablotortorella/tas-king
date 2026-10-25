@@ -97,4 +97,23 @@ describe("importación de Splitwise", () => {
     await expect(readImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId })).rejects.toMatchObject({ status: 404 });
     expect((await readLedger(env.DB, { spaceId: space.id, userId: owner.id })).entries).toHaveLength(0);
   });
+
+  it("importa un export con el resumen fechado: no lo guarda como movimiento y concilia sin diferencias", async () => {
+    const owner = await ensureLocalUser(env.DB, "splitwise-resumen@example.test");
+    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "Resumen fechado" });
+    const csvText = "Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto\n\n2026-01-01,Comida,Comida,10.00,COP,5.00,-5.00\n2026-01-02,Taxi,Viaje,20.00,COP,-10.00,10.00\n\n2026-10-24,Saldo total, , ,COP,-5.00,5.00\n";
+    const created = await createImportPreview(env.DB, { spaceId: space.id, userId: owner.id, fileName: "resumen-fechado.csv", csvText });
+    const preview = await readImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId });
+    expect(preview.parsed.movements).toHaveLength(2);
+    expect(preview.parsed.summaries).toHaveLength(1);
+    const { plan } = await reviewImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId, mapping: ["new", "new"], decisions: [] });
+    expect(plan.reconciliation.map(row => row.differenceMinor)).toEqual([0, 0]);
+    expect(plan.warnings).toEqual([]);
+    const batchId = await commitImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId });
+    const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    expect(data.entries.map(entry => entry.description).sort()).toEqual(["Comida", "Taxi"]);
+    const batch = await readImportBatch(env.DB, { spaceId: space.id, userId: owner.id, batchId });
+    expect(batch.importedCount).toBe(2);
+    expect(batch.reconciliation.rows.every(row => row.differenceMinor === 0)).toBe(true);
+  });
 });
