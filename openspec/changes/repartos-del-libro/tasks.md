@@ -10,14 +10,14 @@
 - [x] 2.1 Hacer que `parseEntryForm` lea `splitMethod`, `percent_<id>`, `parts_<id>`, `fixed_<id>` y `share_<id>` y devuelva la especificación del reparto (método, personas elegidas y texto ingresado) en lugar de asignaciones calculadas, y verificar con pruebas unitarias del lector del formulario para los cinco métodos.
 - [x] 2.2 En `saveEntry`, calcular las asignaciones con `splitAmount` usando el orden del grupo (`participantsFor`), ignorar cualquier importe calculado que envíe el navegador y conservar la compatibilidad con las llamadas que pasan asignaciones ya resueltas, y verificar con pruebas de integración D1 que un movimiento con importes manipulados se guarda con los que resultan del método.
 - [x] 2.3 Incorporar `split: { method, beneficiaries, inputs }` a la instantánea de cada revisión (alta y corrección) y verificar con una prueba de integración que la revisión guarda el método y que repetir la misma clave de idempotencia sigue devolviendo la respuesta original.
-- [ ] 2.4 Hacer que la pantalla de corrección lea la instantánea de la revisión vigente y reabra el formulario con ese método y esos datos, y deduzca igual o exacto cuando no hay método guardado (movimientos anteriores o importados), y verificar con pruebas de integración de los tres escenarios de reapertura del spec.
+- [x] 2.4 Hacer que la pantalla de corrección lea la instantánea de la revisión vigente y reabra el formulario con ese método y esos datos, y deduzca igual o exacto cuando no hay método guardado (movimientos anteriores o importados), y verificar con pruebas de integración de los tres escenarios de reapertura del spec.
 - [x] 2.5 Hacer que el resumen del historial (`revisionSummary`) incluya «forma de reparto» cuando cambian el método o sus datos, y verificar con una prueba que un cambio de igual a 50 % / 50 % no diga «Sin cambios de contenido».
 
 ## 3. Formulario
 
-- [ ] 3.1 Rediseñar la sección de reparto de `renderEntryForm` con los cinco métodos como opciones, los campos propios de cada uno y el índice de orden del grupo en cada persona, conservando los nombres de campo actuales, y verificar que las pruebas E2E existentes del formulario siguen pasando.
-- [ ] 3.2 Mostrar solo los campos del método elegido con las clases y el patrón `:has` ya usados (sin estilos en línea, por la CSP) y verificar con una prueba E2E que cambiar de método cambia los campos visibles y que los controles miden al menos 44 px en 390 px de ancho, en claro y oscuro.
-- [ ] 3.3 Agregar el atajo «lo debe todo una persona» como opción de interfaz que deja una sola beneficiaria con reparto igual, y verificar con una prueba E2E que Ana paga 100,00, se elige «lo debe todo Beto», y los saldos quedan en +100,00 y −100,00.
+- [x] 3.1 Rediseñar la sección de reparto de `renderEntryForm` con los cinco métodos como opciones, los campos propios de cada uno y el índice de orden del grupo en cada persona, conservando los nombres de campo actuales, y verificar que las pruebas E2E existentes del formulario siguen pasando.
+- [x] 3.2 Mostrar solo los campos del método elegido con las clases y el patrón `:has` ya usados (sin estilos en línea, por la CSP) y verificar con una prueba E2E que cambiar de método cambia los campos visibles y que los controles miden al menos 44 px en 390 px de ancho, en claro y oscuro.
+- [x] 3.3 Agregar el atajo «lo debe todo una persona» como opción de interfaz que deja una sola beneficiaria con reparto igual, y verificar con una prueba E2E que Ana paga 100,00, se elige «lo debe todo Beto», y los saldos quedan en +100,00 y −100,00.
 
 ## 4. Vista previa con la misma regla
 

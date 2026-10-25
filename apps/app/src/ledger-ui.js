@@ -123,22 +123,47 @@ function radioChoices(participants, name, selectedId, ownId) {
 }
 function personLabel(person, ownId) { return person.id === ownId ? `${person.displayName} · vos` : person.displayName; }
 
-export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense", entry = null, prefill = {} }) {
+const SPLIT_METHODS = Object.freeze([["equal", "Igual"], ["exact", "Importes exactos"], ["percent", "Porcentajes"], ["shares", "Partes"], ["fixed", "Algunos fijos"]]);
+const SPLIT_HINTS = Object.freeze({
+  equal: "Todas las personas elegidas pagan lo mismo.",
+  exact: "Escribí cuánto le toca a cada persona. Deben sumar el total.",
+  percent: "Escribí el porcentaje de cada persona. Deben sumar 100 %.",
+  shares: "Dale a cada persona un número de partes, por ejemplo 2 adultos y 1 chico. Con 0 partes queda fuera.",
+  fixed: "Quien tiene un importe fijo paga solo eso. El resto se reparte en partes iguales entre las demás personas elegidas.",
+});
+
+// Reparto de un gasto o ingreso: personas elegidas, atajo «lo debe todo», métodos y los campos de cada método.
+// Cada persona lleva su posición en el grupo (data-order) para que la vista previa desempate como el servidor.
+function splitSection({ data, visible, selected, ownId, method, inputs }) {
+  const position = new Map(data.participants.map((person, index) => [person.id, index]));
+  const chips = visible.map(p => choice(`<input type="checkbox" name="beneficiary" value="${escapeHtml(p.id)}" data-order="${position.get(p.id)}" data-name="${escapeHtml(p.displayName)}"${selected.has(p.id) ? " checked" : ""}>`, personLabel(p, ownId))).join("");
+  const shortcut = visible.filter(p => p.active).map(p => `<button type="button" class="chip-button" data-all-to="${escapeHtml(p.id)}">Lo debe todo ${escapeHtml(p.displayName)}</button>`).join("");
+  const methods = SPLIT_METHODS.map(([value, label]) => choice(`<input type="radio" name="splitMethod" value="${value}"${method === value ? " checked" : ""}>`, label)).join("");
+  const hints = SPLIT_METHODS.map(([value]) => `<p class="hint method-hint method-${value}">${SPLIT_HINTS[value]}</p>`).join("");
+  const group = (name, prefix, placeholder, fallback, unit) => `<div class="share-grid method-fields method-${name}">${visible.map(p => `<label>${escapeHtml(personLabel(p, ownId))}${unit ? ` <span class="unit">${unit}</span>` : ""}<input name="${prefix}${escapeHtml(p.id)}" inputmode="decimal" placeholder="${placeholder}" value="${escapeHtml(method === name ? inputs[p.id] ?? "" : fallback)}" autocomplete="off"></label>`).join("")}</div>`;
+  return `<fieldset><legend>¿Entre quiénes se reparte?</legend><div class="choices">${chips}</div><div class="all-to" hidden><span class="lead">Atajo:</span>${shortcut}</div></fieldset><fieldset><legend>¿Cómo se reparte?</legend><div class="choices">${methods}</div>${hints}${group("exact", "share_", "0,00", "")}${group("percent", "percent_", "0", "", "%")}${group("shares", "parts_", "1", "1", "partes")}${group("fixed", "fixed_", "Resto igual", "")}</fieldset>`;
+}
+
+export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense", entry = null, prefill = {}, split = null }) {
   const edit = Boolean(entry);
   const currentType = entry?.type ?? type;
   const currency = entry?.currency ?? prefill.currency ?? data.ledger.default_currency;
   const ownId = data.participants.find(p => p.linkedUserId === userId)?.id;
   const people = [...data.participants].sort((a, b) => Number(b.id === ownId) - Number(a.id === ownId));
   const action = edit ? `${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit` : `${path(spaceId)}/ledger/entries`;
-  const selected = new Set(entry?.allocations.map(share => share.participantId) ?? data.participants.filter(p => p.active).map(p => p.id));
+  // Un movimiento que conserva su método se reabre con él; uno anterior se deduce como igual o exacto.
+  const spec = split && SPLIT_METHODS.some(([value]) => value === split.method) ? split : null;
+  const selected = new Set(spec?.beneficiaries ?? entry?.allocations.map(share => share.participantId) ?? data.participants.filter(p => p.active).map(p => p.id));
   const shares = new Map(entry?.allocations.map(share => [share.participantId, share.amountMinor]) ?? []);
   const singleParty = entry?.cashParties.find(p => p.direction === (currentType === "income" ? "in" : "out"))?.participantId;
   const splitIds = people.filter(p => selected.has(p.id)).map(p => p.id);
   const equallySplit = !entry || currentType === "transfer" || splitEqually(entry.totalMinor, splitIds).every(share => shares.get(share.participantId) === share.amountMinor);
   const visible = people.filter(p => p.active || selected.has(p.id));
+  const method = spec?.method ?? (equallySplit ? "equal" : "exact");
+  const inputs = spec?.inputs ?? Object.fromEntries([...shares].map(([id, amount]) => [id, inputAmount(amount, currency)]));
   const fields = currentType === "transfer"
     ? `<fieldset><legend>De</legend>${radioChoices(people, "from", entry?.cashParties.find(p => p.direction === "out")?.participantId ?? prefill.from ?? ownId, ownId)}</fieldset><fieldset><legend>Para</legend>${radioChoices(people, "to", entry?.cashParties.find(p => p.direction === "in")?.participantId ?? prefill.to ?? people.find(p => p.active && p.id !== (prefill.from ?? ownId))?.id, ownId)}</fieldset>`
-    : `<fieldset><legend>${currentType === "income" ? "¿Quién recibió?" : "¿Quién pagó?"}</legend>${radioChoices(people, "payer", singleParty ?? ownId, ownId)}</fieldset><fieldset><legend>¿Entre quiénes se reparte?</legend><div class="choices">${visible.map(p => choice(`<input type="checkbox" name="beneficiary" value="${escapeHtml(p.id)}"${selected.has(p.id) ? " checked" : ""}>`, personLabel(p, ownId))).join("")}</div></fieldset><fieldset><legend>¿Cómo se reparte?</legend><div class="choices">${choice(`<input type="radio" name="splitMethod" value="equal"${equallySplit ? " checked" : ""}>`, "Igual")}${choice(`<input type="radio" name="splitMethod" value="exact"${equallySplit ? "" : " checked"}>`, "Importes exactos")}</div><div class="share-grid shares">${visible.map(p => `<label>${escapeHtml(personLabel(p, ownId))}<input name="share_${escapeHtml(p.id)}" inputmode="decimal" placeholder="0,00" value="${escapeHtml(shares.has(p.id) ? inputAmount(shares.get(p.id), currency) : "")}"></label>`).join("")}</div></fieldset>`;
+    : `<fieldset><legend>${currentType === "income" ? "¿Quién recibió?" : "¿Quién pagó?"}</legend>${radioChoices(people, "payer", singleParty ?? ownId, ownId)}</fieldset>${splitSection({ data, visible, selected, ownId, method, inputs })}`;
   const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(spaceId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
   const label = entryLabel(currentType).toLowerCase();
   return `<a class="back-link" href="${path(spaceId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div></form>`;

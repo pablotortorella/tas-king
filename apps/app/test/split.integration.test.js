@@ -112,4 +112,57 @@ describe("reparto en el servidor", () => {
     const revision = await env.DB.prepare("SELECT snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ?").bind(ledgerId, saved.id).first();
     expect(JSON.parse(revision.snapshot_json).split).toBeUndefined();
   });
+
+  describe("reapertura del método al corregir", () => {
+    async function editPage(owner, space, entryId) {
+      const session = await createSession(env.DB, { userId: owner.id, secret: SECRET });
+      const cookie = `__Host-homesuite_session=${encodeURIComponent(session.token)}`;
+      const page = await app.request(`https://app.test/spaces/${space.slug}/ledger/entries/${entryId}/edit`, { headers: { Cookie: cookie } }, { DB: env.DB, SESSION_SECRET: SECRET });
+      expect(page.status).toBe(200);
+      return page.text();
+    }
+    const checkedMethod = (html) => /name="splitMethod" value="(\w+)" checked/u.exec(html)?.[1];
+    const valueOf = (html, name) => new RegExp(`name="${name}"[^>]*value="([^"]*)"`, "u").exec(html)?.[1];
+
+    it("reabre un reparto por porcentajes con el método y los datos cargados", async () => {
+      const { owner, space, people } = await book("reapertura-porcentajes");
+      const ids = people.map(person => person.id);
+      const split = { method: "percent", beneficiaries: ids.slice(0, 2), inputs: { [ids[0]]: "60", [ids[1]]: "40" } };
+      const saved = await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: entry(people, { split }), idempotencyKey: crypto.randomUUID() });
+      const html = await editPage(owner, space, saved.id);
+      expect(checkedMethod(html)).toBe("percent");
+      expect(valueOf(html, `percent_${ids[0]}`)).toBe("60");
+      expect(valueOf(html, `percent_${ids[1]}`)).toBe("40");
+      expect(html).toMatch(new RegExp(`name="beneficiary" value="${ids[2]}" data-order="2" data-name="[^"]*"(?! checked)>`, "u"));
+    });
+
+    it("reabre cada método con sus datos", async () => {
+      const { owner, space, people } = await book("reapertura-metodos");
+      const ids = people.map(person => person.id);
+      const cases = [
+        ["shares", { [ids[0]]: "2", [ids[1]]: "1", [ids[2]]: "1" }, "parts_"],
+        ["fixed", { [ids[0]]: "10", [ids[1]]: "", [ids[2]]: "" }, "fixed_"],
+        ["exact", { [ids[0]]: "20", [ids[1]]: "30", [ids[2]]: "50" }, "share_"],
+      ];
+      for (const [method, inputs, prefix] of cases) {
+        const saved = await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: entry(people, { split: { method, beneficiaries: ids, inputs } }), idempotencyKey: crypto.randomUUID() });
+        const html = await editPage(owner, space, saved.id);
+        expect(checkedMethod(html), method).toBe(method);
+        for (const [id, value] of Object.entries(inputs)) expect(valueOf(html, `${prefix}${id}`), `${method} ${id}`).toBe(value);
+      }
+    });
+
+    it("un movimiento sin método se reabre como igual si el reparto es parejo y como exacto si no", async () => {
+      const { owner, space, people } = await book("reapertura-sin-metodo");
+      const ids = people.map(person => person.id);
+      const legacy = (allocations, description) => ({ type: "expense", currency: "COP", totalMinor: 10000, description, note: "", occurredAt: "2026-10-24", cashParties: [{ participantId: ids[0], direction: "out", amountMinor: 10000 }], allocations });
+      const even = await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: legacy([{ participantId: ids[0], amountMinor: 5000 }, { participantId: ids[1], amountMinor: 5000 }], "Parejo"), idempotencyKey: crypto.randomUUID() });
+      const uneven = await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, input: legacy([{ participantId: ids[0], amountMinor: 6000 }, { participantId: ids[1], amountMinor: 4000 }], "Desparejo"), idempotencyKey: crypto.randomUUID() });
+      expect(checkedMethod(await editPage(owner, space, even.id))).toBe("equal");
+      const html = await editPage(owner, space, uneven.id);
+      expect(checkedMethod(html)).toBe("exact");
+      expect(valueOf(html, `share_${ids[0]}`)).toBe("60.00");
+      expect(valueOf(html, `share_${ids[1]}`)).toBe("40.00");
+    });
+  });
 });

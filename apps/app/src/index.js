@@ -588,7 +588,10 @@ app.get("/spaces/:spaceId/ledger/entries/:entryId/edit", async (c) => {
     const entry = data.entries.find(row => row.id === c.req.param("entryId"));
     if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
     if (entry.status !== "active" || (data.ledger.role !== "owner" && entry.createdByUserId !== user.user_id)) throw new LedgerError("No podés corregir este movimiento.", 403);
-    return c.html(page("Corregir movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, entry })));
+    // El método de reparto y sus datos viven en la instantánea de la revisión vigente (no hay columna propia).
+    const revision = await c.env.DB.prepare("SELECT snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ? AND revision = ?").bind(data.ledger.id, entry.id, entry.revision).first();
+    const split = revision ? JSON.parse(revision.snapshot_json).split ?? null : null;
+    return c.html(page("Corregir movimiento", renderEntryForm(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), userId: user.user_id, entry, split })));
   } catch (error) { return ledgerFailure(c, error); }
 });
 

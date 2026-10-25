@@ -122,6 +122,21 @@ export const LEDGER_CLIENT_JS = String.raw`(function () {
     if (messages.length > 1 && !Object.keys(effects).length) note.className = "preview-note warn";
   }
 
+  // Atajo «lo debe todo una persona»: deja como única beneficiaria a esa persona con reparto igual. Sin script los
+  // botones permanecen ocultos y se elige a mano.
+  document.querySelectorAll(".all-to").forEach(function (row) {
+    row.hidden = false;
+    var form = row.closest("form");
+    row.querySelectorAll("[data-all-to]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        form.querySelectorAll('input[name="beneficiary"]').forEach(function (box) { box.checked = box.value === button.getAttribute("data-all-to"); });
+        var equal = form.querySelector('input[name="splitMethod"][value="equal"]');
+        if (equal) equal.checked = true;
+        form.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  });
+
   document.querySelectorAll("form[data-optimistic]").forEach(function (form) {
     var refresh = function () { preview(form); };
     form.addEventListener("input", refresh);
