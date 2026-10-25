@@ -91,7 +91,7 @@ test("un doble clic en Guardar deja un solo movimiento y una sola franja", async
   await expect(listRows(page)).toHaveText(["Doble"]);
 });
 
-test("volver atrás desde la lista deja el formulario limpio y recargar la lista conserva la franja", async ({ page }) => {
+test("recargar la lista conserva la franja y volver atrás no rompe nada", async ({ page }) => {
   const { book } = await openBook(page, "lr-atras");
   await page.goto(`${book}/ledger/new?type=expense`);
   await page.getByLabel("Descripción").fill("Atrás");
@@ -101,7 +101,7 @@ test("volver atrás desde la lista deja el formulario limpio y recargar la lista
   await page.reload();
   await expect(page.locator(".recent-strip")).toContainText("Atrás");
   await page.goBack();
-  await expect(page.getByLabel("Descripción")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
   await page.goto(book);
   await expect(listRows(page)).toHaveText(["Atrás"]);
 });

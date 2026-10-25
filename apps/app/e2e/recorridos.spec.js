@@ -76,15 +76,22 @@ test("un doble clic en Guardar crea un solo movimiento", async ({ page }) => {
   await expect(page.locator(".cat-row", { has: page.locator(".chip.cat", { hasText: /^Panadería$/u }) })).toHaveCount(1);
 });
 
-test("volver atrás después de guardar deja un formulario limpio y usable, sin duplicar el movimiento ya guardado", async ({ page }) => {
+test("volver atrás después de guardar no duplica el movimiento ya guardado, sea cual sea el navegador", async ({ page }) => {
   const { book } = await openBook(page, "atras");
   await fillExpense(page, book, "Atrás y adelante");
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page.locator(".recent-strip")).toContainText("Atrás y adelante");
   await page.goBack();
-  await expect(page.getByLabel("Descripción")).toHaveValue("");
   await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
+  // Chromium vuelve a un formulario limpio; Firefox restaura lo escrito. En los dos casos reenviar es seguro.
+  const restored = (await page.getByLabel("Descripción").inputValue()) !== "";
   await page.getByRole("button", { name: "Guardar" }).click();
+  if (restored) {
+    await expect(page.locator(".recent-strip")).toContainText("Atrás y adelante");
+    await page.goto(book);
+    await expect(entryTitles(page)).toHaveText(["Atrás y adelante"]);
+    return;
+  }
   await expect(page).toHaveURL(/ledger\/new/u);
   await page.getByLabel("Descripción").fill("Segundo movimiento");
   await page.getByLabel("Importe", { exact: true }).fill("7,00");
