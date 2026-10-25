@@ -22,7 +22,7 @@ async function seededBook(page) {
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page.getByRole("heading", { name: "Supermercado" })).toBeVisible();
   const detail = new URL(page.url()).pathname;
-  return { suffix, book, detail, pages: [book, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/spaces/new", "/cuentas-claras", "/invitations"] };
+  return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/spaces/new", "/cuentas-claras", "/invitations"] };
 }
 
 test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ page }) => {

@@ -52,7 +52,7 @@ input[type=checkbox],input[type=radio]{width:auto;min-height:0}
 .chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:700;background:var(--chip);color:var(--ink-2);white-space:nowrap}
 .chip.ok{background:var(--accent-soft);color:var(--accent-deep)}.chip.imp{background:var(--yel-soft);color:var(--yel-text)}.chip.warn{background:var(--warn-bg);color:var(--yel-text);border:1px solid var(--warn-line)}.chip.void{background:var(--chip);color:var(--ink-2)}
 .chip.match{background:var(--chip);color:var(--ink-2)}
-.chip.cat{background:var(--accent-soft);color:var(--accent-deep)}.chip.cat svg{width:14px;height:14px;flex:none}.chip.cat.none{background:transparent;color:var(--ink-3);border:1px dashed var(--line-strong)}.entry-category{margin:4px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip.cat{background:var(--accent-soft);color:var(--accent-deep);white-space:normal;overflow-wrap:anywhere;max-width:100%;min-width:0}.chip.cat svg{width:14px;height:14px;flex:none}.chip.cat.none{background:transparent;color:var(--ink-3);border:1px dashed var(--line-strong)}.entry-category{margin:4px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .money{font-variant-numeric:tabular-nums;white-space:nowrap}.owes{color:var(--neg)}.owed{color:var(--accent-text)}
 table{border-collapse:collapse}.balance-table{width:100%;text-align:left}.balance-table th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
 .balance-table th,.balance-table td{padding:12px 8px;border-bottom:1px solid var(--line-soft)}.balance-table th:last-child,.balance-table td:last-child{text-align:right}
@@ -130,7 +130,7 @@ const FORMS = `
 .choice input:checked+span::before{content:"✓"}
 .choice input:focus-visible+span{outline:3px solid var(--accent-line);outline-offset:2px}
 .type-tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:14px;margin-top:12px}
-.type-tabs a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:11px;color:var(--ink-2);text-decoration:none;font-weight:600;font-size:.95rem;padding:0 6px;text-align:center}
+.type-tabs a{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:11px;color:var(--ink-2);text-decoration:none;font-weight:600;font-size:.95rem;padding:0 6px;text-align:center}
 .type-tabs a[aria-current=page]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 3px var(--shadow)}
 .method-fields,.method-hint{display:none}.ledger-form:has(input[name=splitMethod][value=exact]:checked) .method-exact{display:grid}.ledger-form:has(input[name=splitMethod][value=percent]:checked) .method-percent{display:grid}.ledger-form:has(input[name=splitMethod][value=shares]:checked) .method-shares{display:grid}.ledger-form:has(input[name=splitMethod][value=fixed]:checked) .method-fixed{display:grid}.ledger-form:has(input[name=splitMethod][value=equal]:checked) p.method-equal{display:block}.ledger-form:has(input[name=splitMethod][value=exact]:checked) p.method-exact{display:block}.ledger-form:has(input[name=splitMethod][value=percent]:checked) p.method-percent{display:block}.ledger-form:has(input[name=splitMethod][value=shares]:checked) p.method-shares{display:block}.ledger-form:has(input[name=splitMethod][value=fixed]:checked) p.method-fixed{display:block}@supports not selector(:has(*)){.method-fields{display:grid}.method-hint{display:block}}
 .method-fields{margin-top:12px}.unit{color:var(--ink-3);font-weight:500}.all-to{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.all-to[hidden]{display:none}.all-to .lead{font-size:.9rem;color:var(--ink-3);font-weight:600}
@@ -168,6 +168,7 @@ const FORMS = `
 .cat-row form{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;margin:0}.cat-row form .button{margin:0}
 .cat-row details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--accent-text)}
 .cat-row input,.cat-row select{width:100%;min-height:44px}
+@media(max-width:360px){.type-tabs a{font-size:.85rem;gap:3px}.type-tabs a svg{display:none}}
 `;
 
 export function appCss() {

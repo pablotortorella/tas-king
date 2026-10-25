@@ -18,17 +18,17 @@
 
 ## 4. Selector y gestión
 
-- [ ] 4.1 Agregar el selector agrupado con búsqueda y alta en línea al formulario de movimiento, sin estilos en línea, y verificar con una prueba E2E que se elige una categoría, que escribir una variante normalizada ofrece la existente y que se puede crear una nueva.
-- [ ] 4.2 Crear la pantalla de gestión del libro con renombrar, reagrupar, cambiar ícono, archivar y fusionar, solo para la persona titular, y verificar con pruebas de integración de permisos (el integrante recibe un rechazo) y de los escenarios de renombrar, fusionar y archivar.
-- [ ] 4.3 Verificar con una prueba E2E a 390 px, en claro y oscuro, que el selector y la gestión no desbordan, los controles miden al menos 44 px y el contraste del texto cumple.
+- [x] 4.1 Agregar el selector agrupado con búsqueda y alta en línea al formulario de movimiento, sin estilos en línea, y verificar con una prueba E2E que se elige una categoría, que escribir una variante normalizada ofrece la existente y que se puede crear una nueva.
+- [x] 4.2 Crear la pantalla de gestión del libro con renombrar, reagrupar, cambiar ícono, archivar y fusionar, solo para la persona titular, y verificar con pruebas de integración de permisos (el integrante recibe un rechazo) y de los escenarios de renombrar, fusionar y archivar.
+- [x] 4.3 Verificar con una prueba E2E a 390 px, en claro y oscuro, que el selector y la gestión no desbordan, los controles miden al menos 44 px y el contraste del texto cumple.
 
 ## 5. Lista, búsqueda y exportación
 
-- [ ] 5.1 Mostrar la categoría (con grupo e ícono) en la lista y el detalle y mostrar «Sin categoría» cuando falta, y verificar con una prueba de la vista general y una E2E.
-- [ ] 5.2 Sumar el nombre de la categoría a la búsqueda con el motivo «Categoría» y agregar el filtro por categoría o grupo codificado en la URL, y verificar con pruebas unitarias de `searchLedger` y una E2E de filtrar y quitar el filtro.
-- [ ] 5.3 Reconocer por nombre normalizado la categoría de origen de los importados actuales y verificar con una prueba de integración de la coincidencia y de la ausencia de coincidencia.
-- [ ] 5.4 Incluir las categorías en el JSON del libro y la columna `categoria` en el CSV, y verificar con pruebas de la exportación incluido el escape de fórmulas.
+- [x] 5.1 Mostrar la categoría (con grupo e ícono) en la lista y el detalle y mostrar «Sin categoría» cuando falta, y verificar con una prueba de la vista general y una E2E.
+- [x] 5.2 Sumar el nombre de la categoría a la búsqueda con el motivo «Categoría» y agregar el filtro por categoría o grupo codificado en la URL, y verificar con pruebas unitarias de `searchLedger` y una E2E de filtrar y quitar el filtro.
+- [x] 5.3 Reconocer por nombre normalizado la categoría de origen de los importados actuales y verificar con una prueba de integración de la coincidencia y de la ausencia de coincidencia.
+- [x] 5.4 Incluir las categorías en el JSON del libro y la columna `categoria` en el CSV, y verificar con pruebas de la exportación incluido el escape de fórmulas.
 
 ## 6. Cierre
 
-- [ ] 6.1 Verificar con `openspec validate categorias-del-libro --strict` y ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` hasta que pasen completos.
+- [x] 6.1 Verificar con `openspec validate categorias-del-libro --strict` y ejecutar `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app` y `npm run test:all` hasta que pasen completos.
