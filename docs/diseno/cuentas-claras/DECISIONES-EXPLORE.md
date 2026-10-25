@@ -53,7 +53,7 @@ Los efectos se siguen derivando al leer a partir de partes y asignaciones. A los
 
 ### D5. La fila de resumen debe reconocerse — defecto, no decisión
 
-El export real trae «Saldo total» en la **segunda** celda y la fecha de exportación en la primera. El detector actual solo reconoce la forma sin fecha, así que hoy esa fila se importaría como un movimiento de importe 0 con efectos grandes y la conciliación no correría. Se corrige con una prueba antes de importar datos reales, reconociendo también las variantes en inglés y garantizando que el resumen nunca se importe como movimiento.
+El export real trae «Saldo total» en la **segunda** celda y la fecha de exportación en la primera. El detector actual solo reconoce la forma sin fecha, así que hoy esa fila se importaría como un movimiento de importe 0 con efectos grandes y la conciliación no correría. Se corrige con una prueba antes de importar datos reales, reconociendo también las variantes en inglés y garantizando que el resumen nunca se importe como movimiento. **Entregado en el PR #92**, pendiente de integrar.
 
 ### D6. Comentarios del archivo — confirmada
 

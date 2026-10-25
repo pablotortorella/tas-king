@@ -37,7 +37,7 @@ Consecuencias comprobadas con el archivo real:
 - El plan advierte «el archivo no incluye una fila de saldos para comparar», así que **la conciliación no corre**.
 - Si se confirmara, los saldos importados quedarían **duplicados**: la fila colada vale exactamente lo que deberían valer los saldos reales (la suma de las 2.485 filas reales coincide con el resumen).
 
-**Estado:** sin corregir. Hay que corregirlo con prueba antes de importar datos reales. La prueba debe usar un CSV sintético de la misma forma: fecha en la primera celda, descripción «Saldo total», importe y moneda en blanco, saldos opuestos en las columnas de las personas. Conviene reconocer también las variantes en inglés («Total balance») y exigir que el resumen no se importe nunca como movimiento.
+**Estado:** corregido en el PR #92 (pendiente de integrar). Con el arreglo, el mismo archivo da 0 filas de más, 1 resumen, 0 advertencias y diferencias de conciliación en cero para las dos personas; sin él, fallan las 3 pruebas nuevas. Hay que integrarlo antes de importar datos reales. La prueba debe usar un CSV sintético de la misma forma: fecha en la primera celda, descripción «Saldo total», importe y moneda en blanco, saldos opuestos en las columnas de las personas. Conviene reconocer también las variantes en inglés («Total balance») y exigir que el resumen no se importe nunca como movimiento.
 
 ## 3. Cómo se reparte
 
@@ -95,7 +95,7 @@ Mediciones con las 2.485 filas ya parseadas, en Node y sin red:
 | Búsqueda | 90–390 ms por consulta hoy; con índice por petición debería bajar mucho | A confirmar: arreglo en JavaScript primero, SQL con umbral medible |
 | Paginación en SQL | A 2.500 filas no urge; se acerca a ~5.000 en unos tres años | Diferida, con una medición como disparador |
 | Importación | Necesita prueba a escala y mensajes claros de límite; hoy no es atómica | A decidir: atomicidad y manejo de errores |
-| Fila de resumen | Defecto que bloquea la conciliación | A corregir antes de importar datos reales |
+| Fila de resumen | Defecto que bloquea la conciliación | Corregido en el PR #92; falta integrarlo |
 | Decimales de COP | Hacen falta dos | Resuelto por evidencia |
 | Categoría | Existe pero es poco visible, y un tercio es genérica | A decidir: mostrarla en la lista, catálogo para movimientos propios, filtros |
 | Buscar por persona | Con dos personas devuelve todo | A decidir qué significa buscar por persona |
