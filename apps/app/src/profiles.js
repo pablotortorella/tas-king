@@ -109,8 +109,10 @@ export async function ensureProfile(db, userId) {
 
 export async function readOwnProfile(db, userId) {
   const row = await ensureProfile(db, userId);
+  const presentation = presentProfile(row);
   return {
-    ...presentProfile(row),
+    ...presentation,
+    avatar: { ...presentation.avatar, savedEmoji: row.avatar_emoji },
     nameSource: row.name_source, googleDisplayName: row.google_display_name,
     revision: row.revision, colors: AVATAR_COLORS,
   };

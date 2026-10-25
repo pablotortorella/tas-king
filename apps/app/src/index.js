@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
-import { readOwnProfile } from "./profiles.js";
+import { AVATAR_COLORS, readOwnProfile } from "./profiles.js";
+import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "./profile-ui.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
@@ -69,13 +70,26 @@ function oauthCookie(value, secure, maxAge = 10 * 60) {
   return cookie(OAUTH_COOKIE, value, { maxAge, secure });
 }
 
-function page(title, content) {
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} · HomeSuite</title><link rel="stylesheet" href="/app.css"><body><main class="shell"><a class="brand" href="/">⌂ HomeSuite</a>${content}</main></body></html>`;
-}
-
 function html(value) {
   return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
+
+function avatar(profile) {
+  const value = profile.avatar;
+  const image = value.type === "photo" && value.photoUrl
+    ? `<span class="avatar-fallback">${html(value.initial)}</span><img src="${html(value.photoUrl)}" alt="" referrerpolicy="no-referrer">`
+    : value.type === "emoji" ? html(value.emoji) : html(value.initial);
+  return `<span class="avatar avatar-${html(value.color)}" aria-hidden="true">${image}</span>`;
+}
+
+function page(title, content, profile = null) {
+  const account = profile ? `<a class="account-link" href="/perfil" aria-label="Mi perfil: ${html(profile.displayName)}">${avatar(profile)}<span>${html(profile.displayName)}</span></a>` : "";
+  const accountMenu = profile ? `<a href="/perfil">Mi perfil</a><form action="/auth/logout" method="post"><button type="submit">Cerrar sesión</button></form>` : "";
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/shell.js" defer></script><body><main class="shell"><header class="shell-header"><a class="brand" href="/">⌂ HomeSuite</a><nav class="desktop-nav" aria-label="Herramientas de HomeSuite"><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a></nav><div class="header-actions">${account}<details class="menu"><summary aria-label="Abrir menú de HomeSuite">☰</summary><nav aria-label="Menú de HomeSuite"><a href="/">Inicio</a><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a>${accountMenu}</nav></details></div></header>${content}</main></body></html>`;
+}
+
+const AVATAR_CSS = Object.entries(AVATAR_COLORS).map(([token, color]) =>
+  `.avatar-${token}{background:${color};color:${["ocean", "forest", "clay", "violet", "rose"].includes(token) ? "#fff" : "#20342a"}}`).join("");
 
 function requestId(c) { return c.get("requestId") || "unknown"; }
 
@@ -95,7 +109,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
-  if (new URL(c.req.url).pathname.startsWith("/api/") || new URL(c.req.url).pathname === "/") c.header("Cache-Control", "private, no-store");
+  if (new URL(c.req.url).pathname.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(new URL(c.req.url).pathname)) c.header("Cache-Control", "private, no-store");
 });
 
 app.use("*", async (c, next) => {
@@ -318,22 +332,108 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
   return c.json({ status: accepted ? "accepted" : "rejected", spaceId });
 });
 
-app.get("/app.css", (c) => c.body(`:root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}*{box-sizing:border-box}body{margin:0}.shell{max-width:720px;margin:auto;padding:32px 24px 72px}.brand{color:#206447;text-decoration:none;font-weight:800}.eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}p{font-size:1.1rem;line-height:1.6;color:#52665b}.card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}.button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px}.button.secondary{background:transparent;color:#206447;border:1px solid #206447}.label{font-weight:800;display:block;margin:20px 0 7px}input{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit}.notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}.person{border-top:1px solid #ddd3c3;padding:15px 0}.muted{font-size:.9rem;color:#68766d}` , 200, { "Content-Type": "text/css; charset=utf-8" }));
+app.get("/app.css", (c) => c.body(`
+  :root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}
+  *{box-sizing:border-box}body{margin:0}
+  .shell{max-width:900px;margin:auto;padding:24px 24px 72px}
+  .shell-header{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .shell-header .desktop-nav{display:flex;gap:8px 20px;flex-wrap:wrap}
+  .shell-header nav a{color:#28533c;text-decoration:none;font-weight:700}
+  .shell-header nav a:hover,.shell-header nav a:focus-visible{text-decoration:underline}
+  .header-actions{display:flex;align-items:center;gap:12px}
+  .account-link{display:flex;align-items:center;gap:9px;color:#20342a;text-decoration:none;font-weight:700;max-width:220px}
+  .account-link span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .avatar{width:38px;height:38px;display:inline-grid;place-items:center;flex:none;border-radius:50%;font-size:1.2rem;overflow:hidden;position:relative}
+  .avatar-fallback{position:absolute;inset:0;display:grid;place-items:center}
+  .avatar img{width:100%;height:100%;object-fit:cover;position:relative}
+  ${AVATAR_CSS}
+  .menu{position:relative}.menu summary{list-style:none;cursor:pointer;border:1px solid #b8b1a5;border-radius:12px;padding:7px 11px;font-size:1.25rem;line-height:1.2}
+  .menu summary::-webkit-details-marker{display:none}
+  .menu nav{display:flex;flex-direction:column;gap:14px;position:absolute;right:0;top:calc(100% + 8px);min-width:190px;padding:18px;background:#fffaf0;border:1px solid #d9d0c0;border-radius:14px;box-shadow:0 12px 32px #20342a22;z-index:5}
+  .menu form{margin:0}.menu button{font:inherit;color:#28533c;background:none;border:0;padding:0;cursor:pointer;font-weight:700}
+  .brand{color:#206447;text-decoration:none;font-weight:800}
+  .eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}
+  h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}
+  h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}
+  p{font-size:1.1rem;line-height:1.6;color:#52665b}
+  .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:32px}
+  .tool-card{display:flex;flex-direction:column;gap:12px;background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;color:#20342a;text-decoration:none}
+  .tool-card:hover,.tool-card:focus-visible{border-color:#206447;box-shadow:0 8px 24px #20342a18}
+  .tool-card strong{font-family:Georgia,serif;font-size:1.55rem}
+  .tool-card span{color:#52665b;line-height:1.5}
+  .card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}
+  .button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px;cursor:pointer}
+  .button.secondary{background:transparent;color:#206447;border:1px solid #206447}
+  .label{font-weight:800;display:block;margin:20px 0 7px}
+  input,select{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit;background:white;color:#20342a}
+  .profile-form h2:not(:first-child){margin-top:32px}
+  .profile-form input:disabled{background:#eee9df;color:#68766d}
+  .profile-form button:disabled{opacity:.65;cursor:wait}
+  .notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}
+  .person{border-top:1px solid #ddd3c3;padding:15px 0}
+  .muted{font-size:.9rem;color:#68766d}
+  @media(max-width:760px){.shell-header .desktop-nav{display:none}.account-link{max-width:145px}}
+` , 200, { "Content-Type": "text/css; charset=utf-8" }));
+
+app.get("/shell.js", (c) => c.body(`document.querySelectorAll('.avatar img').forEach((image) => { image.addEventListener('error', () => image.remove()); if (image.complete && !image.naturalWidth) image.remove(); });`, 200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "public, max-age=3600" }));
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {
-    const { index } = startDemoPair();
-    return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Este es un recorrido local de prueba: guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
+    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`));
   }
   const config = authConfig(c.env);
   const session = await signedInUser(c);
   if (session) {
     const profile = await readOwnProfile(c.env.DB, session.user_id);
-    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Muy pronto.</h1><p>Hola, ${html(profile.displayName)}. Ya ingresaste con tu cuenta de Google. Estamos terminando la primera versión de Cuentas Claras; todavía no hay movimientos ni saldos para usar aquí.</p><form action="/auth/logout" method="post"><button class="button secondary">Cerrar sesión</button></form>`));
+    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(profile.displayName)}.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Entrá a ver el estado de esta herramienta.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`, profile));
   }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
-  return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
+  return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section><section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
 });
+
+app.get("/cuentas-claras", async (c) => {
+  if (c.env?.DEV_LOCAL_MODE === "true") {
+    const { index } = startDemoPair();
+    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Recorrido local</h2><p>Esta demostración guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Empezar recorrido</a></section>`));
+  }
+  const session = await signedInUser(c);
+  if (session) {
+    const profile = await readOwnProfile(c.env.DB, session.user_id);
+    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Muy pronto.</h1><p>Hola, ${html(profile.displayName)}. Ya ingresaste con tu cuenta de Google. Estamos terminando la primera versión de Cuentas Claras; todavía no hay movimientos ni saldos para usar aquí.</p>`, profile));
+  }
+  const action = authConfig(c.env) ? `<a class="button" href="/auth/google?returnTo=%2Fcuentas-claras">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Las cuentas compartidas, más claras.</h1><p>Un lugar privado para organizar gastos, ingresos y transferencias de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a Cuentas Claras.</p>${action}</section>`));
+});
+
+app.get("/tareas", async (c) => {
+  const session = await signedInUser(c);
+  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
+  return c.html(page("Fun TasKing", `<p class="eyebrow">Fun TasKing</p><h1>Lo que hay que hacer, a la vista.</h1><p>Fun TasKing ya está disponible mientras preparamos su lugar dentro de HomeSuite.</p><a class="button" href="https://tas-king-staging.pablotortorella.workers.dev">Abrir TasKing en staging</a>`, profile));
+});
+
+app.get("/compras", async (c) => {
+  const session = await signedInUser(c);
+  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
+  return c.html(page("Compras", `<p class="eyebrow">Compras</p><h1>Una lista para comprar mejor, juntos.</h1><p>Esta herramienta todavía está en preparación.</p>`, profile));
+});
+
+app.get("/perfil", async (c) => {
+  const host = new URL(c.req.url).hostname;
+  const localEmail = host === "localhost" || host === "127.0.0.1" ? localUser(c) : null;
+  if (localEmail) {
+    const user = await ensureLocalUser(c.env.DB, localEmail);
+    const profile = await readOwnProfile(c.env.DB, user.id);
+    return c.html(page("Mi perfil", renderProfileForm(profile, "", c.req.query("guardado") === "1"), profile));
+  }
+  const secret = sessionSecret(c.env);
+  const session = await signedInUser(c);
+  if (!session || !secret) return c.redirect("/auth/google?returnTo=%2Fperfil", 302);
+  const profile = await readOwnProfile(c.env.DB, session.user_id);
+  const csrfToken = await createCsrfToken({ sessionId: session.id, secret });
+  return c.html(page("Mi perfil", renderProfileForm(profile, csrfToken, c.req.query("guardado") === "1"), profile));
+});
+
+app.get("/profile.js", (c) => c.body(PROFILE_CLIENT_SCRIPT, 200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "public, max-age=3600" }));
 
 app.get("/demo/crear-espacio", (c) => {
   const { owner, member, index } = demoPair(c);

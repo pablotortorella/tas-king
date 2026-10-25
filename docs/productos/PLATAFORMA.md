@@ -12,6 +12,12 @@ sesiones, espacios, membresías, invitaciones y auditoría. Mantener invariantes
 creación atómica del espacio/titular y aceptación atómica de invitaciones.
 Descubrir una invitación no concede acceso al contenido privado.
 
+La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
+ruta; Cuentas Claras muestra su estado en `/cuentas-claras` después de elegirla.
+El sitio público de staging replica home y landings en otro Worker, y su landing
+de Cuentas Claras conduce a la app de ese mismo entorno. Consultar STATUS para
+dominios y versión activa.
+
 Desde la raíz, comandos actualmente disponibles:
 
 - `npm run dev:homesuite-app`
@@ -50,6 +56,8 @@ Acuerdos de nombre, avatar y apodo por espacio en la
 [exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
 [change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
 La [API común](../HOMESUITE_PROFILE_API.md) implementa datos y gestión en la
-plataforma. Cuentas Claras muestra el aviso «Muy pronto» tras el acceso con Google;
-la integración financiera, la migración de TasKing y la UI de edición quedan para
-cortes posteriores. Consultar STATUS para el SHA y el estado de staging.
+plataforma. La pantalla compartida `/perfil` se abre desde el avatar/nombre y
+desde el menú general de la app. Cuentas Claras muestra el aviso «Muy pronto» al
+entrar a su ruta tras el acceso con Google. La integración financiera y la
+migración de TasKing quedan para cortes posteriores. Consultar STATUS para el SHA
+y el estado de staging.

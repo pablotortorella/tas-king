@@ -37,17 +37,31 @@ function request(user, path, method = "GET", body, extraHeaders = {}) {
 }
 
 describe("perfil compartido en D1 y HTTP", () => {
-  it("muestra Muy pronto tras iniciar sesión con Google y conserva un acceso público", async () => {
+  it("entra a la suite y muestra Muy pronto sólo al navegar a Cuentas Claras", async () => {
     const user = await identity("Ana Google");
     const signedIn = await request(user, "/");
     expect(signedIn.status).toBe(200);
     expect(signedIn.headers.get("Cache-Control")).toBe("private, no-store");
     const html = await signedIn.text();
-    expect(html).toContain("Muy pronto.");
     expect(html).toContain("Hola, Ana Google.");
-    expect(html).toContain("cuenta de Google");
+    expect(html).toContain('href="/cuentas-claras"');
+    expect(html).toContain('class="account-link" href="/perfil"');
+    expect(html).toContain('<a href="/perfil">Mi perfil</a>');
+    expect(html).not.toContain("Muy pronto.");
+    const cuentas = await request(user, "/cuentas-claras");
+    expect(cuentas.status).toBe(200);
+    expect(await cuentas.text()).toContain("Muy pronto.");
+    const profilePage = await request(user, "/perfil");
+    expect(profilePage.status).toBe(200);
+    expect(profilePage.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(await profilePage.text()).toContain('id="profile-form"');
     const publicPage = await app.request(`${ORIGIN}/`, undefined, user.context);
     expect(await publicPage.text()).toContain("Continuar con Google");
+    const publicCuentas = await app.request(`${ORIGIN}/cuentas-claras`, undefined, user.context);
+    expect(await publicCuentas.text()).toContain("/auth/google?returnTo=%2Fcuentas-claras");
+    const guestProfile = await app.request(`${ORIGIN}/perfil`, undefined, user.context);
+    expect(guestProfile.status).toBe(302);
+    expect(guestProfile.headers.get("Location")).toBe("/auth/google?returnTo=%2Fperfil");
     const me = await (await request(user, "/api/me")).json();
     expect(me.profile.avatar.type).toBe("photo");
     expect(me.csrfToken).toBeTruthy();
@@ -81,6 +95,7 @@ describe("perfil compartido en D1 y HTTP", () => {
     const current = await readOwnProfile(env.DB, user.id);
     const restored = await saveOwnProfile(env.DB, user.id, { expectedRevision: current.revision, nameSource: "google", avatarMode: "google" });
     expect(restored).toMatchObject({ displayName: "Google Ana Nueva", avatar: { type: "photo", photoUrl: "https://lh3.googleusercontent.com/new" } });
+    expect(restored.avatar.savedEmoji).toBe("🌻");
     const legacy = await env.DB.prepare("SELECT display_name FROM users WHERE id = ?").bind(user.id).first();
     expect(legacy.display_name).toBe("Google Ana Nueva");
     const audits = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE actor_user_id = ? AND action = 'profile_updated'").bind(user.id).all();
