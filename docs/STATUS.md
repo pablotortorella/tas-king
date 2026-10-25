@@ -35,10 +35,14 @@ Publicado desde ese SHA en dos Workers:
   recorrido móvil en Chromium por home pública → landing → app → enlace OAuth.
   En local se guardó y releyó nombre, emoji y color desde la UI. D1 remota no
   requirió migraciones nuevas.
-- Pendiente de revisión humana: completar login Google real en esta versión y
-  comprobar nombre, foto y edición autenticada. TasKing aún tiene Worker y
-  sesión propios; Compras y las funciones financieras de Cuentas Claras siguen
-  en preparación. Pablo eligió incorporar esas ramas después de este corte.
+- Pablo confirmó el 2026-10-25 que funciona el recorrido solicitado con su
+  cuenta Google: home pública → landing de Cuentas Claras → app → Google,
+  nombre y foto visibles, acceso a «Mi perfil» desde avatar y menú, y guardado
+  de un cambio de nombre o avatar. No informó navegador ni dispositivo de esa
+  revisión; el recorrido entre dos cuentas sigue pendiente. TasKing aún tiene
+  Worker y sesión propios; Compras y las funciones financieras de Cuentas
+  Claras siguen en preparación. Pablo eligió incorporar esas ramas después de
+  este corte.
 
 
 ## Perfil compartido de HomeSuite — primer corte (2026-10-25)
@@ -70,8 +74,8 @@ Publicado desde ese SHA en dos Workers:
   `/api/me` y `/api/me/profile` 401 sin sesión, `/auth/google` 302 hacia Google;
   todas esas respuestas incluyeron `X-Request-Id`. Los limitadores de auth y
   mutaciones y la observabilidad están vinculados al Worker de staging.
-- El login real y la foto de Google requieren comprobación interactiva por una
-  persona con su cuenta; el smoke sólo comprobó el inicio del flujo OAuth.
+- En este primer corte, el smoke sólo comprobó el inicio del flujo OAuth. El
+  login real y la foto se confirmaron en la versión posterior descrita arriba.
 - La UI global de edición llegó en el corte de staging descrito arriba. La
   migración de TasKing sigue pendiente. No habilita producción ni datos
   financieros reales.

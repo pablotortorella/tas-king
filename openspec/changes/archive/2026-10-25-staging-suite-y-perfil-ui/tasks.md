@@ -10,7 +10,7 @@
 - [x] 2.1 Probar API, D1, sitio público y recorrido móvil local con edición real.
 - [x] 2.2 Validar OpenSpec, suites generales y los dos paquetes Wrangler para staging.
 - [x] 2.3 Publicar ambos Workers en staging desde el SHA revisado y comprobar dominios, rutas, OAuth y ausencia de secretos en el sitio.
-- [ ] 2.4 Pedir revisión humana del recorrido con una cuenta Google real y registrar resultado.
+- [x] 2.4 Pedir revisión humana del recorrido con una cuenta Google real y registrar resultado.
 
 ## 3. Registro
 
