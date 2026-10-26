@@ -3,6 +3,8 @@
 import { DARK, LIGHT } from "./theme.js";
 
 export const spacePath = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
+// El saldo grande se achica cuando el monto es largo: elige una clase según los caracteres para que nunca se salga del recuadro.
+export const amountFit = text => { const length = [...String(text)].length; return length <= 12 ? "" : length <= 16 ? " fit-1" : length <= 20 ? " fit-2" : length <= 26 ? " fit-3" : " fit-4"; };
 export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 // Marcas del encabezado que el servidor reemplaza con la cuenta de quien tiene sesión (ver account-ui.js).

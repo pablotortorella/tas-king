@@ -29,6 +29,12 @@ export async function lowContrast(page) {
 }
 
 // Recorridos exploratorios: preparan un grupo con dos personas en un navegador real, igual que lo haría una persona.
+// El cambio de categoría de varios movimientos está plegado: se abre solo cuando se lo quiere usar.
+export async function openBulk(page) {
+  const panel = page.locator("details.selection-bar");
+  if (!(await panel.evaluate(node => node.open))) await panel.locator("summary").click();
+}
+
 export const uniqueId = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
 // Agrega una persona sin cuenta desde la pantalla de personas y vuelve al libro.

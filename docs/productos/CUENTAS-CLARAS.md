@@ -33,6 +33,12 @@ reparto por método de un movimiento afectado se reabre con importes exactos. Un
 transferencia entre las dos personas se anula (quedaría de una persona a sí misma).
 Cambio: `openspec/changes/personas-del-grupo`.
 
+Decisiones de pantalla (Pablo, 2026-10-26, tras probar la importación real en staging): el
+saldo grande se achica por tramos según el largo del monto (`amountFit`, clases `fit-1…4` con
+unidades de contenedor) para que una cifra enorme nunca se salga del recuadro; el cambio de
+categoría de varios movimientos es un panel plegado que nace cerrado, porque es una
+herramienta ocasional y no el protagonista de la lista.
+
 Verificar conservación de saldos por moneda, reparto exacto, signos, límites,
 redondeo, reversión/corrección, duplicados, concurrencia y aislamiento entre espacios.
 La importación necesita previsualización, decisiones explícitas, conciliación y

@@ -11,10 +11,10 @@ export function categorySelect(categories, { name = "categoryId", selected = "",
   return `<label${id ? ` for="${id}"` : ""}>${escapeHtml(label)}<select${id ? ` id="${id}"` : ""} name="${name}"${required ? " required" : ""}><option value="">Elegí una categoría</option>${groups}</select></label>`;
 }
 
-// Barra para cambiar la categoría de lo seleccionado. Funciona sin script: el formulario envía las casillas marcadas, o el
+// Panel plegado para cambiar la categoría de lo seleccionado; se abre solo cuando se lo quiere usar. Funciona sin script: el formulario envía las casillas marcadas, o el
 // criterio completo (búsqueda y filtro) si se elige «todos los resultados».
 export function selectionBar({ data, query, category, person = "", total, csrf }) {
-  return `<div class="selection-bar"><h3>Cambiar la categoría de varios movimientos</h3><p class="hint">Marcá movimientos de la lista o elegí todos los resultados de la búsqueda o el filtro actual.</p><div class="selection-controls">${categorySelect(data.categories ?? [], { label: "Nueva categoría", id: "bulk-category" })}<label class="check-row"><input type="checkbox" name="all" value="1">Todos los ${total} resultados, también los que no se ven</label><button class="button" type="submit">Revisar el cambio</button></div><input type="hidden" name="query" value="${escapeHtml(query)}"><input type="hidden" name="categoria" value="${escapeHtml(category)}"><input type="hidden" name="quien" value="${escapeHtml(person)}">${csrf}<p class="selection-count" aria-live="polite" data-selection-count></p></div>`;
+  return `<details class="selection-bar"><summary>Cambiar la categoría de varios movimientos</summary><p class="hint">Marcá movimientos de la lista o elegí todos los resultados de la búsqueda o el filtro actual.</p><div class="selection-controls">${categorySelect(data.categories ?? [], { label: "Nueva categoría", id: "bulk-category" })}<label class="check-row"><input type="checkbox" name="all" value="1">Todos los ${total} resultados, también los que no se ven</label><button class="button" type="submit">Revisar el cambio</button></div><input type="hidden" name="query" value="${escapeHtml(query)}"><input type="hidden" name="categoria" value="${escapeHtml(category)}"><input type="hidden" name="quien" value="${escapeHtml(person)}">${csrf}<p class="selection-count" aria-live="polite" data-selection-count></p></details>`;
 }
 
 export function renderRecategorizePreview({ spaceId, csrf, preview, criteria, key }) {

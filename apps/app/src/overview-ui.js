@@ -5,7 +5,7 @@ import { categoryOptionGroups } from "./category-options.js";
 import { isPending } from "./suggest.js";
 import { selectionBar } from "./recategorize-ui.js";
 import { suggestTransfers } from "./settlement.js";
-import { avatar, escapeHtml, ICONS, plural, shortDate, spacePath as path } from "./ui-parts.js";
+import { amountFit, avatar, escapeHtml, ICONS, plural, shortDate, spacePath as path } from "./ui-parts.js";
 
 const signed = (amountMinor, currency) => `${amountMinor > 0 ? "+" : ""}${formatMoney(amountMinor, currency)}`;
 
@@ -47,7 +47,7 @@ function balanceBlock(currency, data, ownId, spaceId) {
     const word = amount > 0 ? "Le deben " : amount < 0 ? "Debe " : "";
     return `<li class="balance-row">${avatar(person.displayName, { seed: person.id, noAccount: !person.linkedUserId })}<div class="who"><strong><a href="${path(spaceId)}/ledger/balance?moneda=${currency}&amp;persona=${encodeURIComponent(person.id)}">${escapeHtml(person.displayName)}</a></strong>${person.id === ownId ? ' <span class="tag">· vos</span>' : !person.linkedUserId ? ' <span class="tag">· sin cuenta</span>' : ""}<div class="bar" aria-hidden="true">${bar}</div></div><span class="amount money ${amount < 0 ? "owes" : amount > 0 ? "owed" : ""}">${word ? `<span class="word">${word}</span>` : ""}<span class="num">${escapeHtml(formatMoney(Math.abs(amount), currency))}</span></span></li>`;
   }).join("");
-  return `<div class="currency-block"><div class="hero${own < 0 ? " neg" : ""}"><p class="hero-label">Tu saldo · ${escapeHtml(currency)}</p><p class="hero-amount money">${escapeHtml(signed(own, currency))}</p><p class="hero-note">${note}</p><a class="why" href="${path(spaceId)}/ledger/balance?moneda=${currency}">¿Por qué?</a></div><div class="group-card"><div class="head"><h3>Saldos del grupo · ${escapeHtml(currency)}</h3>${total === 0n ? '<span class="sum-zero">✓ Suman 0</span>' : ""}</div><ul class="balance-list">${rows}</ul></div>${suggestionCard(currency, data, amounts, spaceId)}</div>`;
+  return `<div class="currency-block"><div class="hero${own < 0 ? " neg" : ""}"><p class="hero-label">Tu saldo · ${escapeHtml(currency)}</p><p class="hero-amount money${amountFit(signed(own, currency))}">${escapeHtml(signed(own, currency))}</p><p class="hero-note">${note}</p><a class="why" href="${path(spaceId)}/ledger/balance?moneda=${currency}">¿Por qué?</a></div><div class="group-card"><div class="head"><h3>Saldos del grupo · ${escapeHtml(currency)}</h3>${total === 0n ? '<span class="sum-zero">✓ Suman 0</span>' : ""}</div><ul class="balance-list">${rows}</ul></div>${suggestionCard(currency, data, amounts, spaceId)}</div>`;
 }
 
 function entryRow(entry, data, ownId, spaceId, selectable = false) {

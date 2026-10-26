@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { useScheme, lowContrast, openBook, seedEntriesViaForm } from "./helpers.js";
+import { useScheme, lowContrast, openBook, openBulk, seedEntriesViaForm } from "./helpers.js";
 
 const rows = page => page.locator(".entry-title");
 const chipOf = (page, description) => page.locator(".entry-row", { hasText: description }).locator(".chip.cat");
@@ -15,6 +15,7 @@ async function searchFor(page, text) {
   await page.getByRole("button", { name: "Buscar" }).click();
 }
 async function reviewChange(page, categoryLabel) {
+  await openBulk(page);
   await page.getByLabel("Nueva categoría").selectOption({ label: categoryLabel });
   await page.getByRole("button", { name: "Revisar el cambio" }).click();
   await expect(page.getByRole("heading", { name: "Cambiar categoría" })).toBeVisible();
@@ -24,6 +25,7 @@ test("buscar, seleccionar todos los resultados, revisar, confirmar y deshacer", 
   const book = await bookWith(page, "rc-flujo", [...Array.from({ length: 12 }, (_, index) => `Carulla ${index}`), "Otra cosa"]);
   await searchFor(page, "carulla");
   await expect(rows(page)).toHaveCount(12);
+  await openBulk(page);
   await page.getByLabel(/Todos los 12 resultados/u).check();
   await reviewChange(page, "Alimentos");
   await expect(page.locator(".lead-count")).toContainText("Cambiarán 12 movimientos");
@@ -54,6 +56,7 @@ test("con casillas marcadas se cambian solo esos movimientos", async ({ page }) 
 test("«todos los resultados» incluye los que «Ver más» todavía no muestra", async ({ page }) => {
   await bookWith(page, "rc-vermas", Array.from({ length: 60 }, (_, index) => `Mercado ${index}`));
   await expect(rows(page)).toHaveCount(40);
+  await openBulk(page);
   await page.getByLabel(/Todos los 60 resultados/u).check();
   await reviewChange(page, "Alimentos");
   await expect(page.locator(".lead-count")).toContainText("Cambiarán 60 movimientos");
@@ -73,6 +76,7 @@ test("cancelar en la pantalla de confirmación no cambia nada", async ({ page })
 test("revisar sin elegir categoría o sin seleccionar explica el motivo", async ({ page }) => {
   await bookWith(page, "rc-vacio", ["Uno"]);
   await page.getByRole("checkbox", { name: "Seleccionar Uno" }).check();
+  await openBulk(page);
   await page.getByLabel("Nueva categoría").evaluate(select => select.removeAttribute("required"));
   await page.getByRole("button", { name: "Revisar el cambio" }).click();
   await expect(page.getByText("Elegí la categoría")).toBeVisible();
@@ -99,6 +103,7 @@ test.describe("sin JavaScript", () => {
     await context.close();
     await page.goto(book);
     await page.getByRole("checkbox", { name: "Seleccionar Uno" }).check();
+    await openBulk(page);
     await page.getByLabel("Nueva categoría").selectOption({ label: "Taxi" });
     await page.getByRole("button", { name: "Revisar el cambio" }).click();
     await page.getByRole("button", { name: "Confirmar el cambio" }).click();
@@ -226,4 +231,20 @@ test("sin errores de consola ni violaciones de CSP en la selección y en clasifi
   await page.goto(`${book}/ledger/classify`);
   await page.keyboard.press("s");
   expect(problems).toEqual([]);
+});
+
+test("el cambio masivo nace plegado y el saldo enorme cabe en el recuadro", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  const book = await bookWith(page, "rc-pleg", [{ description: "Cifra enorme", amount: "22950749123,13" }]);
+  const panel = page.locator("details.selection-bar");
+  await expect(panel).not.toHaveAttribute("open", "");
+  await expect(page.getByRole("button", { name: "Revisar el cambio" })).toBeHidden();
+  await openBulk(page);
+  await expect(page.getByRole("button", { name: "Revisar el cambio" })).toBeVisible();
+  const fits = await page.locator(".hero").first().evaluate(hero => {
+    const amount = hero.querySelector(".hero-amount");
+    return amount.scrollWidth <= hero.clientWidth && amount.getBoundingClientRect().right <= hero.getBoundingClientRect().right;
+  });
+  expect(fits).toBe(true);
+  expect(book).toBeTruthy();
 });

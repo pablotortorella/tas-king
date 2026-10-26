@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openBook, openRecent, seedEntriesViaForm } from "./helpers.js";
+import { openBook, openBulk, openRecent, seedEntriesViaForm } from "./helpers.js";
 
 // Regresiones de la revisión integral de código: cada escenario protege un defecto encontrado.
 
@@ -80,6 +80,7 @@ test("«todos los resultados» respeta el filtro de persona: lo que dice la list
   await page.getByRole("searchbox").fill("Beto");
   await page.getByRole("button", { name: "Buscar" }).click();
   await page.locator(".person-filters a", { hasText: /^Participa/u }).click();
+  await openBulk(page);
   await page.getByLabel(/Todos los 2 resultados/u).check();
   await page.getByLabel("Nueva categoría").selectOption({ label: "Taxi" });
   await page.getByRole("button", { name: "Revisar el cambio" }).click();

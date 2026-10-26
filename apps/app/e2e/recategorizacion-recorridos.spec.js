@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook, openRecent, seedEntriesViaForm } from "./helpers.js";
+import { lowContrast, openBook, openBulk, openRecent, seedEntriesViaForm } from "./helpers.js";
 
 // Recorridos «a mano» de la recategorización: impaciencia, pestañas dobles, volver atrás, teclado solo, toque y pantallas
 // angostas. Complementan los escenarios de recategorizacion.spec.js.
@@ -14,6 +14,7 @@ async function bookWith(page, prefix, items) {
 }
 async function pickAndReview(page, descriptions, categoryLabel) {
   for (const description of descriptions) await page.getByRole("checkbox", { name: `Seleccionar ${description}` }).check();
+  await openBulk(page);
   await page.getByLabel("Nueva categoría").selectOption({ label: categoryLabel });
   await page.getByRole("button", { name: "Revisar el cambio" }).click();
   await expect(page.getByRole("heading", { name: "Cambiar categoría" })).toBeVisible();
@@ -105,6 +106,7 @@ test("solo con el teclado se puede seleccionar, revisar y confirmar", async ({ p
   await page.getByRole("checkbox", { name: "Seleccionar Dos" }).focus();
   await page.keyboard.press("Space");
   await expect(page.getByRole("checkbox", { name: "Seleccionar Dos" })).toBeChecked();
+  await openBulk(page);
   await page.getByLabel("Nueva categoría").focus();
   await page.keyboard.type("Taxi");
   await expect(page.getByLabel("Nueva categoría").locator("option:checked")).toHaveText("Taxi");
@@ -145,6 +147,7 @@ test("descripciones muy largas, emoji y HTML se ven como texto sin romper la pan
   };
   await audit("lista");
   await page.getByRole("checkbox").first().check();
+  await openBulk(page);
   await page.getByLabel("Nueva categoría").selectOption({ label: "Taxi" });
   await page.getByRole("button", { name: "Revisar el cambio" }).click();
   await audit("confirmación");

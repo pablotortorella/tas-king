@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { renderBookHead, renderLedgerOverview } from "../src/overview-ui.js";
 import { renderPeople } from "../src/people-ui.js";
+import { selectionBar } from "../src/recategorize-ui.js";
+import { amountFit } from "../src/ui-parts.js";
 
 const participants = [
   { id: "p1", displayName: "<b>Pablo</b>", linkedUserId: "u1", active: 1 },
@@ -144,5 +146,21 @@ describe("libro: ver más", () => {
     const filtered = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", query: "gasto" });
     expect(filtered).toContain("q=gasto&amp;mostrar=80");
     expect(filtered).toContain("95 de 95 movimientos · mostrando 40");
+  });
+});
+
+describe("saldo largo y cambio masivo plegado", () => {
+  it("achica el saldo según el largo del monto, sin tocar los montos cortos", () => {
+    expect(amountFit("COP 1.500,00")).toBe("");
+    expect(amountFit("COP 150.000,00")).toBe(" fit-1");
+    expect(amountFit("−COP 22.950.749,13")).toBe(" fit-2");
+    expect(amountFit("−COP 22.950.749.123,13")).toBe(" fit-3");
+    expect(amountFit("−COP 22.950.749.123.456.789,13")).toBe(" fit-4");
+  });
+
+  it("el panel para cambiar la categoría de varios movimientos nace cerrado", () => {
+    const markup = selectionBar({ data: { categories: [] }, query: "", category: "", total: 3, csrf: "" });
+    expect(markup).toMatch(/^<details class="selection-bar"><summary>Cambiar la categoría de varios movimientos<\/summary>/u);
+    expect(markup).not.toContain(" open");
   });
 });
