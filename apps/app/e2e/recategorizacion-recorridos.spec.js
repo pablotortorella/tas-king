@@ -87,7 +87,7 @@ test("deshacer después de corregir algunos movimientos los deja como están y l
   await expect(page.locator(".notice")).toContainText("3 movimientos");
   const noticeUrl = page.url();
   await page.getByRole("link", { name: /Uno/u }).click();
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await page.getByLabel("Descripción").fill("Uno corregido");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await openRecent(page, "Uno corregido");

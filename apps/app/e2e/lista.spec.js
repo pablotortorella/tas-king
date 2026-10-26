@@ -56,7 +56,7 @@ test("la franja desaparece al abrir la lista de nuevo y el detalle sigue disponi
 test("corregir y anular vuelven a la lista con su mensaje y la franja correspondiente", async ({ page }) => {
   const book = await bookWith(page, "ls-corregir", ["Para corregir"]);
   await page.getByRole("link", { name: /Para corregir/u }).click();
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await page.getByLabel("Descripción").fill("Ya corregido");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.locator(".notice")).toContainText("Movimiento corregido.");

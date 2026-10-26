@@ -7,6 +7,79 @@
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## HomeSuite en staging: sitio, navegación y perfil — 2026-10-25
+
+**Estado:** [PR #99](https://github.com/pablotortorella/tas-king/pull/99)
+integrado en `main` SHA `90bf4b5ab3bf004b00ca166b67f26cefc1b67e48`.
+Publicado desde ese SHA en dos Workers:
+
+| Superficie | URL | Worker y Version ID |
+|---|---|---|
+| Home y landings públicas de staging | `https://site-staging.homesuite.info/` | `homesuite-site-staging` · `563a6a42-049f-4dff-aac5-f6d0bb948d83` |
+| Suite autenticada de staging | `https://staging.homesuite.info/` | `homesuite-app-staging` · `d146478c-5ddd-478e-a3fb-5315c21e6091` |
+
+- La home pública permite navegar a las landings de Tareas, Cuentas Claras y
+  Compras. En staging, Cuentas Claras enlaza a la app del mismo ambiente; Tareas
+  enlaza al TasKing de staging. El sitio público de producción no cambió. El
+  sitio de staging anuncia `X-Robots-Tag: noindex, nofollow` y sólo tiene assets
+  y la variable pública de entorno, sin D1 ni secretos.
+- La raíz de la app presenta la suite. `/cuentas-claras` conserva «Muy pronto»
+  para una sesión válida; sin sesión ofrece el acceso con Google y retorno a esa
+  ruta. El avatar/nombre y el menú general llevan a `/perfil`, que edita el
+  perfil global usando la API común, CSRF y revisión. El apodo por espacio se
+  editará cuando exista la interfaz de espacios.
+- Verificación: 18 unitarias de HomeSuite App, 14 integraciones D1, 10 pruebas
+  del sitio, 230 generales, OpenSpec strict, dry-run de ambos Workers, [CI del
+  PR](https://github.com/pablotortorella/tas-king/actions/runs/40230887372)
+  con 101 escenarios Playwright, smoke HTTP de ambas superficies desde `main` y
+  recorrido móvil en Chromium por home pública → landing → app → enlace OAuth.
+  En local se guardó y releyó nombre, emoji y color desde la UI. D1 remota no
+  requirió migraciones nuevas.
+- Pablo confirmó el 2026-10-25 que funciona el recorrido solicitado con su
+  cuenta Google: home pública → landing de Cuentas Claras → app → Google,
+  nombre y foto visibles, acceso a «Mi perfil» desde avatar y menú, y guardado
+  de un cambio de nombre o avatar. No informó navegador ni dispositivo de esa
+  revisión; el recorrido entre dos cuentas sigue pendiente. TasKing aún tiene
+  Worker y sesión propios; Compras y las funciones financieras de Cuentas
+  Claras siguen en preparación. Pablo eligió incorporar esas ramas después de
+  este corte.
+
+
+## Perfil compartido de HomeSuite — primer corte (2026-10-25)
+
+**Estado:** perfil y aviso «Muy pronto» integrados en `main` y publicados en
+`staging.homesuite.info` el 2026-10-25. Código: `883727e`; Worker
+`homesuite-app-staging`, Version ID `955c8bf9-e892-4c21-8c85-b3d904cdf122`.
+
+- Exploración conversada: nombre y avatar globales, origen Google/personalización,
+  modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
+  defecto, secundario y de edición propia; ciclo de reingreso e historial definidos.
+- [Change](../openspec/changes/perfil-compartido-homesuite/proposal.md): perfil
+  global de plataforma y presentación de membresía separados; contratos propios
+  y lecturas autorizadas; migración compatible, revisiones y pruebas planificadas.
+- `main` conserva la plataforma actual e incorpora perfil global, avatar, apodo de
+  membresía, revisión de escrituras y API autorizada. Tras un login con Google,
+  Cuentas Claras muestra «Muy pronto» y el nombre resuelto del perfil.
+- La integración del perfil con la cronología financiera sigue en la rama funcional
+  `feature/homesuite-profile` porque el libro todavía no está en `main`.
+- Antes de migrar D1 se registró el bookmark de Time Travel
+  `00000011-00000000-0000510f-0055f876f63fac55706083c98e5bc762`. No se hizo
+  una exportación SQL completa; la recuperación por ese punto depende de la
+  retención de Time Travel del plan. La migración `0007` conservó 2 usuarios y
+  2 membresías, creó 2 perfiles y dejó los apodos vacíos; `quick_check` dio `ok`,
+  `foreign_key_check` no encontró errores y no hay migraciones pendientes.
+- Verificación: 18 pruebas unitarias de HomeSuite App, 14 integraciones D1,
+  230 pruebas generales y [CI de `main`](https://github.com/pablotortorella/tas-king/actions/runs/40204299087)
+  en verde con 101 recorridos Playwright. Smoke remoto: `/healthz` y `/` 200,
+  `/api/me` y `/api/me/profile` 401 sin sesión, `/auth/google` 302 hacia Google;
+  todas esas respuestas incluyeron `X-Request-Id`. Los limitadores de auth y
+  mutaciones y la observabilidad están vinculados al Worker de staging.
+- En este primer corte, el smoke sólo comprobó el inicio del flujo OAuth. El
+  login real y la foto se confirmaron en la versión posterior descrita arriba.
+- La UI global de edición llegó en el corte de staging descrito arriba. La
+  migración de TasKing sigue pendiente. No habilita producción ni datos
+  financieros reales.
+
 ## Cuentas Claras: repartos, categorías, importación, recategorización y lista - 2026-10-25
 
 **Alcance:** cinco cambios OpenSpec implementados en ramas apiladas sobre la pila de diseño (PR #94 a #98), más el

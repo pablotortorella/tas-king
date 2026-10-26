@@ -160,7 +160,7 @@ test("un movimiento importado se corrige y se anula como cualquier otro, y la ma
   await page.getByRole("link", { name: /Posada/ }).click();
   await expect(page.locator(".entry-origin")).toContainText("Importado de Splitwise · fila 2");
   await expect(page.locator(".inferred")).toContainText("se dedujeron");
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await page.getByRole("group", { name: /¿Quién pagó\?/u }).getByLabel(/Beto/u).check();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await openRecent(page, "Posada");
@@ -193,7 +193,7 @@ test.describe("punto de partida", () => {
     await page.getByRole("radio", { name: "Traer de Splitwise" }).check();
     await page.getByRole("button", { name: "Crear espacio" }).click();
     await expect(page.getByRole("heading", { name: "Importar Splitwise" })).toBeVisible();
-    await page.getByRole("link", { name: "Cancelar" }).click();
+    await page.getByRole("link", { name: "Cancelar", exact: true }).click();
     await expect(page.getByText("Todavía no hay movimientos.")).toBeVisible();
     await expect(page.getByRole("link", { name: "Agregá tu primer movimiento" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Traé tu historial" })).toBeVisible();

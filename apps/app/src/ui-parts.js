@@ -5,6 +5,10 @@ import { DARK, LIGHT } from "./theme.js";
 export const spacePath = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
 export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
+// Marcas del encabezado que el servidor reemplaza con la cuenta de quien tiene sesión (ver account-ui.js).
+export const ACCOUNT_MARKER = "<!--account-->";
+export const ACCOUNT_MENU_MARKER = "<!--account-menu-->";
+
 export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
@@ -75,12 +79,18 @@ export function shortDate(isoDate) {
   return `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
 }
 
+// Menú de la aplicación (sin JavaScript: un <details>). Dentro de un grupo ofrece sus secciones; siempre ofrece lo común.
+export function appMenu(spaceHref) {
+  const group = spaceHref ? `<p class="menu-title">Este grupo</p><a href="${spaceHref}#saldos">Saldos</a><a href="${spaceHref}#movimientos">Movimientos</a><a href="${spaceHref}/people">Personas</a><a href="${spaceHref}/ledger/categories">Categorías</a><a href="${spaceHref}/ledger/classify">Clasificar rápido</a><a href="${spaceHref}/ledger/import">Importar de Splitwise</a><p class="menu-title">HomeSuite</p>` : "";
+  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${group}<a href="/">Inicio</a><a href="/cuentas-claras">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
+}
+
 export function tabbar(spaceHref) {
   const item = (href, icon, label) => `<a href="${href}">${icon}<span>${label}</span></a>`;
-  return `<nav class="tabbar" aria-label="Secciones del libro">${item(`${spaceHref}#saldos`, ICONS.balance, "Saldos")}${item(`${spaceHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${spaceHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${spaceHref}#personas`, ICONS.people, "Personas")}${item("/cuentas-claras", ICONS.groups, "Grupos")}</nav>`;
+  return `<nav class="tabbar" aria-label="Secciones del libro">${item(`${spaceHref}#saldos`, ICONS.balance, "Saldos")}${item(`${spaceHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${spaceHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${spaceHref}/people`, ICONS.people, "Personas")}${item("/cuentas-claras", ICONS.groups, "Grupos")}</nav>`;
 }
 
 export function renderPage(title, content, { wide = false, spaceHref = null } = {}) {
   const shellClass = `shell${wide ? " wide" : ""}${spaceHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a></header><main id="contenido" class="${shellClass}">${content}</main>${spaceHref ? tabbar(spaceHref) : ""}</body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a><div class="header-actions">${ACCOUNT_MARKER}${appMenu(spaceHref)}</div></header><main id="contenido" class="${shellClass}">${content}</main>${spaceHref ? tabbar(spaceHref) : ""}</body></html>`;
 }

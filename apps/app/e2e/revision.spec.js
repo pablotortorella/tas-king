@@ -18,7 +18,7 @@ test("corregir un movimiento importado con varios pagadores, sin tocar el pagado
   await page.getByRole("link", { name: /Cena grande/u }).click();
   const effects = async () => page.locator(".split-total, table.split tbody").first().innerText();
   const before = await effects();
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await expect(page.getByLabel(/Mantener los actuales/u)).toBeChecked();
   await expect(page.getByText(/Este movimiento tiene varios \(2\)/u)).toBeVisible();
   await page.getByLabel("Descripción").fill("Cena grande (corregida)");

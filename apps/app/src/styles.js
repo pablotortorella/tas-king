@@ -1,3 +1,4 @@
+import { AVATAR_COLORS } from "./profiles.js";
 import { themeCss } from "./theme.js";
 
 // La CSP de la app (style-src 'self') prohíbe estilos en línea: todo el aspecto vive aquí, con colores
@@ -181,8 +182,50 @@ const FORMS = `
 .recent-strip{border:1.5px solid var(--accent-line);background:var(--accent-soft);border-radius:16px;padding:8px 14px;margin:0 0 14px}.recent-strip h3{margin:6px 0 0;font-size:.95rem;color:var(--accent-deep)}.recent-strip .entry-list .entry-row{border-top:0}
 `;
 
+// El color de la letra de cada avatar se elige por contraste: la paleta del perfil mezcla tonos claros y oscuros.
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function inkFor(background) {
+  const contrast = ink => { const [hi, lo] = [luminance(background), luminance(ink)].sort((a, b) => b - a); return (hi + 0.05) / (lo + 0.05); };
+  return contrast("#ffffff") >= contrast("#0f1d16") ? "#ffffff" : "#0f1d16";
+}
+const AVATAR_CSS = Object.entries(AVATAR_COLORS).map(([token, color]) => `.avatar-${token}{background:${color};color:${inkFor(color)}}`).join("");
+
+// Encabezado con la cuenta, menú de la app, inicio de HomeSuite y formulario de perfil.
+const SHELL = `
+.header-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.account-link{display:flex;align-items:center;gap:9px;min-height:44px;color:var(--ink);text-decoration:none;font-weight:700;max-width:220px}
+.account-link:hover{color:var(--ink)}
+.account-link span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-link .avatar{width:38px;height:38px;font-size:1.1rem;position:relative;overflow:hidden}
+.avatar-fallback{position:absolute;inset:0;display:grid;place-items:center}
+.avatar img{width:100%;height:100%;object-fit:cover;position:relative}
+${AVATAR_CSS}
+.menu{position:relative}
+.menu summary{display:flex;align-items:center;gap:8px;min-height:44px;list-style:none;cursor:pointer;border:1.5px solid var(--line-strong);border-radius:12px;padding:0 12px;font-weight:700;color:var(--ink)}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary:hover{background:var(--accent-soft)}
+.menu nav{display:flex;flex-direction:column;gap:2px;position:absolute;right:0;top:calc(100% + 8px);width:max-content;min-width:210px;max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);overflow:auto;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 32px #00000030;z-index:20}
+.menu nav a,.menu nav button{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:10px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:none;border:0;width:100%;text-align:left;cursor:pointer}
+.menu nav a:hover,.menu nav button:hover{background:var(--accent-soft);color:var(--accent-deep)}
+.menu nav form{margin:0}
+.menu-title{margin:6px 12px 2px;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}
+.tool-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;color:var(--ink);text-decoration:none}
+.tool-card:hover,.tool-card:focus-visible{border-color:var(--accent-line);color:var(--ink)}
+.tool-card strong{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem}
+.tool-card span{color:var(--ink-2)}
+.profile-form h2:not(:first-child){margin-top:28px}
+.profile-form input:disabled{background:var(--line-soft);color:var(--ink-3)}
+.profile-form button:disabled{opacity:.65;cursor:wait}
+@media(max-width:560px){.menu-label{display:none}}
+@media(max-width:480px){.account-link span:last-child{display:none}}
+`;
+
 export function appCss() {
   const widths = Array.from({ length: 51 }, (_, i) => `.w${i}{width:${i}%}`).join("");
-  return `${themeCss()}${BASE}${BOOK}${FORMS}${widths}`;
+  return `${themeCss()}${BASE}${BOOK}${FORMS}${SHELL}${widths}`;
 }
 

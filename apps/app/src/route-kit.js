@@ -12,9 +12,14 @@ export function sessionSecret(env = {}) {
   return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
 }
 
+// La sesión se resuelve una sola vez por petición (varias capas la consultan: ruta, menú de cuenta, protección de escrituras).
 export async function signedInUser(c) {
+  const cached = c.get("sessionUser");
+  if (cached !== undefined) return cached;
   const secret = sessionSecret(c.env);
-  return secret ? currentSession(c.env.DB, c.req.raw, secret) : null;
+  const user = secret ? await currentSession(c.env.DB, c.req.raw, secret) : null;
+  c.set("sessionUser", user);
+  return user;
 }
 
 export function signInRequired(c) {

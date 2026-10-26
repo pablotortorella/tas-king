@@ -1,11 +1,15 @@
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
-import { inspectCsrfRequest } from "./csrf.js";
+import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
+import { registerProfileRoutes } from "./profile-routes.js";
+import { readOwnProfile } from "./profiles.js";
 import { registerAssetRoutes } from "./routes/assets.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerEntryRoutes, recentFor } from "./routes/entries.js";
 import { registerImportRoutes } from "./routes/import.js";
 import { recategorizationNoticeFor, registerRecategorizeRoutes } from "./routes/recategorize.js";
+import { registerShellRoutes } from "./routes/shell.js";
+import { fillAccount } from "./account-ui.js";
 import { csrfInput, formError, ledgerFailure, page, requestId, sessionSecret, signedInUser, signInRequired } from "./route-kit.js";
 import { CURRENCY_MINOR_UNITS, currencyLabel } from "./finance.js";
 import { addParticipant, exportLedger, readLedger } from "./ledger.js";
@@ -13,7 +17,7 @@ import { ledgerCsv } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
 import { slowBookEvent } from "./perf.js";
-import { avatar, escapeHtml, noticeFor } from "./ui-parts.js";
+import { ACCOUNT_MARKER, avatar, escapeHtml, noticeFor } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
@@ -21,7 +25,7 @@ import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, r
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
-  "Content-Security-Policy": "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
+  "Content-Security-Policy": "default-src 'self'; img-src 'self' https://lh3.googleusercontent.com https://lh4.googleusercontent.com https://lh5.googleusercontent.com https://lh6.googleusercontent.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests",
   "Cross-Origin-Opener-Policy": "same-origin",
   "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
   "Referrer-Policy": "no-referrer",
@@ -130,7 +134,19 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
-  if (new URL(c.req.url).pathname.startsWith("/spaces/") || new URL(c.req.url).pathname === "/cuentas-claras") c.header("Cache-Control", "private, no-store");
+  const path = new URL(c.req.url).pathname;
+  if (path.startsWith("/spaces/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(path)) c.header("Cache-Control", "private, no-store");
+});
+
+// Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).
+app.use("*", async (c, next) => {
+  await next();
+  if (!c.res.headers.get("Content-Type")?.includes("text/html")) return;
+  const body = await c.res.clone().text();
+  if (!body.includes(ACCOUNT_MARKER)) return;
+  const session = await signedInUser(c);
+  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
+  c.res = new Response(fillAccount(body, profile), c.res);
 });
 
 app.use("*", async (c, next) => {
@@ -173,6 +189,27 @@ app.use("*", async (c, next) => {
   await next();
 });
 
+// Los PATCH del perfil (propio y por espacio) llevan JSON y se protegen aquí: sesión, límite de escrituras y CSRF.
+app.use("*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/spaces\/[^/]+\/me\/presentation$/u.test(path))) return next();
+  const host = new URL(c.req.url).hostname;
+  const localEmail = (host === "localhost" || host === "127.0.0.1") ? localUser(c) : null;
+  if (localEmail) {
+    c.set("protectedUser", await ensureLocalUser(c.env.DB, localEmail));
+    return next();
+  }
+  const secret = sessionSecret(c.env);
+  const session = await signedInUser(c);
+  if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
+  const limited = await enforceRateLimit(c, c.env?.MUTATION_RATE_LIMITER, session.id);
+  if (limited) return limited;
+  const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: session.id, secret });
+  if (!csrf.valid) return c.json({ error: "Solicitud no verificada.", code: "csrf_rejected" }, 403);
+  c.set("protectedUser", session);
+  return next();
+});
+
 app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 
 function localUser(c) {
@@ -180,15 +217,21 @@ function localUser(c) {
   return c.req.query("as") || c.req.header("X-HomeSuite-Dev-Email") || c.env.DEV_LOCAL_EMAIL || null;
 }
 
+registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
+
 app.get("/api/me", async (c) => {
   const email = localUser(c);
   if (email) {
     const user = await ensureLocalUser(c.env.DB, email);
-    return c.json({ id: user.id, email: user.email, displayName: user.display_name, local: true });
+    const profile = await readOwnProfile(c.env.DB, user.id);
+    return c.json({ id: user.id, email: user.email, displayName: profile.displayName, profile, local: true });
   }
+  const secret = sessionSecret(c.env);
   const session = await signedInUser(c);
   if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
-  return c.json({ id: session.user_id, email: session.email, displayName: session.display_name });
+  const profile = await readOwnProfile(c.env.DB, session.user_id);
+  const csrfToken = await createCsrfToken({ sessionId: session.id, secret });
+  return c.json({ id: session.user_id, email: session.email, displayName: profile.displayName, profile, csrfToken });
 });
 
 app.get("/api/local/session", async (c) => {
@@ -536,28 +579,12 @@ app.get("/cuentas-claras", async (c) => {
   const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
   if (listed.length === 1) return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
   const spaces = listed.map((space) => spaceRow(space)).join("") || "<p>No tenés espacios todavía.</p>";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a></section>`));
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones</a></section>`));
 });
 
 registerAssetRoutes(app);
 
-app.get("/", async (c) => {
-  if (c.env?.DEV_LOCAL_MODE === "true") {
-    const { index } = startDemoPair();
-    return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Este es un recorrido local de prueba: guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Continuar con Google</a></section>`));
-  }
-  const config = authConfig(c.env);
-  const session = await signedInUser(c);
-  if (session) {
-    const spaces = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(session.user_id).all();
-    const pending = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM invitations WHERE invitee_email = ? AND status = 'pending'").bind(session.email).first();
-    const listed = await Promise.all(spaces.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
-    const list = listed.length ? listed.map((space) => spaceRow(space)).join("") : "<p>Todavía no formás parte de ningún espacio.</p>";
-    return c.html(page("HomeSuite", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(session.display_name)}.</h1><p>Elegí un espacio o creá el primero para empezar con Cuentas Claras.</p><section class="card"><h2>Tus espacios</h2>${list}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones${pending.count ? ` (${pending.count})` : ""}</a></section><form action="/auth/logout" method="post">${await csrfInput(c, session)}<button class="button secondary">Cerrar sesión</button></form>`));
-  }
-  const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
-  return c.html(page("Bienvenida", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a HomeSuite.</p>${action}</section>`));
-});
+registerShellRoutes(app, { authConfig, localUser });
 
 app.get("/demo/crear-espacio", (c) => {
   const { owner, member, index } = demoPair(c);

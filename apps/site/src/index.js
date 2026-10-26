@@ -1,4 +1,6 @@
 const CANONICAL_HOST = "homesuite.info";
+const STAGING_APP = "https://staging.homesuite.info";
+const STAGING_TASKS = "https://tas-king-staging.pablotortorella.workers.dev";
 
 const SECURITY_HEADERS = Object.freeze({
   "Content-Security-Policy": [
@@ -19,11 +21,12 @@ const SECURITY_HEADERS = Object.freeze({
   "X-Frame-Options": "DENY",
 });
 
-function secure(response) {
+function secure(response, staging = false) {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
   }
+  if (staging) headers.set("X-Robots-Tag", "noindex, nofollow");
 
   return new Response(response.body, {
     status: response.status,
@@ -53,6 +56,7 @@ function methodNotAllowed() {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const staging = env.SITE_ENV === "staging";
 
     if (url.hostname === `www.${CANONICAL_HOST}`) {
       return redirectToCanonical(url);
@@ -62,6 +66,20 @@ export default {
       return methodNotAllowed();
     }
 
-    return secure(await env.ASSETS.fetch(request));
+    const asset = await env.ASSETS.fetch(request);
+    if (staging && request.method === "GET" && asset.status === 200 &&
+        ["/cuentas-claras", "/cuentas-claras.html", "/tareas", "/tareas.html"].includes(url.pathname)) {
+      const original = await asset.text();
+      const content = url.pathname.startsWith("/cuentas-claras")
+        ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/cuentas-claras">Entrar a Cuentas Claras <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging con Google.</p></div>`)
+        : original.replace("https://tas-king.pablotortorella.workers.dev", STAGING_TASKS);
+      const headers = new Headers(asset.headers);
+      headers.delete("Content-Length");
+      headers.delete("Content-Encoding");
+      headers.delete("ETag");
+      headers.set("Cache-Control", "no-store");
+      return secure(new Response(content, { status: asset.status, headers }), true);
+    }
+    return secure(asset, staging);
   },
 };

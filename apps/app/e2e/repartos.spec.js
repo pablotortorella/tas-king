@@ -84,7 +84,7 @@ test("al corregir, el movimiento se reabre con su método y sus datos, y el hist
   await page.locator(".method-fields.method-percent input").nth(1).fill("40");
   await page.getByRole("button", { name: "Guardar" }).click();
   await openRecent(page, "Cena corregible");
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await expect(page.getByLabel("Porcentajes", { exact: true })).toBeChecked();
   await expect(page.locator(".method-fields.method-percent input").nth(0)).toHaveValue("60");
   await expect(page.locator(".method-fields.method-percent input").nth(1)).toHaveValue("40");

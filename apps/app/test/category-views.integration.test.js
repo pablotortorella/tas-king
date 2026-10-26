@@ -49,7 +49,7 @@ describe("pantalla de gestión de categorías", () => {
     expect(owner).toContain("Nueva categoría");
     expect(owner).toContain("Restaurantes");
     expect(member).toContain("Restaurantes");
-    expect(member).not.toContain("<form");
+    expect(member).not.toContain(`action="/spaces/`);
   });
 
   it("alguien sin acceso al libro no la ve", async () => {

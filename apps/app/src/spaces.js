@@ -57,7 +57,7 @@ export async function createSpaceForUser(db, { userId, name, defaultCurrency = "
     try {
       await db.batch([
         db.prepare("INSERT INTO spaces (id, name, slug) VALUES (?, ?, ?)").bind(spaceId, spaceName, slug),
-        db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'owner')").bind(spaceId, userId),
+        db.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'owner', ?)").bind(spaceId, userId, createPlatformId("membership")),
         db.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES (?, ?, ?)").bind(ledgerId, spaceId, currency),
         db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES (?, ?, ?, ?)").bind(ledgerId, createPlatformId("participant"), user.display_name, userId),
         db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'space_created', 'space', ?)").bind(eventId, userId, spaceId, spaceId),
@@ -120,7 +120,7 @@ export async function resolveInvitation(db, { invitationId, userId, email, accep
       : null;
     if (invitation.target_participant_id && !participant) throw new Error("Participante no disponible.");
     const user = await db.prepare("SELECT display_name FROM users WHERE id = ?").bind(userId).first();
-    statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, 'member')").bind(invitation.space_id, userId));
+    statements.splice(1, 0, db.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)").bind(invitation.space_id, userId, createPlatformId("membership")));
     statements.splice(2, 0, invitation.target_participant_id
       ? db.prepare("UPDATE ledger_participants SET linked_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL").bind(userId, ledger.id, invitation.target_participant_id)
       : db.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES (?, ?, ?, ?)").bind(ledger.id, createPlatformId("participant"), user.display_name, userId));

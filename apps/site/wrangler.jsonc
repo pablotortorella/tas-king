@@ -12,5 +12,18 @@
     "directory": "./public",
     "binding": "ASSETS",
     "run_worker_first": true
+  },
+  "env": {
+    "staging": {
+      "name": "homesuite-site-staging",
+      "workers_dev": true,
+      "routes": [{ "pattern": "site-staging.homesuite.info", "custom_domain": true }],
+      "vars": { "SITE_ENV": "staging" },
+      "assets": {
+        "directory": "./public",
+        "binding": "ASSETS",
+        "run_worker_first": true
+      }
+    }
   }
 }

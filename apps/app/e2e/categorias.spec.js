@@ -145,7 +145,7 @@ test("renombrar a un nombre que ya existe muestra el motivo y no cambia nada", a
 test("corregir un movimiento reabre la categoría elegida y cambiarla queda en el historial", async ({ page }) => {
   const { book } = await openBook(page);
   await addExpense(page, book, "Para corregir", { choose: "Taxi" });
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await expect(page.getByLabel("Elegí una")).toHaveValue(await page.getByLabel("Elegí una").locator("option", { hasText: /^Taxi$/u }).getAttribute("value"));
   await page.getByLabel("Elegí una").selectOption({ label: "Hotel" });
   await page.getByRole("button", { name: "Guardar cambios" }).click();

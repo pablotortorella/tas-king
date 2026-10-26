@@ -46,7 +46,7 @@ test("registra, corrige y anula un gasto desde el teléfono", async ({ page }) =
   await expect(page.locator(".recent-strip")).toContainText("Recién agregado");
   await expect(page.getByText("Le deben COP 50,00")).toBeVisible();
   await page.locator(".recent-strip").getByRole("link", { name: /Supermercado/ }).click();
-  await page.getByRole("link", { name: "Corregir" }).click();
+  await page.getByRole("link", { name: "Corregir", exact: true }).click();
   await page.getByLabel("Importe", { exact: true }).fill("120,00");
   await page.getByRole("button", { name: "Guardar" }).click();
   await expect(page.locator(".notice")).toContainText("Movimiento corregido.");

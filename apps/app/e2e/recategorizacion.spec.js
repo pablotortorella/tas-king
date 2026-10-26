@@ -65,7 +65,7 @@ test("cancelar en la pantalla de confirmación no cambia nada", async ({ page })
   const book = await bookWith(page, "rc-cancelar", ["Uno", "Dos"]);
   await page.getByRole("checkbox", { name: "Seleccionar Uno" }).check();
   await reviewChange(page, "Taxi");
-  await page.getByRole("link", { name: "Cancelar" }).click();
+  await page.getByRole("link", { name: "Cancelar", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${book}$`, "u"));
   await expect(chipOf(page, "Uno")).toHaveText("Sin categoría");
 });
