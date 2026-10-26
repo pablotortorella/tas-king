@@ -1,8 +1,8 @@
 ## 1. Glosario y verificación primero
 
-- [ ] 1.1 Escribir `docs/homesuite/GLOSARIO.md` con la tabla de conceptos (interfaz, código, URL y base) y enlazarlo desde `docs/homesuite/README.md`; verificar que el enlace resuelve y que `openspec validate grupos-con-identidad --strict` sigue pasando
-- [ ] 1.2 Escribir la prueba del glosario (config de Node) que falla ante `space` o «espacio» en código, migraciones, pruebas, scripts, demo y documentación vigente, con excepciones `namespace`, `white-space`, `whitespace` y `openspec/changes/archive/`; verificar que hoy falla señalando archivo y línea, y que un fixture con `white-space` no se marca
-- [ ] 1.3 Escribir la prueba de integración que recorre las pantallas de Cuentas Claras (listado, grupo, saldos, movimientos, personas, categorías, clasificar, importar, invitaciones, creación y demos) y falla ante «espacio» o «libro» en el texto visible; verificar que hoy falla
+- [x] 1.1 Escribir `docs/homesuite/GLOSARIO.md` con la tabla de conceptos (interfaz, código, URL y base) y enlazarlo desde `docs/homesuite/README.md`; verificar que el enlace resuelve y que `openspec validate grupos-con-identidad --strict` sigue pasando
+- [x] 1.2 Escribir la prueba del glosario (config de Node) que falla ante `space` o «espacio» en código, migraciones, pruebas, scripts, demo y documentación vigente, con excepciones `namespace`, `white-space`, `whitespace` y `openspec/changes/archive/`; verificar que hoy falla señalando archivo y línea, y que un fixture con `white-space` no se marca
+- [x] 1.3 Escribir la prueba de integración que recorre las pantallas de Cuentas Claras (listado, grupo, saldos, movimientos, personas, categorías, clasificar, importar, invitaciones, creación y demos) y falla ante «espacio» o «libro» en el texto visible; verificar que hoy falla
 
 ## 2. Renombre del esquema (sin cambio de comportamiento)
 

@@ -16,6 +16,7 @@ controles estén implementados: consultar la matriz de cumplimiento más abajo.
 | [Verificación](VERIFICACION.md) | Escenarios, regresiones y evidencia de aceptación |
 | [Operación](OPERACION.md) | Entornos, publicación, migraciones, recuperación y secretos |
 | [Aprendizajes](APRENDIZAJES.md) | Incidentes, causas, controles y asuntos abiertos |
+| [Glosario](GLOSARIO.md) | Una palabra por concepto, igual en interfaz, URLs, código y base |
 
 ## Precedencia y mantenimiento
 
