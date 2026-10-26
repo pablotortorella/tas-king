@@ -8,6 +8,7 @@ import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerEntryRoutes, recentFor } from "./routes/entries.js";
 import { registerImportRoutes } from "./routes/import.js";
 import { recategorizationNoticeFor, registerRecategorizeRoutes } from "./routes/recategorize.js";
+import { registerPeopleRoutes } from "./routes/people.js";
 import { registerShellRoutes } from "./routes/shell.js";
 import { fillAccount } from "./account-ui.js";
 import { csrfInput, formError, ledgerFailure, page, requestId, sessionSecret, signedInUser, signInRequired } from "./route-kit.js";
@@ -15,7 +16,7 @@ import { CURRENCY_MINOR_UNITS, currencyLabel } from "./finance.js";
 import { addParticipant, exportLedger, readLedger } from "./ledger.js";
 import { ledgerCsv } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
-import { PAGE_SIZE, renderBookHead, renderLedgerOverview, renderPeople } from "./overview-ui.js";
+import { PAGE_SIZE, renderBookHead, renderLedgerOverview } from "./overview-ui.js";
 import { slowBookEvent } from "./perf.js";
 import { ACCOUNT_MARKER, avatar, escapeHtml, noticeFor } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
@@ -446,16 +447,12 @@ app.get("/spaces/:spaceId", async (c) => {
   if (!user) return signInRequired(c);
   const space = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
   if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
-  const owner = space.role === "owner";
-  const [members, invitations, csrf, ledger] = await Promise.all([
-    c.env.DB.prepare("SELECT m.user_id, u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(space.id).all(),
-    owner ? c.env.DB.prepare("SELECT id, invitee_email, target_participant_id FROM invitations WHERE space_id = ? AND status = 'pending' ORDER BY created_at").bind(space.id).all() : { results: [] },
+  const [csrf, ledger] = await Promise.all([
     csrfInput(c, user),
     readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
   ]);
-  const people = renderPeople({ data: ledger, space, members: members.results, invitations: invitations.results, csrf, owner, userId: user.user_id });
   const batchNotice = await recategorizationNoticeFor(c, user, space, csrf);
-  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), below: people, limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
   const slow = slowBookEvent({ elapsedMs: Date.now() - started, entries: ledger.entries.length, participants: ledger.participants.length, categories: ledger.categories.length, requestId: requestId(c) }, c.env.SLOW_BOOK_MS);
   if (slow) console.warn(JSON.stringify(slow));
   return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
@@ -465,9 +462,11 @@ app.post("/spaces/:spaceId/participants", async (c) => {
   const user = c.get("protectedUser");
   try {
     await addParticipant(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=participante`, 303);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=participante`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
+
+registerPeopleRoutes(app);
 
 registerImportRoutes(app);
 
@@ -504,7 +503,7 @@ for (const [action, archived, notice] of [["archive", true, "archivado"], ["rest
     const user = c.get("protectedUser");
     try {
       await setLedgerArchived(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, archived });
-      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=${notice}`, 303);
+      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=${notice}`, 303);
     } catch (error) { return ledgerFailure(c, error); }
   });
 }
@@ -513,7 +512,7 @@ app.post("/spaces/:spaceId/rename", async (c) => {
   const user = c.get("protectedUser");
   try {
     await renameSpace(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=renombrado`, 303);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=renombrado`, 303);
   } catch {
     return c.html(formError("No pudimos guardar el nombre", "Sólo el titular puede usar un nombre válido."), 403);
   }
@@ -527,7 +526,7 @@ app.post("/spaces/:spaceId/invitations", async (c) => {
   try {
     const body = await c.req.parseBody();
     await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=invitacion`, 303);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=invitacion`, 303);
   } catch {
     return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
   }
@@ -539,7 +538,7 @@ app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
   if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
   try {
     await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.user_id });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}?aviso=cancelada`, 303);
+    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=cancelada`, 303);
   } catch {
     return c.html(formError("Invitación no encontrada", "La invitación ya no está pendiente.", 404), 404);
   }

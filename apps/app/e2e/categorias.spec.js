@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { useScheme, lowContrast, openRecent } from "./helpers.js";
+import { useScheme, lowContrast, openRecent, addPerson } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
@@ -10,8 +10,7 @@ async function openBook(page) {
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa categorías ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
   const book = new URL(page.url()).pathname;
-  await page.getByLabel("Participante sin cuenta").fill("Beto");
-  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await addPerson(page, book, "Beto");
   return { book, suffix };
 }
 

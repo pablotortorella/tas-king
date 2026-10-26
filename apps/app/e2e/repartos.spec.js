@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { splitAmount } from "../src/split.js";
-import { emulateScheme, lowContrast, openRecent } from "./helpers.js";
+import { emulateScheme, lowContrast, openRecent, addPerson } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 const METHODS = [
@@ -18,8 +18,7 @@ async function openForm(page) {
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa repartos ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
   const book = new URL(page.url()).pathname;
-  await page.getByLabel("Participante sin cuenta").fill("Beto");
-  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await addPerson(page, book, "Beto");
   await page.goto(`${book}/ledger/new?type=expense`);
   return { book, suffix };
 }

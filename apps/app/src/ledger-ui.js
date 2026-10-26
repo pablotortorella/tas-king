@@ -37,6 +37,7 @@ export function revisionSummary(row, previous) {
   const snapshot = JSON.parse(row.snapshot_json);
   if (row.action === "created") return "Movimiento creado";
   if (row.action === "voided") return snapshot.reason ? `Motivo: ${snapshot.reason}` : "Sin motivo indicado";
+  if (snapshot.personMerge) return "Cambió: unión de personas";
   const before = previous ? JSON.parse(previous.snapshot_json) : {};
   const changed = [];
   for (const [key, label] of [["description", "descripción"], ["occurredAt", "fecha"], ["totalMinor", "importe"], ["currency", "moneda"], ["cashParties", "quién pagó o recibió"], ["allocations", "reparto"], ["note", "nota"]]) {
@@ -222,7 +223,10 @@ function provenance(entry, spaceId) {
 
 // Las revisiones que vienen de una recategorización en lote lo indican en el historial.
 function batchMark(row) {
-  try { return JSON.parse(row.snapshot_json).recategorizationBatch ? " · recategorización en lote" : ""; } catch { return ""; }
+  try {
+    const snapshot = JSON.parse(row.snapshot_json);
+    return snapshot.recategorizationBatch ? " · recategorización en lote" : snapshot.personMerge ? " · unión de personas" : "";
+  } catch { return ""; }
 }
 
 export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {

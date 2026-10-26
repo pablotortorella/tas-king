@@ -31,14 +31,22 @@ export async function lowContrast(page) {
 // Recorridos exploratorios: preparan un grupo con dos personas en un navegador real, igual que lo haría una persona.
 export const uniqueId = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
+// Agrega una persona sin cuenta desde la pantalla de personas y vuelve al libro.
+export async function addPerson(page, book, name) {
+  await page.goto(`${book}/people`);
+  await page.getByLabel("Participante sin cuenta").fill(name);
+  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await page.waitForURL(/\/people\?aviso=participante/u);
+  await page.goto(book);
+}
+
 export async function openBook(page, prefix = "rec") {
   const suffix = uniqueId();
   await page.goto(`/api/local/session?as=${prefix}-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa ${prefix} ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
   const book = new URL(page.url()).pathname;
-  await page.getByLabel("Participante sin cuenta").fill("Beto");
-  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await addPerson(page, book, "Beto");
   return { book, suffix };
 }
 

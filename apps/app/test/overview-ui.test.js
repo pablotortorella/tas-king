@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { renderBookHead, renderLedgerOverview, renderPeople } from "../src/overview-ui.js";
+import { renderBookHead, renderLedgerOverview } from "../src/overview-ui.js";
+import { renderPeople } from "../src/people-ui.js";
 
 const participants = [
   { id: "p1", displayName: "<b>Pablo</b>", linkedUserId: "u1", active: 1 },

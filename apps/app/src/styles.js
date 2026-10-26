@@ -217,6 +217,7 @@ ${AVATAR_CSS}
 .tool-card:hover,.tool-card:focus-visible{border-color:var(--accent-line);color:var(--ink)}
 .tool-card strong{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem}
 .tool-card span{color:var(--ink-2)}
+.person-tools{margin:2px 0 0 56px}.person-tools summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--accent-text)}.person-tools[open] summary{margin-bottom:4px}
 .profile-form h2:not(:first-child){margin-top:28px}
 .profile-form input:disabled{background:var(--line-soft);color:var(--ink-3)}
 .profile-form button:disabled{opacity:.65;cursor:wait}

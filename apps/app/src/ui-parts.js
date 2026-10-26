@@ -52,6 +52,8 @@ const NOTICES = Object.freeze({
   invitacion: "Invitación creada. Hasta que se acepte, la persona no puede ver el libro.",
   cancelada: "Invitación cancelada.",
   renombrado: "Nombre del grupo guardado.",
+  "persona-renombrada": "Nombre guardado.",
+  "personas-unidas": "Personas unidas. Los movimientos de la persona unida pasaron a la destinataria y ya cuentan en su saldo.",
   guardado: "Movimiento guardado.",
   corregido: "Movimiento corregido.",
   anulado: "Movimiento anulado. Sigue visible en el historial y ya no cuenta en los saldos.",

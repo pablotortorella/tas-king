@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { addPerson } from "./helpers.js";
 
 test("una sesión local usa el formulario autenticado con CSRF real", async ({ page }) => {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -15,6 +16,7 @@ test("la segunda cuenta entra directo a sus invitaciones pendientes", async ({ p
   await page.goto(`/api/local/session?as=owner-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa invitación ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.goto(`${new URL(page.url()).pathname}/people`);
   await page.getByLabel("Invitar por email").fill(invitee);
   await page.getByRole("button", { name: "Invitar" }).click();
 
@@ -36,8 +38,7 @@ test("registra, corrige y anula un gasto desde el teléfono", async ({ page }) =
   await page.goto(`/api/local/session?as=fin-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa ${suffix}`);
   await page.getByRole("button", { name: "Crear espacio" }).click();
-  await page.getByLabel("Participante sin cuenta").fill("Beto");
-  await page.getByRole("button", { name: "Agregar participante" }).click();
+  await addPerson(page, new URL(page.url()).pathname, "Beto");
   await page.getByRole("link", { name: "Gasto", exact: true }).click();
   await page.getByLabel("Descripción").fill("Supermercado");
   await page.getByLabel("Importe", { exact: true }).fill("100,00");

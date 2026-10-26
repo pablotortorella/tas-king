@@ -187,7 +187,7 @@ describe("recorrido web con sesión real", () => {
     expect(await page.text()).toContain("Casa Hyrule");
     const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
     expect(renamed.status).toBe(303);
-    expect(renamed.headers.get("location")).toBe(`${location}?aviso=renombrado`);
+    expect(renamed.headers.get("location")).toBe(`${location}/people?aviso=renombrado`);
     const confirmed = await authenticatedRequest(owner, `https://app.test${renamed.headers.get("location")}`);
     expect(await confirmed.text()).toContain("Nombre del grupo guardado.");
     const forged = await authenticatedRequest(owner, `https://app.test${location}?aviso=%3Cscript%3Ealert(1)%3C/script%3E`);
