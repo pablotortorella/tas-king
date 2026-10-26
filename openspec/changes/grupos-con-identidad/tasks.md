@@ -6,8 +6,8 @@
 
 ## 2. Renombre del esquema (sin cambio de comportamiento)
 
-- [ ] 2.1 Reescribir `0001`–`0011` con `groups` y `group_id` (tablas, índices, claves, auditoría), renombrar `0006_space_slugs.sql` a `0006_group_slugs.sql`, y verificar que `e2e:setup` aplica las 11 migraciones desde una base vacía y que `grep -ri space apps/app/migrations` no devuelve nada
-- [ ] 2.2 Renombrar `seed/demo.sql`, `apps/app/ops/`, `scripts/` y `wrangler.jsonc` donde corresponda y verificar que `db:seed:homesuite-demo` carga sin errores
+- [x] 2.1 Reescribir `0001`–`0011` con `groups` y `group_id` (tablas, índices, claves, auditoría), renombrar `0006_space_slugs.sql` a `0006_group_slugs.sql`, y verificar que `e2e:setup` aplica las 11 migraciones desde una base vacía y que `grep -ri space apps/app/migrations` no devuelve nada
+- [x] 2.2 Renombrar `seed/demo.sql`, `apps/app/ops/`, `scripts/` y `wrangler.jsonc` donde corresponda y verificar que `db:seed:homesuite-demo` carga sin errores
 
 ## 3. Renombre del código (sin cambio de comportamiento)
 

@@ -5,12 +5,12 @@ INSERT OR IGNORE INTO users (id, google_sub, email, display_name) VALUES
   ('user_demo_pablo', 'local:pablo@example.test', 'pablo@example.test', 'Pablo'),
   ('user_demo_laura', 'local:laura@example.test', 'laura@example.test', 'Laura');
 
-INSERT OR IGNORE INTO spaces (id, name, slug) VALUES ('space_demo_casa', 'Casa compartida', 'casa-compartida');
-INSERT OR IGNORE INTO memberships (space_id, user_id, role) VALUES
-  ('space_demo_casa', 'user_demo_pablo', 'owner'),
-  ('space_demo_casa', 'user_demo_laura', 'member');
+INSERT OR IGNORE INTO groups (id, name, slug) VALUES ('group_demo_casa', 'Casa compartida', 'casa-compartida');
+INSERT OR IGNORE INTO memberships (group_id, user_id, role) VALUES
+  ('group_demo_casa', 'user_demo_pablo', 'owner'),
+  ('group_demo_casa', 'user_demo_laura', 'member');
 
-INSERT OR IGNORE INTO expense_ledgers (id, space_id, default_currency) VALUES ('ledger_demo_casa', 'space_demo_casa', 'COP');
+INSERT OR IGNORE INTO expense_ledgers (id, group_id, default_currency) VALUES ('ledger_demo_casa', 'group_demo_casa', 'COP');
 INSERT OR IGNORE INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES
   ('ledger_demo_casa', 'participant_demo_pablo', 'Pablo', 'user_demo_pablo'),
   ('ledger_demo_casa', 'participant_demo_laura', 'Laura', 'user_demo_laura'),
@@ -18,8 +18,8 @@ INSERT OR IGNORE INTO ledger_participants (ledger_id, id, display_name, linked_u
   ('ledger_demo_casa', 'participant_demo_mateo', 'Mateo', NULL);
 
 -- Ana tiene una invitación pendiente vinculada a su participante; Mateo no tiene cuenta.
-INSERT OR IGNORE INTO invitations (id, space_id, invitee_email, inviter_user_id, target_participant_id) VALUES
-  ('invite_demo_ana', 'space_demo_casa', 'ana@example.test', 'user_demo_pablo', 'participant_demo_ana');
+INSERT OR IGNORE INTO invitations (id, group_id, invitee_email, inviter_user_id, target_participant_id) VALUES
+  ('invite_demo_ana', 'group_demo_casa', 'ana@example.test', 'user_demo_pablo', 'participant_demo_ana');
 
 -- Movimientos propios (importes en unidad menor: COP tiene 2 decimales).
 INSERT OR IGNORE INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, note, occurred_at, status, current_revision, created_by_user_id) VALUES

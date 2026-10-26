@@ -27,7 +27,7 @@ npx wrangler d1 execute homesuite-app-local \
   --local \
   --persist-to "$STATE_DIR" \
   --config apps/app/wrangler.jsonc \
-  --command "PRAGMA quick_check; PRAGMA foreign_key_check; SELECT COUNT(*) AS essential_tables FROM sqlite_master WHERE type = 'table' AND name IN ('users', 'spaces', 'memberships', 'invitations', 'sessions');" \
+  --command "PRAGMA quick_check; PRAGMA foreign_key_check; SELECT COUNT(*) AS essential_tables FROM sqlite_master WHERE type = 'table' AND name IN ('users', 'groups', 'memberships', 'invitations', 'sessions');" \
   --json > "$RESULT_FILE"
 
 node -e '

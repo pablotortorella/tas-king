@@ -2,7 +2,7 @@ PRAGMA defer_foreign_keys = true;
 
 CREATE TABLE invitations_v2 (
   id TEXT PRIMARY KEY,
-  space_id TEXT NOT NULL REFERENCES spaces(id),
+  group_id TEXT NOT NULL REFERENCES groups(id),
   invitee_email TEXT NOT NULL,
   inviter_user_id TEXT NOT NULL REFERENCES users(id),
   status TEXT NOT NULL CHECK(status IN ('pending', 'accepted', 'rejected', 'canceled', 'expired')) DEFAULT 'pending',
@@ -11,20 +11,20 @@ CREATE TABLE invitations_v2 (
   resolved_at TEXT
 );
 
-INSERT INTO invitations_v2 (id, space_id, invitee_email, inviter_user_id, status, created_at, expires_at, resolved_at)
-SELECT id, space_id, invitee_email, inviter_user_id, status, created_at, datetime(created_at, '+30 days'), resolved_at
+INSERT INTO invitations_v2 (id, group_id, invitee_email, inviter_user_id, status, created_at, expires_at, resolved_at)
+SELECT id, group_id, invitee_email, inviter_user_id, status, created_at, datetime(created_at, '+30 days'), resolved_at
 FROM invitations;
 
 DROP TABLE invitations;
 ALTER TABLE invitations_v2 RENAME TO invitations;
 
-CREATE UNIQUE INDEX invitations_one_pending_email_per_space ON invitations(space_id, invitee_email) WHERE status = 'pending';
+CREATE UNIQUE INDEX invitations_one_pending_email_per_group ON invitations(group_id, invitee_email) WHERE status = 'pending';
 CREATE INDEX invitations_pending_by_email ON invitations(invitee_email) WHERE status = 'pending';
 CREATE INDEX invitations_pending_by_expiry ON invitations(expires_at) WHERE status = 'pending';
 
 CREATE TABLE expense_ledgers (
   id TEXT PRIMARY KEY,
-  space_id TEXT NOT NULL UNIQUE REFERENCES spaces(id),
+  group_id TEXT NOT NULL UNIQUE REFERENCES groups(id),
   default_currency TEXT NOT NULL CHECK(length(default_currency) = 3 AND default_currency GLOB '[A-Z][A-Z][A-Z]'),
   revision INTEGER NOT NULL DEFAULT 0 CHECK(revision >= 0),
   archived_at TEXT,
