@@ -5,9 +5,10 @@ import { categoryForEntry, categoryResolver, readCategories } from "./categories
 import { recordLedgerChange } from "./ledger-events.js";
 import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
+import { nameKey } from "./names.js";
 import { aliasResolver, relabelComponents } from "./person-merge.js";
 
-export { LedgerError };
+export { LedgerError, nameKey };
 
 export async function getLedgerAccess(db, spaceId, userId) {
   const row = await db.prepare(`
@@ -20,9 +21,6 @@ export async function getLedgerAccess(db, spaceId, userId) {
   if (!row) throw new LedgerError("No tenés acceso a este libro.", 404);
   return row;
 }
-
-// Dos nombres son «el mismo» sin distinguir mayúsculas, tildes ni espacios repetidos.
-export const nameKey = value => value.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
 
 export async function addParticipant(db, { spaceId, userId, name }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);

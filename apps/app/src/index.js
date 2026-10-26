@@ -576,7 +576,7 @@ app.get("/cuentas-claras", async (c) => {
   if (!user) return signInRequired(c);
   const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
   const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
-  if (listed.length === 1) return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
+  if (listed.length === 1 && c.req.query("todos") !== "1") return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
   const spaces = listed.map((space) => spaceRow(space)).join("") || "<p>No tenés espacios todavía.</p>";
   return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones</a></section>`));
 });

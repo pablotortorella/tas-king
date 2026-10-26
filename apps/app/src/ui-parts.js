@@ -84,7 +84,7 @@ export function shortDate(isoDate) {
 // Menú de la aplicación (sin JavaScript: un <details>). Dentro de un grupo ofrece sus secciones; siempre ofrece lo común.
 export function appMenu(spaceHref) {
   const group = spaceHref ? `<p class="menu-title">Este grupo</p><a href="${spaceHref}#saldos">Saldos</a><a href="${spaceHref}#movimientos">Movimientos</a><a href="${spaceHref}/people">Personas</a><a href="${spaceHref}/ledger/categories">Categorías</a><a href="${spaceHref}/ledger/classify">Clasificar rápido</a><a href="${spaceHref}/ledger/import">Importar de Splitwise</a><p class="menu-title">HomeSuite</p>` : "";
-  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${group}<a href="/">Inicio</a><a href="/cuentas-claras">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
+  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${group}<a href="/">Inicio</a><a href="/cuentas-claras?todos=1">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
 }
 
 export function tabbar(spaceHref) {

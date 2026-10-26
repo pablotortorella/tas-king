@@ -48,7 +48,7 @@ export function renderPeople({ data, space, members, invitations, csrf, owner, u
   const rename = `<form class="ledger-form" action="${spaceHref}/rename" method="post">${csrf}<label for="space-name">Nombre del grupo</label><input id="space-name" name="name" required maxlength="120" value="${escapeHtml(space.name)}"><div class="form-actions"><button class="button secondary">Guardar nombre</button></div></form>`;
   const admin = owner ? `<section class="ledger-section" id="administrar"><h2>Administrar grupo</h2>${archived ? `${archiveTool}${rename}` : `${addPerson}${invite}${rename}${archiveTool}`}</section>` : "";
   const lead = owner ? "Participar en las cuentas no es lo mismo que tener acceso." : "Participar en las cuentas no es lo mismo que tener acceso. La administración queda en manos del titular.";
-  return `<section class="ledger-section" id="personas"><h2>Personas · ${data.participants.length}</h2><p class="muted">${lead}</p>${people}${loose}</section>${merged}${admin}<a class="button secondary" href="/cuentas-claras">Cambiar grupo</a>`;
+  return `<section class="ledger-section" id="personas"><h2>Personas · ${data.participants.length}</h2><p class="muted">${lead}</p>${people}${loose}</section>${merged}${admin}<a class="button secondary" href="/cuentas-claras?todos=1">Cambiar grupo</a>`;
 }
 
 const backTo = (spaceId, label = "← Volver a las personas") => `<a class="back-link" href="${path(spaceId)}/people">${label}</a>`;
@@ -72,7 +72,7 @@ export function renderMergePreview({ spaceId, csrf, preview, key }) {
   const { source, target } = preview;
   const rows = items => items.map(item => `<li><strong>${escapeHtml(item.description)}</strong> <span class="muted">${escapeHtml(shortDate(item.occurredAt))} · ${escapeHtml(formatMoney(item.totalMinor, item.currency))}</span></li>`).join("");
   const balances = preview.balances.map(row => `<tr><th scope="row">${escapeHtml(row.currency)}</th><td>${escapeHtml(signed(row.source, row.currency))}</td><td>${escapeHtml(signed(row.target, row.currency))}</td><td>${escapeHtml(signed(row.after, row.currency))}</td></tr>`).join("");
-  const table = balances ? `<section class="ledger-section"><h2>Saldos</h2><table class="split"><thead><tr><th scope="col">Moneda</th><th scope="col">${escapeHtml(source.name)} hoy</th><th scope="col">${escapeHtml(target.name)} hoy</th><th scope="col">${escapeHtml(target.name)} después</th></tr></thead><tbody>${balances}</tbody></table></section>` : "";
+  const table = balances ? `<section class="ledger-section"><h2>Saldos</h2><div class="table-scroll"><table class="split"><thead><tr><th scope="col">Moneda</th><th scope="col">${escapeHtml(source.name)} hoy</th><th scope="col">${escapeHtml(target.name)} hoy</th><th scope="col">${escapeHtml(target.name)} después</th></tr></thead><tbody>${balances}</tbody></table></div></section>` : "";
   const notes = invitationNotes(preview);
   const voided = preview.voided ? `<p class="notice" role="status">${plural(preview.voided, "transferencia entre las dos personas se anula", "transferencias entre las dos personas se anulan")}: quedarían de una persona a sí misma y no cambian ningún saldo.</p><ul class="plain-list">${rows(preview.voidedSample)}</ul>` : "";
   const sample = preview.sample.length ? `<section class="ledger-section"><h2>Muestra</h2><ul class="plain-list">${rows(preview.sample)}</ul>${preview.revise > preview.sample.length ? `<p class="muted">Y ${plural(preview.revise - preview.sample.length, "movimiento más", "movimientos más")}.</p>` : ""}</section>` : "";

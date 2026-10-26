@@ -25,6 +25,14 @@ anulaciones siguen el contrato de inmutabilidad del libro; no reescribir histori
 sin una decisión funcional explícita. Persistir una operación y sus efectos como
 unidad atómica; reintentos e importación necesitan idempotencia comprobable.
 
+Unir dos personas del grupo (decisión de Pablo, 2026-10-26: la persona destinataria
+se elige en el momento de confirmar y todos los movimientos pasan a ella) no
+reescribe la historia: cada movimiento recibe una revisión nueva marcada como unión,
+la persona unida se conserva como registro y el saldo total del grupo no cambia. El
+reparto por método de un movimiento afectado se reabre con importes exactos. Una
+transferencia entre las dos personas se anula (quedaría de una persona a sí misma).
+Cambio: `openspec/changes/personas-del-grupo`.
+
 Verificar conservación de saldos por moneda, reparto exacto, signos, límites,
 redondeo, reversión/corrección, duplicados, concurrencia y aislamiento entre espacios.
 La importación necesita previsualización, decisiones explícitas, conciliación y

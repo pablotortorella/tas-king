@@ -158,7 +158,7 @@ const FORMS = `
 .split-total td{font-weight:800}
 @media(max-width:560px){
 .balance-table.split th,.balance-table.split td{padding:10px 2px;font-size:.78rem}.balance-table.split th{letter-spacing:0;font-size:.66rem}.balance-table.split td:first-child{max-width:4.5rem;overflow-wrap:anywhere}.card,.ledger-section{padding:16px}
-.form-grid,.share-grid,.ledger-form .form-grid.three{grid-template-columns:1fr}.ledger-form .form-grid.amount-row{grid-template-columns:minmax(0,1fr) 150px}
+.form-grid,.share-grid,.ledger-form .form-grid.three{grid-template-columns:minmax(0,1fr)}.share-grid select{min-width:0;max-width:100%}.ledger-form .form-grid.amount-row{grid-template-columns:minmax(0,1fr) 150px}
 .balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.incident-row{grid-template-columns:1fr}
 .section-top{align-items:flex-start}.book-head .actions{width:100%}.book-head .actions .button{flex:1}
 .entry-row a{grid-template-columns:44px 1fr}.entry-side{grid-column:2;text-align:left;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.entry-side .money,.entry-side small{display:inline}

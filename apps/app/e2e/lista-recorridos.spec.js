@@ -101,7 +101,10 @@ test("recargar la lista conserva la franja y volver atrás no rompe nada", async
   await page.reload();
   await expect(page.locator(".recent-strip")).toContainText("Atrás");
   await page.goBack();
-  await expect(page.getByRole("button", { name: "Guardar" })).toBeEnabled();
+  // Chromium vuelve al formulario; Firefox suma una entrada al recargar una dirección con ancla y se queda en la lista.
+  // En ambos casos la pantalla tiene que quedar usable y sin duplicar el movimiento.
+  if (await page.getByLabel("Descripción").count()) await expect(page.getByRole("button", { name: /^Guardar/u })).toBeEnabled();
+  else await expect(listRows(page)).toHaveText(["Atrás"]);
   await page.goto(book);
   await expect(listRows(page)).toHaveText(["Atrás"]);
 });

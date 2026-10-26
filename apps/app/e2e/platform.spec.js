@@ -80,7 +80,7 @@ test("previsualiza, resuelve incidentes e importa Splitwise en móvil", async ({
   await page.getByLabel("Archivo CSV").setInputFiles({ name: "grupo.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
   await page.getByRole("button", { name: "Previsualizar" }).click();
   await expect(page.getByText("1 movimientos válidos · 2 incidentes · 1 filas de resumen.")).toBeVisible();
-  await page.locator('[name="mapping_0"]').selectOption({ label: ownerName });
+  await page.locator('[name="mapping_0"]').selectOption({ label: `Soy yo (${ownerName})` });
   await page.locator('[name="decision_3"]').selectOption("assume_default");
   await page.locator('[name="decision_4"]').selectOption("exclude");
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();

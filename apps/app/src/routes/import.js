@@ -39,7 +39,7 @@ export function registerImportRoutes(app) {
       if (preview.batchId) return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/import/batches/${encodeURIComponent(preview.batchId)}`, 303);
       const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
       const summary = await readPreviewSummary(c.env.DB, preview.id, preview.meta, { page: Number.parseInt(c.req.query("pagina") ?? "1", 10) || 1 });
-      return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, summary, ledger: data.ledger, participants: data.participants.filter(person => person.active) })));
+      return c.html(page("Previsualizar Splitwise", renderImportPreview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, summary, ledger: data.ledger, participants: data.participants.filter(person => person.active), ownId: data.participants.find(person => person.linkedUserId === user.user_id)?.id ?? null })));
     } catch (error) { return ledgerFailure(c, error); }
   });
 
@@ -68,7 +68,7 @@ export function registerImportRoutes(app) {
     try {
       const { preview, plan } = await readImportPlan(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, previewId: c.req.param("previewId") });
       const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-      return c.html(page("Confirmar Splitwise", renderImportReview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, plan, participants: data.participants })));
+      return c.html(page("Confirmar Splitwise", renderImportReview({ spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), preview, plan, participants: data.participants, ownId: data.participants.find(person => person.linkedUserId === user.user_id)?.id ?? null })));
     } catch (error) { return ledgerFailure(c, error); }
   });
 

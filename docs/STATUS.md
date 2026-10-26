@@ -7,6 +7,33 @@
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Cuentas Claras: personas del grupo, menú y «Soy yo» en la importación — 2026-10-26
+
+**Estado:** implementado en la rama `feature/personas-menu-perfil` (integra `main` con el perfil
+compartido), sin publicar. Cambio OpenSpec: `personas-del-grupo`.
+
+- **Menú de la app** en el encabezado: secciones del grupo (Saldos, Movimientos, Personas, Categorías,
+  Clasificar, Importar), Inicio, Mis grupos, «Ver mi perfil» y «Cerrar sesión»; el avatar y el nombre
+  llevan al perfil. Se cierra con Escape, al tocar afuera y al elegir una sección de la misma página.
+  La lista de grupos con invitaciones vive en `/cuentas-claras`; `/` es el inicio de HomeSuite.
+- **Pantalla de personas** (`/spaces/:id/people`): estado y saldo de cada persona, personas unidas
+  aparte y las herramientas de administración que estaban al final del libro. La titular renombra a una
+  persona (nombre único entre vigentes) y la une a otra: vista previa sin escribir, confirmación con
+  clave idempotente, un movimiento revisado por cada uno afectado, cuenta e invitaciones resueltas, y
+  la persona unida se conserva como registro (`0011_person_merge.sql`).
+- **Importación**: cada columna pregunta «¿Quién es “X” en este grupo?» con «Soy yo (nombre)» primero;
+  se preselecciona por nombre; la revisión avisa si dos columnas van a la misma persona o si ninguna es
+  quien importa.
+- **Evidencia (2026-10-26):** unitarias 330, integración 279 (incluye unión por tandas con corte a mitad,
+  doble confirmación en simultáneo y corrección concurrente; 2.500 movimientos en 189 ms en D1 local),
+  sitio 10 y base 230; E2E 153 en Chromium y 153 en Firefox (menú, personas y correspondencia a 390 px y
+  escritorio, claro y oscuro). Un intermitente conocido de Firefox (`importacion-recorridos`, recarga del
+  progreso) pasó 6 de 6 al repetirlo. Se corrigieron dos pruebas que pasaban por un motivo equivocado
+  (un «Guardar» que coincidía con «Guardar nombre» del libro) y una medición de desborde que ocurría antes de
+  cargar la hoja de estilos. Los límites de D1 remoto de la unión se verifican en staging antes de cerrar el cambio.
+- **Pendiente:** probar en staging la unión de las dos personas duplicadas del caso real; deshacer una
+  unión queda fuera de este cambio.
+
 ## HomeSuite en staging: sitio, navegación y perfil — 2026-10-25
 
 **Estado:** [PR #99](https://github.com/pablotortorella/tas-king/pull/99)

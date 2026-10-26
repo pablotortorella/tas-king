@@ -143,9 +143,12 @@ test("en 320 px la vista previa, la revisión y el progreso no desbordan y se le
     expect(await lowContrast(page), `contraste en ${label}`).toEqual([]);
   };
   await upload(page, book, csv);
+  // Se espera la pantalla ya dibujada: medir en el instante de la navegación mira una página sin la hoja de estilos.
+  await expect(page.getByRole("heading", { name: "Revisá el archivo" })).toBeVisible();
   await audit("vista previa");
   await page.locator('[name="decision_3"]').selectOption("exclude");
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
+  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
   await audit("revisión");
   await page.route("**/ledger/import/batches/*/load", route => route.abort());
   await page.getByLabel("Revisé la diferencia o la falta de saldo fuente").check();

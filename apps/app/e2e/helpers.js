@@ -36,7 +36,7 @@ export async function addPerson(page, book, name) {
   await page.goto(`${book}/people`);
   await page.getByLabel("Participante sin cuenta").fill(name);
   await page.getByRole("button", { name: "Agregar participante" }).click();
-  await page.waitForURL(/\/people\?aviso=participante/u);
+  await expect(page).toHaveURL(/\/people\?aviso=participante/u);
   await page.goto(book);
 }
 

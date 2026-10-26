@@ -180,6 +180,16 @@ import { searchable } from "/text.js";
         button.disabled = false;
       }
     });
+    // Al volver atrás, el navegador puede recuperar el formulario tal como quedó (botón deshabilitado y aviso «pendiente»):
+    // se restablece. Reintentar es seguro porque la clave de idempotencia del formulario no cambia.
+    window.addEventListener("pageshow", function (event) {
+      if (!event.persisted) return;
+      var button = form.querySelector('button[type="submit"]');
+      var feedback = form.querySelector(".form-feedback");
+      form.querySelectorAll(".pending-entry").forEach(function (item) { item.remove(); });
+      if (button) button.disabled = false;
+      if (feedback) { feedback.className = "form-feedback"; feedback.textContent = ""; }
+    });
   });
 })();
 `;

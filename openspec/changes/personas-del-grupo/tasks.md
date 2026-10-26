@@ -22,17 +22,17 @@
 
 ## 5. Pantalla de personas
 
-- [ ] 5.1 Crear `/spaces/:id/people` con la lista (estado, saldo, quién es la persona que mira), las personas unidas aparte, las herramientas de administración y los formularios de renombrar y unir en dos pasos, y verificar con pruebas de integración de permisos (integrante en solo lectura) y de que el libro ya no repite esas secciones.
-- [ ] 5.2 Mostrar «Cambió: unión de personas» en el historial y que un movimiento unido se reabra con importes exactos, y verificar con una prueba de integración y una E2E.
-- [ ] 5.3 Verificar con E2E en 390 px y escritorio (Chromium y Firefox) el recorrido completo: renombrar, unir con vista previa, confirmar, doble clic, volver atrás, sin desborde, 44 px y contraste, y un recorrido solo con el teclado.
+- [x] 5.1 Crear `/spaces/:id/people` con la lista (estado, saldo, quién es la persona que mira), las personas unidas aparte, las herramientas de administración y los formularios de renombrar y unir en dos pasos, y verificar con pruebas de integración de permisos (integrante en solo lectura) y de que el libro ya no repite esas secciones.
+- [x] 5.2 Mostrar «Cambió: unión de personas» en el historial y que un movimiento unido se reabra con importes exactos, y verificar con una prueba de integración y una E2E.
+- [x] 5.3 Verificar con E2E en 390 px y escritorio (Chromium y Firefox) el recorrido completo: renombrar, unir con vista previa, confirmar, doble clic, volver atrás, sin desborde, 44 px y contraste, y un recorrido solo con el teclado.
 
 ## 6. Importación: «Soy yo»
 
-- [ ] 6.1 Implementar `mappingChoices` (opciones, orden y preselección) y el cálculo de avisos de la revisión, y verificar con pruebas unitarias.
-- [ ] 6.2 Usarlas en el paso de correspondencia y en la revisión, y verificar con pruebas de integración de las pantallas y con E2E de «Soy yo», la preselección por nombre, los dos avisos y que no bloquean.
+- [x] 6.1 Implementar `mappingChoices` (opciones, orden y preselección) y el cálculo de avisos de la revisión, y verificar con pruebas unitarias.
+- [x] 6.2 Usarlas en el paso de correspondencia y en la revisión, y verificar con pruebas de integración de las pantallas y con E2E de «Soy yo», la preselección por nombre, los dos avisos y que no bloquean.
 
 ## 7. Cierre
 
-- [ ] 7.1 Actualizar `docs/productos/CUENTAS-CLARAS.md`, `docs/STATUS.md` y el backlog, con las decisiones de esta propuesta y las medidas.
-- [ ] 7.2 Correr todas las suites (unitarias, integración, E2E en Chromium y Firefox y `test:all`) y dejar la evidencia en `docs/STATUS.md`.
+- [x] 7.1 Actualizar `docs/productos/CUENTAS-CLARAS.md`, `docs/STATUS.md` y el backlog, con las decisiones de esta propuesta y las medidas.
+- [x] 7.2 Correr todas las suites (unitarias, integración, E2E en Chromium y Firefox y `test:all`) y dejar la evidencia en `docs/STATUS.md`.
 - [ ] 7.3 Probar en staging (sin tocar producción) la unión de las dos personas duplicadas del caso real y registrar el resultado.

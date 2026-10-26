@@ -148,3 +148,26 @@ describe("unir por la web", () => {
     expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).participants.map(p => p.id)).toContain(t.anaId);
   });
 });
+
+describe("menú y lista de grupos", () => {
+  it("con un solo grupo, «Mis grupos» muestra la lista (con crear e invitaciones) en lugar de entrar al grupo", async () => {
+    const t = await book("pv-mis-grupos");
+    const direct = await request(t.owner, "/cuentas-claras");
+    expect(direct.status).toBe(303);
+    expect(direct.headers.get("location")).toBe(t.base);
+    const all = await request(t.owner, "/cuentas-claras?todos=1");
+    expect(all.status).toBe(200);
+    const html = await all.text();
+    expect(html).toContain("Crear espacio");
+    expect(html).toContain("Invitaciones");
+    expect(html).toContain("pv-mis-grupos");
+  });
+
+  it("el menú del grupo ofrece sus secciones, el perfil propio y «Mis grupos» completo", async () => {
+    const t = await book("pv-menu");
+    const html = await (await request(t.owner, t.base)).text();
+    for (const href of [`${t.base}#saldos`, `${t.base}#movimientos`, `${t.base}/people`, `${t.base}/ledger/categories`, `${t.base}/ledger/classify`, `${t.base}/ledger/import`, "/perfil", "/cuentas-claras?todos=1"]) expect(html).toContain(`href="${href}"`);
+    expect(html).toContain("Ver mi perfil");
+    expect(html).toContain("Cerrar sesión");
+  });
+});
