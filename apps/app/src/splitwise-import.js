@@ -1,3 +1,4 @@
+import { chunkByBytes } from "./chunking.js";
 import { categoryResolver, findCategoryByName, readCategories } from "./categories.js";
 import { IMPORTED_GROUP } from "./category-data.js";
 import { getLedgerAccess, LedgerError } from "./ledger.js";
@@ -406,7 +407,11 @@ export async function loadImportChunk(db, { spaceId, userId, batchId, chunk = IM
         const found = findCategoryByName(categories, importedCategoryName(row.category));
         if (found) categoryByKey.set(key, resolve(found.id)?.id ?? found.id);
       }
-      await db.batch(chunkStatements(db, { ledgerId: ledger.id, userId: batch.actor_user_id, batch, review, rows, categoryByKey, categoryById }));
+      // Cada fila viaja en cinco JSON (movimiento, revisión, pagadores, reparto, origen): se pesa por varias veces su tamaño
+      // para que ninguna sentencia supere el límite de D1, aunque las notas sean largas.
+      for (const part of chunkByBytes(rows, { maxItems: chunk, weigh: row => JSON.stringify(row).length * 3 + 600 })) {
+        await db.batch(chunkStatements(db, { ledgerId: ledger.id, userId: batch.actor_user_id, batch, review, rows: part, categoryByKey, categoryById }));
+      }
       loaded = await loadedCount(db, batch.id);
     }
   }

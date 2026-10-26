@@ -141,6 +141,22 @@ La prueba de equivalencia compara la búsqueda nueva con la anterior sobre miles
 
 Hasta entonces la lectura completa del libro (unas 7.500 filas por vista con 2.485 movimientos) y la búsqueda en JavaScript siguen dentro del presupuesto.
 
+### Mediciones en D1 de staging (2026-10-26)
+
+Con la pila desplegada en staging (Worker `homesuite-app-staging`, migraciones `0004`–`0010` aplicadas con respaldo previo) se probó contra **D1 remoto** con `wrangler d1 execute --remote` y una tabla temporal (ya eliminada). No se pudo recorrer la app autenticada: staging usa Google y no hay sesión local.
+
+| Prueba | Resultado |
+|---|---|
+| `INSERT … SELECT … FROM json_each(<JSON>)` de 100 filas, sentencia de ~49 KB / ~69 KB | 6 ms de SQL |
+| Mismo, sentencia de ~99 KB | 26 ms de SQL |
+| Mismo, sentencia de ~110 KB | **error `SQLITE_TOOBIG` («statement too long»)**: el tope está entre 98,8 y 110 KB |
+| 25 sentencias de 100 filas en una sola ejecución (el tamaño de una importación de 2.485 filas) | 56 ms de SQL, 5.000 filas escritas |
+| `UPDATE … WHERE id IN (SELECT … FROM json_each(<1.000 ids>))` | 5 ms de SQL, 1.000 filas escritas |
+
+**Qué cambió por esto:** las escrituras por tandas ahora se parten también por tamaño (`chunking.js`, tope ~60 KB por sentencia): con notas de 1.000 caracteres, 100 movimientos pasarían el límite. Hay pruebas con notas largas en la importación y en la recategorización.
+
+**Sigue sin medirse:** la latencia y el costo de una importación completa pasando por el Worker (red, CPU por petición, subconsultas por petición), porque requiere sesión autenticada. Las pruebas de la sentencia usaron el texto SQL literal; la app envía el JSON como parámetro enlazado, que debería quedar por debajo (el límite se aplica al texto de la sentencia), pero no está comprobado en remoto.
+
 ## 8. Qué informa esto
 
 | Decisión | Qué dice el caso real | Estado |

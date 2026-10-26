@@ -1,4 +1,5 @@
 import { categoryForEntry, readCategories, resolveCategory } from "./categories.js";
+import { chunkByBytes } from "./chunking.js";
 import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
 import { getLedgerAccess, readLedger } from "./ledger.js";
@@ -86,8 +87,7 @@ async function latestSnapshots(db, ledgerId, ids) {
 // «el movimiento sigue en la revisión que se vio», así que un movimiento corregido a mitad de camino simplemente no se toca.
 async function writeChanges(db, { ledger, userId, batchId, changes, categoryName }) {
   const snapshots = await latestSnapshots(db, ledger.id, changes.map(change => change.entry.id));
-  for (let start = 0; start < changes.length; start += WRITE_CHUNK) {
-    const part = changes.slice(start, start + WRITE_CHUNK).map(change => {
+  const prepared = changes.map(change => {
       const entry = change.entry;
       const previous = snapshots.get(entry.id) ?? { description: entry.description, note: entry.note, occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations };
       const name = categoryName(change.categoryId);
@@ -96,6 +96,8 @@ async function writeChanges(db, { ledger, userId, batchId, changes, categoryName
         snapshot: { ...previous, categoryId: change.categoryId, categoryName: name, status: "active", recategorizationBatch: batchId },
       };
     });
+  // Tandas de hasta WRITE_CHUNK movimientos y de tamaño acotado (una sentencia de D1 no admite ~100 KB).
+  for (const part of chunkByBytes(prepared, { maxItems: WRITE_CHUNK })) {
     // Solo las revisiones llevan la instantánea completa; el UPDATE y los elementos del lote reciben únicamente lo que usan.
     const json = JSON.stringify(part);
     const slim = JSON.stringify(part.map(({ id, next, previous }) => ({ id, next, previous })));

@@ -267,3 +267,29 @@ describe("avisos de la lista", () => {
     expect(createCsrfToken).toBeDefined();
   });
 });
+
+describe("sentencias acotadas: notas largas no rompen las tandas", () => {
+  it("importar 120 filas con notas de 1.000 caracteres carga todo una sola vez", async () => {
+    const t = await team("rv-notas-largas");
+    const note = "n".repeat(1000);
+    const rows = Array.from({ length: 120 }, (_, index) => `2026-02-01,Fila ${index},Otros,10.00,COP,5.00,-5.00,${note}`);
+    const csv = `Fecha,Descripción,Categoría,Coste,Moneda,Ana,Beto,Notas\n${rows.join("\n")}\n`;
+    const preview = await createImportPreview(env.DB, { ...as(t), fileName: "n.csv", csvText: csv });
+    await reviewImportPreview(env.DB, { ...as(t), previewId: preview.previewId, mapping: [t.ownerId, t.memberId] });
+    const batchId = await confirmImportPreview(env.DB, { ...as(t), previewId: preview.previewId, acknowledgeDifference: true });
+    for (let round = 0; round < 5; round += 1) if ((await loadImportChunk(env.DB, { ...as(t), batchId })).done) break;
+    const entries = (await view(t)).entries;
+    expect(entries).toHaveLength(120);
+    expect(entries.every(entry => entry.note.length === 1000)).toBe(true);
+    expect(new Set(entries.map(entry => entry.sourceRowNumber)).size).toBe(120);
+  });
+
+  it("recategorizar 150 movimientos con notas largas cambia todos exactamente una vez", async () => {
+    const t = await team("rv-notas-recat");
+    await seedEntries(env.DB, { ledgerId: t.ledger.id, userId: t.owner.id, payerId: t.ownerId, otherId: t.memberId, count: 150, note: "m".repeat(1000) });
+    const ids = (await view(t)).entries.map(entry => entry.id);
+    const result = await applyRecategorization(env.DB, { ...as(t), criteria: { ids }, categoryId: find(t, "Taxi").id, key: key() });
+    expect(result).toMatchObject({ planned: 150, changed: 150, status: "applied" });
+    expect(await count("SELECT COUNT(*) AS n FROM entry_revisions WHERE ledger_id = ? AND revision = 2", t.ledger.id)).toBe(150);
+  });
+});
