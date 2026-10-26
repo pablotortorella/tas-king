@@ -65,6 +65,10 @@ Un script de una sola vez (en el directorio temporal, no se commitea) aplica ree
 
 `avatar()` de `ui-parts.js` aprende a recibir emoji y color (`avatar-<token>`) y se usa en el listado, el encabezado y la página del grupo. Contraste: se reutiliza `inkFor` que ya elige tinta clara u oscura por color.
 
+### D6b. Extracto de la descripción
+
+En el listado de grupos la descripción se muestra como extracto de hasta 150 caracteres (decisión de Pablo), cortado en el último límite de palabra y con «…» cuando se acorta; en el encabezado del grupo se muestra completa. El máximo al guardarla sigue siendo 500.
+
 ### D7. «Administrar grupo» como pantalla propia
 
 `GET/POST /groups/:id/settings` para la persona titular, con tres secciones en orden: identidad (nombre, descripción, emoji+color), personas (agregar participante sin cuenta e invitar con vínculo opcional; los formularios que hoy viven en Personas y que mantienen sus rutas, renombradas a `/groups/:id/…`), y archivar. La pantalla de Personas queda de solo lectura más renombrar y unir. Acceso: ruedita en el encabezado del grupo (solo titular) e ítem del menú (solo titular). Un integrante que abre la URL recibe 403.
@@ -99,7 +103,3 @@ Las rutas `/spaces`, `/api/spaces`, `/local/spaces` y `/demo/crear-espacio|espac
 3. Documentación y glosario; actualizar `personas-del-grupo` al vocabulario nuevo.
 4. Staging: backup, mostrar y confirmar el script, recrear, desplegar, recorrer en vivo con Pablo.
 5. Reversión: antes de tocar staging, volver atrás es descartar la rama. Después, la base de staging se vuelve a crear desde el backup o desde las migraciones previas del commit anterior (los datos de staging se consideran descartables).
-
-## Open Questions
-
-- Texto exacto del extracto de la descripción en el listado (largo en caracteres); se define al construir la pantalla y no cambia specs ni tareas.

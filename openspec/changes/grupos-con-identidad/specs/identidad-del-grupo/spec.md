@@ -78,12 +78,17 @@ Dentro de un grupo, la persona titular SHALL ver una ruedita de configuración e
 
 ### Requirement: El listado de grupos muestra la identidad de cada grupo
 
-`/groups` SHALL listar todos los grupos de la persona con su avatar (emoji y color), nombre, un extracto de la descripción y su rol (titular o integrante), con enlace a cada grupo, acciones para crear un grupo y ver invitaciones, y sin importar cuántos grupos tenga. La página del grupo SHALL mostrar el avatar, el nombre y la descripción en el encabezado.
+`/groups` SHALL listar todos los grupos de la persona con su avatar (emoji y color), nombre, un extracto de la descripción de hasta 150 caracteres (acortado con «…») y su rol (titular o integrante), con enlace a cada grupo, acciones para crear un grupo y ver invitaciones, y sin importar cuántos grupos tenga. La página del grupo SHALL mostrar el avatar, el nombre y la descripción en el encabezado.
 
 #### Scenario: Varios grupos distinguibles
 
 - **WHEN** una persona con dos grupos de distinta identidad abre `/groups`
 - **THEN** cada fila muestra su emoji, su color, su nombre y el extracto de su descripción
+
+#### Scenario: Descripción larga en el listado
+
+- **WHEN** un grupo tiene una descripción de 400 caracteres
+- **THEN** el listado muestra como máximo 150 caracteres terminados en «…» y la página del grupo la muestra completa
 
 #### Scenario: Un solo grupo también tiene lista
 

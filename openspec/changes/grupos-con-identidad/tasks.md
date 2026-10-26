@@ -22,7 +22,7 @@
 - [ ] 4.1 Agregar `description`, `avatar_emoji` y `avatar_color` a `groups` (en `0001`) con la restricción de 500 caracteres; verificar con una prueba de integración que rechaza 501 caracteres y acepta nulos
 - [ ] 4.2 Implementar `updateGroup` en `groups.js` (titular, nombre, descripción, emoji con `normalizeEmoji`, color de `AVATAR_COLORS`, evento `group_updated` en un `batch`) reemplazando `renameGroup`; verificar con pruebas de integración de permisos, emoji inválido, nombre vacío, descripción larga y auditoría
 - [ ] 4.3 Hacer que `avatar()` acepte emoji y color con el contraste de `inkFor`, y usarlo en listado, encabezado y página del grupo; verificar con pruebas unitarias del marcado (emoji, inicial, color por defecto estable y escape de HTML)
-- [ ] 4.4 Mostrar descripción como texto plano en el encabezado de la página del grupo y un extracto en el listado; verificar con una prueba que `<script>` se ve literal
+- [ ] 4.4 Mostrar descripción como texto plano en el encabezado de la página del grupo y un extracto de hasta 150 caracteres en el listado; verificar con pruebas que `<script>` se ve literal y que 400 caracteres se cortan a 150 con «…»
 
 ## 5. Administrar grupo
 
