@@ -3,6 +3,9 @@
   "name": "homesuite-app",
   "main": "./src/index.js",
   "compatibility_date": "2026-06-30",
+  // split.js y text.js se sirven al navegador con el texto de sus funciones (Function.prototype.toString): minificar renombraría
+  // los exports y rompería los import del navegador. Una prueba (served-modules-config.test.js) exige que siga apagado.
+  "minify": false,
   "d1_databases": [{
     "binding": "DB",
     "database_name": "homesuite-app-local",
