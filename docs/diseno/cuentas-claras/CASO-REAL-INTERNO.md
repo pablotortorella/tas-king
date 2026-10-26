@@ -141,6 +141,20 @@ La prueba de equivalencia compara la búsqueda nueva con la anterior sobre miles
 
 Hasta entonces la lectura completa del libro (unas 7.500 filas por vista con 2.485 movimientos) y la búsqueda en JavaScript siguen dentro del presupuesto.
 
+### Medición de unir dos personas con 2.500 movimientos (2026-10-26)
+
+Mismo entorno (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- people`. Una persona participa de los 2.500 movimientos del libro y se une a otra.
+
+| Dato | Valor |
+|---|---|
+| Escritura | 25 tandas de 100 movimientos; 7 sentencias por tanda (revisiones, suma y borrado de partes de efectivo y de asignaciones, subida de revisión, elementos de la unión) y 8 de cierre |
+| Sentencias en total | 190, en 27 `batch` |
+| Vista previa | 35 ms |
+| Aplicar | 189 ms |
+| Leer el libro después | 35 ms |
+
+Es una medición en local: los límites de D1 remoto (tamaño de la sentencia, tiempo por petición) se verifican en staging antes de cerrar el cambio `personas-del-grupo` (tarea 7.3).
+
 ### Mediciones en D1 de staging (2026-10-26)
 
 Con la pila desplegada en staging (Worker `homesuite-app-staging`, migraciones `0004`–`0010` aplicadas con respaldo previo) se probó contra **D1 remoto** con `wrangler d1 execute --remote` y una tabla temporal (ya eliminada). No se pudo recorrer la app autenticada: staging usa Google y no hay sesión local.

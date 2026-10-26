@@ -5,6 +5,7 @@ import { categoryForEntry, categoryResolver, readCategories } from "./categories
 import { recordLedgerChange } from "./ledger-events.js";
 import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
+import { aliasResolver, relabelComponents } from "./person-merge.js";
 
 export { LedgerError };
 
@@ -20,14 +21,16 @@ export async function getLedgerAccess(db, spaceId, userId) {
   return row;
 }
 
+// Dos nombres son «el mismo» sin distinguir mayúsculas, tildes ni espacios repetidos.
+export const nameKey = value => value.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
+
 export async function addParticipant(db, { spaceId, userId, name }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);
   if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede agregar participantes.", 403);
   if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
   const displayName = typeof name === "string" ? name.trim() : "";
   if (!displayName || displayName.length > 120) throw new LedgerError("Ingresá un nombre de hasta 120 caracteres.");
-  const sameName = value => value.normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/\s+/gu, " ").trim();
-  if ((await participantsFor(db, ledger.id)).some(person => person.active && sameName(person.displayName) === sameName(displayName))) {
+  if ((await participantsFor(db, ledger.id)).some(person => person.active && nameKey(person.displayName) === nameKey(displayName))) {
     throw new LedgerError("Ya hay una persona con ese nombre en el grupo. Usá otro para distinguirlas.", 409);
   }
   const id = createPlatformId("participant");
@@ -38,8 +41,15 @@ export async function addParticipant(db, { spaceId, userId, name }) {
   return { id, displayName };
 }
 
-async function participantsFor(db, ledgerId) {
-  const rows = await db.prepare("SELECT id, display_name AS displayName, linked_user_id AS linkedUserId, active FROM ledger_participants WHERE ledger_id = ? AND pending_import_batch_id IS NULL ORDER BY created_at, id").bind(ledgerId).all();
+// Las personas vigentes del libro. Las que se unieron a otra (merged_into_id) no se ofrecen ni se validan: sus movimientos
+// pasaron a la persona destinataria.
+export async function participantsFor(db, ledgerId) {
+  const rows = await db.prepare("SELECT id, display_name AS displayName, linked_user_id AS linkedUserId, active FROM ledger_participants WHERE ledger_id = ? AND pending_import_batch_id IS NULL AND merged_into_id IS NULL ORDER BY created_at, id").bind(ledgerId).all();
+  return rows.results;
+}
+
+async function mergedParticipantsFor(db, ledgerId) {
+  const rows = await db.prepare("SELECT id, display_name AS displayName, linked_user_id AS linkedUserId, merged_into_id AS mergedIntoId FROM ledger_participants WHERE ledger_id = ? AND merged_into_id IS NOT NULL ORDER BY created_at, id").bind(ledgerId).all();
   return rows.results;
 }
 
@@ -201,7 +211,7 @@ export const VISIBLE_ENTRY_SQL = "(e.import_batch_id IS NULL OR EXISTS (SELECT 1
 
 export async function readLedger(db, { spaceId, userId }) {
   const ledger = await getLedgerAccess(db, spaceId, userId);
-  const participants = await participantsFor(db, ledger.id);
+  const [participants, mergedParticipants] = await Promise.all([participantsFor(db, ledger.id), mergedParticipantsFor(db, ledger.id)]);
   const visible = `SELECT e.id FROM ledger_entries e WHERE e.ledger_id = ? AND ${VISIBLE_ENTRY_SQL}`;
   const [categories, entryRows, cashRows, allocationRows] = await Promise.all([
     readCategories(db, ledger.id),
@@ -228,14 +238,23 @@ export async function readLedger(db, { spaceId, userId }) {
   };
   const participantIds = participants.map(p => p.id);
   const resolveCategory = categoryResolver(categories);
+  // Lo que todavía apunta a una persona unida (movimientos anulados, o importados cuya carga se retomó después de la unión)
+  // se lee como si apuntara a la persona vigente. Una transferencia anulada entre las dos personas queda de una a sí misma.
+  const resolve = mergedParticipants.length ? aliasResolver(mergedParticipants) : null;
   const entries = entryRows.results.map(row => {
-    const cashParties = cashByEntry.get(row.id) ?? [];
-    const allocations = sharesByEntry.get(row.id) ?? [];
-    const validated = validateEntryDraft({ type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, cashParties, allocations }, participantIds);
+    const { cashParties, allocations } = resolve
+      ? relabelComponents({ cashParties: cashByEntry.get(row.id) ?? [], allocations: sharesByEntry.get(row.id) ?? [] }, resolve)
+      : { cashParties: cashByEntry.get(row.id) ?? [], allocations: sharesByEntry.get(row.id) ?? [] };
+    let validated;
+    try { validated = validateEntryDraft({ type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, cashParties, allocations }, participantIds); }
+    catch (error) {
+      if (!resolve || row.status === "active") throw error;
+      validated = { effects: [] };
+    }
     if (row.status === "active") for (const effect of validated.effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
     return { categoryId: row.category_id, categoryInfo: categoryInfoFor(resolveCategory, row.category_id), importBatchId: row.import_batch_id, sourceRowNumber: row.source_row_number, inferred: row.inferred === 1, id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
   });
-  return { ledger, participants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
+  return { ledger, participants, mergedParticipants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }
 
 export async function exportLedger(db, { spaceId, userId }) {
@@ -244,5 +263,5 @@ export async function exportLedger(db, { spaceId, userId }) {
   const events = await db.prepare("SELECT * FROM ledger_events WHERE ledger_id = ? ORDER BY created_at, id").bind(data.ledger.id).all();
   const imports = await db.prepare("SELECT id, source_hash, file_name, imported_count, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, committed_at FROM splitwise_import_batches WHERE ledger_id = ? AND status = 'committed'").bind(data.ledger.id).all();
   const sourceRows = await db.prepare("SELECT s.entry_id, s.batch_id, s.source_row_number, s.raw_json FROM import_source_rows s JOIN splitwise_import_batches b ON b.id = s.batch_id WHERE s.ledger_id = ? AND b.status = 'committed' ORDER BY s.batch_id, s.source_row_number").bind(data.ledger.id).all();
-  return { schemaVersion: 3, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: data.participants, categories: data.categories, entries: data.entries, revisions: revisions.results, events: events.results, imports: imports.results, importSourceRows: sourceRows.results };
+  return { schemaVersion: 3, exportedAt: new Date().toISOString(), ledger: data.ledger, participants: [...data.participants, ...data.mergedParticipants], categories: data.categories, entries: data.entries, revisions: revisions.results, events: events.results, imports: imports.results, importSourceRows: sourceRows.results };
 }

@@ -3,6 +3,7 @@ import { chunkByBytes } from "./chunking.js";
 import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
 import { getLedgerAccess, readLedger } from "./ledger.js";
+import { latestSnapshots, WRITE_CHUNK } from "./revisions.js";
 import { listResults } from "./search.js";
 import { suggestCategory } from "./suggest.js";
 import { createPlatformId } from "./platform.js";
@@ -13,7 +14,6 @@ export { isPending };
 // Máximo de movimientos por operación y tamaño de cada escritura. Se fijaron midiendo con D1 local (ver
 // CASO-REAL-INTERNO.md); los límites de D1 remoto siguen sin verificarse.
 export const MAX_BATCH = 1000;
-export const WRITE_CHUNK = 100;
 const KEY_PATTERN = /^[A-Za-z0-9_-]{16,120}$/u;
 const SAMPLE_SIZE = 8;
 
@@ -71,16 +71,6 @@ export async function previewRecategorization(db, { spaceId, userId, criteria, c
     category: { id: category.id, name: category.name },
     ledgerRevision: data.ledger.revision,
   };
-}
-
-async function latestSnapshots(db, ledgerId, ids) {
-  const found = new Map();
-  for (let start = 0; start < ids.length; start += WRITE_CHUNK) {
-    const part = ids.slice(start, start + WRITE_CHUNK);
-    const rows = (await db.prepare("SELECT r.entry_id, r.snapshot_json FROM entry_revisions r JOIN ledger_entries e ON e.ledger_id = r.ledger_id AND e.id = r.entry_id AND e.current_revision = r.revision WHERE r.ledger_id = ? AND r.entry_id IN (SELECT value FROM json_each(?))").bind(ledgerId, JSON.stringify(part)).all()).results;
-    for (const row of rows) found.set(row.entry_id, JSON.parse(row.snapshot_json));
-  }
-  return found;
 }
 
 // Escribe una revisión por movimiento y un solo UPDATE por tanda. Las tres sentencias de cada tanda comparten la guarda

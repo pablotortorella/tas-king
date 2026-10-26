@@ -5,20 +5,20 @@
 
 ## 2. Modelo de datos
 
-- [ ] 2.1 Crear `0011_person_merge.sql` con `ledger_participants.merged_into_id` y `person_merges`, y verificar con una prueba de integración que se aplica sobre todas las migraciones y que no se puede registrar dos veces la unión de la misma persona.
-- [ ] 2.2 Excluir a las personas unidas de `participantsFor` y verificar con una prueba de integración que `saveEntry` rechaza una persona unida y que la lectura del libro no la lista.
+- [x] 2.1 Crear `0011_person_merge.sql` con `ledger_participants.merged_into_id` y `person_merges`, y verificar con una prueba de integración que se aplica sobre todas las migraciones y que no se puede registrar dos veces la unión de la misma persona.
+- [x] 2.2 Excluir a las personas unidas de `participantsFor` y verificar con una prueba de integración que `saveEntry` rechaza una persona unida y que la lectura del libro no la lista.
 
 ## 3. Renombrar
 
-- [ ] 3.1 Implementar renombrar con unicidad entre vigentes (sin distinguir mayúsculas ni tildes), evento del libro, permiso de titular y rechazo en grupo archivado, y verificar con pruebas de integración de los escenarios del spec.
+- [x] 3.1 Implementar renombrar con unicidad entre vigentes (sin distinguir mayúsculas ni tildes), evento del libro, permiso de titular y rechazo en grupo archivado, y verificar con pruebas de integración de los escenarios del spec.
 
 ## 4. Unir personas
 
-- [ ] 4.1 Implementar las reglas puras de la unión (suma por persona de partes y asignaciones, descarte de `split`, detección de transferencias entre ambas) y verificar con pruebas unitarias, incluidos pagadores y partes de ambas personas en el mismo movimiento.
-- [ ] 4.2 Implementar la vista previa (movimientos que cambian, transferencias que se anulan, saldos antes y después, cuenta e invitaciones) sin escribir, y verificar con pruebas de integración que no modifica nada y que rechaza personas iguales, ya unidas, no vigentes, de otro grupo, dos cuentas y libro archivado.
-- [ ] 4.3 Implementar la aplicación por tandas con revisión por movimiento (`personMerge`), transferencias anuladas, traslado de la cuenta, resolución de invitaciones y cierre con evento y revisión del libro, y verificar con pruebas de integración de los saldos (suma exacta, total del grupo sin cambio), de la auditoría y de la cuenta y las invitaciones.
-- [ ] 4.4 Hacerla idempotente y reanudable, y verificar con pruebas de integración de doble confirmación en simultáneo, de un corte a mitad (libro legible en cada paso y completado al repetir), de un movimiento corregido a mitad de camino y de una clave reutilizada con otras personas.
-- [ ] 4.5 Medir con D1 local la unión de una persona con 2.500 movimientos (tiempo, sentencias, tamaño) y dejar los números en `docs/diseno/cuentas-claras/CASO-REAL-INTERNO.md` sin datos personales.
+- [x] 4.1 Implementar las reglas puras de la unión (suma por persona de partes y asignaciones, descarte de `split`, detección de transferencias entre ambas) y verificar con pruebas unitarias, incluidos pagadores y partes de ambas personas en el mismo movimiento.
+- [x] 4.2 Implementar la vista previa (movimientos que cambian, transferencias que se anulan, saldos antes y después, cuenta e invitaciones) sin escribir, y verificar con pruebas de integración que no modifica nada y que rechaza personas iguales, ya unidas, no vigentes, de otro grupo, dos cuentas y libro archivado.
+- [x] 4.3 Implementar la aplicación por tandas con revisión por movimiento (`personMerge`), transferencias anuladas, traslado de la cuenta, resolución de invitaciones y cierre con evento y revisión del libro, y verificar con pruebas de integración de los saldos (suma exacta, total del grupo sin cambio), de la auditoría y de la cuenta y las invitaciones.
+- [x] 4.4 Hacerla idempotente y reanudable, y verificar con pruebas de integración de doble confirmación en simultáneo, de un corte a mitad (libro legible en cada paso y completado al repetir), de un movimiento corregido a mitad de camino y de una clave reutilizada con otras personas.
+- [x] 4.5 Medir con D1 local la unión de una persona con 2.500 movimientos (tiempo, sentencias, tamaño) y dejar los números en `docs/diseno/cuentas-claras/CASO-REAL-INTERNO.md` sin datos personales.
 
 ## 5. Pantalla de personas
 
