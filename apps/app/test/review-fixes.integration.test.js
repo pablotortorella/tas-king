@@ -8,7 +8,7 @@ import { ledgerCsv, parseEntryForm, renderEntryForm } from "../src/ledger-ui.js"
 import { applyRecategorization, classifyOne, isPending, selectEntries, undoRecategorization } from "../src/recategorize.js";
 import { confirmImportPreview, createImportPreview, loadImportChunk, reviewImportPreview } from "../src/splitwise-import.js";
 import { createSession } from "../src/sessions.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { seedEntries } from "./fixtures/seed-entries.js";
 import { syntheticSplitwiseCsv } from "./fixtures/synthetic-splitwise.js";
 
@@ -17,16 +17,16 @@ const SECRET = "f".repeat(32);
 async function team(name) {
   const owner = await ensureLocalUser(env.DB, `${name}-owner@example.test`);
   const member = await ensureLocalUser(env.DB, `${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.id, email: member.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.id, email: member.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-  const carla = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Carla" });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+  const carla = await addParticipant(env.DB, { groupId: group.id, userId: owner.id, name: "Carla" });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.id).id;
-  return { owner, member, space, ledger: data.ledger, ownerId, memberId, carlaId: carla.id, categories: data.categories };
+  return { owner, member, group, ledger: data.ledger, ownerId, memberId, carlaId: carla.id, categories: data.categories };
 }
-const as = (t, user = t.owner) => ({ spaceId: t.space.id, userId: user.id });
+const as = (t, user = t.owner) => ({ groupId: t.group.id, userId: user.id });
 const find = (t, name) => t.categories.find(category => category.name === name);
 const key = () => crypto.randomUUID();
 const add = (t, description, extra = {}) => saveEntry(env.DB, { ...as(t), idempotencyKey: key(), input: {
@@ -48,7 +48,7 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const t = await team("rv-pagadores");
     const saved = await multiPayer(t);
     const data = await view(t);
-    const html = renderEntryForm(data, { spaceId: t.space.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(entry => entry.id === saved.id) });
+    const html = renderEntryForm(data, { groupId: t.group.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(entry => entry.id === saved.id) });
     expect(html).toMatch(/<input type="radio" name="payer" value="__keep__" checked required>/u);
     expect(html).toContain("Mantener los actuales");
     expect(html).toContain(`name="payerAmount_${t.ownerId}" value="9000"`);
@@ -60,7 +60,7 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const saved = await multiPayer(t);
     const before = await view(t);
     const entry = before.entries.find(row => row.id === saved.id);
-    const html = renderEntryForm(before, { spaceId: t.space.slug, csrf: "", userId: t.owner.id, entry });
+    const html = renderEntryForm(before, { groupId: t.group.slug, csrf: "", userId: t.owner.id, entry });
     const form = formOf(html);
     form.set("description", "Pagaron dos (corregido)");
     const input = parseEntryForm(form);
@@ -76,7 +76,7 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const t = await team("rv-pagadores-importe");
     const saved = await multiPayer(t);
     const data = await view(t);
-    const form = formOf(renderEntryForm(data, { spaceId: t.space.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) }));
+    const form = formOf(renderEntryForm(data, { groupId: t.group.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) }));
     form.set("amount", "200,00");
     expect(() => parseEntryForm(form)).toThrow(/varios pagadores/u);
   });
@@ -85,7 +85,7 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const t = await team("rv-pagadores-solo");
     const saved = await multiPayer(t);
     const data = await view(t);
-    const form = formOf(renderEntryForm(data, { spaceId: t.space.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) }));
+    const form = formOf(renderEntryForm(data, { groupId: t.group.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) }));
     form.set("payer", t.memberId);
     expect(parseEntryForm(form).cashParties).toEqual([{ participantId: t.memberId, direction: "out", amountMinor: 15000 }]);
     form.set("payer", "__keep__");
@@ -97,7 +97,7 @@ describe("varios pagadores: corregir sin cambiar los saldos", () => {
     const t = await team("rv-un-pagador");
     const saved = await add(t, "Uno");
     const data = await view(t);
-    const html = renderEntryForm(data, { spaceId: t.space.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) });
+    const html = renderEntryForm(data, { groupId: t.group.slug, csrf: "", userId: t.owner.id, entry: data.entries.find(row => row.id === saved.id) });
     expect(html).not.toContain("__keep__");
     expect(html).not.toContain("payerAmount_");
   });
@@ -256,11 +256,11 @@ describe("avisos de la lista", () => {
   it("un valor heredado de Object.prototype en ?aviso= no se muestra como título", async () => {
     const owner = await ensureLocalUser(env.DB, "rv-aviso@example.test");
     const session = await createSession(env.DB, { userId: owner.id, secret: SECRET });
-    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "rv-aviso" });
-    const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    const group = await createGroupForUser(env.DB, { userId: owner.id, name: "rv-aviso" });
+    const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
     const ownerId = data.participants[0].id;
-    const saved = await saveEntry(env.DB, { spaceId: space.id, userId: owner.id, idempotencyKey: key(), input: { type: "expense", currency: "COP", totalMinor: 100, description: "Uno", note: "", occurredAt: "2026-01-01", cashParties: [{ participantId: ownerId, direction: "out", amountMinor: 100 }], allocations: [{ participantId: ownerId, amountMinor: 100 }] } });
-    const response = await app.request(`https://app.test/spaces/${space.slug}?aviso=constructor&nuevo=${saved.id}`, { headers: { Cookie: `__Host-homesuite_session=${encodeURIComponent(session.token)}` } }, { DB: env.DB, SESSION_SECRET: SECRET });
+    const saved = await saveEntry(env.DB, { groupId: group.id, userId: owner.id, idempotencyKey: key(), input: { type: "expense", currency: "COP", totalMinor: 100, description: "Uno", note: "", occurredAt: "2026-01-01", cashParties: [{ participantId: ownerId, direction: "out", amountMinor: 100 }], allocations: [{ participantId: ownerId, amountMinor: 100 }] } });
+    const response = await app.request(`https://app.test/groups/${group.slug}?aviso=constructor&nuevo=${saved.id}`, { headers: { Cookie: `__Host-homesuite_session=${encodeURIComponent(session.token)}` } }, { DB: env.DB, SESSION_SECRET: SECRET });
     const html = await response.text();
     expect(html).toContain("<h3>Recién agregado</h3>");
     expect(html).not.toContain("native code");

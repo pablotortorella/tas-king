@@ -12,7 +12,7 @@ async function seededBook(page) {
   const suffix = unique();
   await page.goto(`/api/local/session?as=diseno-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa diseño ${suffix}`);
-  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.getByRole("button", { name: "Crear grupo" }).click();
   const book = new URL(page.url()).pathname;
   await addPerson(page, book, "Beto");
   await page.getByRole("link", { name: "Gasto", exact: true }).click();
@@ -21,7 +21,7 @@ async function seededBook(page) {
   await page.getByRole("button", { name: "Guardar" }).click();
   await openRecent(page, "Supermercado");
   const detail = new URL(page.url()).pathname;
-  return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/spaces/new", "/cuentas-claras", "/invitations"] };
+  return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/groups/new", "/cuentas-claras", "/invitations"] };
 }
 
 test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ page }) => {
@@ -174,7 +174,7 @@ test("se explica el saldo y se registra una sugerencia hasta quedar a mano", asy
   await expect(page.getByRole("heading", { name: "Por qué te deben" })).toBeVisible();
   await expect(page.getByText("Coincide con el saldo del grupo")).toBeVisible();
   await expect(page.getByText("acumulado COP 50,00")).toBeVisible();
-  await page.getByRole("link", { name: "← Volver al libro" }).click();
+  await page.getByRole("link", { name: "← Volver al grupo" }).click();
   await expect(page.getByText("Para quedar a mano")).toBeVisible();
   await page.getByRole("link", { name: /^Registrar:/u }).click();
   await expect(page.getByRole("heading", { name: "Agregar transferencia" })).toBeVisible();
@@ -197,7 +197,7 @@ test("archivar deja el grupo de sólo lectura y restaurar lo reabre", async ({ p
   await expect(page.getByRole("link", { name: "Agregar movimiento" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Gasto", exact: true })).toHaveCount(0);
   await page.goto(`${book}/ledger/new`);
-  await expect(page.getByRole("alert")).toContainText("El libro está archivado.");
+  await expect(page.getByRole("alert")).toContainText("El grupo está archivado.");
   await page.goto(`${book}/people`);
   await page.getByRole("button", { name: "Restaurar grupo" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Grupo restaurado." })).toBeVisible();

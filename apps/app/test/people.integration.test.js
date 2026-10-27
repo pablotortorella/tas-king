@@ -3,22 +3,22 @@ import { describe, expect, it } from "vitest";
 import { addParticipant, exportLedger, readLedger, saveEntry, voidEntry } from "../src/ledger.js";
 import { setLedgerArchived } from "../src/ledger-admin.js";
 import { applyMerge, previewMerge, readMerges, renamePerson } from "../src/people.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { seedEntries } from "./fixtures/seed-entries.js";
 
 async function team(name) {
   const owner = await ensureLocalUser(env.DB, `${name}-owner@example.test`);
   const member = await ensureLocalUser(env.DB, `${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.id, email: member.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.id, email: member.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-  const ana = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Ana" });
-  const beto = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Beto" });
-  const caro = await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Caro" });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
-  return { owner, member, space, ledger: data.ledger, ownerId: data.participants.find(p => p.linkedUserId === owner.id).id, memberId: data.participants.find(p => p.linkedUserId === member.id).id, ana: ana.id, beto: beto.id, caro: caro.id };
+  const ana = await addParticipant(env.DB, { groupId: group.id, userId: owner.id, name: "Ana" });
+  const beto = await addParticipant(env.DB, { groupId: group.id, userId: owner.id, name: "Beto" });
+  const caro = await addParticipant(env.DB, { groupId: group.id, userId: owner.id, name: "Caro" });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
+  return { owner, member, group, ledger: data.ledger, ownerId: data.participants.find(p => p.linkedUserId === owner.id).id, memberId: data.participants.find(p => p.linkedUserId === member.id).id, ana: ana.id, beto: beto.id, caro: caro.id };
 }
-const as = (t, user = t.owner) => ({ spaceId: t.space.id, userId: user.id });
+const as = (t, user = t.owner) => ({ groupId: t.group.id, userId: user.id });
 const view = (t, user) => readLedger(env.DB, as(t, user));
 const key = () => crypto.randomUUID();
 const count = async (sql, ...binds) => (await env.DB.prepare(sql).bind(...binds).first()).n;
@@ -266,7 +266,7 @@ describe("cuentas e invitaciones", () => {
 
   it("una invitación pendiente a la unida pasa a la destinataria si esta no tiene cuenta ni invitación", async () => {
     const t = await team("pm-invitacion-pasa");
-    const invitation = await inviteToSpace(env.DB, { spaceId: t.space.id, inviterUserId: t.owner.id, email: "ana-invitada@example.test", targetParticipantId: t.ana });
+    const invitation = await inviteToGroup(env.DB, { groupId: t.group.id, inviterUserId: t.owner.id, email: "ana-invitada@example.test", targetParticipantId: t.ana });
     const preview = await previewMerge(env.DB, { ...as(t), sourceId: t.ana, targetId: t.beto });
     expect(preview.invitation).toEqual({ moves: "ana-invitada@example.test", canceled: [] });
     await merge(t, t.ana, t.beto);
@@ -275,8 +275,8 @@ describe("cuentas e invitaciones", () => {
 
   it("si la destinataria ya tiene una invitación pendiente, la de la unida se cancela", async () => {
     const t = await team("pm-invitacion-cancela");
-    const sourceInvite = await inviteToSpace(env.DB, { spaceId: t.space.id, inviterUserId: t.owner.id, email: "uno@example.test", targetParticipantId: t.ana });
-    const targetInvite = await inviteToSpace(env.DB, { spaceId: t.space.id, inviterUserId: t.owner.id, email: "dos@example.test", targetParticipantId: t.beto });
+    const sourceInvite = await inviteToGroup(env.DB, { groupId: t.group.id, inviterUserId: t.owner.id, email: "uno@example.test", targetParticipantId: t.ana });
+    const targetInvite = await inviteToGroup(env.DB, { groupId: t.group.id, inviterUserId: t.owner.id, email: "dos@example.test", targetParticipantId: t.beto });
     const preview = await previewMerge(env.DB, { ...as(t), sourceId: t.ana, targetId: t.beto });
     expect(preview.invitation).toEqual({ moves: null, canceled: ["uno@example.test"] });
     await merge(t, t.ana, t.beto);
@@ -286,7 +286,7 @@ describe("cuentas e invitaciones", () => {
 
   it("si la cuenta pasa a la destinataria, su invitación pendiente deja de tener sentido y se cancela", async () => {
     const t = await team("pm-invitacion-cuenta");
-    const targetInvite = await inviteToSpace(env.DB, { spaceId: t.space.id, inviterUserId: t.owner.id, email: "tres@example.test", targetParticipantId: t.beto });
+    const targetInvite = await inviteToGroup(env.DB, { groupId: t.group.id, inviterUserId: t.owner.id, email: "tres@example.test", targetParticipantId: t.beto });
     const preview = await previewMerge(env.DB, { ...as(t), sourceId: t.memberId, targetId: t.beto });
     expect(preview.invitation.canceled).toEqual(["tres@example.test"]);
     await merge(t, t.memberId, t.beto);
@@ -322,7 +322,7 @@ describe("repeticiones, cortes y cambios simultáneos", () => {
     const t = await team("pm-libro-cambio");
     const preview = await previewMerge(env.DB, { ...as(t), sourceId: t.ana, targetId: t.beto });
     await expense(t, { paid: [cash(t.ana, 10000)], shared: [share(t.ana, 10000)] });
-    await expect(merge(t, t.ana, t.beto, { expectedRevision: preview.ledgerRevision })).rejects.toThrow(/El libro cambió/u);
+    await expect(merge(t, t.ana, t.beto, { expectedRevision: preview.ledgerRevision })).rejects.toThrow(/El grupo cambió/u);
     expect(await count("SELECT COUNT(*) AS n FROM person_merges WHERE ledger_id = ?", t.ledger.id)).toBe(0);
     expect((await view(t)).participants.map(p => p.id)).toContain(t.ana);
   });

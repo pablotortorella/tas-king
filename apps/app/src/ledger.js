@@ -10,22 +10,22 @@ import { aliasResolver, relabelComponents } from "./person-merge.js";
 
 export { LedgerError, nameKey };
 
-export async function getLedgerAccess(db, spaceId, userId) {
+export async function getLedgerAccess(db, groupId, userId) {
   const row = await db.prepare(`
-    SELECT l.id, l.space_id, l.default_currency, l.archived_at, l.revision, m.role
+    SELECT l.id, l.group_id, l.default_currency, l.archived_at, l.revision, m.role
     FROM expense_ledgers l
-    JOIN spaces s ON s.id = l.space_id
-    JOIN memberships m ON m.space_id = l.space_id
+    JOIN groups s ON s.id = l.group_id
+    JOIN memberships m ON m.group_id = l.group_id
     WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?
-  `).bind(spaceId, spaceId, userId).first();
-  if (!row) throw new LedgerError("No tenés acceso a este libro.", 404);
+  `).bind(groupId, groupId, userId).first();
+  if (!row) throw new LedgerError("No tenés acceso a este grupo.", 404);
   return row;
 }
 
-export async function addParticipant(db, { spaceId, userId, name }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function addParticipant(db, { groupId, userId, name }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede agregar participantes.", 403);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const displayName = typeof name === "string" ? name.trim() : "";
   if (!displayName || displayName.length > 120) throw new LedgerError("Ingresá un nombre de hasta 120 caracteres.");
   if ((await participantsFor(db, ledger.id)).some(person => person.active && nameKey(person.displayName) === nameKey(displayName))) {
@@ -114,9 +114,9 @@ async function replayOrThrow(db, ledgerId, userId, key, hash, error, entryId = n
   throw error;
 }
 
-export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, entryId = null, expectedRevision = null }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+export async function saveEntry(db, { groupId, userId, input, idempotencyKey, entryId = null, expectedRevision = null }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   if (typeof idempotencyKey !== "string" || idempotencyKey.length < 16 || idempotencyKey.length > 200) throw new LedgerError("Recargá el formulario y volvé a intentar.");
   const participants = await participantsFor(db, ledger.id);
   const allowedIds = participants.map(row => row.id);
@@ -168,9 +168,9 @@ export async function saveEntry(db, { spaceId, userId, input, idempotencyKey, en
   catch (error) { return replayOrThrow(db, ledger.id, userId, idempotencyKey, hash, error, entryId, expectedRevision); }
 }
 
-export async function voidEntry(db, { spaceId, userId, entryId, expectedRevision, idempotencyKey, reason = "" }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+export async function voidEntry(db, { groupId, userId, entryId, expectedRevision, idempotencyKey, reason = "" }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const entry = await db.prepare(`SELECT e.* FROM ledger_entries e WHERE e.ledger_id = ? AND e.id = ? AND ${VISIBLE_ENTRY_SQL}`).bind(ledger.id, entryId).first();
   if (!entry) throw new LedgerError("Movimiento no encontrado.", 404);
   if (ledger.role !== "owner" && entry.created_by_user_id !== userId) throw new LedgerError("Sólo podés anular tus movimientos.", 403);
@@ -207,8 +207,8 @@ function categoryInfoFor(resolve, id) {
 // Es la única definición de «visible»: toda consulta de movimientos (lista, partes, revisiones, exportación) la reutiliza.
 export const VISIBLE_ENTRY_SQL = "(e.import_batch_id IS NULL OR EXISTS (SELECT 1 FROM splitwise_import_batches b WHERE b.id = e.import_batch_id AND b.status = 'committed'))";
 
-export async function readLedger(db, { spaceId, userId }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function readLedger(db, { groupId, userId }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   const [participants, mergedParticipants] = await Promise.all([participantsFor(db, ledger.id), mergedParticipantsFor(db, ledger.id)]);
   const visible = `SELECT e.id FROM ledger_entries e WHERE e.ledger_id = ? AND ${VISIBLE_ENTRY_SQL}`;
   const [categories, entryRows, cashRows, allocationRows] = await Promise.all([
@@ -255,8 +255,8 @@ export async function readLedger(db, { spaceId, userId }) {
   return { ledger, participants, mergedParticipants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }
 
-export async function exportLedger(db, { spaceId, userId }) {
-  const data = await readLedger(db, { spaceId, userId });
+export async function exportLedger(db, { groupId, userId }) {
+  const data = await readLedger(db, { groupId, userId });
   const revisions = await db.prepare(`SELECT r.* FROM entry_revisions r JOIN ledger_entries e ON e.ledger_id = r.ledger_id AND e.id = r.entry_id WHERE r.ledger_id = ? AND ${VISIBLE_ENTRY_SQL} ORDER BY r.entry_id, r.revision`).bind(data.ledger.id).all();
   const events = await db.prepare("SELECT * FROM ledger_events WHERE ledger_id = ? ORDER BY created_at, id").bind(data.ledger.id).all();
   const imports = await db.prepare("SELECT id, source_hash, file_name, imported_count, source_summary_json, reconciliation_json, assumptions_json, excluded_rows_json, committed_at FROM splitwise_import_batches WHERE ledger_id = ? AND status = 'committed'").bind(data.ledger.id).all();

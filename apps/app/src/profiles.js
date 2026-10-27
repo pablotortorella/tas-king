@@ -192,64 +192,64 @@ export async function saveOwnProfile(db, userId, patch) {
   return readOwnProfile(db, userId);
 }
 
-export async function readOwnPresentation(db, spaceIdOrSlug, userId) {
-  const row = await db.prepare(`SELECT m.space_id, m.nickname, m.presentation_revision,
+export async function readOwnPresentation(db, groupIdOrSlug, userId) {
+  const row = await db.prepare(`SELECT m.group_id, m.nickname, m.presentation_revision,
     m.membership_generation FROM memberships m
-    WHERE m.space_id = ? AND m.user_id = ?`)
-    .bind(spaceIdOrSlug, userId).first();
-  if (!row) throw new ProfileError("Espacio no encontrado.", 404, "space_not_found");
+    WHERE m.group_id = ? AND m.user_id = ?`)
+    .bind(groupIdOrSlug, userId).first();
+  if (!row) throw new ProfileError("Grupo no encontrado.", 404, "group_not_found");
   if (!row.membership_generation) {
     await db.prepare(`UPDATE memberships SET membership_generation = ?
-      WHERE space_id = ? AND user_id = ? AND membership_generation IS NULL`)
-      .bind(createPlatformId("membership"), row.space_id, userId).run();
-    return readOwnPresentation(db, row.space_id, userId);
+      WHERE group_id = ? AND user_id = ? AND membership_generation IS NULL`)
+      .bind(createPlatformId("membership"), row.group_id, userId).run();
+    return readOwnPresentation(db, row.group_id, userId);
   }
   const profile = await ensureProfile(db, userId);
   return {
     ...presentProfile(profile, row.nickname),
-    spaceId: row.space_id, revision: row.presentation_revision,
+    groupId: row.group_id, revision: row.presentation_revision,
     generation: row.membership_generation,
   };
 }
 
-export async function saveOwnNickname(db, spaceId, userId, patch) {
+export async function saveOwnNickname(db, groupId, userId, patch) {
   if (!patch || typeof patch !== "object" || Array.isArray(patch) ||
       Object.keys(patch).some(k => !["nickname", "expectedRevision", "generation"].includes(k)) ||
       !Object.hasOwn(patch, "nickname")) invalid("Datos del apodo inválidos.");
   const nickname = normalizeNickname(patch.nickname);
   if (!Number.isSafeInteger(patch.expectedRevision) || patch.expectedRevision < 0 ||
       typeof patch.generation !== "string" || !patch.generation) invalid("Falta la revisión de la membresía.");
-  const current = await readOwnPresentation(db, spaceId, userId);
+  const current = await readOwnPresentation(db, groupId, userId);
   if (current.revision !== patch.expectedRevision || current.generation !== patch.generation) {
     throw new ProfileError("La membresía cambió. Volvé a cargarla.", 409, "presentation_conflict");
   }
   const mutationId = createPlatformId("mutation");
   const results = await db.batch([
     db.prepare(`UPDATE memberships SET nickname = ?, presentation_revision = presentation_revision + 1,
-      last_presentation_mutation_id = ? WHERE space_id = ? AND user_id = ?
+      last_presentation_mutation_id = ? WHERE group_id = ? AND user_id = ?
       AND presentation_revision = ? AND membership_generation = ?`)
-      .bind(nickname, mutationId, current.spaceId, userId, current.revision, current.generation),
-    db.prepare(`INSERT INTO platform_audit_events (id, actor_user_id, space_id, action, entity_type, entity_id, metadata_json)
+      .bind(nickname, mutationId, current.groupId, userId, current.revision, current.generation),
+    db.prepare(`INSERT INTO platform_audit_events (id, actor_user_id, group_id, action, entity_type, entity_id, metadata_json)
       SELECT ?, ?, ?, 'nickname_updated', 'membership', ?, ? FROM memberships
-      WHERE space_id = ? AND user_id = ? AND last_presentation_mutation_id = ?`)
-      .bind(createPlatformId("audit"), userId, current.spaceId, userId, JSON.stringify({ revision: current.revision + 1, empty: nickname === null }), current.spaceId, userId, mutationId),
+      WHERE group_id = ? AND user_id = ? AND last_presentation_mutation_id = ?`)
+      .bind(createPlatformId("audit"), userId, current.groupId, userId, JSON.stringify({ revision: current.revision + 1, empty: nickname === null }), current.groupId, userId, mutationId),
   ]);
   if (results[0].meta.changes !== 1) throw new ProfileError("La membresía cambió. Volvé a cargarla.", 409, "presentation_conflict");
-  return readOwnPresentation(db, current.spaceId, userId);
+  return readOwnPresentation(db, current.groupId, userId);
 }
 
-export async function listMemberPresentations(db, spaceId, viewerId) {
-  const access = await db.prepare("SELECT 1 FROM memberships WHERE space_id = ? AND user_id = ?")
-    .bind(spaceId, viewerId).first();
-  if (!access) throw new ProfileError("Espacio no encontrado.", 404, "space_not_found");
+export async function listMemberPresentations(db, groupId, viewerId) {
+  const access = await db.prepare("SELECT 1 FROM memberships WHERE group_id = ? AND user_id = ?")
+    .bind(groupId, viewerId).first();
+  if (!access) throw new ProfileError("Grupo no encontrado.", 404, "group_not_found");
   const rows = await db.prepare(`SELECT u.id AS user_id, u.display_name, p.name_source,
     p.google_display_name, p.custom_display_name, p.google_picture_url, p.avatar_mode,
     p.avatar_emoji, p.avatar_color, m.nickname, m.role
     FROM memberships m JOIN users u ON u.id = m.user_id
-    LEFT JOIN user_profiles p ON p.user_id = u.id WHERE m.space_id = ?
-    AND EXISTS (SELECT 1 FROM memberships viewer WHERE viewer.space_id = m.space_id AND viewer.user_id = ?)
+    LEFT JOIN user_profiles p ON p.user_id = u.id WHERE m.group_id = ?
+    AND EXISTS (SELECT 1 FROM memberships viewer WHERE viewer.group_id = m.group_id AND viewer.user_id = ?)
     ORDER BY CASE m.role WHEN 'owner' THEN 0 ELSE 1 END, u.display_name, u.id`)
-    .bind(spaceId, viewerId).all();
+    .bind(groupId, viewerId).all();
   return rows.results.map(row => ({ ...presentProfile({
     ...row, name_source: row.name_source || "custom",
     custom_display_name: row.custom_display_name || row.display_name,

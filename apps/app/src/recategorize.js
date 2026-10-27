@@ -36,9 +36,9 @@ function mayChange(ledger, userId, entry) {
 
 function money(value) { return new Intl.NumberFormat("es-CO").format(value); }
 
-async function loadContext(db, { spaceId, userId, criteria, categoryId, currentCategoryId = null }) {
-  const data = await readLedger(db, { spaceId, userId });
-  if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+async function loadContext(db, { groupId, userId, criteria, categoryId, currentCategoryId = null }) {
+  const data = await readLedger(db, { groupId, userId });
+  if (data.ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const category = await categoryForEntry(db, { ledgerId: data.ledger.id, userId, categoryId, currentCategoryId });
   if (!category) throw new LedgerError("Elegí la categoría que querés aplicar.");
   const selected = selectEntries(data, criteria);
@@ -60,8 +60,8 @@ function tooMany(count) {
 }
 
 // Paso 1: cuántos cambiarían, una muestra y la revisión actual del libro. No escribe nada.
-export async function previewRecategorization(db, { spaceId, userId, criteria, categoryId }) {
-  const { data, category, selected, eligible, skipped } = await loadContext(db, { spaceId, userId, criteria, categoryId });
+export async function previewRecategorization(db, { groupId, userId, criteria, categoryId }) {
+  const { data, category, selected, eligible, skipped } = await loadContext(db, { groupId, userId, criteria, categoryId });
   if (eligible.length > MAX_BATCH) throw tooMany(eligible.length);
   return {
     count: eligible.length,
@@ -123,25 +123,25 @@ function summarize(batch) {
 // Paso 2: aplica. La clave de la confirmación es el identificador del lote: repetirla (o enviarla en simultáneo) devuelve el
 // lote ya aplicado y, si se había cortado a la mitad, lo completa sin duplicar nada.
 // `hooks.beforeWrite` es un punto de enganche solo para pruebas (simula un corte o una edición concurrente justo antes de escribir).
-export async function applyRecategorization(db, { spaceId, userId, criteria, categoryId, expectedRevision = null, key, kind = "bulk", hooks = {} }) {
+export async function applyRecategorization(db, { groupId, userId, criteria, categoryId, expectedRevision = null, key, kind = "bulk", hooks = {} }) {
   if (typeof key !== "string" || !KEY_PATTERN.test(key)) throw new LedgerError("Recargá la pantalla y volvé a intentar.");
-  const ledgerAccess = await getLedgerAccess(db, spaceId, userId);
+  const ledgerAccess = await getLedgerAccess(db, groupId, userId);
   const batchId = `recat_${key}`;
   const fingerprint = await requestFingerprint(criteria, categoryId, kind);
   const existing = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledgerAccess.id, batchId).first();
   if (existing && (existing.actor_user_id !== userId || (existing.request_hash && existing.request_hash !== fingerprint))) throw new LedgerError("Esta solicitud ya se usó con otros datos. Recargá la pantalla y volvé a intentar.", 409);
   const resuming = Boolean(existing && existing.status === "applying");
   if (existing && !resuming) return summarize(existing);
-  const { data, category, selected, eligible } = await loadContext(db, { spaceId, userId, criteria, categoryId });
+  const { data, category, selected, eligible } = await loadContext(db, { groupId, userId, criteria, categoryId });
   if (eligible.length > MAX_BATCH) throw tooMany(eligible.length);
   if (!resuming) {
-    if (expectedRevision !== null && Number(expectedRevision) !== data.ledger.revision) throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+    if (expectedRevision !== null && Number(expectedRevision) !== data.ledger.revision) throw new LedgerError("El grupo cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
     if (!eligible.length) throw new LedgerError("No hay movimientos para cambiar: ya tienen esa categoría o no podés modificarlos.");
     const insert = await db.prepare("INSERT OR IGNORE INTO recategorization_batches (ledger_id, id, actor_user_id, kind, category_id, planned, request_hash) SELECT ?, ?, ?, ?, ?, ?, ? WHERE (? IS NULL OR (SELECT revision FROM expense_ledgers WHERE id = ?) = ?)").bind(data.ledger.id, batchId, userId, kind, category.id, eligible.length, fingerprint, expectedRevision, data.ledger.id, expectedRevision === null ? 0 : Number(expectedRevision)).run();
     if (!insert.meta?.changes) {
       const raced = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(data.ledger.id, batchId).first();
       if (raced) return summarize(raced);
-      throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+      throw new LedgerError("El grupo cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
     }
   }
   // Al reanudar, los que ya se escribieron figuran como «ya tienen la categoría»: lo omitido es lo seleccionado menos lo planeado.
@@ -153,8 +153,8 @@ export async function applyRecategorization(db, { spaceId, userId, criteria, cat
   return summarize(await finish(db, { ledger: data.ledger, userId, batchId, skipped: skippedCount }));
 }
 
-export async function readRecategorizationBatch(db, { spaceId, userId, batchId }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function readRecategorizationBatch(db, { groupId, userId, batchId }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   const batch = await db.prepare("SELECT b.*, u.display_name AS actor_name FROM recategorization_batches b JOIN users u ON u.id = b.actor_user_id WHERE b.ledger_id = ? AND b.id = ?").bind(ledger.id, batchId).first();
   if (!batch) throw new LedgerError("Operación no encontrada.", 404);
   const categories = await readCategories(db, ledger.id);
@@ -163,9 +163,9 @@ export async function readRecategorizationBatch(db, { spaceId, userId, batchId }
 
 // Deshacer: restaura la categoría anterior solo de los movimientos cuya revisión vigente sigue siendo la del lote. Los
 // que se modificaron después quedan como están y se informan.
-export async function undoRecategorization(db, { spaceId, userId, batchId, key = null }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+export async function undoRecategorization(db, { groupId, userId, batchId, key = null }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const batch = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, batchId).first();
   if (!batch) throw new LedgerError("Operación no encontrada.", 404);
   if (batch.kind === "undo") throw new LedgerError("Un deshacer no se deshace: volvé a aplicar la categoría.", 409);
@@ -176,7 +176,7 @@ export async function undoRecategorization(db, { spaceId, userId, batchId, key =
   const existingUndo = await db.prepare("SELECT * FROM recategorization_batches WHERE ledger_id = ? AND id = ?").bind(ledger.id, undoId).first();
   if (existingUndo?.status === "applied") return { ...summarize(existingUndo), kept: [] };
   const items = (await db.prepare("SELECT entry_id, revision, previous_category_id FROM recategorization_items WHERE ledger_id = ? AND batch_id = ?").bind(ledger.id, batchId).all()).results;
-  const data = await readLedger(db, { spaceId, userId });
+  const data = await readLedger(db, { groupId, userId });
   const byId = new Map(data.entries.map(entry => [entry.id, entry]));
   const categories = data.categories;
   const changes = [];
@@ -201,8 +201,8 @@ export async function undoRecategorization(db, { spaceId, userId, batchId, key =
 }
 
 // Clasificar rápido: asigna una categoría a un solo movimiento con el mismo mecanismo (tipo «quick»), así se puede deshacer.
-export async function classifyOne(db, { spaceId, userId, entryId, categoryId, key }) {
-  return applyRecategorization(db, { spaceId, userId, criteria: { ids: [entryId] }, categoryId, expectedRevision: null, key, kind: "quick" });
+export async function classifyOne(db, { groupId, userId, entryId, categoryId, key }) {
+  return applyRecategorization(db, { groupId, userId, criteria: { ids: [entryId] }, categoryId, expectedRevision: null, key, kind: "quick" });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -232,9 +232,9 @@ export function rankCategories({ categories, entries, recentIds, limit = RECENT_
 }
 
 // Todo lo que la pantalla necesita para mostrar el siguiente pendiente.
-export async function readClassifyContext(db, { spaceId, userId, skipped = [] }) {
-  const data = await readLedger(db, { spaceId, userId });
-  if (data.ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+export async function readClassifyContext(db, { groupId, userId, skipped = [] }) {
+  const data = await readLedger(db, { groupId, userId });
+  if (data.ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const { current, remaining } = classifyQueue(data, userId, skipped);
   const recentIds = (await db.prepare("SELECT category_id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind != 'undo' AND category_id IS NOT NULL ORDER BY rowid DESC LIMIT 40").bind(data.ledger.id, userId).all()).results.map(row => row.category_id);
   const lastRow = await db.prepare("SELECT id FROM recategorization_batches WHERE ledger_id = ? AND actor_user_id = ? AND kind = 'quick' AND status = 'applied' AND undone_at IS NULL ORDER BY rowid DESC LIMIT 1").bind(data.ledger.id, userId).first();
@@ -243,6 +243,6 @@ export async function readClassifyContext(db, { spaceId, userId, skipped = [] })
     data, current, remaining,
     suggestion: current ? suggestCategory(current, categorized) : null,
     recents: rankCategories({ categories: data.categories, entries: data.entries, recentIds }),
-    last: lastRow ? await readRecategorizationBatch(db, { spaceId, userId, batchId: lastRow.id }) : null,
+    last: lastRow ? await readRecategorizationBatch(db, { groupId, userId, batchId: lastRow.id }) : null,
   };
 }

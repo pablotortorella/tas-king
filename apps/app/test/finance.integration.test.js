@@ -4,12 +4,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 beforeAll(async () => {
   await env.DB.batch([
     env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES ('fin_user', 'fin_sub', 'finance@example.test', 'Finance')"),
-    env.DB.prepare("INSERT INTO spaces (id, name) VALUES ('fin_space_a', 'Libro A')"),
-    env.DB.prepare("INSERT INTO spaces (id, name) VALUES ('fin_space_b', 'Libro B')"),
-    env.DB.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES ('fin_space_a', 'fin_user', 'owner')"),
-    env.DB.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES ('fin_space_b', 'fin_user', 'owner')"),
-    env.DB.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES ('ledger_a', 'fin_space_a', 'COP')"),
-    env.DB.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES ('ledger_b', 'fin_space_b', 'USD')"),
+    env.DB.prepare("INSERT INTO groups (id, name) VALUES ('fin_group_a', 'Libro A')"),
+    env.DB.prepare("INSERT INTO groups (id, name) VALUES ('fin_group_b', 'Libro B')"),
+    env.DB.prepare("INSERT INTO memberships (group_id, user_id, role) VALUES ('fin_group_a', 'fin_user', 'owner')"),
+    env.DB.prepare("INSERT INTO memberships (group_id, user_id, role) VALUES ('fin_group_b', 'fin_user', 'owner')"),
+    env.DB.prepare("INSERT INTO expense_ledgers (id, group_id, default_currency) VALUES ('ledger_a', 'fin_group_a', 'COP')"),
+    env.DB.prepare("INSERT INTO expense_ledgers (id, group_id, default_currency) VALUES ('ledger_b', 'fin_group_b', 'USD')"),
     env.DB.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name, linked_user_id) VALUES ('ledger_a', 'participant_a', 'Ana', 'fin_user')"),
     env.DB.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name) VALUES ('ledger_a', 'participant_b', 'Beto')"),
     env.DB.prepare("INSERT INTO ledger_participants (ledger_id, id, display_name) VALUES ('ledger_b', 'participant_other', 'Otra')"),
@@ -37,7 +37,7 @@ describe("D1: fundaciones financieras", () => {
   });
 
   it("crea invitaciones con vencimiento y admite el estado expired", async () => {
-    await env.DB.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id) VALUES ('fin_invite', 'fin_space_a', 'invite@example.test', 'fin_user')").run();
+    await env.DB.prepare("INSERT INTO invitations (id, group_id, invitee_email, inviter_user_id) VALUES ('fin_invite', 'fin_group_a', 'invite@example.test', 'fin_user')").run();
     const invitation = await env.DB.prepare("SELECT status, expires_at > created_at AS future_expiry FROM invitations WHERE id = 'fin_invite'").first();
     expect(invitation).toEqual({ status: "pending", future_expiry: 1 });
     await env.DB.prepare("UPDATE invitations SET status = 'expired', resolved_at = CURRENT_TIMESTAMP WHERE id = 'fin_invite'").run();

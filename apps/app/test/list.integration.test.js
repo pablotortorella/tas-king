@@ -4,7 +4,7 @@ import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { readLedger, saveEntry } from "../src/ledger.js";
 import { createSession } from "../src/sessions.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { seedEntries } from "./fixtures/seed-entries.js";
 
 const SECRET = "l".repeat(32);
@@ -23,16 +23,16 @@ function request(who, path, init = {}, extraEnv = {}) {
 async function team(name) {
   const owner = await identity(`${name}-owner@example.test`);
   const member = await identity(`${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.user.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.user.id, email: member.user.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.user.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.user.id, email: member.user.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.user.id, email: member.user.email, accepted: true });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.user.id });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.user.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.user.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.user.id).id;
-  return { owner, member, space, ledger: data.ledger, ownerId, memberId, base: `/spaces/${space.slug}` };
+  return { owner, member, group, ledger: data.ledger, ownerId, memberId, base: `/groups/${group.slug}` };
 }
 const entryForm = (t, extra = {}) => [["type", "expense"], ["currency", "COP"], ["amount", "100,00"], ["description", "Compra"], ["occurredAt", "2026-06-01"], ["payer", t.ownerId], ["splitMethod", "equal"], ["beneficiary", t.ownerId], ["beneficiary", t.memberId], ["idempotencyKey", crypto.randomUUID()], ...Object.entries(extra)];
-const add = (t, description, extra = {}) => saveEntry(env.DB, { spaceId: t.space.id, userId: t.owner.user.id, idempotencyKey: crypto.randomUUID(), input: {
+const add = (t, description, extra = {}) => saveEntry(env.DB, { groupId: t.group.id, userId: t.owner.user.id, idempotencyKey: crypto.randomUUID(), input: {
   type: "expense", currency: "COP", totalMinor: 10000, description, note: "", occurredAt: "2026-06-01",
   cashParties: [{ participantId: t.ownerId, direction: "out", amountMinor: 10000 }], allocations: [{ participantId: t.ownerId, amountMinor: 5000 }, { participantId: t.memberId, amountMinor: 5000 }], ...extra } });
 const titles = html => [...html.matchAll(/<strong class="entry-title">([^<]*)<\/strong>/gu)].map(match => match[1]);
@@ -43,7 +43,7 @@ describe("orden de la lista", () => {
     await add(t, "Primero cargado");
     await add(t, "Segundo cargado");
     await add(t, "Tercero cargado");
-    const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id });
+    const data = await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id });
     expect(data.entries.map(entry => entry.description)).toEqual(["Tercero cargado", "Segundo cargado", "Primero cargado"]);
     expect(data.balances.find(row => row.participantId === t.ownerId).amountMinor).toBe(15000);
     const html = await (await request(t.owner, t.base)).text();
@@ -61,7 +61,7 @@ describe("orden de la lista", () => {
   it("muchos movimientos cargados en el mismo segundo conservan el orden de carga", async () => {
     const t = await team("ls-lote");
     await seedEntries(env.DB, { ledgerId: t.ledger.id, userId: t.owner.user.id, payerId: t.ownerId, otherId: t.memberId, count: 30, prefix: "Fila" });
-    const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id });
+    const data = await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id });
     expect(data.entries.map(entry => entry.description)).toEqual(Array.from({ length: 30 }, (_, index) => `Fila ${29 - index}`));
   });
 });
@@ -152,7 +152,7 @@ describe("buscar por persona desde la lista", () => {
     await add(t, "Pagó el titular uno");
     await add(t, "Pagó el titular dos");
     await add(t, "Pagó el integrante", { cashParties: [{ participantId: t.memberId, direction: "out", amountMinor: 10000 }] });
-    const memberName = (await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).participants.find(person => person.id === t.memberId).displayName;
+    const memberName = (await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).participants.find(person => person.id === t.memberId).displayName;
     const html = await (await request(t.owner, `${t.base}?q=${encodeURIComponent(memberName)}`)).text();
     expect(titles(html)).toHaveLength(3);
     expect(html).toContain(`Pagó ${memberName} (1)`);
@@ -166,7 +166,7 @@ describe("buscar por persona desde la lista", () => {
   it("«Ver más» conserva el filtro de persona", async () => {
     const t = await team("ls-persona-mas");
     await seedEntries(env.DB, { ledgerId: t.ledger.id, userId: t.owner.user.id, payerId: t.ownerId, otherId: t.memberId, count: 95, prefix: "Fila" });
-    const ownerName = (await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).participants.find(person => person.id === t.ownerId).displayName;
+    const ownerName = (await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).participants.find(person => person.id === t.ownerId).displayName;
     const html = await (await request(t.owner, `${t.base}?q=${encodeURIComponent(ownerName)}&quien=pago:${t.ownerId}`)).text();
     expect(titles(html)).toHaveLength(40);
     expect(html).toContain("Ver 40 movimientos más");

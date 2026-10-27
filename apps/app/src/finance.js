@@ -53,7 +53,7 @@ function validateComponents(components, participants, allowedDirections) {
   if (!Array.isArray(components)) throw new FinancialValidationError("Los componentes financieros son requeridos.");
   const seen = new Set();
   return components.map((component) => {
-    if (!component || !participants.has(component.participantId)) throw new FinancialValidationError("El participante no pertenece al libro.");
+    if (!component || !participants.has(component.participantId)) throw new FinancialValidationError("El participante no pertenece al grupo.");
     if (allowedDirections && !allowedDirections.has(component.direction)) throw new FinancialValidationError("La dirección de efectivo no corresponde al movimiento.");
     const key = allowedDirections ? `${component.participantId}:${component.direction}` : component.participantId;
     if (seen.has(key)) throw new FinancialValidationError("Un participante no puede repetirse en el mismo componente.");

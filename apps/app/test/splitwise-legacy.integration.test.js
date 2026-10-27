@@ -4,7 +4,7 @@ import retireSql from "../ops/retire-legacy-import-tables.sql?raw";
 import { readLedger } from "../src/ledger.js";
 import { runMaintenance } from "../src/maintenance.js";
 import { convertLegacyImports } from "../src/splitwise-legacy.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 
 // La migración 0009 retira las tablas del modelo anterior; para probar la conversión se recrean con su definición original.
 const LEGACY_DDL = [
@@ -32,10 +32,10 @@ async function legacyBook(name) {
   await restoreLegacyTables();
   const owner = await ensureLocalUser(env.DB, `${name}-owner@example.test`);
   const member = await ensureLocalUser(env.DB, `${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.id, email: member.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.id, email: member.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.id).id;
   const ledgerId = data.ledger.id;
@@ -51,7 +51,7 @@ async function legacyBook(name) {
     await env.DB.prepare("INSERT INTO splitwise_import_entries (ledger_id, id, batch_id, source_row_number, occurred_at, description, category, currency_code, total_minor) VALUES (?, ?, ?, ?, ?, ?, ?, 'COP', ?)").bind(ledgerId, `legacy_${id}`, batchId, line, date, description, category, total).run();
     for (const [participantId, amount] of effects) await env.DB.prepare("INSERT INTO splitwise_import_effects (ledger_id, entry_id, participant_id, amount_minor) VALUES (?, ?, ?, ?)").bind(ledgerId, `legacy_${id}`, participantId, amount).run();
   }
-  return { owner, space, ledgerId, ownerId, memberId, batchId };
+  return { owner, group, ledgerId, ownerId, memberId, batchId };
 }
 
 describe("conversión de importaciones del modelo anterior", () => {
@@ -59,7 +59,7 @@ describe("conversión de importaciones del modelo anterior", () => {
     const t = await legacyBook("legacy-saldos");
     const report = await convertLegacyImports(env.DB);
     expect(report.find(item => item.batchId === t.batchId)).toEqual({ batchId: t.batchId, converted: 4, skipped: 0 });
-    const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.id });
+    const data = await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.id });
     expect(data.entries).toHaveLength(4);
     expect(data.entries.every(entry => entry.type === "expense" && entry.importBatchId === t.batchId && entry.inferred)).toBe(true);
     expect(data.balances.find(row => row.participantId === t.ownerId).amountMinor).toBe(5000 - 8000 + 0 + 1500);
@@ -87,7 +87,7 @@ describe("conversión de importaciones del modelo anterior", () => {
   it("la fila sin efecto queda pagada y consumida por una misma persona", async () => {
     const t = await legacyBook("legacy-sin-efecto");
     await convertLegacyImports(env.DB);
-    const entry = (await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.id })).entries.find(row => row.description === "Sin efecto");
+    const entry = (await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.id })).entries.find(row => row.description === "Sin efecto");
     expect(entry.cashParties).toHaveLength(1);
     expect(entry.allocations).toEqual([{ participantId: entry.cashParties[0].participantId, amountMinor: 4500 }]);
   });
@@ -115,7 +115,7 @@ describe("el mantenimiento diario convierte los lotes del modelo anterior", () =
     const t = await legacyBook("legacy-mantenimiento");
     const result = await runMaintenance(env.DB);
     expect(result.convertedLegacyBatches).toBeGreaterThanOrEqual(1);
-    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.id })).entries).toHaveLength(4);
+    expect((await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.id })).entries).toHaveLength(4);
     await env.DB.exec(executable(retireSql));
     expect((await runMaintenance(env.DB)).convertedLegacyBatches).toBe(0);
   });

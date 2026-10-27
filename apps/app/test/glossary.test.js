@@ -19,6 +19,7 @@ const ALLOWED_PHRASES = [
   ["white-space", "propiedad CSS"],
   ["space-between", "valor CSS"], ["space-around", "valor CSS"], ["space-evenly", "valor CSS"],
   ["press(\"Space\")", "nombre de la tecla de espacio en Playwright"],
+  ["un espacio para la vida compartida", "lema de marca del sitio público, uso figurado y no el concepto (decisión pendiente de Pablo)"],
   ["espacios en blanco", "caracteres en blanco, no el concepto"], ["espacio en blanco", "caracteres en blanco, no el concepto"],
 ];
 

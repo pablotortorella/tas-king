@@ -22,7 +22,7 @@ import { ACCOUNT_MARKER, avatar, escapeHtml, noticeFor } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
-import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, renameSpace, resolveInvitation, resolveSpace } from "./spaces.js";
+import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, renameGroup, resolveInvitation, resolveGroup } from "./groups.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
@@ -107,7 +107,7 @@ const html = escapeHtml;
 function isProtectedMutation(c) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) return false;
   const path = new URL(c.req.url).pathname;
-  return path === "/auth/logout" || path === "/spaces" || path.startsWith("/spaces/") || path.startsWith("/invitations/");
+  return path === "/auth/logout" || path === "/groups" || path.startsWith("/groups/") || path.startsWith("/invitations/");
 }
 
 function isMutation(c) {
@@ -136,7 +136,7 @@ app.use("*", async (c, next) => {
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
   const path = new URL(c.req.url).pathname;
-  if (path.startsWith("/spaces/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(path)) c.header("Cache-Control", "private, no-store");
+  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(path)) c.header("Cache-Control", "private, no-store");
 });
 
 // Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).
@@ -190,10 +190,10 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// Los PATCH del perfil (propio y por espacio) llevan JSON y se protegen aquí: sesión, límite de escrituras y CSRF.
+// Los PATCH del perfil (propio y por grupo) llevan JSON y se protegen aquí: sesión, límite de escrituras y CSRF.
 app.use("*", async (c, next) => {
   const path = new URL(c.req.url).pathname;
-  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/spaces\/[^/]+\/me\/presentation$/u.test(path))) return next();
+  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/groups\/[^/]+\/me\/presentation$/u.test(path))) return next();
   const host = new URL(c.req.url).hostname;
   const localEmail = (host === "localhost" || host === "127.0.0.1") ? localUser(c) : null;
   if (localEmail) {
@@ -244,7 +244,7 @@ app.get("/api/local/session", async (c) => {
   setCookie(c, sessionCookie(session.token, true));
   const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
   const membership = invitation ? null : await c.env.DB.prepare("SELECT 1 AS found FROM memberships WHERE user_id = ? LIMIT 1").bind(user.id).first();
-  return c.redirect(invitation ? "/invitations" : membership ? "/cuentas-claras" : "/spaces/new", 303);
+  return c.redirect(invitation ? "/invitations" : membership ? "/cuentas-claras" : "/groups/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {
@@ -297,51 +297,51 @@ app.post("/auth/logout", async (c) => {
   return c.redirect("/", 303);
 });
 
-app.post("/api/local/spaces", async (c) => {
+app.post("/api/local/groups", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.json();
-  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
-  return c.json(space, 201);
+  const group = await createGroupForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.json(group, 201);
 });
 
-app.post("/local/spaces", async (c) => {
+app.post("/local/groups", async (c) => {
   const email = localUser(c);
   if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
-  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
-  return c.redirect(`/local/spaces/${space.id}`, 303);
+  const group = await createGroupForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.redirect(`/local/groups/${group.id}`, 303);
 });
 
-app.get("/local/spaces/:spaceId", async (c) => {
+app.get("/local/groups/:groupId", async (c) => {
   const email = localUser(c);
   if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const space = await c.env.DB.prepare("SELECT s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("spaceId"), user.id).first();
-  if (!space) return c.text("Espacio no encontrado.", 404);
-  const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT invitee_email FROM invitations WHERE space_id = ? AND status = 'pending'").bind(c.req.param("spaceId")).all() : { results: [] };
-  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("spaceId")).all();
+  const group = await c.env.DB.prepare("SELECT s.name, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("groupId"), user.id).first();
+  if (!group) return c.text("Grupo no encontrado.", 404);
+  const invitations = group.role === "owner" ? await c.env.DB.prepare("SELECT invitee_email FROM invitations WHERE group_id = ? AND status = 'pending'").bind(c.req.param("groupId")).all() : { results: [] };
+  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("groupId")).all();
   const participants = members.results.map(member => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
   const pending = invitations.results.map(row => `<div class="person"><strong>${html(row.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><br><a class="button secondary" href="/local/invitations?as=${encodeURIComponent(row.invitee_email)}">Ver como invitada</a></div>`).join("");
-  const management = space.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/spaces/${c.req.param("spaceId")}/invitations" method="post"><label class="label" for="local-invite-email">Email</label><input id="local-invite-email" name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
+  const management = group.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/groups/${c.req.param("groupId")}/invitations" method="post"><label class="label" for="local-invite-email">Email</label><input id="local-invite-email" name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(group.name)} · ${group.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este grupo ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
 });
 
-app.post("/local/spaces/:spaceId/invitations", async (c) => {
+app.post("/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
-  await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
-  return c.redirect(`/local/spaces/${c.req.param("spaceId")}`, 303);
+  await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.id, email: body.email });
+  return c.redirect(`/local/groups/${c.req.param("groupId")}`, 303);
 });
 
 app.get("/local/invitations", async (c) => {
   const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
-  const cards = rows.results.map(row => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/local/invitations/${row.id}?as=${encodeURIComponent(user.email)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  const cards = rows.results.map(row => `<section class="card"><h2>${html(row.group_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/local/invitations/${row.id}?as=${encodeURIComponent(user.email)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
   return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}`));
 });
 
@@ -350,38 +350,38 @@ app.post("/local/invitations/:invitationId", async (c) => {
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
   const accepted = body.decision === "accept";
-  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
-  return c.redirect(accepted ? `/local/spaces/${spaceId}?as=${encodeURIComponent(user.email)}` : `/local/invitations?as=${encodeURIComponent(user.email)}`, 303);
+  const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.redirect(accepted ? `/local/groups/${groupId}?as=${encodeURIComponent(user.email)}` : `/local/invitations?as=${encodeURIComponent(user.email)}`, 303);
 });
 
-app.post("/api/local/spaces/:spaceId/invitations", async (c) => {
+app.post("/api/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede invitar." }, 403);
   const body = await c.req.json();
-  const invitation = await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
+  const invitation = await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.id, email: body.email });
   return c.json(invitation, 201);
 });
 
-app.get("/api/local/spaces/:spaceId/invitations", async (c) => {
+app.get("/api/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede ver invitaciones." }, 403);
-  const rows = await c.env.DB.prepare("SELECT id, invitee_email AS email, status FROM invitations WHERE space_id = ? ORDER BY created_at").bind(c.req.param("spaceId")).all();
+  const rows = await c.env.DB.prepare("SELECT id, invitee_email AS email, status FROM invitations WHERE group_id = ? ORDER BY created_at").bind(c.req.param("groupId")).all();
   return c.json(rows.results);
 });
 
-app.delete("/api/local/spaces/:spaceId/invitations/:invitationId", async (c) => {
+app.delete("/api/local/groups/:groupId/invitations/:invitationId", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede cancelar invitaciones." }, 403);
-  await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.id });
+  await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), groupId: c.req.param("groupId"), actorUserId: user.id });
   return c.body(null, 204);
 });
 
@@ -389,7 +389,7 @@ app.get("/api/local/invitations/pending", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
   return c.json(rows.results);
 });
 
@@ -399,70 +399,70 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
   const accepted = c.req.param("decision") === "accept";
   if (!accepted && c.req.param("decision") !== "reject") return c.json({ error: "Decisión inválida." }, 400);
   const user = await ensureLocalUser(c.env.DB, email);
-  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
-  return c.json({ status: accepted ? "accepted" : "rejected", spaceId });
+  const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.json({ status: accepted ? "accepted" : "rejected", groupId });
 });
 
 
 
-async function canonicalSpacePath(c, next) {
-  const key = c.req.param("spaceId");
-  if (c.req.method !== "GET" || !key?.startsWith("space_")) return next();
+async function canonicalGroupPath(c, next) {
+  const key = c.req.param("groupId");
+  if (c.req.method !== "GET" || !key?.startsWith("group_")) return next();
   const user = await signedInUser(c);
   if (!user) return next();
-  const membership = await c.env.DB.prepare("SELECT 1 FROM memberships WHERE space_id = ? AND user_id = ?").bind(key, user.user_id).first();
+  const membership = await c.env.DB.prepare("SELECT 1 FROM memberships WHERE group_id = ? AND user_id = ?").bind(key, user.user_id).first();
   if (!membership) return next();
-  const space = await resolveSpace(c.env.DB, key);
-  if (!space) return next();
+  const group = await resolveGroup(c.env.DB, key);
+  if (!group) return next();
   const url = new URL(c.req.url);
-  const prefix = `/spaces/${encodeURIComponent(key)}`;
-  return c.redirect(`/spaces/${encodeURIComponent(space.slug)}${url.pathname.slice(prefix.length)}${url.search}`, 308);
+  const prefix = `/groups/${encodeURIComponent(key)}`;
+  return c.redirect(`/groups/${encodeURIComponent(group.slug)}${url.pathname.slice(prefix.length)}${url.search}`, 308);
 }
 
-app.use("/spaces/:spaceId", canonicalSpacePath);
-app.use("/spaces/:spaceId/*", canonicalSpacePath);
+app.use("/groups/:groupId", canonicalGroupPath);
+app.use("/groups/:groupId/*", canonicalGroupPath);
 
-app.get("/spaces/new", async (c) => {
+app.get("/groups/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear espacio", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el espacio y su libro en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/spaces">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear grupo", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el grupo en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/groups">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear grupo</button></form>`));
 });
 
-app.post("/spaces", async (c) => {
+app.post("/groups", async (c) => {
   const user = c.get("protectedUser");
   try {
     const body = await c.req.parseBody();
-    const space = await createSpaceForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
+    const group = await createGroupForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
     const target = body.start === "splitwise" ? "/ledger/import" : "";
-    return c.redirect(`/spaces/${encodeURIComponent(space.slug)}${target}`, 303);
+    return c.redirect(`/groups/${encodeURIComponent(group.slug)}${target}`, 303);
   } catch {
-    return c.html(formError("No pudimos crear el espacio", "Elegí un nombre de hasta 120 caracteres."), 400);
+    return c.html(formError("No pudimos crear el grupo", "Elegí un nombre de hasta 120 caracteres."), 400);
   }
 });
 
 
-app.get("/spaces/:spaceId", async (c) => {
+app.get("/groups/:groupId", async (c) => {
   const started = Date.now();
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const space = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
-  if (!space) return c.html(formError("Espacio no encontrado", "No tenés acceso a este espacio.", 404), 404);
+  const group = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
+  if (!group) return c.html(formError("Grupo no encontrado", "No tenés acceso a este grupo.", 404), 404);
   const [csrf, ledger] = await Promise.all([
     csrfInput(c, user),
-    readLedger(c.env.DB, { spaceId: space.id, userId: user.user_id }),
+    readLedger(c.env.DB, { groupId: group.id, userId: user.user_id }),
   ]);
-  const batchNotice = await recategorizationNoticeFor(c, user, space, csrf);
-  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(space, ledger, user.user_id)}${renderLedgerOverview(ledger, { spaceId: space.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const batchNotice = await recategorizationNoticeFor(c, user, group, csrf);
+  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(group, ledger, user.user_id)}${renderLedgerOverview(ledger, { groupId: group.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
   const slow = slowBookEvent({ elapsedMs: Date.now() - started, entries: ledger.entries.length, participants: ledger.participants.length, categories: ledger.categories.length, requestId: requestId(c) }, c.env.SLOW_BOOK_MS);
   if (slow) console.warn(JSON.stringify(slow));
-  return c.html(page("Cuentas Claras", content, { wide: true, spaceHref: `/spaces/${encodeURIComponent(space.slug)}` }));
+  return c.html(page("Cuentas Claras", content, { wide: true, groupHref: `/groups/${encodeURIComponent(group.slug)}` }));
 });
 
-app.post("/spaces/:spaceId/participants", async (c) => {
+app.post("/groups/:groupId/participants", async (c) => {
   const user = c.get("protectedUser");
   try {
-    await addParticipant(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=participante`, 303);
+    await addParticipant(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=participante`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -476,22 +476,22 @@ registerCategoryRoutes(app);
 
 registerRecategorizeRoutes(app);
 
-app.get("/spaces/:spaceId/ledger/export.json", async (c) => {
+app.get("/groups/:groupId/ledger/export.json", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   try {
-    const data = await exportLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    const data = await exportLedger(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id });
     c.header("Content-Disposition", "attachment; filename=cuentas-claras.json");
     c.header("Cache-Control", "private, no-store");
     return c.json(data);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
-app.get("/spaces/:spaceId/ledger/export.csv", async (c) => {
+app.get("/groups/:groupId/ledger/export.csv", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
   try {
-    const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
+    const data = await readLedger(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id });
     c.header("Content-Disposition", "attachment; filename=cuentas-claras.csv");
     c.header("Cache-Control", "private, no-store");
     return c.body(ledgerCsv(data), 200, { "Content-Type": "text/csv; charset=utf-8" });
@@ -499,46 +499,46 @@ app.get("/spaces/:spaceId/ledger/export.csv", async (c) => {
 });
 
 for (const [action, archived, notice] of [["archive", true, "archivado"], ["restore", false, "restaurado"]]) {
-  app.post(`/spaces/:spaceId/ledger/${action}`, async (c) => {
+  app.post(`/groups/:groupId/ledger/${action}`, async (c) => {
     const user = c.get("protectedUser");
     try {
-      await setLedgerArchived(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, archived });
-      return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=${notice}`, 303);
+      await setLedgerArchived(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, archived });
+      return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=${notice}`, 303);
     } catch (error) { return ledgerFailure(c, error); }
   });
 }
 
-app.post("/spaces/:spaceId/rename", async (c) => {
+app.post("/groups/:groupId/rename", async (c) => {
   const user = c.get("protectedUser");
   try {
-    await renameSpace(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=renombrado`, 303);
+    await renameGroup(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=renombrado`, 303);
   } catch {
     return c.html(formError("No pudimos guardar el nombre", "Sólo el titular puede usar un nombre válido."), 403);
   }
 });
 
-app.post("/spaces/:spaceId/invitations", async (c) => {
+app.post("/groups/:groupId/invitations", async (c) => {
   const user = c.get("protectedUser");
-  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN spaces s ON s.id = m.space_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN groups s ON s.id = m.group_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
-  try { await assertLedgerWritable(c.env.DB, c.req.param("spaceId"), user.user_id); } catch (error) { return ledgerFailure(c, error); }
+  try { await assertLedgerWritable(c.env.DB, c.req.param("groupId"), user.user_id); } catch (error) { return ledgerFailure(c, error); }
   try {
     const body = await c.req.parseBody();
-    await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=invitacion`, 303);
+    await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=invitacion`, 303);
   } catch {
     return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
   }
 });
 
-app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
+app.post("/groups/:groupId/invitations/:invitationId/cancel", async (c) => {
   const user = c.get("protectedUser");
-  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN spaces s ON s.id = m.space_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("spaceId"), c.req.param("spaceId"), user.user_id).first();
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN groups s ON s.id = m.group_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
   if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
   try {
-    await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.user_id });
-    return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/people?aviso=cancelada`, 303);
+    await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), groupId: c.req.param("groupId"), actorUserId: user.user_id });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=cancelada`, 303);
   } catch {
     return c.html(formError("Invitación no encontrada", "La invitación ya no está pendiente.", 404), 404);
   }
@@ -547,9 +547,9 @@ app.post("/spaces/:spaceId/invitations/:invitationId/cancel", async (c) => {
 app.get("/invitations", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending' ORDER BY i.created_at").bind(user.email).all();
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending' ORDER BY i.created_at").bind(user.email).all();
   const csrf = await csrfInput(c, user);
-  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post">${csrf}<button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.group_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post">${csrf}<button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
   return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}<a class="button secondary" href="/">Volver</a>`));
 });
 
@@ -559,41 +559,41 @@ app.post("/invitations/:invitationId", async (c) => {
   if (body.decision !== "accept" && body.decision !== "reject") return c.html(formError("Decisión inválida", "Elegí aceptar o rechazar la invitación."), 400);
   try {
     const accepted = body.decision === "accept";
-    const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.user_id, email: user.email, accepted });
-    const space = accepted ? await resolveSpace(c.env.DB, spaceId) : null;
-    return c.redirect(space ? `/spaces/${encodeURIComponent(space.slug)}` : "/invitations", 303);
+    const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.user_id, email: user.email, accepted });
+    const group = accepted ? await resolveGroup(c.env.DB, groupId) : null;
+    return c.redirect(group ? `/groups/${encodeURIComponent(group.slug)}` : "/invitations", 303);
   } catch {
     return c.html(formError("Invitación no encontrada", "La invitación no existe, ya fue resuelta o no te corresponde.", 404), 404);
   }
 });
 
-function spaceRow(space) {
-  return `<div class="person-row">${avatar(space.name, { seed: space.id })}<div class="grow"><a href="/spaces/${encodeURIComponent(space.slug)}"><strong>${html(space.name)}</strong></a><span class="muted">${space.role === "owner" ? "Titular" : "Integrante"}</span></div></div>`;
+function groupRow(group) {
+  return `<div class="person-row">${avatar(group.name, { seed: group.id })}<div class="grow"><a href="/groups/${encodeURIComponent(group.slug)}"><strong>${html(group.name)}</strong></a><span class="muted">${group.role === "owner" ? "Titular" : "Integrante"}</span></div></div>`;
 }
 
 app.get("/cuentas-claras", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
-  const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveSpace(c.env.DB, row.id)).slug })));
-  if (listed.length === 1 && c.req.query("todos") !== "1") return c.redirect(`/spaces/${encodeURIComponent(listed[0].slug)}`, 303);
-  const spaces = listed.map((space) => spaceRow(space)).join("") || "<p>No tenés espacios todavía.</p>";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un espacio.</h1><p>Cada espacio conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${spaces}<a class="button" href="/spaces/new">Crear espacio</a><a class="button secondary" href="/invitations">Invitaciones</a></section>`));
+  const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
+  const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveGroup(c.env.DB, row.id)).slug })));
+  if (listed.length === 1 && c.req.query("todos") !== "1") return c.redirect(`/groups/${encodeURIComponent(listed[0].slug)}`, 303);
+  const groups = listed.map((group) => groupRow(group)).join("") || "<p>No tenés grupos todavía.</p>";
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un grupo.</h1><p>Cada grupo conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${groups}<a class="button" href="/groups/new">Crear grupo</a><a class="button secondary" href="/invitations">Invitaciones</a></section>`));
 });
 
 registerAssetRoutes(app);
 
 registerShellRoutes(app, { authConfig, localUser });
 
-app.get("/demo/crear-espacio", (c) => {
+app.get("/demo/crear-grupo", (c) => {
   const { owner, member, index } = demoPair(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/local/spaces"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear grupo", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este grupo?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/local/groups"><label class="label" for="nombre">Nombre del grupo</label><input id="nombre" name="name" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear grupo</button></form>`));
 });
 
-app.get("/demo/espacio", (c) => {
+app.get("/demo/grupo", (c) => {
   const name = c.req.query("nombre")?.trim() || "Casa compartida";
   const { owner, member, index } = demoPair(c);
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(name)}</p><h1>Cuentas Claras está lista.</h1><p>Cuando conectemos la cuenta real, aquí aparecerán los movimientos y balances del espacio. No inventamos números antes de tiempo.</p><section class="card"><h2>Participantes</h2><div class="person"><strong>${html(owner)}</strong><br><span class="muted">Titular del espacio</span></div><div class="person"><strong>${html(member)}</strong><br><span class="muted">Invitación pendiente · ${html(member.toLowerCase())}@example.com</span></div><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&${demoQuery(index)}">Ver lo que verá ${html(member)}</a></section>`));
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(name)}</p><h1>Cuentas Claras está lista.</h1><p>Cuando conectemos la cuenta real, aquí aparecerán los movimientos y balances del grupo. No inventamos números antes de tiempo.</p><section class="card"><h2>Participantes</h2><div class="person"><strong>${html(owner)}</strong><br><span class="muted">Titular del grupo</span></div><div class="person"><strong>${html(member)}</strong><br><span class="muted">Invitación pendiente · ${html(member.toLowerCase())}@example.com</span></div><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&${demoQuery(index)}">Ver lo que verá ${html(member)}</a></section>`));
 });
 
 app.get("/demo/invitacion", (c) => {
@@ -601,7 +601,7 @@ app.get("/demo/invitacion", (c) => {
   const { owner, index } = demoPair(c);
   const answer = c.req.query("respuesta");
   const result = answer ? `<p class="notice">Invitación ${answer === "aceptar" ? "aceptada" : "rechazada"} en esta demostración. En la aplicación real la acción quedará auditada.</p>` : `<p class="notice">Antes de aceptar no ves integrantes, movimientos ni saldos.</p><a class="button" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&respuesta=aceptar&${demoQuery(index)}">Aceptar invitación</a><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&respuesta=rechazar&${demoQuery(index)}">Rechazar</a>`;
-  return c.html(page("Invitación", `<p class="eyebrow">Invitación a Cuentas Claras</p><h1>${html(name)}</h1><p>Te invitó <strong>${html(owner)}</strong>. Si aceptás, vas a poder acceder a Cuentas Claras de este espacio.</p><section class="card">${result}</section>`));
+  return c.html(page("Invitación", `<p class="eyebrow">Invitación a Cuentas Claras</p><h1>${html(name)}</h1><p>Te invitó <strong>${html(owner)}</strong>. Si aceptás, vas a poder acceder a Cuentas Claras de este grupo.</p><section class="card">${result}</section>`));
 });
 
 app.notFound((c) => c.json({ error: "No encontrado." }, 404));

@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_CATEGORIES } from "../src/category-data.js";
 import { CategoryError, categoryForEntry, createCategory, mergeCategory, readCategories, resolveCategory, seedCategoriesStatement, setCategoryArchived, updateCategory } from "../src/categories.js";
 import { getLedgerAccess } from "../src/ledger.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 
 async function book(name) {
   const owner = await ensureLocalUser(env.DB, `${name}@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const ledger = await getLedgerAccess(env.DB, space.id, owner.id);
-  return { owner, space, ledger };
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const ledger = await getLedgerAccess(env.DB, group.id, owner.id);
+  return { owner, group, ledger };
 }
 const count = ledgerId => env.DB.prepare("SELECT COUNT(*) AS n FROM ledger_categories WHERE ledger_id = ?").bind(ledgerId).first().then(row => row.n);
 const byName = (categories, name) => categories.find(category => category.name === name);
@@ -159,9 +159,9 @@ describe("gestión por la persona titular", () => {
   async function team(name) {
     const base = await book(name);
     const member = await ensureLocalUser(env.DB, `${name}-integrante@example.test`);
-    const invitation = await inviteToSpace(env.DB, { spaceId: base.space.id, inviterUserId: base.owner.id, email: member.email });
+    const invitation = await inviteToGroup(env.DB, { groupId: base.group.id, inviterUserId: base.owner.id, email: member.email });
     await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-    const memberLedger = await getLedgerAccess(env.DB, base.space.id, member.id);
+    const memberLedger = await getLedgerAccess(env.DB, base.group.id, member.id);
     return { ...base, member, memberLedger };
   }
 

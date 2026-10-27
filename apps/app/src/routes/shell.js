@@ -2,7 +2,7 @@ import { createCsrfToken } from "../csrf.js";
 import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "../profile-ui.js";
 import { readOwnProfile } from "../profiles.js";
 import { page, sessionSecret, signedInUser } from "../route-kit.js";
-import { ensureLocalUser } from "../spaces.js";
+import { ensureLocalUser } from "../groups.js";
 import { escapeHtml } from "../ui-parts.js";
 
 const html = escapeHtml;

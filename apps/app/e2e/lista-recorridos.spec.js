@@ -148,7 +148,7 @@ test("con un libro del tamaño de un export real la búsqueda, los filtros y «V
   if (await ack.count()) await ack.check();
   await page.getByRole("button", { name: "Confirmar importación" }).click();
   await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 120_000 });
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await expect(page.getByText("2485 vigentes").or(page.getByText("2.485 vigentes"))).toBeVisible();
   const started = Date.now();
   await search(page, "Movimiento 12");

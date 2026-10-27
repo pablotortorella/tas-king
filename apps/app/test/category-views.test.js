@@ -60,7 +60,7 @@ const participants = [{ id: "p1", displayName: "Ana", linkedUserId: "u", active:
 const data = (list = entries, role = "owner") => ({ ledger: { default_currency: "COP", role, archived_at: null }, participants, categories, entries: list, balances: [] });
 
 describe("selector de categoría en el formulario", () => {
-  const form = (extra = {}) => renderEntryForm(data(), { spaceId: "casa", csrf: "", userId: "u", ...extra });
+  const form = (extra = {}) => renderEntryForm(data(), { groupId: "casa", csrf: "", userId: "u", ...extra });
   it("agrupa las categorías vigentes y ofrece escribir una nueva", () => {
     const html = form();
     expect(html).toContain('<optgroup label="Comidas y bebidas">');
@@ -87,7 +87,7 @@ describe("selector de categoría en el formulario", () => {
 });
 
 describe("lista, detalle y filtro en la vista general", () => {
-  const view = (extra = {}) => renderLedgerOverview(data(), { spaceId: "casa", userId: "u", ...extra });
+  const view = (extra = {}) => renderLedgerOverview(data(), { groupId: "casa", userId: "u", ...extra });
   it("muestra el chip de categoría de cada fila", () => {
     const html = view();
     expect(html).toContain("Restaurantes");
@@ -107,24 +107,24 @@ describe("lista, detalle y filtro en la vista general", () => {
   });
   it("el enlace «ver más» conserva el filtro", () => {
     const many = Array.from({ length: 50 }, (_, index) => entry(`m${index}`, { categoryId: "c-alq", categoryInfo: info("c-alq", "Alquiler") }));
-    const html = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u", category: "c-alq" });
+    const html = renderLedgerOverview(data(many), { groupId: "casa", userId: "u", category: "c-alq" });
     expect(html).toContain("categoria=c-alq");
   });
-  it("enlaza a la gestión de categorías", () => expect(view()).toContain('href="/spaces/casa/ledger/categories"'));
+  it("enlaza a la gestión de categorías", () => expect(view()).toContain('href="/groups/casa/ledger/categories"'));
   it("el detalle muestra la categoría con su grupo", () => {
-    const html = renderEntryDetail(entries[0], data(), { spaceId: "casa", userId: "u", revisions: [] });
+    const html = renderEntryDetail(entries[0], data(), { groupId: "casa", userId: "u", revisions: [] });
     expect(html).toContain("Restaurantes");
     expect(html).toContain("Comidas y bebidas");
   });
-  it("el detalle de un movimiento sin categoría lo dice", () => expect(renderEntryDetail(entries[3], data(), { spaceId: "casa", userId: "u", revisions: [] })).toContain("Sin categoría"));
-  it("el detalle de una transferencia no muestra categoría", () => expect(renderEntryDetail(entries[4], data(), { spaceId: "casa", userId: "u", revisions: [] })).not.toContain("Sin categoría"));
+  it("el detalle de un movimiento sin categoría lo dice", () => expect(renderEntryDetail(entries[3], data(), { groupId: "casa", userId: "u", revisions: [] })).toContain("Sin categoría"));
+  it("el detalle de una transferencia no muestra categoría", () => expect(renderEntryDetail(entries[4], data(), { groupId: "casa", userId: "u", revisions: [] })).not.toContain("Sin categoría"));
 });
 
 describe("pantalla de gestión", () => {
-  const owner = renderCategories(data(), { spaceId: "casa", csrf: '<input type="hidden" name="_csrf" value="t">', owner: true });
-  const member = renderCategories(data(undefined, "member"), { spaceId: "casa", csrf: "", owner: false });
+  const owner = renderCategories(data(), { groupId: "casa", csrf: '<input type="hidden" name="_csrf" value="t">', owner: true });
+  const member = renderCategories(data(undefined, "member"), { groupId: "casa", csrf: "", owner: false });
   it("el titular ve los formularios de editar, archivar, fusionar y crear", () => {
-    for (const fragment of ["/ledger/categories/c-alq/archive", "/ledger/categories/c-alq/merge", 'action="/spaces/casa/ledger/categories"', "Nueva categoría"]) expect(owner).toContain(fragment);
+    for (const fragment of ["/ledger/categories/c-alq/archive", "/ledger/categories/c-alq/merge", 'action="/groups/casa/ledger/categories"', "Nueva categoría"]) expect(owner).toContain(fragment);
   });
   it("un integrante solo ve la lista", () => {
     expect(member).not.toContain("<form");
@@ -142,7 +142,7 @@ describe("pantalla de gestión", () => {
     expect(merge).not.toContain(">Casa · Alquiler<");
   });
   it("escapa los nombres y no usa estilos en línea", () => {
-    const html = renderCategories({ ...data(), categories: [{ ...categories[0], name: '"><img src=x onerror=1>' }] }, { spaceId: "casa", csrf: "", owner: true });
+    const html = renderCategories({ ...data(), categories: [{ ...categories[0], name: '"><img src=x onerror=1>' }] }, { groupId: "casa", csrf: "", owner: true });
     expect(html).not.toContain("<img");
     expect(html).not.toMatch(/ style=|<script/u);
   });

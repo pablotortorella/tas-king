@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { readLedger } from "../src/ledger.js";
 import { IMPORT_CHUNK, confirmImportPreview, createImportPreview, loadImportChunk, reviewImportPreview } from "../src/splitwise-import.js";
-import { createSpaceForUser, ensureLocalUser } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser } from "../src/groups.js";
 import { syntheticSplitwiseCsv } from "./fixtures/synthetic-splitwise.js";
 
 // Medición de la carga por etapas de un archivo de la forma del caso real (2.485 filas, dos personas) contra D1 local.
@@ -10,28 +10,28 @@ import { syntheticSplitwiseCsv } from "./fixtures/synthetic-splitwise.js";
 describe("importación a escala", () => {
   it("carga 2.485 filas por tandas, publica una sola vez y conserva los saldos", async () => {
     const owner = await ensureLocalUser(env.DB, "scale-owner@example.test");
-    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: "Escala" });
-    const ledger = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    const group = await createGroupForUser(env.DB, { userId: owner.id, name: "Escala" });
+    const ledger = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
     const ownerId = ledger.participants[0].id;
     const { csv, balances } = syntheticSplitwiseCsv({ rows: 2485 });
     const timings = {};
     const time = async (label, work) => { const start = Date.now(); const result = await work(); timings[label] = Date.now() - start; return result; };
 
-    const created = await time("previewMs", () => createImportPreview(env.DB, { spaceId: space.id, userId: owner.id, fileName: "escala.csv", csvText: csv }));
-    await time("reviewMs", () => reviewImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId, mapping: [ownerId, "new"] }));
-    const batchId = await time("confirmMs", () => confirmImportPreview(env.DB, { spaceId: space.id, userId: owner.id, previewId: created.previewId, acknowledgeDifference: true }));
+    const created = await time("previewMs", () => createImportPreview(env.DB, { groupId: group.id, userId: owner.id, fileName: "escala.csv", csvText: csv }));
+    await time("reviewMs", () => reviewImportPreview(env.DB, { groupId: group.id, userId: owner.id, previewId: created.previewId, mapping: [ownerId, "new"] }));
+    const batchId = await time("confirmMs", () => confirmImportPreview(env.DB, { groupId: group.id, userId: owner.id, previewId: created.previewId, acknowledgeDifference: true }));
 
     const chunkMs = [];
     let result;
     do {
       const start = Date.now();
-      result = await loadImportChunk(env.DB, { spaceId: space.id, userId: owner.id, batchId });
+      result = await loadImportChunk(env.DB, { groupId: group.id, userId: owner.id, batchId });
       chunkMs.push(Date.now() - start);
     } while (!result.done);
 
-    const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
     const readStart = Date.now();
-    await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+    await readLedger(env.DB, { groupId: group.id, userId: owner.id });
     const readMs = Date.now() - readStart;
     const sorted = [...chunkMs].sort((a, b) => a - b);
     const summary = { rows: 2485, chunkSize: IMPORT_CHUNK, chunks: chunkMs.length, statementsPerChunk: 5, publishStatements: 6, ...timings, chunkMsMedian: sorted[Math.floor(sorted.length / 2)], chunkMsMax: sorted.at(-1), chunkMsTotal: chunkMs.reduce((a, b) => a + b, 0), readLedgerMs: readMs };

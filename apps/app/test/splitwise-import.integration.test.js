@@ -7,7 +7,7 @@ import { ledgerCsv, searchLedger } from "../src/ledger-ui.js";
 import { runMaintenance } from "../src/maintenance.js";
 import { createSession } from "../src/sessions.js";
 import { cancelImportBatch, cancelImportPreview, confirmImportPreview, createImportPreview, loadImportChunk, readImportBatch, readImportPlan, readImportPreview, readImportProgress, readPreviewSummary, reviewImportPreview } from "../src/splitwise-import.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { syntheticSplitwiseCsv } from "./fixtures/synthetic-splitwise.js";
 
 const SECRET = "i".repeat(32);
@@ -22,15 +22,15 @@ const fixtureCsv = "Fecha,Descripción,Categoría,Coste,Moneda,Don Quijote,Sanch
 async function team(name) {
   const owner = await ensureLocalUser(env.DB, `${name}-owner@example.test`);
   const member = await ensureLocalUser(env.DB, `${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.id, email: member.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.id, email: member.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.id).id;
-  return { owner, member, space, ledger: data.ledger, ownerId, memberId };
+  return { owner, member, group, ledger: data.ledger, ownerId, memberId };
 }
-const as = (t, user = t.owner) => ({ spaceId: t.space.id, userId: user.id });
+const as = (t, user = t.owner) => ({ groupId: t.group.id, userId: user.id });
 const view = t => readLedger(env.DB, as(t));
 
 async function preview(t, csvText, mapping, decisions = {}) {
@@ -307,7 +307,7 @@ describe("importación de Splitwise: carga por etapas", () => {
     const hidden = await env.DB.prepare("SELECT id FROM ledger_entries WHERE import_batch_id = ? LIMIT 1").bind(batchId).first();
     const owner = await identity(t.owner);
     const get = path => app.request(`https://app.test${path}`, { headers: { Cookie: owner.cookie } }, { DB: env.DB, SESSION_SECRET: SECRET });
-    const base = `/spaces/${t.space.slug}`;
+    const base = `/groups/${t.group.slug}`;
     expect((await view(t)).entries).toHaveLength(0);
     expect((await exportLedger(env.DB, as(t))).entries).toHaveLength(0);
     expect((await exportLedger(env.DB, as(t))).importSourceRows).toEqual([]);
@@ -407,7 +407,7 @@ describe("importación de Splitwise: carga por etapas", () => {
     await expect(readImportProgress(env.DB, { ...as(t, t.member), batchId })).rejects.toMatchObject({ status: 403 });
     await expect(cancelImportBatch(env.DB, { ...as(t, t.member), batchId })).rejects.toMatchObject({ status: 403 });
     const stranger = await ensureLocalUser(env.DB, "imp-permisos-extraño@example.test");
-    await expect(loadImportChunk(env.DB, { spaceId: t.space.id, userId: stranger.id, batchId })).rejects.toMatchObject({ status: 404 });
+    await expect(loadImportChunk(env.DB, { groupId: t.group.id, userId: stranger.id, batchId })).rejects.toMatchObject({ status: 404 });
     await cancelImportBatch(env.DB, { ...as(t), batchId });
   });
 

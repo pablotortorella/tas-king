@@ -144,7 +144,7 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
   }
   if (!categoryId) return null;
   const chosen = categories.find(category => category.id === categoryId);
-  if (!chosen) throw new CategoryError("La categoría no existe en este libro.");
+  if (!chosen) throw new CategoryError("La categoría no existe en este grupo.");
   if (chosen.id === currentCategoryId) return chosen;
   const same = keepCurrent(categories, currentCategoryId, chosen.id);
   if (same) return same;
@@ -154,7 +154,7 @@ export async function categoryForEntry(db, { ledgerId, userId, categoryId, categ
 
 function assertOwner(ledger) {
   if (ledger.role !== "owner") throw new CategoryError("Sólo el titular puede gestionar las categorías.", 403);
-  if (ledger.archived_at) throw new CategoryError("El libro está archivado.", 409);
+  if (ledger.archived_at) throw new CategoryError("El grupo está archivado.", 409);
 }
 
 async function loadTarget(db, ledgerId, categoryId) {

@@ -114,7 +114,7 @@ test("solo con el teclado se puede recorrer la importación de principio a fin",
   await expect(page.getByRole("heading", { name: "Revisá el archivo" })).toBeVisible();
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Así quedará el grupo" })).toBeVisible();
   const ack = page.getByLabel("Revisé la diferencia o la falta de saldo fuente");
   if (await ack.count()) { await ack.focus(); await page.keyboard.press("Space"); }
   await page.getByRole("button", { name: "Confirmar importación" }).focus();
@@ -148,7 +148,7 @@ test("en 320 px la vista previa, la revisión y el progreso no desbordan y se le
   await audit("vista previa");
   await page.locator('[name="decision_3"]').selectOption("exclude");
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
-  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Así quedará el grupo" })).toBeVisible();
   await audit("revisión");
   await page.route("**/ledger/import/batches/*/load", route => route.abort());
   await page.getByLabel("Revisé la diferencia o la falta de saldo fuente").check();

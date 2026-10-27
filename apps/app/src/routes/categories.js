@@ -8,12 +8,12 @@ import { noticeFor } from "../ui-parts.js";
 // Pantalla de categorías del libro y su gestión.
 
 export function registerCategoryRoutes(app) {
-  app.get("/spaces/:spaceId/ledger/categories", async (c) => {
+  app.get("/groups/:groupId/ledger/categories", async (c) => {
     const user = await signedInUser(c);
     if (!user) return signInRequired(c);
     try {
-      const data = await readLedger(c.env.DB, { spaceId: c.req.param("spaceId"), userId: user.user_id });
-      return c.html(page("Categorías", noticeFor(c.req.query("aviso")) + renderCategories(data, { spaceId: c.req.param("spaceId"), csrf: await csrfInput(c, user), owner: data.ledger.role === "owner" })));
+      const data = await readLedger(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id });
+      return c.html(page("Categorías", noticeFor(c.req.query("aviso")) + renderCategories(data, { groupId: c.req.param("groupId"), csrf: await csrfInput(c, user), owner: data.ledger.role === "owner" })));
     } catch (error) { return ledgerFailure(c, error); }
   });
 
@@ -27,14 +27,14 @@ export function registerCategoryRoutes(app) {
     { path: "/:categoryId/merge", notice: () => "categoria-fusionada", run: (db, ctx, form, id) => mergeCategory(db, { ...ctx, categoryId: id, intoId: form.get("into") }) },
   ];
   for (const action of actions) {
-    app.post(`/spaces/:spaceId/ledger/categories${action.path}`, async (c) => {
+    app.post(`/groups/:groupId/ledger/categories${action.path}`, async (c) => {
       const user = c.get("protectedUser");
       try {
-        const ledger = await getLedgerAccess(c.env.DB, c.req.param("spaceId"), user.user_id);
+        const ledger = await getLedgerAccess(c.env.DB, c.req.param("groupId"), user.user_id);
         if (ledger.role !== "owner") throw new LedgerError("Sólo el titular puede gestionar las categorías.", 403);
-        if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+        if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
         const result = await action.run(c.env.DB, { ledger, userId: user.user_id }, await c.req.formData(), c.req.param("categoryId"));
-        return c.redirect(`/spaces/${encodeURIComponent(c.req.param("spaceId"))}/ledger/categories?aviso=${action.notice(result)}`, 303);
+        return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/ledger/categories?aviso=${action.notice(result)}`, 303);
       } catch (error) { return ledgerFailure(c, error); }
     });
   }

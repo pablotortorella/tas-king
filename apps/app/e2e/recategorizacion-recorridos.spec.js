@@ -37,7 +37,7 @@ test("volver atrás desde el aviso muestra una vista previa que ya no ofrece con
   await page.goBack();
   await expect(page.getByText("Ya no hay nada para cambiar")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirmar el cambio" })).toBeHidden();
-  await page.getByRole("link", { name: "Volver al libro" }).first().click();
+  await page.getByRole("link", { name: "Volver al grupo" }).first().click();
   await page.getByRole("link", { name: /Uno/u }).click();
   await expect(page.getByText(/Revisión \d+ ·/u)).toHaveCount(2);
 });
@@ -137,7 +137,7 @@ test.describe("con una pantalla táctil", () => {
 
 test("descripciones muy largas, emoji y HTML se ven como texto sin romper la pantalla en 320 px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  const long = "Compra enorme sin espacios ".repeat(4).trim();
+  const long = "Compra enorme sin grupos ".repeat(4).trim();
   const book = await bookWith(page, "rr-raros", [{ description: "🍕 Pizza del viernes" }, { description: "<b>negrita</b><img src=x onerror=alert(1)>" }, { description: long }]);
   const audit = async label => {
     const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));

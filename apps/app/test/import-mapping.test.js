@@ -56,7 +56,7 @@ describe("pantallas de la importación", () => {
   const meta = { participantNames: ["Pablo T", "Ana", "Caro"], counts: { movements: 3, incidents: 0, summaries: 0 } };
   const preview = (review = null) => ({ id: "preview_1", fileName: "grupo.csv", meta, review });
   const summary = { incidents: [], balances: [], pages: 1, page: 1 };
-  const render = (extra = {}) => renderImportPreview({ spaceId: "casa", csrf: "", preview: preview(), participants: people, summary, ledger: { default_currency: "COP" }, ownId: "p_yo", ...extra });
+  const render = (extra = {}) => renderImportPreview({ groupId: "casa", csrf: "", preview: preview(), participants: people, summary, ledger: { default_currency: "COP" }, ownId: "p_yo", ...extra });
 
   it("cada columna pregunta quién es y ofrece «Soy yo» como primera opción", () => {
     const html = render();
@@ -83,7 +83,7 @@ describe("pantallas de la importación", () => {
     expect(html).not.toContain("Soy yo");
   });
 
-  const review = (mapping, extra = {}) => renderImportReview({ spaceId: "casa", csrf: "", preview: preview({ mapping, decisions: {} }), plan: { rows: [], totals: [], reconciliation: [], warnings: [], assumptions: [], excluded: [] }, participants: people, ownId: "p_yo", ...extra });
+  const review = (mapping, extra = {}) => renderImportReview({ groupId: "casa", csrf: "", preview: preview({ mapping, decisions: {} }), plan: { rows: [], totals: [], reconciliation: [], warnings: [], assumptions: [], excluded: [] }, participants: people, ownId: "p_yo", ...extra });
 
   it("la revisión nombra a «Soy yo» y avisa de columnas repetidas y de que nadie es quien importa", () => {
     const clear = review(["p_yo", "p_ana", "new"]);

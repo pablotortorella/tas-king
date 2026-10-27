@@ -12,7 +12,7 @@ async function startImport(page, book, csv) {
 }
 async function reviewAndConfirm(page) {
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
-  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Así quedará el grupo" })).toBeVisible();
   const ack = page.getByLabel("Revisé la diferencia o la falta de saldo fuente");
   if (await ack.count()) await ack.check();
   await page.getByRole("button", { name: "Confirmar importación" }).click();
@@ -32,7 +32,7 @@ test("recorrido completo: subir, revisar, confirmar, ver el avance y publicar", 
   await reviewAndConfirm(page);
   await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".lead-count")).toContainText("350 movimientos importados");
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await expect(page.getByText("350 vigentes")).toBeVisible();
   await expect(page.locator(".entry-row .chip.imp").first()).toContainText("Importado de Splitwise · fila");
 });
@@ -75,7 +75,7 @@ test("al reabrir la importación a mitad de camino se reanuda desde lo cargado, 
   await page.goto(book);
   await page.goto(progressUrl);
   await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await expect(page.getByText("250 vigentes")).toBeVisible();
 });
 
@@ -155,7 +155,7 @@ test("un movimiento importado se corrige y se anula como cualquier otro, y la ma
   await page.getByRole("button", { name: "Previsualizar" }).click();
   await reviewAndConfirm(page);
   await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await expect(page.locator(".chip.warn", { hasText: "Pagador inferido" })).toHaveCount(2);
   await page.getByRole("link", { name: /Posada/ }).click();
   await expect(page.locator(".entry-origin")).toContainText("Importado de Splitwise · fila 2");
@@ -191,7 +191,7 @@ test.describe("punto de partida", () => {
     await expect(page.getByRole("radio", { name: /Saldos anteriores/u })).toBeDisabled();
     await page.getByLabel("Nombre", { exact: true }).fill(`Punto ${suffix}`);
     await page.getByRole("radio", { name: "Traer de Splitwise" }).check();
-    await page.getByRole("button", { name: "Crear espacio" }).click();
+    await page.getByRole("button", { name: "Crear grupo" }).click();
     await expect(page.getByRole("heading", { name: "Importar Splitwise" })).toBeVisible();
     await page.getByRole("link", { name: "Cancelar", exact: true }).click();
     await expect(page.getByText("Todavía no hay movimientos.")).toBeVisible();
@@ -239,7 +239,7 @@ for (const scheme of ["light", "dark"]) {
       await audit("vista previa");
       await page.locator('[name="decision_3"]').selectOption("exclude");
       await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
-      await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Así quedará el grupo" })).toBeVisible();
       await audit("revisión");
       await page.route("**/ledger/import/batches/*/load", route => route.abort());
       await page.getByLabel("Revisé la diferencia o la falta de saldo fuente").check();
@@ -257,7 +257,7 @@ test("sin errores de consola ni violaciones de CSP en todo el recorrido de impor
   const { book } = await openBook(page, "imp-csp");
   const { csv } = syntheticSplitwiseCsv({ rows: 120 });
   await fullImport(page, book, csv);
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await page.locator(".entry-row a").first().click();
   expect(problems).toEqual([]);
 });

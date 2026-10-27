@@ -13,12 +13,12 @@ export const VOID_REASON = "Unión de personas: las dos puntas de la transferenc
 
 function requireOwner(ledger, action) {
   if (ledger.role !== "owner") throw new LedgerError(`Sólo el titular puede ${action}.`, 403);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
 }
 
 // Renombrar: el nombre es único entre las personas vigentes del grupo (sin distinguir mayúsculas ni tildes).
-export async function renamePerson(db, { spaceId, userId, personId, name }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function renamePerson(db, { groupId, userId, personId, name }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   requireOwner(ledger, "renombrar personas");
   const displayName = typeof name === "string" ? name.trim() : "";
   if (!displayName || displayName.length > 120) throw new LedgerError("Ingresá un nombre de hasta 120 caracteres.");
@@ -37,8 +37,8 @@ export async function renamePerson(db, { spaceId, userId, personId, name }) {
 }
 
 // Todo lo que una unión cambiaría, calculado con la lectura del libro. No escribe.
-async function planMerge(db, { spaceId, userId, sourceId, targetId }) {
-  const data = await readLedger(db, { spaceId, userId });
+async function planMerge(db, { groupId, userId, sourceId, targetId }) {
+  const data = await readLedger(db, { groupId, userId });
   requireOwner(data.ledger, "unir personas");
   if (!sourceId || !targetId) throw new LedgerError("Elegí las dos personas.");
   if (sourceId === targetId) throw new LedgerError("Elegí dos personas distintas.");
@@ -55,8 +55,8 @@ async function planMerge(db, { spaceId, userId, sourceId, targetId }) {
   const toVoid = affected.filter(entry => isTransferBetween(entry, sourceId, targetId));
   const voiding = new Set(toVoid.map(entry => entry.id));
   const toRevise = affected.filter(entry => !voiding.has(entry.id));
-  const invitations = (await db.prepare("SELECT invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' AND target_participant_id = ?").bind(data.ledger.space_id, sourceId).all()).results;
-  const targetInvitations = (await db.prepare("SELECT invitee_email FROM invitations WHERE space_id = ? AND status = 'pending' AND target_participant_id = ?").bind(data.ledger.space_id, targetId).all()).results;
+  const invitations = (await db.prepare("SELECT invitee_email FROM invitations WHERE group_id = ? AND status = 'pending' AND target_participant_id = ?").bind(data.ledger.group_id, sourceId).all()).results;
+  const targetInvitations = (await db.prepare("SELECT invitee_email FROM invitations WHERE group_id = ? AND status = 'pending' AND target_participant_id = ?").bind(data.ledger.group_id, targetId).all()).results;
   const accountMoves = Boolean(source.linkedUserId) && !target.linkedUserId;
   const invitationMoves = invitations.length > 0 && !target.linkedUserId && targetInvitations.length === 0;
   const canceled = [...(invitationMoves ? [] : invitations), ...(accountMoves ? targetInvitations : [])].map(row => row.invitee_email);
@@ -154,8 +154,8 @@ async function finish(db, { plan, userId, mergeId }) {
   const mineArgs = [ledger.id, mergeId, token];
   await db.batch([
     db.prepare(`UPDATE person_merges SET status = 'applied', token = ?, changed = (SELECT COUNT(*) FROM person_merge_items WHERE ledger_id = ? AND merge_id = ? AND kind = 'revised'), voided = (SELECT COUNT(*) FROM person_merge_items WHERE ledger_id = ? AND merge_id = ? AND kind = 'voided') WHERE ledger_id = ? AND id = ? AND status = 'applying' AND NOT ${references("entry_cash_parties")} AND NOT ${references("entry_allocations")}`).bind(token, ledger.id, mergeId, ledger.id, mergeId, ledger.id, mergeId, ledger.id, sourceId, ledger.id, sourceId),
-    db.prepare(`UPDATE invitations SET target_participant_id = ? WHERE space_id = ? AND status = 'pending' AND target_participant_id = ? AND NOT EXISTS (SELECT 1 FROM invitations x WHERE x.space_id = ? AND x.status = 'pending' AND x.target_participant_id = ?) AND EXISTS (SELECT 1 FROM ledger_participants WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL) AND ${mine}`).bind(targetId, ledger.space_id, sourceId, ledger.space_id, targetId, ledger.id, targetId, ...mineArgs),
-    db.prepare(`UPDATE invitations SET status = 'canceled', resolved_at = CURRENT_TIMESTAMP WHERE space_id = ? AND status = 'pending' AND (target_participant_id = ? OR (? = 1 AND target_participant_id = ?)) AND ${mine}`).bind(ledger.space_id, sourceId, plan.accountMoves ? 1 : 0, targetId, ...mineArgs),
+    db.prepare(`UPDATE invitations SET target_participant_id = ? WHERE group_id = ? AND status = 'pending' AND target_participant_id = ? AND NOT EXISTS (SELECT 1 FROM invitations x WHERE x.group_id = ? AND x.status = 'pending' AND x.target_participant_id = ?) AND EXISTS (SELECT 1 FROM ledger_participants WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL) AND ${mine}`).bind(targetId, ledger.group_id, sourceId, ledger.group_id, targetId, ledger.id, targetId, ...mineArgs),
+    db.prepare(`UPDATE invitations SET status = 'canceled', resolved_at = CURRENT_TIMESTAMP WHERE group_id = ? AND status = 'pending' AND (target_participant_id = ? OR (? = 1 AND target_participant_id = ?)) AND ${mine}`).bind(ledger.group_id, sourceId, plan.accountMoves ? 1 : 0, targetId, ...mineArgs),
     db.prepare(`UPDATE ledger_participants SET active = 0, merged_into_id = ?, linked_user_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND ${mine}`).bind(targetId, ledger.id, sourceId, ...mineArgs),
     db.prepare(`UPDATE ledger_participants SET linked_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND linked_user_id IS NULL AND ? IS NOT NULL AND ${mine}`).bind(plan.source.linkedUserId ?? null, ledger.id, targetId, plan.source.linkedUserId ?? null, ...mineArgs),
     db.prepare(`UPDATE ledger_participants SET merged_into_id = ? WHERE ledger_id = ? AND merged_into_id = ? AND ${mine}`).bind(targetId, ledger.id, sourceId, ...mineArgs),
@@ -171,9 +171,9 @@ function summarize(merge) {
 
 // Paso 2: aplica. La clave de la confirmación identifica la unión: repetirla (o enviarla en simultáneo) devuelve la unión
 // ya aplicada y, si se había cortado a la mitad, la completa sin duplicar nada. `hooks.beforeWrite` es solo para pruebas.
-export async function applyMerge(db, { spaceId, userId, sourceId, targetId, expectedRevision = null, key, hooks = {} }) {
+export async function applyMerge(db, { groupId, userId, sourceId, targetId, expectedRevision = null, key, hooks = {} }) {
   if (typeof key !== "string" || !KEY_PATTERN.test(key)) throw new LedgerError("Recargá la pantalla y volvé a intentar.");
-  const access = await getLedgerAccess(db, spaceId, userId);
+  const access = await getLedgerAccess(db, groupId, userId);
   requireOwner(access, "unir personas");
   const mergeId = `merge_${key}`;
   let merge = await db.prepare("SELECT * FROM person_merges WHERE ledger_id = ? AND id = ?").bind(access.id, mergeId).first();
@@ -184,13 +184,13 @@ export async function applyMerge(db, { spaceId, userId, sourceId, targetId, expe
     if (sameSource && (sameSource.status === "applied" || sameSource.target_id !== targetId)) throw new LedgerError("Esa persona ya fue unida a otra.", 409);
     merge = sameSource ?? null;
   }
-  let plan = await planMerge(db, { spaceId, userId, sourceId, targetId });
+  let plan = await planMerge(db, { groupId, userId, sourceId, targetId });
   if (!merge) {
-    if (expectedRevision !== null && Number(expectedRevision) !== plan.data.ledger.revision) throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+    if (expectedRevision !== null && Number(expectedRevision) !== plan.data.ledger.revision) throw new LedgerError("El grupo cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
     const inserted = await db.prepare("INSERT OR IGNORE INTO person_merges (ledger_id, id, actor_user_id, source_id, target_id, planned) SELECT ?, ?, ?, ?, ?, ? WHERE (? IS NULL OR (SELECT revision FROM expense_ledgers WHERE id = ?) = ?)").bind(access.id, mergeId, userId, sourceId, targetId, plan.affected.length, expectedRevision, access.id, expectedRevision === null ? null : Number(expectedRevision)).run();
     if (!inserted.meta?.changes) {
       const raced = await db.prepare("SELECT * FROM person_merges WHERE ledger_id = ? AND (id = ? OR source_id = ?)").bind(access.id, mergeId, sourceId).first();
-      if (!raced) throw new LedgerError("El libro cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
+      if (!raced) throw new LedgerError("El grupo cambió desde la vista previa. Volvé a previsualizar antes de confirmar.", 409);
       if (raced.status === "applied") return summarize(raced);
       merge = raced;
     } else merge = { id: mergeId };
@@ -198,7 +198,7 @@ export async function applyMerge(db, { spaceId, userId, sourceId, targetId, expe
   await hooks.beforeWrite?.();
   for (let round = 0; round < MAX_ROUNDS && plan.affected.length; round += 1) {
     await writeChunks(db, { plan, userId, mergeId: merge.id });
-    plan = await planMerge(db, { spaceId, userId, sourceId, targetId });
+    plan = await planMerge(db, { groupId, userId, sourceId, targetId });
   }
   const done = await finish(db, { plan, userId, mergeId: merge.id });
   if (done?.status !== "applied") throw new LedgerError("La unión no terminó porque otras personas siguen cambiando movimientos. Repetí la confirmación.", 409);

@@ -1,6 +1,6 @@
 import { CATEGORY_ICON_KEYS, CATEGORY_ICON_LABELS, categoryIcon } from "./category-data.js";
 import { resolveCategory } from "./categories.js";
-import { escapeHtml, plural, spacePath as path } from "./ui-parts.js";
+import { escapeHtml, plural, groupPath as path } from "./ui-parts.js";
 
 
 function iconSelect(selected) {
@@ -8,11 +8,11 @@ function iconSelect(selected) {
 }
 
 // Gestión de las categorías del libro. Cualquier integrante la ve; solo la persona titular puede cambiarlas.
-export function renderCategories(data, { spaceId, csrf, owner }) {
+export function renderCategories(data, { groupId, csrf, owner }) {
   const categories = data.categories ?? [];
   const counts = new Map();
   for (const entry of data.entries) if (entry.categoryInfo) counts.set(entry.categoryInfo.id, (counts.get(entry.categoryInfo.id) ?? 0) + 1);
-  const base = `${path(spaceId)}/ledger/categories`;
+  const base = `${path(groupId)}/ledger/categories`;
   const writable = owner && !data.ledger.archived_at;
   const active = categories.filter(category => category.status === "active");
   const groupNames = [...new Set(active.map(category => category.group))];
@@ -32,7 +32,7 @@ export function renderCategories(data, { spaceId, csrf, owner }) {
   const archived = categories.filter(category => category.status === "archived");
   const create = writable ? `<form class="ledger-form" method="post" action="${base}">${csrf}<h2>Nueva categoría</h2><label>Nombre<input name="name" required maxlength="60" autocomplete="off"></label><label>Grupo<input name="group" maxlength="60" list="category-groups" placeholder="Mis categorías" autocomplete="off"></label>${iconSelect("tag")}<div class="form-actions"><button class="button" type="submit">Crear categoría</button></div></form>` : "";
   const datalist = `<datalist id="category-groups">${groupNames.map(name => `<option value="${escapeHtml(name)}"></option>`).join("")}</datalist>`;
-  const intro = owner ? "Cada libro tiene su propia lista. Renombrar, reagrupar o fusionar cambia una sola fila: los movimientos no se reescriben."
-    : "Estas son las categorías del libro. Solo la persona titular puede renombrarlas, reagruparlas, archivarlas o fusionarlas.";
-  return `<a class="back-link" href="${path(spaceId)}">← Volver al libro</a><p class="eyebrow">Cuentas Claras</p><h1>Categorías</h1><p class="hint">${intro}</p>${create}${datalist}<div class="panel">${groups}${archived.length ? `<section class="cat-group"><h3>Archivadas y fusionadas</h3><ul class="plain-list">${archived.map(row).join("")}</ul></section>` : ""}</div>`;
+  const intro = owner ? "Cada grupo tiene su propia lista. Renombrar, reagrupar o fusionar cambia una sola fila: los movimientos no se reescriben."
+    : "Estas son las categorías del grupo. Solo la persona titular puede renombrarlas, reagruparlas, archivarlas o fusionarlas.";
+  return `<a class="back-link" href="${path(groupId)}">← Volver al grupo</a><p class="eyebrow">Cuentas Claras</p><h1>Categorías</h1><p class="hint">${intro}</p>${create}${datalist}<div class="panel">${groups}${archived.length ? `<section class="cat-group"><h3>Archivadas y fusionadas</h3><ul class="plain-list">${archived.map(row).join("")}</ul></section>` : ""}</div>`;
 }

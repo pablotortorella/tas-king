@@ -8,7 +8,7 @@ async function openBook(page) {
   const suffix = unique();
   await page.goto(`/api/local/session?as=cat-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa categorías ${suffix}`);
-  await page.getByRole("button", { name: "Crear espacio" }).click();
+  await page.getByRole("button", { name: "Crear grupo" }).click();
   const book = new URL(page.url()).pathname;
   await addPerson(page, book, "Beto");
   return { book, suffix };

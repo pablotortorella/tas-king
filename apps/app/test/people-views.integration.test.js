@@ -5,7 +5,7 @@ import { createCsrfToken } from "../src/csrf.js";
 import { addParticipant, readLedger, saveEntry } from "../src/ledger.js";
 import { setLedgerArchived } from "../src/ledger-admin.js";
 import { createSession } from "../src/sessions.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 
 const SECRET = "v".repeat(32);
 
@@ -24,15 +24,15 @@ const form = fields => new URLSearchParams(fields).toString();
 async function book(name) {
   const owner = await identity(`${name}-owner@example.test`);
   const member = await identity(`${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.user.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.user.id, email: member.user.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.user.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.user.id, email: member.user.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.user.id, email: member.user.email, accepted: true });
-  const ana = await addParticipant(env.DB, { spaceId: space.id, userId: owner.user.id, name: "Ana" });
-  const beto = await addParticipant(env.DB, { spaceId: space.id, userId: owner.user.id, name: "Beto" });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.user.id });
+  const ana = await addParticipant(env.DB, { groupId: group.id, userId: owner.user.id, name: "Ana" });
+  const beto = await addParticipant(env.DB, { groupId: group.id, userId: owner.user.id, name: "Beto" });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.user.id });
   const ownId = data.participants.find(person => person.linkedUserId === owner.user.id).id;
-  await saveEntry(env.DB, { spaceId: space.id, userId: owner.user.id, idempotencyKey: crypto.randomUUID(), input: { type: "expense", currency: "COP", totalMinor: 20000, description: "Mercado", note: "", occurredAt: "2026-10-22", cashParties: [{ participantId: ana.id, direction: "out", amountMinor: 20000 }], allocations: [{ participantId: ana.id, amountMinor: 10000 }, { participantId: beto.id, amountMinor: 10000 }] } });
-  return { owner, member, space, ownId, anaId: ana.id, betoId: beto.id, base: `/spaces/${space.slug}` };
+  await saveEntry(env.DB, { groupId: group.id, userId: owner.user.id, idempotencyKey: crypto.randomUUID(), input: { type: "expense", currency: "COP", totalMinor: 20000, description: "Mercado", note: "", occurredAt: "2026-10-22", cashParties: [{ participantId: ana.id, direction: "out", amountMinor: 20000 }], allocations: [{ participantId: ana.id, amountMinor: 10000 }, { participantId: beto.id, amountMinor: 10000 }] } });
+  return { owner, member, group, ownId, anaId: ana.id, betoId: beto.id, base: `/groups/${group.slug}` };
 }
 
 describe("pantalla de personas", () => {
@@ -101,7 +101,7 @@ describe("unir por la web", () => {
     expect(html).toContain("no se puede deshacer");
     const key = /name="key" value="([^"]+)"/u.exec(html)[1];
     const revision = /name="expectedRevision" value="([^"]+)"/u.exec(html)[1];
-    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).participants.map(p => p.id)).toContain(t.anaId);
+    expect((await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).participants.map(p => p.id)).toContain(t.anaId);
     const confirm = () => request(t.owner, `${t.base}/people/${t.anaId}/merge`, { method: "POST", body: form({ into: t.betoId, key, expectedRevision: revision }) });
     const done = await confirm();
     expect(done.status).toBe(303);
@@ -111,7 +111,7 @@ describe("unir por la web", () => {
     expect(people).toContain("Personas unidas.");
     expect(people).toContain("Personas unidas</h2>");
     expect(people).toContain("unida a Beto");
-    const entry = (await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).entries[0];
+    const entry = (await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).entries[0];
     const detail = await (await request(t.owner, `${t.base}/ledger/entries/${encodeURIComponent(entry.id)}`)).text();
     expect(detail).toContain("Cambió: unión de personas");
     const edit = await (await request(t.owner, `${t.base}/ledger/entries/${encodeURIComponent(entry.id)}/edit`)).text();
@@ -131,7 +131,7 @@ describe("unir por la web", () => {
 
   it("no ofrece unir en un grupo archivado y rechaza la operación", async () => {
     const t = await book("pv-unir-archivado");
-    await setLedgerArchived(env.DB, { spaceId: t.space.id, userId: t.owner.user.id, archived: true });
+    await setLedgerArchived(env.DB, { groupId: t.group.id, userId: t.owner.user.id, archived: true });
     expect((await request(t.owner, `${t.base}/people/${t.anaId}/merge`)).status).toBe(409);
     expect((await request(t.owner, `${t.base}/people/${t.anaId}/merge`, { method: "POST", body: form({ into: t.betoId, key: crypto.randomUUID() }) })).status).toBe(409);
   });
@@ -141,11 +141,11 @@ describe("unir por la web", () => {
     const html = await (await request(t.owner, `${t.base}/people/${t.anaId}/merge/preview?into=${t.betoId}`)).text();
     const key = /name="key" value="([^"]+)"/u.exec(html)[1];
     const revision = /name="expectedRevision" value="([^"]+)"/u.exec(html)[1];
-    await addParticipant(env.DB, { spaceId: t.space.id, userId: t.owner.user.id, name: "Caro" });
+    await addParticipant(env.DB, { groupId: t.group.id, userId: t.owner.user.id, name: "Caro" });
     const stale = await request(t.owner, `${t.base}/people/${t.anaId}/merge`, { method: "POST", body: form({ into: t.betoId, key, expectedRevision: revision }) });
     expect(stale.status).toBe(409);
-    expect(await stale.text()).toContain("El libro cambió");
-    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).participants.map(p => p.id)).toContain(t.anaId);
+    expect(await stale.text()).toContain("El grupo cambió");
+    expect((await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).participants.map(p => p.id)).toContain(t.anaId);
   });
 });
 
@@ -158,7 +158,7 @@ describe("menú y lista de grupos", () => {
     const all = await request(t.owner, "/cuentas-claras?todos=1");
     expect(all.status).toBe(200);
     const html = await all.text();
-    expect(html).toContain("Crear espacio");
+    expect(html).toContain("Crear grupo");
     expect(html).toContain("Invitaciones");
     expect(html).toContain("pv-mis-grupos");
   });

@@ -1,6 +1,6 @@
 import { CURRENCY_MINOR_UNITS, currencyLabel, formatMoney, normalizeCurrency, parseMoney, splitEqually } from "./finance.js";
 import { LedgerError } from "./errors.js";
-import { escapeHtml, ICONS, shortDate, spacePath as path } from "./ui-parts.js";
+import { escapeHtml, ICONS, shortDate, groupPath as path } from "./ui-parts.js";
 import { searchable } from "./text.js";
 import { categoryIcon } from "./category-data.js";
 import { resolveCategory } from "./categories.js";
@@ -158,13 +158,13 @@ function splitSection({ data, visible, selected, ownId, method, inputs }) {
   return `<fieldset><legend>¿Entre quiénes se reparte?</legend><div class="choices">${chips}</div><div class="all-to" hidden><span class="lead">Atajo:</span>${shortcut}</div></fieldset><fieldset><legend>¿Cómo se reparte?</legend><div class="choices">${methods}</div>${hints}${group("exact", "share_", "0,00", "")}${group("percent", "percent_", "0", "", "%")}${group("shares", "parts_", "1", "1", "partes")}${group("fixed", "fixed_", "Resto igual", "")}</fieldset>`;
 }
 
-export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense", entry = null, prefill = {}, split = null }) {
+export function renderEntryForm(data, { groupId, csrf, userId, type = "expense", entry = null, prefill = {}, split = null }) {
   const edit = Boolean(entry);
   const currentType = entry?.type ?? type;
   const currency = entry?.currency ?? prefill.currency ?? data.ledger.default_currency;
   const ownId = data.participants.find(p => p.linkedUserId === userId)?.id;
   const people = [...data.participants].sort((a, b) => Number(b.id === ownId) - Number(a.id === ownId));
-  const action = edit ? `${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit` : `${path(spaceId)}/ledger/entries`;
+  const action = edit ? `${path(groupId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit` : `${path(groupId)}/ledger/entries`;
   // Un movimiento que conserva su método se reabre con él; uno anterior se deduce como igual o exacto.
   const spec = split && SPLIT_METHODS.some(([value]) => value === split.method) ? split : null;
   const selected = new Set(spec?.beneficiaries ?? entry?.allocations.map(share => share.participantId) ?? data.participants.filter(p => p.active).map(p => p.id));
@@ -177,9 +177,9 @@ export function renderEntryForm(data, { spaceId, csrf, userId, type = "expense",
   const fields = currentType === "transfer"
     ? `<fieldset><legend>De</legend>${radioChoices(people, "from", entry?.cashParties.find(p => p.direction === "out")?.participantId ?? prefill.from ?? ownId, ownId)}</fieldset><fieldset><legend>Para</legend>${radioChoices(people, "to", entry?.cashParties.find(p => p.direction === "in")?.participantId ?? prefill.to ?? people.find(p => p.active && p.id !== (prefill.from ?? ownId))?.id, ownId)}</fieldset>`
     : `${payerFieldset({ type: currentType, entry, people, ownId, names: new Map(data.participants.map(p => [p.id, p.displayName])), currency })}${categorySection(data, entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
-  const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(spaceId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
+  const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(groupId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
   const label = entryLabel(currentType).toLowerCase();
-  return `<a class="back-link" href="${path(spaceId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(spaceId)}">Cancelar</a></div></form>`;
+  return `<a class="back-link" href="${path(groupId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(groupId)}">Cancelar</a></div></form>`;
 }
 
 function bare(amountMinor, currency) { return formatMoney(amountMinor, currency).replace(`${currency} `, ""); }
@@ -215,10 +215,10 @@ function splitNote(entry, data) {
 }
 
 // Origen de un movimiento importado: archivo, fila y, si el pagador y el reparto se dedujeron, cómo corregirlos.
-function provenance(entry, spaceId) {
+function provenance(entry, groupId) {
   if (!entry.importBatchId) return "";
   const inferred = entry.inferred ? '<p class="hint inferred">El pagador y el reparto se dedujeron de los saldos del archivo. Si no coinciden con lo que pasó, corregilos: el efecto original no cambia hasta que lo hagas.</p>' : "";
-  return `<p class="entry-origin"><span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span> <a href="${path(spaceId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver el lote</a></p>${inferred}`;
+  return `<p class="entry-origin"><span class="chip imp">Importado de Splitwise · fila ${escapeHtml(entry.sourceRowNumber)}</span> <a href="${path(groupId)}/ledger/import/batches/${encodeURIComponent(entry.importBatchId)}">Ver el lote</a></p>${inferred}`;
 }
 
 // Las revisiones que vienen de una recategorización en lote lo indican en el historial.
@@ -229,17 +229,17 @@ function batchMark(row) {
   } catch { return ""; }
 }
 
-export function renderEntryDetail(entry, data, { spaceId, userId, revisions }) {
+export function renderEntryDetail(entry, data, { groupId, userId, revisions }) {
   const names = new Map(data.participants.map(p => [p.id, p.displayName]));
-  const back = `<a class="back-link" href="${path(spaceId)}">← Volver al libro</a>`;
+  const back = `<a class="back-link" href="${path(groupId)}">← Volver al grupo</a>`;
   const voided = entry.status === "voided";
   const creator = entry.createdByUserId === userId ? "vos" : entry.creatorName;
   const list = direction => entry.cashParties.filter(p => p.direction === direction).map(p => names.get(p.participantId) ?? "Participante").join(", ");
   const who = entry.type === "expense" ? `pagó ${list("out")}` : entry.type === "income" ? `recibió ${list("in")}` : `${list("out")} → ${list("in")}`;
   const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))}${batchMark(row)} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
-  const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(spaceId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
-  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, spaceId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
+  const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(groupId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(groupId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
+  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, groupId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
 }
 export function ledgerCsv(data) {
   const quote = value => {

@@ -7,7 +7,7 @@ import { createCsrfToken } from "../src/csrf.js";
 
 describe("protección operativa", () => {
   it("rechaza payload declarado mayor a 16 KiB antes del handler", async () => {
-    const response = await app.request("https://app.test/api/local/spaces", {
+    const response = await app.request("https://app.test/api/local/groups", {
       method: "POST",
       headers: { "Content-Length": "16385", "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "payload@example.test" },
       body: "{}",
@@ -37,7 +37,7 @@ describe("protección operativa", () => {
     const secret = "r".repeat(32);
     const session = await createSession(env.DB, { userId, secret });
     const csrf = await createCsrfToken({ sessionId: session.id, secret });
-    const response = await app.request("https://app.test/spaces", {
+    const response = await app.request("https://app.test/groups", {
       method: "POST",
       headers: {
         Cookie: `__Host-homesuite_session=${encodeURIComponent(session.token)}`,
@@ -57,11 +57,11 @@ describe("mantenimiento programado", () => {
   it("purga sesiones antiguas y vence invitaciones sin tocar historia financiera", async () => {
     await env.DB.batch([
       env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES ('maint_user', 'maint_sub', 'maint@example.test', 'Maint')"),
-      env.DB.prepare("INSERT INTO spaces (id, name) VALUES ('maint_space', 'Maint Space')"),
-      env.DB.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES ('maint_space', 'maint_user', 'owner')"),
+      env.DB.prepare("INSERT INTO groups (id, name) VALUES ('maint_group', 'Maint Group')"),
+      env.DB.prepare("INSERT INTO memberships (group_id, user_id, role) VALUES ('maint_group', 'maint_user', 'owner')"),
       env.DB.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES ('old_session', 'maint_user', '2026-01-01T00:00:00.000Z')"),
-      env.DB.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id, expires_at) VALUES ('old_invite', 'maint_space', 'old@example.test', 'maint_user', '2026-01-01T00:00:00.000Z')"),
-      env.DB.prepare("INSERT INTO expense_ledgers (id, space_id, default_currency) VALUES ('maint_ledger', 'maint_space', 'COP')"),
+      env.DB.prepare("INSERT INTO invitations (id, group_id, invitee_email, inviter_user_id, expires_at) VALUES ('old_invite', 'maint_group', 'old@example.test', 'maint_user', '2026-01-01T00:00:00.000Z')"),
+      env.DB.prepare("INSERT INTO expense_ledgers (id, group_id, default_currency) VALUES ('maint_ledger', 'maint_group', 'COP')"),
     ]);
     const result = await runMaintenance(env.DB, { now: new Date("2026-10-20T05:00:00.000Z") });
     expect(result).toEqual({ expiredInvitations: 1, deletedSessions: 1, deletedImportPreviews: 0, deletedPendingImports: 0, convertedLegacyBatches: 0 });

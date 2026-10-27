@@ -117,10 +117,10 @@ export function buildImportPlan(parsed, review, defaultCurrency) {
 // ---------------------------------------------------------------------------------------------------------------
 // Vista previa
 
-export async function createImportPreview(db, { spaceId, userId, fileName, csvText }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function createImportPreview(db, { groupId, userId, fileName, csvText }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   assertOwner(ledger);
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   if (typeof csvText !== "string" || new TextEncoder().encode(csvText).byteLength > MAX_CSV_BYTES) throw new LedgerError("El CSV debe medir como máximo 2 MiB.", 413);
   let parsed;
   try { parsed = parseSplitwiseCsv(csvText); }
@@ -138,8 +138,8 @@ export async function createImportPreview(db, { spaceId, userId, fileName, csvTe
   return { previewId: id };
 }
 
-export async function readImportPreview(db, { spaceId, userId, previewId }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function readImportPreview(db, { groupId, userId, previewId }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   assertOwner(ledger, "Sólo el titular puede revisar importaciones.");
   const row = await db.prepare("SELECT * FROM splitwise_import_previews WHERE id = ? AND ledger_id = ? AND actor_user_id = ? AND expires_at > CURRENT_TIMESTAMP").bind(previewId, ledger.id, userId).first();
   if (!row) throw new LedgerError("La previsualización venció. Volvé a cargar el archivo.", 404);
@@ -176,8 +176,8 @@ async function assertNoOverlap(db, ledgerId, rows) {
 
 // Guarda el mapeo y las decisiones. Con partial=true acepta decisiones incompletas (para paginar los incidentes sin
 // perder lo ya decidido); sin partial exige todo y devuelve el plan.
-export async function reviewImportPreview(db, { spaceId, userId, previewId, mapping, decisions = {}, partial = false }) {
-  const preview = await readImportPreview(db, { spaceId, userId, previewId });
+export async function reviewImportPreview(db, { groupId, userId, previewId, mapping, decisions = {}, partial = false }) {
+  const preview = await readImportPreview(db, { groupId, userId, previewId });
   await validateMapping(db, preview.ledger.id, preview.meta.participantNames, mapping);
   const saved = preview.review?.decisions ?? {};
   const merged = { ...saved };
@@ -201,16 +201,16 @@ export async function reviewImportPreview(db, { spaceId, userId, previewId, mapp
   return { preview: { ...preview, review }, plan };
 }
 
-export async function readImportPlan(db, { spaceId, userId, previewId }) {
-  const preview = await readImportPreview(db, { spaceId, userId, previewId });
+export async function readImportPlan(db, { groupId, userId, previewId }) {
+  const preview = await readImportPreview(db, { groupId, userId, previewId });
   if (preview.batchId) throw new LedgerError("Esta importación ya se confirmó.", 409);
   if (!preview.review) throw new LedgerError("Revisá el archivo antes de confirmar.");
   const parsed = await loadParsed(db, previewId, preview.meta);
   return { preview, plan: buildImportPlan(parsed, preview.review, preview.ledger.default_currency) };
 }
 
-export async function cancelImportPreview(db, { spaceId, userId, previewId }) {
-  const preview = await readImportPreview(db, { spaceId, userId, previewId });
+export async function cancelImportPreview(db, { groupId, userId, previewId }) {
+  const preview = await readImportPreview(db, { groupId, userId, previewId });
   if (preview.batchId) throw new LedgerError("Esta importación ya se confirmó: cancelala desde su pantalla de avance.", 409);
   await db.batch([
     db.prepare("DELETE FROM splitwise_import_rows WHERE owner_id = ?").bind(previewId),
@@ -253,11 +253,11 @@ function newCategories(rows, existing) {
   return [...wanted].map(([nameKey, name]) => ({ name, name_key: nameKey }));
 }
 
-export async function confirmImportPreview(db, { spaceId, userId, previewId, acknowledgeDifference = false }) {
+export async function confirmImportPreview(db, { groupId, userId, previewId, acknowledgeDifference = false }) {
   // Repetir la confirmación (doble clic, reintento) devuelve el lote que ya creó esa vista previa.
-  const confirmed = await readImportPreview(db, { spaceId, userId, previewId });
+  const confirmed = await readImportPreview(db, { groupId, userId, previewId });
   if (confirmed.batchId) return confirmed.batchId;
-  const { preview, plan } = await readImportPlan(db, { spaceId, userId, previewId });
+  const { preview, plan } = await readImportPlan(db, { groupId, userId, previewId });
   await validateMapping(db, preview.ledger.id, preview.meta.participantNames, preview.review.mapping);
   await assertNoOverlap(db, preview.ledger.id, plan.rows);
   if ((plan.reconciliation.some(item => item.differenceMinor !== 0) || plan.warnings.length) && !acknowledgeDifference) {
@@ -266,7 +266,7 @@ export async function confirmImportPreview(db, { spaceId, userId, previewId, ack
   const ledgerId = preview.ledger.id;
   const existing = await db.prepare("SELECT id, source_hash, status FROM splitwise_import_batches WHERE ledger_id = ?").bind(ledgerId).first();
   if (existing?.source_hash === preview.sourceHash) return existing.id;
-  if (existing) throw new LedgerError(existing.status === "pending" ? "Ya hay una importación en curso. Terminala o cancelala antes de empezar otra." : "Este libro ya tiene una importación; las reimportaciones incrementales aún no están habilitadas.", 409);
+  if (existing) throw new LedgerError(existing.status === "pending" ? "Ya hay una importación en curso. Terminala o cancelala antes de empezar otra." : "Este grupo ya tiene una importación; las reimportaciones incrementales aún no están habilitadas.", 409);
   const batchId = createPlatformId("import");
   const mappedIds = [];
   const setup = [];
@@ -303,8 +303,8 @@ export async function confirmImportPreview(db, { spaceId, userId, previewId, ack
   }
 }
 
-async function ownedBatch(db, { spaceId, userId, batchId }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+async function ownedBatch(db, { groupId, userId, batchId }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   const row = await db.prepare("SELECT * FROM splitwise_import_batches WHERE id = ? AND ledger_id = ?").bind(batchId, ledger.id).first();
   if (!row) throw new LedgerError("Lote no encontrado.", 404);
   return { ledger, row };
@@ -314,8 +314,8 @@ async function loadedCount(db, batchId) {
   return (await db.prepare("SELECT COUNT(*) AS loaded FROM ledger_entries WHERE import_batch_id = ?").bind(batchId).first()).loaded;
 }
 
-export async function readImportProgress(db, { spaceId, userId, batchId }) {
-  const { ledger, row } = await ownedBatch(db, { spaceId, userId, batchId });
+export async function readImportProgress(db, { groupId, userId, batchId }) {
+  const { ledger, row } = await ownedBatch(db, { groupId, userId, batchId });
   assertOwner(ledger, "Sólo el titular puede ver el avance de una importación.");
   return { id: row.id, status: row.status, fileName: row.file_name, planned: row.planned_count, loaded: row.status === "committed" ? row.imported_count : await loadedCount(db, row.id) };
 }
@@ -386,11 +386,11 @@ async function publishBatch(db, ledger, userId, batch) {
 
 // Carga una tanda y, si era la última, publica. El avance se calcula desde lo ya cargado, no desde un contador, así que
 // repetir o paralelizar tandas no duplica nada (identificadores determinísticos e INSERT OR IGNORE).
-export async function loadImportChunk(db, { spaceId, userId, batchId, chunk = IMPORT_CHUNK }) {
-  const { ledger, row: batch } = await ownedBatch(db, { spaceId, userId, batchId });
+export async function loadImportChunk(db, { groupId, userId, batchId, chunk = IMPORT_CHUNK }) {
+  const { ledger, row: batch } = await ownedBatch(db, { groupId, userId, batchId });
   assertOwner(ledger);
   if (batch.status === "committed") return { status: "committed", loaded: batch.imported_count, planned: batch.planned_count, done: true };
-  if (ledger.archived_at) throw new LedgerError("El libro está archivado.", 409);
+  if (ledger.archived_at) throw new LedgerError("El grupo está archivado.", 409);
   const review = JSON.parse(batch.review_json);
   let loaded = await loadedCount(db, batch.id);
   if (loaded < batch.planned_count) {
@@ -423,15 +423,15 @@ export async function loadImportChunk(db, { spaceId, userId, batchId, chunk = IM
   return { status: "pending", loaded, planned: batch.planned_count, done: false };
 }
 
-export async function cancelImportBatch(db, { spaceId, userId, batchId }) {
-  const { ledger, row } = await ownedBatch(db, { spaceId, userId, batchId });
+export async function cancelImportBatch(db, { groupId, userId, batchId }) {
+  const { ledger, row } = await ownedBatch(db, { groupId, userId, batchId });
   assertOwner(ledger);
   if (row.status !== "pending") throw new LedgerError("Una importación publicada no se cancela: anulá sus movimientos uno por uno.", 409);
   await discardImportBatch(db, row.id);
 }
 
-export async function readImportBatch(db, { spaceId, userId, batchId }) {
-  const ledger = await getLedgerAccess(db, spaceId, userId);
+export async function readImportBatch(db, { groupId, userId, batchId }) {
+  const ledger = await getLedgerAccess(db, groupId, userId);
   const row = await db.prepare("SELECT * FROM splitwise_import_batches WHERE id = ? AND ledger_id = ? AND status = 'committed'").bind(batchId, ledger.id).first();
   if (!row) throw new LedgerError("Lote no encontrado.", 404);
   return { id: row.id, fileName: row.file_name, importedCount: row.imported_count, reconciliation: JSON.parse(row.reconciliation_json), assumptions: JSON.parse(row.assumptions_json), excluded: JSON.parse(row.excluded_rows_json), committedAt: row.committed_at };

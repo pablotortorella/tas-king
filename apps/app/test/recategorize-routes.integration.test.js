@@ -4,7 +4,7 @@ import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { readLedger, saveEntry } from "../src/ledger.js";
 import { createSession } from "../src/sessions.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { CLASSIFY_JS } from "../src/classify-client.js";
 
 const SECRET = "r".repeat(32);
@@ -23,16 +23,16 @@ function request(who, path, init = {}) {
 async function team(name) {
   const owner = await identity(`${name}-owner@example.test`);
   const member = await identity(`${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.user.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.user.id, email: member.user.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.user.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.user.id, email: member.user.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.user.id, email: member.user.email, accepted: true });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.user.id });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.user.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.user.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.user.id).id;
-  return { owner, member, space, ledger: data.ledger, ownerId, memberId, categories: data.categories, base: `/spaces/${space.slug}` };
+  return { owner, member, group, ledger: data.ledger, ownerId, memberId, categories: data.categories, base: `/groups/${group.slug}` };
 }
 const find = (t, name) => t.categories.find(category => category.name === name);
-const add = (t, description, extra = {}, who = t.owner) => saveEntry(env.DB, { spaceId: t.space.id, userId: who.user.id, idempotencyKey: crypto.randomUUID(), input: {
+const add = (t, description, extra = {}, who = t.owner) => saveEntry(env.DB, { groupId: t.group.id, userId: who.user.id, idempotencyKey: crypto.randomUUID(), input: {
   type: "expense", currency: "COP", totalMinor: 10000, description, note: "", occurredAt: "2026-06-01",
   cashParties: [{ participantId: who === t.owner ? t.ownerId : t.memberId, direction: "out", amountMinor: 10000 }], allocations: [{ participantId: t.ownerId, amountMinor: 5000 }, { participantId: t.memberId, amountMinor: 5000 }], ...extra } });
 const key = () => crypto.randomUUID();
@@ -58,7 +58,7 @@ describe("cambiar la categoría desde la lista", () => {
     expect(result.html).toContain("Cambiarán 2 movimientos");
     expect(result.html).toContain("Carulla uno");
     expect(result.html).toContain('name="expectedRevision"');
-    const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id });
+    const data = await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id });
     expect(data.entries.every(entry => entry.categoryId === null)).toBe(true);
   });
 
@@ -122,7 +122,7 @@ describe("cambiar la categoría desde la lista", () => {
     expect(book).toContain("«Alimentos»");
     expect(book).toContain("/recategorize/recat_");
     expect(book).toContain("Deshacer");
-    const data = await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id });
+    const data = await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id });
     expect(data.entries.map(entry => entry.categoryInfo?.name)).toEqual(["Alimentos", "Alimentos"]);
   });
 
@@ -136,7 +136,7 @@ describe("cambiar la categoría desde la lista", () => {
     expect(undo.headers.get("Location")).toMatch(/aviso=deshecho&lote=recat_undo_/u);
     const book = await (await request(t.owner, undo.headers.get("Location").replace("#movimientos", ""))).text();
     expect(book).toContain("Se deshizo la operación");
-    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).entries[0].categoryInfo).toBeNull();
+    expect((await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).entries[0].categoryInfo).toBeNull();
     const again = await request(t.owner, `${t.base}/ledger/recategorize/${batchId}/undo`, { method: "POST", form: [] });
     expect(again.status).toBe(409);
     expect(await again.text()).toContain("ya se deshizo");
@@ -150,7 +150,7 @@ describe("cambiar la categoría desde la lista", () => {
     const response = await request(t.owner, `${t.base}/ledger/recategorize`, { method: "POST", form: [["ids", a.id], ["categoryId", find(t, "Taxi").id], ["expectedRevision", String(stale)], ["key", key()]] });
     expect(response.status).toBe(409);
     expect(await response.text()).toContain("cambió desde la vista previa");
-    expect((await readLedger(env.DB, { spaceId: t.space.id, userId: t.owner.user.id })).entries.every(entry => entry.categoryId === null)).toBe(true);
+    expect((await readLedger(env.DB, { groupId: t.group.id, userId: t.owner.user.id })).entries.every(entry => entry.categoryId === null)).toBe(true);
   });
 
   it("repetir la confirmación (doble envío) deja un solo lote", async () => {

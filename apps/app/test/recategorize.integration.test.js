@@ -5,21 +5,21 @@ import { addParticipant, readLedger, saveEntry, voidEntry } from "../src/ledger.
 import { setLedgerArchived } from "../src/ledger-admin.js";
 import { revisionSummary } from "../src/ledger-ui.js";
 import { MAX_BATCH, applyRecategorization, classifyOne, previewRecategorization, readRecategorizationBatch, selectEntries, undoRecategorization } from "../src/recategorize.js";
-import { createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation } from "../src/groups.js";
 import { seedEntries } from "./fixtures/seed-entries.js";
 
 async function team(name) {
   const owner = await ensureLocalUser(env.DB, `${name}-owner@example.test`);
   const member = await ensureLocalUser(env.DB, `${name}-member@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  const invitation = await inviteToSpace(env.DB, { spaceId: space.id, inviterUserId: owner.id, email: member.email });
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  const invitation = await inviteToGroup(env.DB, { groupId: group.id, inviterUserId: owner.id, email: member.email });
   await resolveInvitation(env.DB, { invitationId: invitation.id, userId: member.id, email: member.email, accepted: true });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
   const ownerId = data.participants.find(person => person.linkedUserId === owner.id).id;
   const memberId = data.participants.find(person => person.linkedUserId === member.id).id;
-  return { owner, member, space, ledger: data.ledger, ownerId, memberId, categories: data.categories };
+  return { owner, member, group, ledger: data.ledger, ownerId, memberId, categories: data.categories };
 }
-const as = (t, user = t.owner) => ({ spaceId: t.space.id, userId: user.id });
+const as = (t, user = t.owner) => ({ groupId: t.group.id, userId: user.id });
 const find = (t, name) => t.categories.find(category => category.name === name);
 const view = (t, user) => readLedger(env.DB, as(t, user));
 const key = () => crypto.randomUUID();
@@ -95,12 +95,12 @@ describe("selección y vista previa", () => {
     const call = (criteria, categoryId) => previewRecategorization(env.DB, { ...as(t), criteria, categoryId });
     await expect(call({ ids: [] }, find(t, "Taxi").id)).rejects.toThrow(/No hay movimientos seleccionados/u);
     await expect(call({ ids: [one.id] }, "")).rejects.toThrow(/Elegí la categoría/u);
-    await expect(call({ ids: [one.id] }, find(other, "Taxi").id)).rejects.toThrow(/no existe en este libro/u);
+    await expect(call({ ids: [one.id] }, find(other, "Taxi").id)).rejects.toThrow(/no existe en este grupo/u);
     await setCategoryArchived(env.DB, { ledger: t.ledger, userId: t.owner.id, categoryId: find(t, "Hotel").id, archived: true });
     await expect(call({ ids: [one.id] }, find(t, "Hotel").id)).rejects.toThrow(/archivada/u);
     await expect(bulk(t, { ids: [one.id] }, find(t, "Taxi").id)).resolves.toMatchObject({ changed: 1 });
     await expect(bulk(t, { ids: [one.id] }, find(t, "Taxi").id)).rejects.toThrow(/No hay movimientos para cambiar/u);
-    await setLedgerArchived(env.DB, { spaceId: t.space.id, userId: t.owner.id, archived: true });
+    await setLedgerArchived(env.DB, { groupId: t.group.id, userId: t.owner.id, archived: true });
     await expect(call({ ids: [one.id] }, find(t, "Restaurantes").id)).rejects.toMatchObject({ status: 409 });
     await expect(bulk(t, { ids: [one.id] }, find(t, "Restaurantes").id)).rejects.toMatchObject({ status: 409 });
   });
@@ -300,7 +300,7 @@ describe("deshacer", () => {
     const mine = await addEntry(t, { description: "Del integrante", cashParties: [{ participantId: t.memberId, direction: "out", amountMinor: 10000 }] }, t.member);
     const batch = await bulk(t, { ids: [mine.id] }, find(t, "Taxi").id, {}, t.member);
     const stranger = await ensureLocalUser(env.DB, "rc-deshacer-extraño@example.test");
-    await expect(undoRecategorization(env.DB, { spaceId: t.space.id, userId: stranger.id, batchId: batch.id })).rejects.toMatchObject({ status: 404 });
+    await expect(undoRecategorization(env.DB, { groupId: t.group.id, userId: stranger.id, batchId: batch.id })).rejects.toMatchObject({ status: 404 });
     const ownerBatch = await bulk(t, { ids: [(await addEntry(t, { description: "Del titular" })).id] }, find(t, "Hotel").id);
     await expect(undoRecategorization(env.DB, { ...as(t, t.member), batchId: ownerBatch.id })).rejects.toMatchObject({ status: 403 });
     const undone = await undoRecategorization(env.DB, { ...as(t), batchId: batch.id });
@@ -323,7 +323,7 @@ describe("deshacer", () => {
     const t = await team("rc-deshacer-archivado");
     const one = await addEntry(t, { description: "Uno" });
     const batch = await bulk(t, { ids: [one.id] }, find(t, "Taxi").id);
-    await setLedgerArchived(env.DB, { spaceId: t.space.id, userId: t.owner.id, archived: true });
+    await setLedgerArchived(env.DB, { groupId: t.group.id, userId: t.owner.id, archived: true });
     await expect(undoRecategorization(env.DB, { ...as(t), batchId: batch.id })).rejects.toMatchObject({ status: 409 });
   });
 });

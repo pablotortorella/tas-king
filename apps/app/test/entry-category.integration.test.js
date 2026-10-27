@@ -3,25 +3,25 @@ import { describe, expect, it } from "vitest";
 import { addParticipant, readLedger, saveEntry } from "../src/ledger.js";
 import { createCategory, readCategories, mergeCategory, setCategoryArchived, updateCategory } from "../src/categories.js";
 import { revisionSummary } from "../src/ledger-ui.js";
-import { createSpaceForUser, ensureLocalUser } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser } from "../src/groups.js";
 
 async function book(name) {
   const owner = await ensureLocalUser(env.DB, `${name}@example.test`);
-  const space = await createSpaceForUser(env.DB, { userId: owner.id, name });
-  await addParticipant(env.DB, { spaceId: space.id, userId: owner.id, name: "Beto" });
-  const data = await readLedger(env.DB, { spaceId: space.id, userId: owner.id });
-  return { owner, space, ledger: data.ledger, people: data.participants, categories: data.categories };
+  const group = await createGroupForUser(env.DB, { userId: owner.id, name });
+  await addParticipant(env.DB, { groupId: group.id, userId: owner.id, name: "Beto" });
+  const data = await readLedger(env.DB, { groupId: group.id, userId: owner.id });
+  return { owner, group, ledger: data.ledger, people: data.participants, categories: data.categories };
 }
 const entry = (people, extra = {}) => ({
   type: "expense", currency: "COP", totalMinor: 10000, description: "Cena", note: "", occurredAt: "2026-10-24",
   cashParties: [{ participantId: people[0].id, direction: "out", amountMinor: 10000 }], allocations: [],
   split: { method: "equal", beneficiaries: people.map(person => person.id), inputs: {} }, ...extra,
 });
-const save = (b, input, extra = {}) => saveEntry(env.DB, { spaceId: b.space.id, userId: b.owner.id, input, idempotencyKey: crypto.randomUUID(), ...extra });
+const save = (b, input, extra = {}) => saveEntry(env.DB, { groupId: b.group.id, userId: b.owner.id, input, idempotencyKey: crypto.randomUUID(), ...extra });
 const find = (categories, name) => categories.find(category => category.name === name);
 const row = (b, id) => env.DB.prepare("SELECT category_id FROM ledger_entries WHERE ledger_id = ? AND id = ?").bind(b.ledger.id, id).first();
 const snapshot = async (b, id, revision) => JSON.parse((await env.DB.prepare("SELECT snapshot_json FROM entry_revisions WHERE ledger_id = ? AND entry_id = ? AND revision = ?").bind(b.ledger.id, id, revision).first()).snapshot_json);
-const reread = b => readLedger(env.DB, { spaceId: b.space.id, userId: b.owner.id });
+const reread = b => readLedger(env.DB, { groupId: b.group.id, userId: b.owner.id });
 
 describe("categoría en los movimientos", () => {
   it("elegir una categoría la guarda, la muestra y la deja en la instantánea con su nombre", async () => {
@@ -74,7 +74,7 @@ describe("categoría en los movimientos", () => {
     const mine = await book("ec-ajena-a");
     const other = await book("ec-ajena-b");
     const foreign = find(other.categories, "Restaurantes");
-    await expect(save(mine, entry(mine.people, { categoryId: foreign.id }))).rejects.toThrow(/no existe en este libro/u);
+    await expect(save(mine, entry(mine.people, { categoryId: foreign.id }))).rejects.toThrow(/no existe en este grupo/u);
     expect((await reread(mine)).entries).toHaveLength(0);
   });
 

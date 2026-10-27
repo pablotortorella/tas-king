@@ -23,19 +23,19 @@ const data = (entries = [entry()]) => ({
 
 describe("libro: vista general", () => {
   it("escapa nombres y descripciones, y no deja marcado ejecutable", () => {
-    const html = renderLedgerOverview(data(), { spaceId: "casa", userId: "u1" });
+    const html = renderLedgerOverview(data(), { groupId: "casa", userId: "u1" });
     expect(html).not.toContain("<script>");
     expect(html).not.toContain("<b>Pablo</b>");
     expect(html).toContain("&lt;b&gt;Pablo&lt;/b&gt;");
   });
 
   it("no usa estilos en línea, que la CSP bloquea", () => {
-    const html = renderLedgerOverview(data(), { spaceId: "casa", userId: "u1" }) + renderBookHead({ slug: "casa", name: "Casa" }, data(), "u1");
+    const html = renderLedgerOverview(data(), { groupId: "casa", userId: "u1" }) + renderBookHead({ slug: "casa", name: "Casa" }, data(), "u1");
     expect(html).not.toMatch(/\sstyle=/u);
   });
 
   it("muestra el saldo propio, la palabra del saldo, la suma cero y el efecto propio", () => {
-    const html = renderLedgerOverview(data(), { spaceId: "casa", userId: "u1" });
+    const html = renderLedgerOverview(data(), { groupId: "casa", userId: "u1" });
     expect(html.replace(/<[^>]+>/gu, "")).toContain("Le deben COP 50,00");
     expect(html.replace(/<[^>]+>/gu, "")).toContain("Debe COP 50,00");
     expect(html).toContain("Suman 0");
@@ -45,10 +45,10 @@ describe("libro: vista general", () => {
   });
 
   it("el saldo negativo propio usa la tarjeta roja y la frase correspondiente", () => {
-    const html = renderLedgerOverview(data(), { spaceId: "casa", userId: "u-otro" });
+    const html = renderLedgerOverview(data(), { groupId: "casa", userId: "u-otro" });
     expect(html).toContain("Estás a mano.");
     const negative = { ...data(), participants: [{ ...participants[0], linkedUserId: "u9" }, { ...participants[1], linkedUserId: "u1" }] };
-    const rendered = renderLedgerOverview(negative, { spaceId: "casa", userId: "u1" });
+    const rendered = renderLedgerOverview(negative, { groupId: "casa", userId: "u1" });
     expect(rendered).toContain('class="hero neg"');
     expect(rendered).toContain("Te toca aportar.");
   });
@@ -56,7 +56,7 @@ describe("libro: vista general", () => {
   it("separa las monedas en bloques propios", () => {
     const multi = data();
     multi.balances.push({ currency: "USD", participantId: "p1", amountMinor: -4000 }, { currency: "USD", participantId: "p2", amountMinor: 4000 });
-    const html = renderLedgerOverview(multi, { spaceId: "casa", userId: "u1" });
+    const html = renderLedgerOverview(multi, { groupId: "casa", userId: "u1" });
     expect(html).toContain("Saldos del grupo · COP");
     expect(html).toContain("Saldos del grupo · USD");
   });
@@ -64,39 +64,39 @@ describe("libro: vista general", () => {
   it("rotula anulados e importados una sola vez y cuenta resultados", () => {
     const voided = entry({ id: "e2", status: "voided", description: "Cena" });
     const imported = { ...entry({ id: "e3", description: "Taxi" }), importBatchId: "import_x", sourceRowNumber: 7 };
-    const html = renderLedgerOverview(data([entry(), voided, imported]), { spaceId: "casa", userId: "u1" });
+    const html = renderLedgerOverview(data([entry(), voided, imported]), { groupId: "casa", userId: "u1" });
     expect(html).toContain("2 vigentes · 1 anulado");
     expect(html.match(/Importado de Splitwise/gu)).toHaveLength(1);
     expect(html).toContain("No cuenta en los saldos");
-    const filtered = renderLedgerOverview(data([entry(), voided, imported]), { spaceId: "casa", userId: "u1", query: "taxi" });
+    const filtered = renderLedgerOverview(data([entry(), voided, imported]), { groupId: "casa", userId: "u1", query: "taxi" });
     expect(filtered).toContain("1 de 3 movimientos");
     expect(filtered).toContain("Quitar búsqueda");
   });
 
   it("el libro vacío muestra el botón destacado y, para el titular, la opción de importar", () => {
-    const owner = renderLedgerOverview(data([]), { spaceId: "casa", userId: "u1" });
+    const owner = renderLedgerOverview(data([]), { groupId: "casa", userId: "u1" });
     expect(owner).toContain("Todavía no hay movimientos.");
-    expect(owner).toMatch(/<a class="button big" href="\/spaces\/casa\/ledger\/new">Agregá tu primer movimiento<\/a>/u);
-    expect(owner).toContain('href="/spaces/casa/ledger/import"');
-    const member = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "member" } }, { spaceId: "casa", userId: "u1" });
+    expect(owner).toMatch(/<a class="button big" href="\/groups\/casa\/ledger\/new">Agregá tu primer movimiento<\/a>/u);
+    expect(owner).toContain('href="/groups/casa/ledger/import"');
+    const member = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "member" } }, { groupId: "casa", userId: "u1" });
     expect(member).toContain("Agregá tu primer movimiento");
     expect(member).not.toContain("/ledger/import");
   });
 
   it("con movimientos ya no muestra las ayudas de inicio", () => {
-    const html = renderLedgerOverview(data([entry()]), { spaceId: "casa", userId: "u1" });
+    const html = renderLedgerOverview(data([entry()]), { groupId: "casa", userId: "u1" });
     expect(html).not.toContain("Agregá tu primer movimiento");
     expect(html).not.toContain("Traé tu historial");
   });
 
   it("un libro archivado y vacío no ofrece empezar", () => {
-    const archived = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "owner", archived_at: "2026-01-01" } }, { spaceId: "casa", userId: "u1" });
+    const archived = renderLedgerOverview({ ...data([]), ledger: { default_currency: "COP", role: "owner", archived_at: "2026-01-01" } }, { groupId: "casa", userId: "u1" });
     expect(archived).toContain("Este grupo no tiene movimientos.");
     expect(archived).not.toContain("Agregá tu primer movimiento");
   });
 
   it("una búsqueda sin resultados no muestra la guía de inicio", () => {
-    const html = renderLedgerOverview(data([entry()]), { spaceId: "casa", userId: "u1", query: "zzz" });
+    const html = renderLedgerOverview(data([entry()]), { groupId: "casa", userId: "u1", query: "zzz" });
     expect(html).toContain("No hay coincidencias.");
     expect(html).not.toContain("Agregá tu primer movimiento");
   });
@@ -105,7 +105,7 @@ describe("libro: vista general", () => {
 describe("libro: personas", () => {
   const members = [{ user_id: "u1", display_name: "Pablo", role: "owner" }];
   const invitations = [{ id: "i1", invitee_email: "laura@example.test", target_participant_id: "p2" }];
-  const base = { data: data(), space: { slug: "casa", name: "Casa" }, members, csrf: '<input type="hidden" name="_csrf" value="t">', userId: "u1" };
+  const base = { data: data(), group: { slug: "casa", name: "Casa" }, members, csrf: '<input type="hidden" name="_csrf" value="t">', userId: "u1" };
 
   it("distingue propietario, invitación pendiente y sin cuenta, y ofrece cancelar sólo al titular", () => {
     const owner = renderPeople({ ...base, invitations, owner: true });
@@ -124,9 +124,9 @@ describe("libro: personas", () => {
   it("conserva los nombres de campos de administración", () => {
     const html = renderPeople({ ...base, invitations: [], owner: true });
     for (const field of ['name="name"', 'name="email"', 'name="targetParticipantId"']) expect(html).toContain(field);
-    expect(html).toContain("/spaces/casa/participants");
-    expect(html).toContain("/spaces/casa/invitations");
-    expect(html).toContain("/spaces/casa/rename");
+    expect(html).toContain("/groups/casa/participants");
+    expect(html).toContain("/groups/casa/invitations");
+    expect(html).toContain("/groups/casa/rename");
   });
 });
 
@@ -134,16 +134,16 @@ describe("libro: ver más", () => {
   const many = Array.from({ length: 95 }, (_, index) => entry({ id: `e${String(index).padStart(3, "0")}`, description: `Gasto ${index}` }));
 
   it("muestra 40 movimientos y ofrece ver los siguientes sin perder la búsqueda", () => {
-    const first = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1" });
+    const first = renderLedgerOverview(data(many), { groupId: "casa", userId: "u1" });
     expect(first.match(/class="entry-row/gu)).toHaveLength(40);
     expect(first).toContain("Ver 40 movimientos más");
     expect(first).toContain("mostrar=80");
-    const last = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", limit: 80 });
+    const last = renderLedgerOverview(data(many), { groupId: "casa", userId: "u1", limit: 80 });
     expect(last.match(/class="entry-row/gu)).toHaveLength(80);
     expect(last).toContain("Ver 15 movimientos más");
-    const all = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", limit: 120 });
+    const all = renderLedgerOverview(data(many), { groupId: "casa", userId: "u1", limit: 120 });
     expect(all).not.toContain("movimientos más");
-    const filtered = renderLedgerOverview(data(many), { spaceId: "casa", userId: "u1", query: "gasto" });
+    const filtered = renderLedgerOverview(data(many), { groupId: "casa", userId: "u1", query: "gasto" });
     expect(filtered).toContain("q=gasto&amp;mostrar=80");
     expect(filtered).toContain("95 de 95 movimientos · mostrando 40");
   });

@@ -2,7 +2,7 @@
 
 import { DARK, LIGHT } from "./theme.js";
 
-export const spacePath = spaceId => `/spaces/${encodeURIComponent(spaceId)}`;
+export const groupPath = groupId => `/groups/${encodeURIComponent(groupId)}`;
 // El saldo grande se achica cuando el monto es largo: elige una clase según los caracteres para que nunca se salga del recuadro.
 export const amountFit = text => { const length = [...String(text)].length; return length <= 12 ? "" : length <= 16 ? " fit-1" : length <= 20 ? " fit-2" : length <= 26 ? " fit-3" : " fit-4"; };
 export const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
@@ -51,7 +51,7 @@ export function avatar(name, { seed = name, noAccount = false } = {}) {
 
 const NOTICES = Object.freeze({
   participante: "Participante agregado.",
-  invitacion: "Invitación creada. Hasta que se acepte, la persona no puede ver el libro.",
+  invitacion: "Invitación creada. Hasta que se acepte, la persona no puede ver el grupo.",
   cancelada: "Invitación cancelada.",
   renombrado: "Nombre del grupo guardado.",
   "persona-renombrada": "Nombre guardado.",
@@ -84,17 +84,17 @@ export function shortDate(isoDate) {
 }
 
 // Menú de la aplicación (sin JavaScript: un <details>). Dentro de un grupo ofrece sus secciones; siempre ofrece lo común.
-export function appMenu(spaceHref) {
-  const group = spaceHref ? `<p class="menu-title">Este grupo</p><a href="${spaceHref}#saldos">Saldos</a><a href="${spaceHref}#movimientos">Movimientos</a><a href="${spaceHref}/people">Personas</a><a href="${spaceHref}/ledger/categories">Categorías</a><a href="${spaceHref}/ledger/classify">Clasificar rápido</a><a href="${spaceHref}/ledger/import">Importar de Splitwise</a><p class="menu-title">HomeSuite</p>` : "";
+export function appMenu(groupHref) {
+  const group = groupHref ? `<p class="menu-title">Este grupo</p><a href="${groupHref}#saldos">Saldos</a><a href="${groupHref}#movimientos">Movimientos</a><a href="${groupHref}/people">Personas</a><a href="${groupHref}/ledger/categories">Categorías</a><a href="${groupHref}/ledger/classify">Clasificar rápido</a><a href="${groupHref}/ledger/import">Importar de Splitwise</a><p class="menu-title">HomeSuite</p>` : "";
   return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${group}<a href="/">Inicio</a><a href="/cuentas-claras?todos=1">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
 }
 
-export function tabbar(spaceHref) {
+export function tabbar(groupHref) {
   const item = (href, icon, label) => `<a href="${href}">${icon}<span>${label}</span></a>`;
-  return `<nav class="tabbar" aria-label="Secciones del libro">${item(`${spaceHref}#saldos`, ICONS.balance, "Saldos")}${item(`${spaceHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${spaceHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${spaceHref}/people`, ICONS.people, "Personas")}${item("/cuentas-claras", ICONS.groups, "Grupos")}</nav>`;
+  return `<nav class="tabbar" aria-label="Secciones del grupo">${item(`${groupHref}#saldos`, ICONS.balance, "Saldos")}${item(`${groupHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${groupHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${groupHref}/people`, ICONS.people, "Personas")}${item("/cuentas-claras", ICONS.groups, "Grupos")}</nav>`;
 }
 
-export function renderPage(title, content, { wide = false, spaceHref = null } = {}) {
-  const shellClass = `shell${wide ? " wide" : ""}${spaceHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a><div class="header-actions">${ACCOUNT_MARKER}${appMenu(spaceHref)}</div></header><main id="contenido" class="${shellClass}">${content}</main>${spaceHref ? tabbar(spaceHref) : ""}</body></html>`;
+export function renderPage(title, content, { wide = false, groupHref = null } = {}) {
+  const shellClass = `shell${wide ? " wide" : ""}${groupHref ? " has-tabbar" : ""}`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a><div class="header-actions">${ACCOUNT_MARKER}${appMenu(groupHref)}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
 }

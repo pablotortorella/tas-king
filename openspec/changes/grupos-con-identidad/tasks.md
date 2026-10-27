@@ -11,11 +11,11 @@
 
 ## 3. Renombre del código (sin cambio de comportamiento)
 
-- [ ] 3.1 Renombrar `spaces.js` a `groups.js` y sus funciones, parámetros y mensajes de error, y actualizar las importaciones; verificar con la suite de integración `spaces.integration` renombrada a `groups.integration`
-- [ ] 3.2 Renombrar las rutas a `/groups…`, `/api/groups…`, `/local/groups…`, `/demo/crear-grupo` y `/demo/grupo`, los redirects, los enlaces generados (`spacePath` pasa a `groupPath`) y la cookie de OAuth si hiciera referencia; verificar que `/spaces/<id>` y `/api/spaces/<id>/members` responden 404
-- [ ] 3.3 Reemplazar «espacio» y «libro» de los textos visibles por «grupo», «movimientos» o «saldos» según el sentido, con la concordancia revisada a mano («← Volver al grupo», «Categorías del grupo», «Secciones del grupo»); verificar con la prueba de 1.3 en verde
-- [ ] 3.4 Renombrar las ~785 ocurrencias en pruebas unitarias e integración y las 32 de E2E; verificar que `test:homesuite-app`, `test:homesuite-app:integration` y el E2E completo en Chromium pasan sin más cambios que los nombres
-- [ ] 3.5 Commits por capa (esquema, módulos, rutas y textos, pruebas) cada uno con sus suites en verde; verificar que la prueba de 1.2 pasa con todo el código y las migraciones
+- [x] 3.1 Renombrar `spaces.js` a `groups.js` y sus funciones, parámetros y mensajes de error, y actualizar las importaciones; verificar con la suite de integración `spaces.integration` renombrada a `groups.integration`
+- [x] 3.2 Renombrar las rutas a `/groups…`, `/api/groups…`, `/local/groups…`, `/demo/crear-grupo` y `/demo/grupo`, los redirects, los enlaces generados (`spacePath` pasa a `groupPath`) y la cookie de OAuth si hiciera referencia; verificar que `/spaces/<id>` y `/api/spaces/<id>/members` responden 404
+- [x] 3.3 Reemplazar «espacio» y «libro» de los textos visibles por «grupo», «movimientos» o «saldos» según el sentido, con la concordancia revisada a mano («← Volver al grupo», «Categorías del grupo», «Secciones del grupo»); verificar con la prueba de 1.3 en verde
+- [x] 3.4 Renombrar las ~785 ocurrencias en pruebas unitarias e integración y las 32 de E2E; verificar que `test:homesuite-app`, `test:homesuite-app:integration` y el E2E completo en Chromium pasan sin más cambios que los nombres
+- [x] 3.5 Commits por capa: el esquema va aparte y los módulos, rutas, textos y pruebas van juntos, porque no existe un estado verde con el esquema solo; verificar que la prueba de 1.2 no marca nada en `apps/`, `scripts/` ni migraciones, salvo el lema del sitio público (excepción explícita)
 
 ## 4. Identidad del grupo
 

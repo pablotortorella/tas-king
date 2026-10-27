@@ -3,91 +3,91 @@ import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { createSession, currentSession, revokeSession } from "../src/sessions.js";
-import { createSpaceForUser, ensureLocalUser, renameSpace, resolveSpace } from "../src/spaces.js";
+import { createGroupForUser, ensureLocalUser, renameGroup, resolveGroup } from "../src/groups.js";
 
 describe("URLs estables de grupos", () => {
   it("normaliza acentos, numera duplicados y conserva la URL al renombrar", async () => {
     const owner = await ensureLocalUser(env.DB, "slugs-owner@example.test");
-    const first = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
-    const second = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
-    const third = await createSpaceForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    const first = await createGroupForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    const second = await createGroupForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
+    const third = await createGroupForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
     expect([first.slug, second.slug, third.slug]).toEqual(["casa-bogota", "casa-bogota-2", "casa-bogota-3"]);
-    const renamed = await renameSpace(env.DB, { spaceId: first.slug, userId: owner.id, name: "Otra casa" });
+    const renamed = await renameGroup(env.DB, { groupId: first.slug, userId: owner.id, name: "Otra casa" });
     expect(renamed.slug).toBe(first.slug);
-    expect((await resolveSpace(env.DB, first.id)).slug).toBe(first.slug);
-    const reserved = await createSpaceForUser(env.DB, { userId: owner.id, name: "New" });
+    expect((await resolveGroup(env.DB, first.id)).slug).toBe(first.slug);
+    const reserved = await createGroupForUser(env.DB, { userId: owner.id, name: "New" });
     expect(reserved.slug).toBe("new-2");
   });
 
   it("asigna una URL legible al primer acceso de un grupo previo", async () => {
-    await env.DB.prepare("INSERT INTO spaces (id, name) VALUES ('space_legacy_slug', 'Viaje al Perú')").run();
-    expect((await resolveSpace(env.DB, "space_legacy_slug")).slug).toBe("viaje-al-peru");
+    await env.DB.prepare("INSERT INTO groups (id, name) VALUES ('group_legacy_slug', 'Viaje al Perú')").run();
+    expect((await resolveGroup(env.DB, "group_legacy_slug")).slug).toBe("viaje-al-peru");
   });
 });
 
-describe("D1: invariantes de espacios", () => {
-  it("permite un solo titular por espacio", async () => {
+describe("D1: invariantes de grupos", () => {
+  it("permite un solo titular por grupo", async () => {
     await env.DB.batch([
       env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES (?, ?, ?, ?)").bind("u_owner", "sub-owner", "owner@example.test", "Owner"),
       env.DB.prepare("INSERT INTO users (id, google_sub, email, display_name) VALUES (?, ?, ?, ?)").bind("u_other", "sub-other", "other@example.test", "Other"),
-      env.DB.prepare("INSERT INTO spaces (id, name) VALUES (?, ?)").bind("s_1", "Casa"),
-      env.DB.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, ?)").bind("s_1", "u_owner", "owner"),
+      env.DB.prepare("INSERT INTO groups (id, name) VALUES (?, ?)").bind("s_1", "Casa"),
+      env.DB.prepare("INSERT INTO memberships (group_id, user_id, role) VALUES (?, ?, ?)").bind("s_1", "u_owner", "owner"),
     ]);
-    await expect(env.DB.prepare("INSERT INTO memberships (space_id, user_id, role) VALUES (?, ?, ?)").bind("s_1", "u_other", "owner").run()).rejects.toThrow();
+    await expect(env.DB.prepare("INSERT INTO memberships (group_id, user_id, role) VALUES (?, ?, ?)").bind("s_1", "u_other", "owner").run()).rejects.toThrow();
   });
 
-  it("impide dos invitaciones pendientes para el mismo email y espacio", async () => {
-    await env.DB.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id) VALUES (?, ?, ?, ?)").bind("i_1", "s_1", "link@example.test", "u_owner").run();
-    await expect(env.DB.prepare("INSERT INTO invitations (id, space_id, invitee_email, inviter_user_id) VALUES (?, ?, ?, ?)").bind("i_2", "s_1", "link@example.test", "u_owner").run()).rejects.toThrow();
+  it("impide dos invitaciones pendientes para el mismo email y grupo", async () => {
+    await env.DB.prepare("INSERT INTO invitations (id, group_id, invitee_email, inviter_user_id) VALUES (?, ?, ?, ?)").bind("i_1", "s_1", "link@example.test", "u_owner").run();
+    await expect(env.DB.prepare("INSERT INTO invitations (id, group_id, invitee_email, inviter_user_id) VALUES (?, ?, ?, ?)").bind("i_2", "s_1", "link@example.test", "u_owner").run()).rejects.toThrow();
   });
 });
 
-describe("API local de espacios", () => {
+describe("API local de grupos", () => {
   const headers = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "zelda@example.test" };
-  it("crea espacio, titular, invitación y auditoría", async () => {
-    const created = await app.request("http://app.test/api/local/spaces", { method: "POST", headers, body: JSON.stringify({ name: "Casa de Hyrule" }) }, env);
+  it("crea grupo, titular, invitación y auditoría", async () => {
+    const created = await app.request("http://app.test/api/local/groups", { method: "POST", headers, body: JSON.stringify({ name: "Casa de Hyrule" }) }, env);
     expect(created.status).toBe(201);
-    const space = await created.json();
-    const invited = await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { method: "POST", headers, body: JSON.stringify({ email: "LINK@example.test" }) }, env);
+    const group = await created.json();
+    const invited = await app.request(`http://app.test/api/local/groups/${group.id}/invitations`, { method: "POST", headers, body: JSON.stringify({ email: "LINK@example.test" }) }, env);
     expect(invited.status).toBe(201);
     expect((await invited.json()).email).toBe("link@example.test");
-    const events = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE space_id = ? ORDER BY created_at").bind(space.id).all();
-    expect(events.results.map(event => event.action)).toEqual(["space_created", "invitation_created"]);
+    const events = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE group_id = ? ORDER BY created_at").bind(group.id).all();
+    expect(events.results.map(event => event.action)).toEqual(["group_created", "invitation_created"]);
   });
 
   it("sólo deja cancelar al titular y conserva la cancelación auditada", async () => {
     const ownerHeaders = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "mario@example.test" };
-    const created = await app.request("http://app.test/api/local/spaces", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Mushroom" }) }, env);
-    const space = await created.json();
-    const invitation = await (await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "luigi@example.test" }) }, env)).json();
-    const denied = await app.request(`http://app.test/api/local/spaces/${space.id}/invitations/${invitation.id}`, { method: "DELETE", headers: { "X-HomeSuite-Dev-Email": "luigi@example.test" } }, env);
+    const created = await app.request("http://app.test/api/local/groups", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Mushroom" }) }, env);
+    const group = await created.json();
+    const invitation = await (await app.request(`http://app.test/api/local/groups/${group.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "luigi@example.test" }) }, env)).json();
+    const denied = await app.request(`http://app.test/api/local/groups/${group.id}/invitations/${invitation.id}`, { method: "DELETE", headers: { "X-HomeSuite-Dev-Email": "luigi@example.test" } }, env);
     expect(denied.status).toBe(403);
-    const canceled = await app.request(`http://app.test/api/local/spaces/${space.id}/invitations/${invitation.id}`, { method: "DELETE", headers: ownerHeaders }, env);
+    const canceled = await app.request(`http://app.test/api/local/groups/${group.id}/invitations/${invitation.id}`, { method: "DELETE", headers: ownerHeaders }, env);
     expect(canceled.status).toBe(204);
-    const rows = await (await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { headers: ownerHeaders }, env)).json();
+    const rows = await (await app.request(`http://app.test/api/local/groups/${group.id}/invitations`, { headers: ownerHeaders }, env)).json();
     expect(rows).toEqual([{ id: invitation.id, email: "luigi@example.test", status: "canceled" }]);
   });
 
   it("revela sólo contexto mínimo y aceptar crea membresía", async () => {
     const ownerHeaders = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "zelda2@example.test" };
-    const space = await (await app.request("http://app.test/api/local/spaces", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Hyrule" }) }, env)).json();
-    const invitation = await (await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "link2@example.test" }) }, env)).json();
+    const group = await (await app.request("http://app.test/api/local/groups", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Hyrule" }) }, env)).json();
+    const invitation = await (await app.request(`http://app.test/api/local/groups/${group.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "link2@example.test" }) }, env)).json();
     const inviteeHeaders = { "X-HomeSuite-Dev-Email": "link2@example.test" };
     const pending = await (await app.request("http://app.test/api/local/invitations/pending", { headers: inviteeHeaders }, env)).json();
-    expect(pending).toEqual([{ id: invitation.id, space_name: "Hyrule", inviter_name: "zelda2" }]);
+    expect(pending).toEqual([{ id: invitation.id, group_name: "Hyrule", inviter_name: "zelda2" }]);
     const accepted = await app.request(`http://app.test/api/local/invitations/${invitation.id}/accept`, { method: "POST", headers: inviteeHeaders }, env);
     expect(accepted.status).toBe(200);
-    const member = await env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = (SELECT id FROM users WHERE email = ?)").bind(space.id, "link2@example.test").first();
+    const member = await env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = (SELECT id FROM users WHERE email = ?)").bind(group.id, "link2@example.test").first();
     expect(member.role).toBe("member");
   });
 
   it("conserva la identidad local al aceptar desde el formulario", async () => {
     const ownerHeaders = { "Content-Type": "application/json", "X-HomeSuite-Dev-Email": "tom@example.test" };
-    const space = await (await app.request("http://app.test/api/local/spaces", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Casa Tom" }) }, env)).json();
-    const invitation = await (await app.request(`http://app.test/api/local/spaces/${space.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "jerry@example.test" }) }, env)).json();
+    const group = await (await app.request("http://app.test/api/local/groups", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ name: "Casa Tom" }) }, env)).json();
+    const invitation = await (await app.request(`http://app.test/api/local/groups/${group.id}/invitations`, { method: "POST", headers: ownerHeaders, body: JSON.stringify({ email: "jerry@example.test" }) }, env)).json();
     const response = await app.request(`http://app.test/local/invitations/${invitation.id}?as=jerry@example.test`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" }, env);
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(`/local/spaces/${space.id}?as=jerry%40example.test`);
+    expect(response.headers.get("location")).toBe(`/local/groups/${group.id}?as=jerry%40example.test`);
   });
 });
 
@@ -151,38 +151,38 @@ function authenticatedRequest(identity, url, init = {}) {
 describe("recorrido web con sesión real", () => {
   it("rechaza mutaciones sin token CSRF o desde otro origen", async () => {
     const owner = await realIdentity("csrf-real");
-    const withoutToken = await app.request("https://app.test/spaces", {
+    const withoutToken = await app.request("https://app.test/groups", {
       method: "POST",
       headers: { ...owner.headers, Origin: "https://app.test", "Content-Type": "application/x-www-form-urlencoded" },
       body: "name=No+crear",
     }, owner.context);
     expect(withoutToken.status).toBe(403);
 
-    const crossOrigin = await app.request("https://app.test/spaces", {
+    const crossOrigin = await app.request("https://app.test/groups", {
       method: "POST",
       headers: { ...owner.headers, Origin: "https://evil.example", "X-CSRF-Token": owner.csrfToken, "Content-Type": "application/x-www-form-urlencoded" },
       body: "name=Tampoco+crear",
     }, owner.context);
     expect(crossOrigin.status).toBe(403);
 
-    const spaces = await env.DB.prepare("SELECT COUNT(*) AS count FROM memberships WHERE user_id = ?").bind(owner.id).first();
-    expect(spaces.count).toBe(0);
+    const groups = await env.DB.prepare("SELECT COUNT(*) AS count FROM memberships WHERE user_id = ?").bind(owner.id).first();
+    expect(groups.count).toBe(0);
   });
 
   it("incluye un token CSRF firmado en los formularios autenticados", async () => {
     const owner = await realIdentity("forms-real");
-    const response = await authenticatedRequest(owner, "https://app.test/spaces/new");
+    const response = await authenticatedRequest(owner, "https://app.test/groups/new");
     expect(response.status).toBe(200);
     expect(await response.text()).toContain('name="_csrf"');
     expect(response.headers.get("x-request-id")).toBeTruthy();
   });
 
-  it("crea y renombra un espacio exclusivamente para su titular", async () => {
+  it("crea y renombra un grupo exclusivamente para su titular", async () => {
     const owner = await realIdentity("zelda-real");
-    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Casa+Hyrule" });
+    const created = await authenticatedRequest(owner, "https://app.test/groups", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Casa+Hyrule" });
     expect(created.status).toBe(303);
     const location = created.headers.get("location");
-    expect(location).toBe("/spaces/casa-hyrule");
+    expect(location).toBe("/groups/casa-hyrule");
     const page = await authenticatedRequest(owner, `https://app.test${location}`);
     expect(await page.text()).toContain("Casa Hyrule");
     const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
@@ -192,14 +192,14 @@ describe("recorrido web con sesión real", () => {
     expect(await confirmed.text()).toContain("Nombre del grupo guardado.");
     const forged = await authenticatedRequest(owner, `https://app.test${location}?aviso=%3Cscript%3Ealert(1)%3C/script%3E`);
     expect(await forged.text()).not.toContain("<script>alert(1)");
-    const space = await env.DB.prepare("SELECT id, name, slug FROM spaces WHERE slug = ?").bind(location.split("/").at(-1)).first();
-    expect(space.name).toBe("Hyrule compartido");
-    expect(space.slug).toBe("casa-hyrule");
-    const legacy = await authenticatedRequest(owner, `https://app.test/spaces/${space.id}`);
+    const group = await env.DB.prepare("SELECT id, name, slug FROM groups WHERE slug = ?").bind(location.split("/").at(-1)).first();
+    expect(group.name).toBe("Hyrule compartido");
+    expect(group.slug).toBe("casa-hyrule");
+    const legacy = await authenticatedRequest(owner, `https://app.test/groups/${group.id}`);
     expect(legacy.status).toBe(308);
     expect(legacy.headers.get("location")).toBe(location);
-    const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE space_id = ? ORDER BY created_at DESC LIMIT 1").bind(space.id).first();
-    expect(audit.action).toBe("space_renamed");
+    const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE group_id = ? ORDER BY created_at DESC LIMIT 1").bind(group.id).first();
+    expect(audit.action).toBe("group_renamed");
     const outsider = await realIdentity("ganon-real");
     const forbidden = await authenticatedRequest(outsider, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Nope" });
     expect(forbidden.status).toBe(403);
@@ -207,7 +207,7 @@ describe("recorrido web con sesión real", () => {
 
   it("mantiene la invitación privada, acepta una vez y aísla a terceras personas", async () => {
     const owner = await realIdentity("link-real");
-    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Viaje+Kakariko" });
+    const created = await authenticatedRequest(owner, "https://app.test/groups", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Viaje+Kakariko" });
     const location = created.headers.get("location");
     const invitee = await realIdentity("zelda-invite");
     const invited = await authenticatedRequest(owner, `https://app.test${location}/invitations`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `email=${encodeURIComponent(invitee.email)}` });
@@ -217,7 +217,7 @@ describe("recorrido web con sesión real", () => {
     expect(invitationHtml).toContain("Viaje Kakariko");
     expect(invitationHtml).toContain("link-real");
     expect(invitationHtml).not.toContain("Participantes");
-    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN spaces s ON s.id = i.space_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN groups s ON s.id = i.group_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
     const accepted = await authenticatedRequest(invitee, `https://app.test/invitations/${invitation.id}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "decision=accept" });
     expect(accepted.headers.get("location")).toBe(location);
     const joined = await authenticatedRequest(invitee, `https://app.test${location}`);
@@ -229,11 +229,11 @@ describe("recorrido web con sesión real", () => {
 
   it("permite al titular cancelar una pendiente y prohíbe hacerlo a otra persona", async () => {
     const owner = await realIdentity("sam-real");
-    const created = await authenticatedRequest(owner, "https://app.test/spaces", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Comarca" });
+    const created = await authenticatedRequest(owner, "https://app.test/groups", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Comarca" });
     const location = created.headers.get("location");
     const invitee = await realIdentity("frodo-real");
     await authenticatedRequest(owner, `https://app.test${location}/invitations`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `email=${encodeURIComponent(invitee.email)}` });
-    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN spaces s ON s.id = i.space_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
+    const invitation = await env.DB.prepare("SELECT i.id FROM invitations i JOIN groups s ON s.id = i.group_id WHERE s.slug = ? AND i.invitee_email = ?").bind(location.split("/").at(-1), invitee.email).first();
     const denied = await authenticatedRequest(invitee, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });
     expect(denied.status).toBe(403);
     const canceled = await authenticatedRequest(owner, `https://app.test${location}/invitations/${invitation.id}/cancel`, { method: "POST" });

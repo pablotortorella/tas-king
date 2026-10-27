@@ -47,7 +47,7 @@ describe("seguridad de OAuth", () => {
   });
 
   it("acepta sólo returnTo relativo seguro", () => {
-    expect(validReturnTo("/cuentas-claras?espacio=uno")).toBe("/cuentas-claras?espacio=uno");
+    expect(validReturnTo("/cuentas-claras?grupo=uno")).toBe("/cuentas-claras?grupo=uno");
     expect(validReturnTo("https://evil.example")).toBe("/");
     expect(validReturnTo("//evil.example")).toBe("/");
     expect(validReturnTo("/\\evil.example")).toBe("/");

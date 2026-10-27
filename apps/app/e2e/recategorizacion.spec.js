@@ -154,7 +154,7 @@ test.describe("clasificar rápido", () => {
     await page.getByLabel("Otra categoría").selectOption({ label: "Mascotas" });
     await page.getByRole("button", { name: "Asignar" }).click();
     await expect(page.getByText("No quedan movimientos pendientes")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Volver al libro" }).last()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Volver al grupo" }).last()).toBeVisible();
   });
 
   test("solo con el teclado: números, Enter, S y U", async ({ page }) => {

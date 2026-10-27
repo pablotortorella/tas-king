@@ -41,7 +41,7 @@ test("elegir «Soy yo» no crea una persona repetida", async ({ page }) => {
   const own = await ownLabel(page);
   await page.getByLabel("¿Quién es “Yo mismo” en este grupo?").selectOption({ label: own });
   await page.getByRole("button", { name: "Revisar saldos y decisiones" }).click();
-  await expect(page.getByRole("heading", { name: "Así quedará el libro" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Así quedará el grupo" })).toBeVisible();
   await expect(page.getByText(`Yo mismo → ${own}`)).toBeVisible();
   await expect(page.getByText("quedarás fuera")).toHaveCount(0);
   const ack = page.getByLabel("Revisé la diferencia o la falta de saldo fuente");

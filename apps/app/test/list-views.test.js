@@ -5,7 +5,7 @@ import { PAGE_SIZE, renderLedgerOverview } from "../src/overview-ui.js";
 const people = [{ id: "p1", displayName: "Ana", linkedUserId: "u1", active: 1 }, { id: "p2", displayName: "Beto", linkedUserId: null, active: 1 }];
 const entry = (index, extra = {}) => ({ id: `e${index}`, type: "expense", currency: "COP", totalMinor: 10000, description: `Movimiento ${index}`, note: "", occurredAt: "2026-06-01", status: "active", revision: 1, createdByUserId: "u1", creatorName: "Ana", inferred: false, categoryInfo: null, cashParties: [{ participantId: "p1", direction: "out", amountMinor: 10000 }], allocations: [{ participantId: "p1", amountMinor: 5000 }, { participantId: "p2", amountMinor: 5000 }], effects: [{ participantId: "p1", amountMinor: 5000 }, { participantId: "p2", amountMinor: -5000 }], ...extra });
 const data = entries => ({ ledger: { default_currency: "COP", role: "owner", archived_at: null }, participants: people, categories: [], entries, balances: [] });
-const view = (entries, options = {}) => renderLedgerOverview(data(entries), { spaceId: "casa", userId: "u1", ...options });
+const view = (entries, options = {}) => renderLedgerOverview(data(entries), { groupId: "casa", userId: "u1", ...options });
 const rowsOf = html => [...html.matchAll(/<strong class="entry-title">([^<]*)<\/strong>/gu)].map(match => match[1]);
 
 describe("«Ver más» y el contador con el índice nuevo", () => {
@@ -61,7 +61,7 @@ describe("franja «Recién agregado» en la vista", () => {
   it("muestra el movimiento afectado arriba, con enlace al detalle", () => {
     const html = view(list, { recent: { entry: list[0], title: "Recién agregado" } });
     expect(html).toMatch(/<section class="recent-strip"[^>]*><h3>Recién agregado<\/h3>/u);
-    expect(html).toContain('href="/spaces/casa/ledger/entries/e1"');
+    expect(html).toContain('href="/groups/casa/ledger/entries/e1"');
     expect(html.indexOf("recent-strip")).toBeLessThan(html.indexOf('class="entry-list"'));
   });
   it("sin el parámetro no hay franja", () => expect(view(list)).not.toContain("recent-strip"));

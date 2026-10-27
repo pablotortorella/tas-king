@@ -14,7 +14,7 @@ test("corregir un movimiento importado con varios pagadores, sin tocar el pagado
   if (await ack.count()) await ack.check();
   await page.getByRole("button", { name: "Confirmar importación" }).click();
   await expect(page.getByRole("heading", { name: "Importación completada" })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("link", { name: "Ver el libro" }).click();
+  await page.getByRole("link", { name: "Ver el grupo" }).click();
   await page.getByRole("link", { name: /Cena grande/u }).click();
   const effects = async () => page.locator(".split-total, table.split tbody").first().innerText();
   const before = await effects();
