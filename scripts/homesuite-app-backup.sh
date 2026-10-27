@@ -42,13 +42,20 @@ npx wrangler d1 time-travel info "$DATABASE" \
   --json > "$BOOKMARK_FILE"
 
 echo "Exportando $DATABASE..."
-if ! npx wrangler d1 export "$DATABASE" \
+EXPORT_LOG="$DESTINATION/export.log"
+if npx wrangler d1 export "$DATABASE" \
   --remote \
   --env "$ENVIRONMENT" \
   --config apps/app/wrangler.jsonc \
   --output "$SQL_FILE" \
-  --skip-confirmation > /dev/null 2>&1; then
-  echo "La exportación de $DATABASE falló; no se continuará con el backup." >&2
+  --skip-confirmation > "$EXPORT_LOG" 2>&1; then
+  rm -f -- "$EXPORT_LOG"
+else
+  exit_code=$?
+  error_code="$(sed -n 's/.*\[code: \([0-9][0-9]*\)\].*/\1/p' "$EXPORT_LOG" | head -n 1)"
+  rm -f -- "$EXPORT_LOG"
+  printf 'La exportación de %s falló (Wrangler exit %s, Cloudflare code %s); no se continuará con el backup.\n' \
+    "$DATABASE" "$exit_code" "${error_code:-no disponible}" >&2
   exit 1
 fi
 

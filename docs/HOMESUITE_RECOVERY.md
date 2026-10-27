@@ -89,10 +89,14 @@ preparada a las 05:17 UTC, con restauración local antes de subir y verificació
 de descarga desde R2 después. Se activa al configurar el secreto de repositorio
 `HOMESUITE_PROD_BACKUP_API_TOKEN` y la variable
 `HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial es un Account API token
-personalizado de Cloudflare con permiso `D1 Read` en la cuenta y
+personalizado de Cloudflare con permiso de acceso a D1 y
 `Workers R2 Storage Bucket Item Write` limitado al bucket de backups. No usar
-una clave global ni un token S3 exclusivo de R2. Hasta activar y comprobar una
-ejecución manual, no existe respaldo periódico acreditado.
+una clave global ni un token S3 exclusivo de R2. El primer ensayo del workflow
+falló al exportar D1: `D1 Read` permitió obtener el bookmark, pero la
+exportación devolvió código 10000. Se desactivó la variable y se está
+comprobando si Cloudflare permite `D1 Edit` restringido a la base productiva.
+Hasta corregir permisos y completar una ejecución manual, no existe respaldo
+periódico acreditado.
 
 Pendientes operativos: activar la tarea diaria, comprobar alerta por fallos,
 acordar RPO/RTO y documentar exportación y eliminación de grupos. La regla de
