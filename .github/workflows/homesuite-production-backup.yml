@@ -1,0 +1,36 @@
+name: HomeSuite production backup
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    if: vars.HOMESUITE_PROD_BACKUPS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 30e57650ec41085db3a006d596eaecc7
+      CLOUDFLARE_API_TOKEN: ${{ secrets.HOMESUITE_PROD_BACKUP_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Export, restore locally and upload to R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          log="$(mktemp)"
+          trap 'rm -f -- "$log"' EXIT
+          npm run db:backup:homesuite-app:production | tee "$log"
+          prefix="$(sed -n 's|^Backup de HomeSuite completo en R2: homesuite-app-backups/\(production/[0-9]*T[0-9]*Z\)$|\1|p' "$log" | tail -n 1)"
+          test -n "$prefix"
+          npm run db:verify-backup:homesuite-app -- "$prefix"

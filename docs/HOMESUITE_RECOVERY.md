@@ -1,15 +1,15 @@
 # HomeSuite: backup y recuperación
 
-**Estado:** staging comprobado; producción bloqueada
+**Estado:** staging comprobado; respaldo y restauración de producción vacía acreditados
 
-**Fecha:** 2026-10-20
+**Fecha:** 2026-10-27
 
 ## Capas de recuperación
 
 1. D1 Time Travel ofrece el punto de recuperación inmediato mediante bookmark.
 2. Antes de migrar staging se guarda un export SQL local con checksum.
 3. Cada export se importa en una D1 local aislada antes de considerarlo válido.
-4. Producción requerirá además una copia externa con retención definida.
+4. Producción guarda una copia en R2 privado, con retención de 90 días.
 
 Los artefactos viven bajo `backups/homesuite-app/`, están ignorados por Git y no
 se consideran una copia externa.
@@ -47,6 +47,12 @@ npm run deploy:homesuite-app:staging
 La cadena es obligatoria: **backup → migraciones → Worker**. Si falla el backup,
 no comienza la migración; si falla la migración, no se publica el Worker.
 
+La publicación futura de HomeSuite App usa
+`npm run deploy:homesuite-app:production` desde el SHA integrado y aprobado.
+Encadena respaldo externo con ensayo local, migraciones y Worker. La creación
+inicial sin dominio realizada el 2026-10-27 fue sólo un bootstrap de
+infraestructura, no ese despliegue público.
+
 ## Rollback
 
 1. Detener nuevas escrituras si el incidente puede agravar datos.
@@ -64,10 +70,30 @@ no comienza la migración; si falla la migración, no se publica el Worker.
 No se restaura staging o producción desde un archivo elegido sólo por fecha: se
 comprueba su manifiesto y checksum. Un rollback de Worker no revierte D1.
 
-## Pendiente antes de producción
+## Producción: respaldo externo acreditado
 
-- bucket o proveedor externo separado para backups;
-- cifrado, acceso mínimo y retención automática;
-- restore drill de la D1 productiva vacía antes de aceptar usuarios;
-- RPO/RTO acordados y alertas por backup o cron fallidos;
-- procedimiento de exportación y eliminación de grupos.
+- El bucket R2 privado `homesuite-app-backups` existe desde 2026-10-27, separado
+  de D1 y de la máquina operadora. La regla `expire-production-90d` vence los
+  objetos bajo `production/` a los 90 días.
+- `npm run db:backup:homesuite-app:production` obtiene bookmark, exporta a un
+  directorio temporal privado, restaura localmente y sube SQL, bookmark y
+  manifiesto a R2. El archivo temporal se destruye al terminar. Wrangler
+  generó una URL de exportación temporal en la primera ejecución; desde entonces
+  la salida del comando de exportación se suprime para evitar registrarla.
+- El respaldo `production/20261027T193248Z` se recuperó de R2 con
+  `npm run db:verify-backup:homesuite-app -- production/20261027T193248Z`:
+  SHA-256, `quick_check`, claves foráneas y tablas esenciales correctos.
+
+La tarea diaria de `.github/workflows/homesuite-production-backup.yml` queda
+preparada a las 05:17 UTC, con restauración local antes de subir y verificación
+de descarga desde R2 después. Se activa al configurar el secreto de repositorio
+`HOMESUITE_PROD_BACKUP_API_TOKEN` y la variable
+`HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial es un Account API token
+personalizado de Cloudflare con permiso `D1 Read` en la cuenta y
+`Workers R2 Storage Bucket Item Write` limitado al bucket de backups. No usar
+una clave global ni un token S3 exclusivo de R2. Hasta activar y comprobar una
+ejecución manual, no existe respaldo periódico acreditado.
+
+Pendientes operativos: activar la tarea diaria, comprobar alerta por fallos,
+acordar RPO/RTO y documentar exportación y eliminación de grupos. La regla de
+retención no crea respaldos por sí sola.

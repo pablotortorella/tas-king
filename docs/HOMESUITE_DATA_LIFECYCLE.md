@@ -25,7 +25,7 @@
 | Historial | revisiones y eventos | Inmutable y retenido junto al libro para explicar cada cambio. |
 | Idempotencia | claves, hash y respuesta confirmada | Se conserva mientras pueda repetirse la operación correspondiente; no se purga hasta fijar la ventana de reintentos de la API. |
 | Operación | request ID y logs estructurados | Según la retención configurada en Workers Observability. Nunca incluye cookies, tokens, email ni cuerpos. |
-| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción requerirá copia externa, retención definida y restore drill propio. |
+| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción: copia en R2 privado con expiración a los 90 días y restore drill acreditado de la base vacía (2026-10-27); tarea diaria preparada, pendiente de credencial, activación y primer ensayo. |
 
 ## Exportación y eliminación
 
@@ -47,7 +47,7 @@ editar un movimiento crea una revisión nueva; no reescribe el pasado.
 
 ## Bloqueos de producción
 
-No crear recursos productivos ni registrar finanzas reales hasta comprobar:
+No abrir producción a usuarios ni registrar finanzas reales hasta comprobar:
 
 - backup externo independiente de D1 y de la máquina del operador;
 - retención de backups y restore drill del ambiente productivo;
@@ -58,3 +58,8 @@ No crear recursos productivos ni registrar finanzas reales hasta comprobar:
 - recorrido manual con dos cuentas reales y pruebas de autorización completas.
 
 La aprobación para staging no implica aprobación para producción.
+
+Pablo autorizó expresamente el 2026-10-27 preparar recursos productivos vacíos
+antes de completar estos controles. Se crearon D1, R2 y un Worker sin rutas ni
+tráfico; esta excepción puntual no habilita uso real ni elimina los bloqueos
+restantes. Ver [STATUS](STATUS.md) y [recuperación](HOMESUITE_RECOVERY.md).
