@@ -12,6 +12,8 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
   await expect(page.getByText("Compras", { exact: true })).toBeVisible();
   await expect(page.getByText("Remanso", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explorá las herramientas" })).toBeVisible();
+  // El acceso a la app de Remanso desde el hero existe solo en staging; sin ese ambiente no se ofrece.
+  await expect(page.getByRole("link", { name: /Probá Remanso/ })).toHaveCount(0);
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");

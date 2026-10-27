@@ -68,9 +68,11 @@ export default {
 
     const asset = await env.ASSETS.fetch(request);
     if (staging && request.method === "GET" && asset.status === 200 &&
-        ["/cuentas-claras", "/cuentas-claras.html", "/remanso", "/remanso.html", "/tareas", "/tareas.html"].includes(url.pathname)) {
+        ["/", "/index.html", "/cuentas-claras", "/cuentas-claras.html", "/remanso", "/remanso.html", "/tareas", "/tareas.html"].includes(url.pathname)) {
       const original = await asset.text();
-      const content = url.pathname.startsWith("/cuentas-claras")
+      const content = url.pathname === "/" || url.pathname === "/index.html"
+        ? original.replace("<!-- staging-app-entry -->", `<a class="secondary-action" href="${STAGING_APP}/remanso">Probá Remanso <span aria-hidden="true">→</span></a>`)
+        : url.pathname.startsWith("/cuentas-claras")
         ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/cuentas-claras">Entrar a Cuentas Claras <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging con Google.</p></div>`)
         : url.pathname.startsWith("/remanso")
           ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/remanso">Entrar a Remanso <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging. Las sesiones cortas no piden cuenta.</p></div>`)

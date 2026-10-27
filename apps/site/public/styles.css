@@ -149,6 +149,36 @@ h1 {
   padding: 14px 22px;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 13px 21px;
+  border: 1px solid var(--green);
+  border-radius: 999px;
+  color: var(--green);
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+.secondary-action:hover {
+  background: var(--green-soft);
+}
+
+.secondary-action:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 4px;
+}
+
 .primary-action:hover,
 .tool-link:hover {
   background: #174b34;

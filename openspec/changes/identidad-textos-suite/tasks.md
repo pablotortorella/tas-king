@@ -5,6 +5,7 @@
 ## 2. Textos
 
 - [x] 2.1 Portada y cuatro landings del sitio (`apps/site/public/`).
+- [x] 2.3 Portada conectada con Remanso: hero sin la frase temporal, botón «Probá Remanso» sólo en staging (worker, estilo y pruebas de staging y producción).
 - [x] 2.2 Inicio, tarjetas de herramientas y `/compras` de la app (`routes/shell.js`) y sus snapshots, revisando que el diff sea solo el texto.
 
 ## 3. Documentación

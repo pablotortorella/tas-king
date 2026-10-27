@@ -87,6 +87,26 @@ describe("homesuite-site", () => {
     expect(production.headers.get("X-Robots-Tag")).toBeNull();
   });
 
+  it("conecta la portada con Remanso: en staging el hero abre la app, en producción no hay acceso a la app", async () => {
+    const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(home).toContain("<!-- staging-app-entry -->");
+    for (const path of ["/", "/index.html"]) {
+      const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${path}`),
+        { ...assetEnvironment(home), SITE_ENV: "staging" });
+      expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+      expect(staging.headers.get("Cache-Control")).toBe("no-store");
+      const html = await staging.text();
+      expect(html).toContain('class="secondary-action" href="https://staging.homesuite.info/remanso"');
+      expect(html).toContain("Probá Remanso");
+      expect(html).not.toContain("staging-app-entry");
+    }
+    const production = await worker.fetch(new Request("https://homesuite.info/"), assetEnvironment(home));
+    const html = await production.text();
+    expect(html).not.toContain("staging.homesuite.info");
+    expect(html).not.toContain("Probá Remanso");
+    expect(production.headers.get("X-Robots-Tag")).toBeNull();
+  });
+
   it("en la landing de Tareas apunta al TasKing de staging", async () => {
     const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/tareas"),
       { ...assetEnvironment('<a href="https://tas-king.pablotortorella.workers.dev">Tareas</a>'), SITE_ENV: "staging" });
@@ -102,6 +122,9 @@ describe("homesuite-site", () => {
     expect(html).toContain("Te damos la bienvenida a casa");
     expect(html).toContain("Organizá, cuidá y disfrutá tu hogar.");
     expect(html).toContain("Explorá las herramientas");
+    // El hero no usa una frase temporal sobre herramientas «que se están sumando»: la calma se conecta con Remanso.
+    expect(html.replace(/\s+/g, " ")).toContain("organizar lo cotidiano y encontrar momentos de calma");
+    expect(html).not.toContain("Estamos sumando");
     expect(html).toContain('href="/tareas"');
     expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('href="/compras"');
