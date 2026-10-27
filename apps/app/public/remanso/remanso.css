@@ -87,13 +87,15 @@ body.remanso :focus-visible { outline: 3px solid var(--rem-focus); outline-offse
 body.remanso .notice { background: var(--rem-soft); color: var(--rem-ink); }
 body.remanso[data-pantalla="sesion"] .shell-header { display: none; }
 body.remanso { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body.remanso .topbar, body.remanso .shell { width: 100%; box-sizing: border-box; }
 body.remanso .shell { display: flex; flex-direction: column; flex: 1; min-height: 0; padding-bottom: 10px; }
 
 /* ---------- estructura ---------- */
-.remanso-app { flex: 1; width: 100%; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; }
-.rem-pantalla { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+/* --rem-x crece con la altura de la ventana: 0 hasta 760 px (el mínimo compacto, que entra en 390 × 720) y hasta 56 px a partir de 1320 px. */
+.remanso-app { --rem-x: clamp(0px, calc((100dvh - 760px) * .1), 56px); flex: 1; width: 100%; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; }
+.rem-pantalla { flex: 1; display: flex; flex-direction: column; gap: calc(10px + var(--rem-x) * .9); }
 /* El gap de la pantalla separaría de más al título; se compensa con el margen negativo. */
-.remanso-app .rem-pantalla > .eyebrow { margin: 4px 0 -8px; }
+.remanso-app .rem-pantalla > .eyebrow { margin: 4px 0 calc(-8px - var(--rem-x) * .9); }
 .remanso-app h1 { font-size: clamp(1.35rem, 6vw, 2rem); font-weight: 400; line-height: 1.15; margin: 4px 0 0; color: var(--rem-ink); }
 .rem-label { font-family: inherit; font-size: .8125rem; font-weight: 700; margin: 0 0 6px; color: var(--rem-muted); }
 .rem-bloque { margin: 0; }
@@ -105,29 +107,29 @@ body.remanso .shell { display: flex; flex-direction: column; flex: 1; min-height
   font: inherit; cursor: pointer; color: var(--rem-ink); background: var(--rem-surface);
   border: 1px solid var(--rem-line); border-radius: 14px; padding: 4px 6px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: 44px; text-align: center;
+  min-height: calc(44px + var(--rem-x) * .5); text-align: center;
 }
 .rem-chip[aria-pressed="true"] { background: var(--rem-accent); color: var(--rem-on-accent); border-color: var(--rem-link); border-width: 2px; padding: 3px 5px; }
 .rem-chip[aria-disabled="true"] { border-style: dashed; color: var(--rem-muted); }
-.rem-dur { min-height: 44px; flex-flow: row wrap; column-gap: 4px; row-gap: 0; align-content: center; }
+.rem-dur { min-height: calc(44px + var(--rem-x) * .5); flex-flow: row wrap; column-gap: 4px; row-gap: 0; align-content: center; }
 .rem-dur b { font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
 .rem-dur span { font-size: .8125rem; }
 .rem-dur .rem-tag { flex-basis: 100%; justify-content: center; }
-.rem-fondo { min-height: 48px; font-size: .8125rem; font-weight: 600; gap: 0; }
+.rem-fondo { min-height: calc(48px + var(--rem-x) * .5); font-size: .8125rem; font-weight: 600; gap: 0; }
 .rem-fondo svg { width: 20px; height: 20px; flex: none; }
 .rem-tag { display: inline-flex; align-items: center; gap: 3px; font-size: .6875rem; font-weight: 600; line-height: 1.2; color: var(--rem-muted); }
 .rem-tag svg { width: 11px; height: 11px; }
-.rem-animo { min-height: 44px; border-radius: 22px; font-size: .875rem; background: var(--rem-page); flex-direction: row; }
+.rem-animo { min-height: calc(44px + var(--rem-x) * .4); border-radius: 22px; font-size: .875rem; background: var(--rem-page); flex-direction: row; }
 
 /* ---------- línea de gongs ---------- */
-.rem-gongs { margin-top: 8px; padding: 10px 14px 2px; border-radius: 14px; background: var(--rem-soft); }
+.rem-gongs { margin-top: 8px; padding: calc(10px + var(--rem-x) * .5) 14px 2px; border-radius: 14px; background: var(--rem-soft); }
 .rem-pista { position: relative; height: 12px; }
 .rem-pista::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--rem-track); }
 .rem-punto { position: absolute; top: 0; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--rem-gold); }
 .rem-marcas { position: relative; height: 14px; margin-top: 6px; font-size: .6875rem; color: var(--rem-muted); }
 .rem-marcas span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .rem-regla { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .75rem; color: var(--rem-muted); padding-bottom: 8px; }
-.rem-sonido { min-height: 44px; font-size: .75rem; font-weight: 600; padding: 4px 3px; }
+.rem-sonido { min-height: calc(44px + var(--rem-x) * .5); font-size: .75rem; font-weight: 600; padding: 4px 3px; }
 /* «Probar gong» comparte la fila con el rótulo del bloque: ahorra una fila entera. */
 .rem-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
 .rem-fila .rem-label { margin: 0; }
@@ -142,7 +144,7 @@ a.rem-enlace { display: inline-flex; align-items: center; }
 .rem-aviso p { margin: 0; font-size: .9375rem; line-height: 1.5; color: var(--rem-ink); }
 .rem-aviso .button { margin-top: 10px; }
 .rem-primario, .rem-secundario { font: inherit; cursor: pointer; border-radius: 999px; font-weight: 700; letter-spacing: .02em; }
-.rem-primario { min-height: 50px; border: 0; background: var(--rem-accent); color: var(--rem-on-accent); font-size: 1.0625rem; margin-top: auto; }
+.rem-primario { min-height: calc(50px + var(--rem-x) * .4); border: 0; background: var(--rem-accent); color: var(--rem-on-accent); font-size: 1.0625rem; margin-top: auto; }
 .rem-secundario { min-height: 46px; border: 1px solid var(--rem-line); background: transparent; color: var(--rem-ink); font-size: .9375rem; font-weight: 600; }
 .rem-pila { display: flex; flex-direction: column; gap: 8px; }
 

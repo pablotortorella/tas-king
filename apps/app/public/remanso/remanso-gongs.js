@@ -83,11 +83,17 @@ export function synthGong(ctx, noise, dest, t, amp, main, sound) {
   strike.start(t, Math.random() * 7); strike.stop(t + sound.golpe.dur + 0.03);
 }
 
-// Las ráfagas de viento del bosque del paquete llegan a un nivel de 0,30–0,65 y a Pablo le sonaron muy fuertes (2026-10-27).
-// Aquí se multiplican por este factor (0,195 como máximo); afinar el sonido es cambiar este número.
-export const FACTOR_VIENTO = 0.3;
+// Ajustes de oído con Pablo (2026-10-27). Cada número se afina por separado.
+//
+// Las ráfagas de viento del bosque del paquete llegan a un nivel de 0,30–0,65: sonaban muy fuertes y, como son ruido filtrado,
+// parecidas a la lluvia. Se multiplican por este factor (0,0975 como máximo, igual que las hojas) y se espacian al doble.
+export const FACTOR_VIENTO = 0.15;
+// De las gotas de lluvia que programa el motor sólo suena esta proporción (el sonido original era muy denso).
+export const DENSIDAD_GOTAS = 0.35;
+// Nivel del lecho continuo de la lluvia (ruido blanco y marrón) respecto del paquete.
+export const NIVEL_LECHO_LLUVIA = 0.6;
 
-/** El motor del paquete con gong elegible y ráfagas más suaves: sólo se reemplazan `gong()` y `windGust()`. */
+/** El motor del paquete con gong elegible, viento más suave y lluvia menos densa: sólo se reemplazan `gong()`, `windGust()`, `drop()` y `buildAmbient()`. */
 export class SuiteEngine extends RemansoEngine {
   constructor() {
     super();
@@ -103,8 +109,8 @@ export class SuiteEngine extends RemansoEngine {
     synthGong(this.ctx, this.buf.white, dest, t, amp, main, GONGS[this.gongId]);
   }
 
-  // Igual que `windGust` del paquete, con el nivel de la ráfaga reducido por FACTOR_VIENTO. Las hojas, las frecuencias y la
-  // cadencia (próxima ráfaga en 12–37 s) no cambian.
+  // Igual que `windGust` del paquete, con el nivel de la ráfaga y de las hojas reducido por FACTOR_VIENTO y la espera hasta la
+  // siguiente ráfaga al doble (24–74 s después de terminar la anterior, no 12–37 s). Las frecuencias no cambian.
   windGust(s, t) {
     const rise = 1.5 + Math.random() * 2;
     const hold = 0.5 + Math.random() * 2;
@@ -119,8 +125,24 @@ export class SuiteEngine extends RemansoEngine {
     s.windBp.frequency.linearRampToValueAtTime(650 + Math.random() * 450, t + rise);
     s.windBp.frequency.linearRampToValueAtTime(420, end);
     s.leaves.gain.setValueAtTime(0, t);
-    s.leaves.gain.linearRampToValueAtTime(0.012 + Math.random() * 0.015, t + rise + 0.3);
+    s.leaves.gain.linearRampToValueAtTime((0.012 + Math.random() * 0.015) * FACTOR_VIENTO, t + rise + 0.3);
     s.leaves.gain.linearRampToValueAtTime(0, end);
-    return (end - t) + 12 + Math.random() * 25;
+    return (end - t) + 24 + Math.random() * 50;
+  }
+
+  // Sólo suena una parte de las gotas que programa el motor: menos densidad sin tocar la intensidad que sube y baja.
+  drop(t, bus, level) {
+    if (Math.random() < DENSIDAD_GOTAS) super.drop(t, bus, level);
+  }
+
+  // Construye el fondo del paquete y, en la lluvia, pasa el lecho continuo por una ganancia que lo baja.
+  buildAmbient(s) {
+    super.buildAmbient(s);
+    if (s.ambient === "lluvia") {
+      const recorte = this.gain(NIVEL_LECHO_LLUVIA);
+      s.rain.disconnect();
+      s.rain.connect(recorte);
+      recorte.connect(s.amb);
+    }
   }
 }
