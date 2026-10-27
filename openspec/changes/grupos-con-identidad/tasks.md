@@ -26,8 +26,8 @@
 
 ## 5. Administrar grupo
 
-- [x] 5.1 Implementar `GET/POST /groups/:id/settings` con identidad arriba, agregar participante e invitar después, y archivar al final; verificar con pruebas de integración de vistas (orden de secciones, 403 para integrantes, avisos de guardado)
-- [x] 5.2 Quitar de la pantalla de Personas los formularios de agregar, invitar, renombrar grupo y archivar; verificar que un integrante y la persona titular ven Personas solo con lista, renombrar persona y unir
+- [x] 5.1 Implementar `GET/POST /groups/:id/settings` con identidad arriba, el enlace a Personas después, y archivar al final (ajustado el 2026-10-27: agregar e invitar viven en Personas); verificar con pruebas de integración de vistas (orden de secciones, 403 para integrantes, avisos de guardado)
+- [x] 5.2 Quitar de la pantalla de Personas el renombrar grupo y el archivar; la persona titular conserva agregar, invitar, renombrar persona y unir, y un integrante ve solo la lista (ajustado el 2026-10-27: sumar e invitar se quedan en Personas)
 - [x] 5.3 Agregar la ruedita al encabezado del grupo y «Administrar grupo» al menú, solo para la persona titular, con 44 px de área táctil y etiqueta accesible (la auditoría también llevó a dar 44 px al enlace «N personas» y al de importar del grupo vacío); verificar con E2E (la persona titular llega por ambas vías) en 390 px y escritorio, y con integración que un integrante no ve ninguna (el E2E local no tiene una segunda cuenta)
 - [x] 5.4 Verificar el recorrido completo del formulario en el navegador (cambiar nombre, descripción, emoji y color y verlos reflejados en listado y encabezado) en Chromium y Firefox, incluido modo oscuro y contraste
 
@@ -42,6 +42,7 @@
 
 - [x] 7.1 Verificar que el saldo grande y el panel de cambio masivo plegado (commit `df8d4cb`) siguen intactos tras el renombre, con su E2E en verde
 - [x] 7.2 Capturas de las pantallas nuevas y modificadas a 360 px y escritorio, claro y oscuro, sin desbordes horizontales ni controles menores a 44 px; verificar con las auditorías existentes (`lowContrast`, desbordes) extendidas a las pantallas nuevas
+- [x] 7.3 Ajustes tras probar staging (2026-10-27): ruedita junto al nombre del grupo; botones del encabezado separados 12 px y apilados a ancho completo en el teléfono (el contenedor de acciones quedaba fuera de `.book-head` por un `</div>` de más, ahora una prueba verifica que los bloques cierran); agregar participante e invitar se mueven de «Administrar grupo» a Personas, que la administración solo enlaza; E2E del encabezado en teléfono y escritorio
 
 ## 8. Documentación y OpenSpec
 

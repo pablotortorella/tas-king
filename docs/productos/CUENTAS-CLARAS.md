@@ -47,9 +47,10 @@ Decisiones de Pablo (2026-10-26), cambio `openspec/changes/grupos-con-identidad`
   emoji y color, con las reglas del avatar personal. En la lista de grupos la
   descripción se muestra como extracto de 150 caracteres.
 - **Administrar grupo** (solo la persona titular, `/groups/:id/settings`): identidad
-  arriba, luego agregar personas e invitar, y archivar al final. Se llega por la
-  ruedita del grupo y por el menú. La pantalla de Personas queda para ver,
-  renombrar y unir.
+  arriba, luego un enlace a Personas, y archivar al final. Se llega por la ruedita
+  junto al nombre del grupo y por el menú. Agregar personas e invitar se hacen en la
+  pantalla de Personas (decisión de Pablo, 2026-10-27), donde también se ven,
+  renombran y unen.
 - **Cambiar de grupo sin selector:** el nombre del grupo con su avatar en el
   encabezado lleva a `/groups` y el menú ofrece «Mis grupos».
 - **Último grupo:** se recuerda en una cookie del navegador (`last_group`, solo el

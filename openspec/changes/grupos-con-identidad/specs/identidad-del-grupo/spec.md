@@ -30,7 +30,7 @@ Cada grupo SHALL tener un nombre de 1 a 120 caracteres, una descripción opciona
 
 ### Requirement: Solo la persona titular administra el grupo
 
-El sistema SHALL ofrecer una pantalla «Administrar grupo» en `/groups/:id/settings`. Solo la persona titular SHALL poder abrirla y guardar cambios; un integrante SHALL recibir un rechazo de permiso. La pantalla SHALL tener, en este orden: nombre, descripción y emoji con color; agregar participantes sin cuenta e invitar por email (con la opción de vincular a una persona existente); y archivar el grupo. Guardar la identidad SHALL registrar un evento de auditoría de la plataforma.
+El sistema SHALL ofrecer una pantalla «Administrar grupo» en `/groups/:id/settings`. Solo la persona titular SHALL poder abrirla y guardar cambios; un integrante SHALL recibir un rechazo de permiso. La pantalla SHALL tener, en este orden: nombre, descripción y emoji con color; un enlace a la pantalla de Personas; y archivar el grupo. Agregar participantes e invitar SHALL hacerse en la pantalla de Personas, no en la administración. Guardar la identidad SHALL registrar un evento de auditoría de la plataforma.
 
 #### Scenario: La persona titular edita la identidad
 
@@ -50,16 +50,26 @@ El sistema SHALL ofrecer una pantalla «Administrar grupo» en `/groups/:id/sett
 #### Scenario: Orden de la pantalla
 
 - **WHEN** la persona titular abre «Administrar grupo»
-- **THEN** el nombre es la primera sección, seguido por descripción y emoji con color, y recién después aparecen agregar participantes e invitar
+- **THEN** el nombre es la primera sección, seguido por descripción y emoji con color, luego el enlace «Ir a Personas» y al final archivar; no hay formularios de agregar participantes ni de invitar
 
-#### Scenario: Lo de administración sale de Personas
+#### Scenario: Sumar gente se hace en Personas
 
-- **WHEN** cualquier integrante abre la pantalla de Personas
+- **WHEN** la persona titular abre la pantalla de Personas de un grupo activo
+- **THEN** ve los formularios de agregar un participante sin cuenta y de invitar por email (con la opción de vincular a una persona existente), y al usarlos vuelve a Personas con su aviso
+
+#### Scenario: Un integrante no suma gente ni administra
+
+- **WHEN** un integrante abre la pantalla de Personas
 - **THEN** no ve formularios de agregar participantes, invitar, renombrar el grupo ni archivar
+
+#### Scenario: Grupo archivado
+
+- **WHEN** el grupo está archivado
+- **THEN** la pantalla de Personas no ofrece sumar ni invitar
 
 ### Requirement: La administración se alcanza desde el grupo y desde el menú
 
-Dentro de un grupo, la persona titular SHALL ver una ruedita de configuración en el encabezado de la página del grupo y un ítem «Administrar grupo» en el menú, ambos hacia la pantalla de administración. Los integrantes SHALL NO ver ninguno de los dos.
+Dentro de un grupo, la persona titular SHALL ver una ruedita de configuración junto al nombre del grupo, en el encabezado de la página del grupo, y un ítem «Administrar grupo» en el menú, ambos hacia la pantalla de administración. Los integrantes SHALL NO ver ninguno de los dos.
 
 #### Scenario: La persona titular llega por la ruedita
 

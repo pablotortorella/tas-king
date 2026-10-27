@@ -48,16 +48,12 @@ function identityForm({ row, csrf }) {
 }
 
 // Pantalla de administración del grupo (solo la persona titular): identidad, personas y archivar.
-export function renderGroupSettings({ group: row, data, invitations = [], csrf }) {
+export function renderGroupSettings({ group: row, data, csrf }) {
   const href = path(row.slug);
   const archived = Boolean(data.ledger.archived_at);
-  const invited = new Set(invitations.map(invitation => invitation.target_participant_id));
-  const nominal = data.participants.filter(person => !person.linkedUserId && person.active && !invited.has(person.id)).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.displayName)}</option>`).join("");
-  const addPerson = `<form class="ledger-form" action="${href}/participants" method="post">${csrf}<label for="participant-name">Participante sin cuenta<span class="hint">Podés sumar a alguien sin invitarlo todavía: figura en los saldos aunque no tenga acceso.</span></label><input id="participant-name" name="name" required maxlength="120"><div class="form-actions"><button class="button secondary">Agregar participante</button></div></form>`;
-  const invite = `<form class="ledger-form" action="${href}/invitations" method="post">${csrf}<label for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email" inputmode="email"><label for="target-participant">Vincular con participante (opcional)<span class="hint">Al aceptar, la cuenta se vincula a esa persona y conserva su historial y saldos.</span></label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominal}</select><div class="form-actions"><button class="button">Invitar</button></div></form>`;
   const archiveTool = archived
     ? `<form class="ledger-form" action="${href}/ledger/restore" method="post">${csrf}<p class="hint">El grupo está archivado: se puede leer y exportar, pero no recibe movimientos ni personas.</p><div class="form-actions"><button class="button">Restaurar grupo</button></div></form>`
     : `<details class="archive-tool"><summary>Archivar este grupo</summary><form class="ledger-form" action="${href}/ledger/archive" method="post">${csrf}<p class="hint">El grupo queda de sólo lectura: nadie puede agregar movimientos ni personas, pero todo se sigue viendo y exportando. No borra nada y se puede restaurar.</p><div class="form-actions"><button class="button danger">Archivar grupo</button></div></form></details>`;
-  const people = archived ? "" : `<section class="ledger-section" id="integrantes"><h2>Personas e invitaciones</h2>${addPerson}${invite}<p class="muted">Para renombrar o unir personas, andá a la pantalla de personas.</p><div class="form-actions"><a class="button secondary" href="${href}/people">Ver personas</a></div></section>`;
+  const people = archived ? "" : `<section class="ledger-section" id="integrantes"><h2>Personas</h2><p class="muted">Sumar personas, invitarlas por email, renombrarlas y unirlas se hace desde la pantalla de personas.</p><div class="form-actions"><a class="button secondary" href="${href}/people">Ir a Personas</a></div></section>`;
   return `<a class="back-link" href="${href}">← Volver al grupo</a><p class="eyebrow">Titular · Cuentas Claras</p><h1>Administrar grupo</h1>${identityForm({ row, csrf })}${people}<section class="ledger-section" id="archivar"><h2>Archivar</h2>${archiveTool}</section>`;
 }

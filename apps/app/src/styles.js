@@ -69,7 +69,7 @@ table{border-collapse:collapse}.balance-table{width:100%;text-align:left}.balanc
 
 const BOOK = `
 .book-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:4px}
-.book-head>div{min-width:0;max-width:100%}.book-head h1{margin-bottom:4px;overflow-wrap:anywhere}.book-head .actions{display:flex;gap:8px;flex-wrap:wrap}.book-head .actions .button{margin:0}
+.book-head>div{min-width:0;max-width:100%}.book-head h1{margin-bottom:4px;overflow-wrap:anywhere}.book-head .actions{display:flex;gap:12px;flex-wrap:wrap}.book-head .actions .button{margin:0}
 .book-grid{display:grid;gap:16px;align-items:start}
 .book-grid>section,.book-grid .panel>section{margin-top:16px}.panel{min-width:0}.panel>.card:first-child,.panel>.ledger-section:first-child{margin-top:16px}
 .currency-block+.currency-block{margin-top:24px}
@@ -161,7 +161,7 @@ const FORMS = `
 .balance-table.split th,.balance-table.split td{padding:10px 2px;font-size:.78rem}.balance-table.split th{letter-spacing:0;font-size:.66rem}.balance-table.split td:first-child{max-width:4.5rem;overflow-wrap:anywhere}.card,.ledger-section{padding:16px}
 .form-grid,.share-grid,.ledger-form .form-grid.three{grid-template-columns:minmax(0,1fr)}.share-grid select{min-width:0;max-width:100%}.ledger-form .form-grid.amount-row{grid-template-columns:minmax(0,1fr) 150px}
 .balance-table th,.balance-table td{padding:10px 4px;font-size:.88rem}.incident-row{grid-template-columns:1fr}
-.section-top{align-items:flex-start}.book-head .actions{width:100%}.book-head .actions .button{flex:1}
+.section-top{align-items:flex-start}.book-head .actions{width:100%;flex-direction:column}.book-head .actions .button{width:100%}
 .entry-row a{grid-template-columns:44px 1fr}.entry-side{grid-column:2;text-align:left;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.entry-side .money,.entry-side small{display:inline}
 }
 .category-field select,.category-field input{width:100%}.category-field .category-hint{min-height:1.2em;margin:4px 0 0}
@@ -208,6 +208,7 @@ ${AVATAR_CSS}
 .book-title{display:flex;gap:14px;align-items:center;min-width:0}.book-title>div{min-width:0}.group-description{margin:0 0 6px;color:var(--ink-2);max-width:60ch;overflow-wrap:anywhere;white-space:pre-line}
 .group-switch{display:inline-flex;align-items:center;gap:8px;min-height:44px;min-width:0;max-width:260px;color:var(--ink);text-decoration:none;font-weight:700;border:1.5px solid var(--line-strong);border-radius:999px;padding:0 12px 0 5px}
 .group-switch:hover{color:var(--ink);background:var(--accent-soft)}.group-switch .avatar{width:32px;height:32px;font-size:1rem}.group-switch-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.title-line{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:4px}.title-line h1{margin:0;min-width:0}.title-line .icon-button{flex:none}
 .icon-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:1.5px solid var(--line-strong);border-radius:12px;color:var(--ink);background:transparent}.icon-button:hover{background:var(--accent-soft);color:var(--ink)}
 .group-list{display:grid;gap:4px}.group-row{list-style:none}.group-link{display:flex;gap:14px;align-items:center;min-height:56px;padding:8px 4px;color:var(--ink);text-decoration:none;border-radius:14px}.group-link:hover{background:var(--accent-soft);color:var(--ink)}.group-link .grow{display:grid;gap:2px;min-width:0}.group-about{color:var(--ink-2);font-size:.92rem;overflow-wrap:anywhere}
 .book-head .muted a,.first-run-import a{display:inline-flex;align-items:center;min-height:44px}

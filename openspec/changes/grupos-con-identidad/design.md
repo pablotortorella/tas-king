@@ -71,7 +71,7 @@ En el listado de grupos la descripción se muestra como extracto de hasta 150 ca
 
 ### D7. «Administrar grupo» como pantalla propia
 
-`GET/POST /groups/:id/settings` para la persona titular, con tres secciones en orden: identidad (nombre, descripción, emoji+color), personas (agregar participante sin cuenta e invitar con vínculo opcional; los formularios que hoy viven en Personas y que mantienen sus rutas, renombradas a `/groups/:id/…`), y archivar. La pantalla de Personas queda de solo lectura más renombrar y unir. Acceso: ruedita en el encabezado del grupo (solo titular) e ítem del menú (solo titular). Un integrante que abre la URL recibe 403.
+`GET/POST /groups/:id/settings` para la persona titular, con tres secciones en orden: identidad (nombre, descripción, emoji+color), un enlace «Ir a Personas» y archivar. Agregar participante sin cuenta e invitar con vínculo opcional **viven en la pantalla de Personas** (decisión de Pablo tras probar staging el 2026-10-27: sumar gente es una tarea de Personas, y la administración solo enlaza; las rutas `POST /groups/:id/participants` e `/invitations` vuelven a Personas con su aviso). La ruedita va junto al nombre del grupo, no en la fila de acciones. Acceso: ruedita en el encabezado del grupo (solo titular) e ítem del menú (solo titular). Un integrante que abre la URL recibe 403.
 
 ### D8. Último grupo en una cookie, validada en el servidor
 

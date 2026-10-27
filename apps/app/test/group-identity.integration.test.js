@@ -72,14 +72,16 @@ describe("administrar la identidad del grupo", () => {
 });
 
 describe("pantalla «Administrar grupo»", () => {
-  it("la titular la ve con el nombre primero, luego descripción y emoji con color, luego personas, y al final archivar", async () => {
+  it("la titular la ve con el nombre primero, luego descripción y emoji con color, luego el enlace a Personas, y al final archivar", async () => {
     const { owner, base } = await groupWithMember();
     const response = await request(owner, `${base}/settings`);
     expect(response.status).toBe(200);
     const html = await response.text();
-    const order = ["Nombre del grupo", "Descripción", "Emoji", "Color de fondo", "Participante sin cuenta", "Invitar por email", "Archivar este grupo"].map(text => html.indexOf(text));
+    const order = ["Nombre del grupo", "Descripción", "Emoji", "Color de fondo", "Ir a Personas", "Archivar este grupo"].map(text => html.indexOf(text));
     expect(order.every(index => index > 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
+    for (const absent of ["Participante sin cuenta", "Invitar por email", `${base}/participants`, `${base}/invitations`]) expect(html).not.toContain(absent);
+    expect(html).toContain(`href="${base}/people"`);
   });
 
   it("un integrante recibe 403, quien no es del grupo y quien no inició sesión no la ven", async () => {

@@ -37,12 +37,12 @@ export async function openBulk(page) {
 
 export const uniqueId = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
-// Agrega una persona sin cuenta desde «Administrar grupo» y vuelve al grupo.
+// Agrega una persona sin cuenta desde la pantalla de Personas y vuelve al grupo.
 export async function addPerson(page, book, name) {
-  await page.goto(`${book}/settings`);
+  await page.goto(`${book}/people`);
   await page.getByLabel("Participante sin cuenta").fill(name);
   await page.getByRole("button", { name: "Agregar participante" }).click();
-  await expect(page).toHaveURL(/\/settings\?aviso=participante/u);
+  await expect(page).toHaveURL(/\/people\?aviso=participante/u);
   await page.goto(book);
 }
 

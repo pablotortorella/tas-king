@@ -14,6 +14,28 @@ async function createGroup(page, name) {
 }
 
 for (const [label, size] of [["teléfono", { width: 390, height: 780 }], ["escritorio", { width: 1280, height: 800 }]]) {
+  test(`el encabezado del grupo en ${label} deja la ruedita junto al nombre y los botones separados y alineados`, async ({ page }) => {
+    await page.setViewportSize(size);
+    const { book } = await openBook(page, "gr-cabecera");
+    await page.goto(book);
+    const box = async locator => locator.boundingBox();
+    const name = await box(page.locator(".book-head h1"));
+    const gear = await box(page.getByRole("link", { name: "Administrar grupo" }));
+    expect(Math.abs((gear.y + gear.height / 2) - (name.y + name.height / 2))).toBeLessThan(name.height / 2 + 1);
+    expect(gear.x).toBeGreaterThanOrEqual(name.x + name.width - 1);
+    const actions = await page.locator(".book-head .actions .button").all();
+    const boxes = await Promise.all(actions.map(box));
+    expect(boxes.length).toBe(2);
+    for (const item of boxes) expect(item.height).toBeGreaterThanOrEqual(44);
+    const [a, b] = boxes;
+    const gap = size.width < 561 ? b.y - (a.y + a.height) : b.x - (a.x + a.width);
+    expect(gap).toBeGreaterThanOrEqual(8);
+    if (size.width < 561) { expect(Math.abs(a.x - b.x)).toBeLessThan(1); expect(Math.abs(a.width - b.width)).toBeLessThan(1); }
+    else expect(Math.abs(a.y - b.y)).toBeLessThan(1);
+  });
+}
+
+for (const [label, size] of [["teléfono", { width: 390, height: 780 }], ["escritorio", { width: 1280, height: 800 }]]) {
   test.describe(`administrar el grupo en ${label}`, () => {
     test.use({ viewport: size });
 
@@ -28,10 +50,14 @@ for (const [label, size] of [["teléfono", { width: 390, height: 780 }], ["escri
       await expect(page).toHaveURL(/\/settings$/u);
 
       const headings = await page.locator("main h2").allInnerTexts();
-      expect(headings.slice(0, 3)).toEqual(["Identidad del grupo", "Personas e invitaciones", "Archivar"]);
+      expect(headings.slice(0, 3)).toEqual(["Identidad del grupo", "Personas", "Archivar"]);
       const order = await page.locator("main label").allInnerTexts();
       expect(order.slice(0, 4).map(text => text.split("\n")[0])).toEqual(["Nombre del grupo", "Descripción", "Emoji", "Color de fondo"]);
 
+      await page.getByRole("link", { name: "Ir a Personas" }).click();
+      await expect(page).toHaveURL(/\/people$/u);
+      await expect(page.getByLabel("Participante sin cuenta")).toBeVisible();
+      await page.goto(`${book}/settings`);
       await page.getByLabel("Nombre del grupo").fill(`Viaje ${suffix}`);
       await page.getByLabel("Descripción").fill("Gastos del viaje de diciembre a Cartagena con la familia");
       await page.getByLabel("Emoji").fill("✈️");

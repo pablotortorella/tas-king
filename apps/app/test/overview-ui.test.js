@@ -35,6 +35,17 @@ describe("libro: vista general", () => {
     expect(html).not.toMatch(/\sstyle=/u);
   });
 
+  it("el encabezado cierra todos sus bloques, lleva la ruedita junto al nombre y las acciones dentro de sí mismo", () => {
+    for (const role of ["owner", "member"]) {
+      const html = renderBookHead({ slug: "casa", name: "Casa" }, { ...data(), ledger: { default_currency: "COP", role, archived_at: null } }, "u1");
+      expect(html.match(/<div\b/gu).length).toBe(html.match(/<\/div>/gu).length);
+      expect(html.indexOf('<div class="actions">')).toBeLessThan(html.lastIndexOf("</div>"));
+      expect(html.endsWith("</div>")).toBe(true);
+      if (role === "owner") expect(html).toMatch(/<div class="title-line"><h1>Casa<\/h1><a class="icon-button"[^>]*aria-label="Administrar grupo"/u);
+      else expect(html).not.toContain("icon-button");
+    }
+  });
+
   it("muestra el saldo propio, la palabra del saldo, la suma cero y el efecto propio", () => {
     const html = renderLedgerOverview(data(), { groupId: "casa", userId: "u1" });
     expect(html.replace(/<[^>]+>/gu, "")).toContain("Le deben COP 50,00");
@@ -116,21 +127,30 @@ describe("libro: personas", () => {
     expect(owner).toContain("Cancelar invitación");
     expect(owner).toContain('name="_csrf"');
     expect(owner).not.toContain("Administrar grupo");
-    for (const text of ["Agregar participante", "Invitar por email", "Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
+    for (const text of ["Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
     const member = renderPeople({ ...base, invitations: [], owner: false });
     expect(member).not.toContain("Administrar grupo");
     expect(member).not.toContain("Cancelar invitación");
     expect(member).toContain("Sin cuenta");
   });
 
-  it("la administración del grupo conserva los nombres de campos y vive en su propia pantalla", () => {
-    const html = renderGroupSettings({ group: { id: "group_1", slug: "casa", name: "Casa" }, data: data(), invitations: [], csrf: base.csrf });
-    for (const field of ['name="name"', 'name="description"', 'name="emoji"', 'name="color"', 'name="email"', 'name="targetParticipantId"']) expect(html).toContain(field);
-    for (const action of ["/groups/casa/settings", "/groups/casa/participants", "/groups/casa/invitations", "/groups/casa/ledger/archive"]) expect(html).toContain(action);
+  it("la administración del grupo conserva los nombres de campos, enlaza a Personas y no repite sus formularios", () => {
+    const html = renderGroupSettings({ group: { id: "group_1", slug: "casa", name: "Casa" }, data: data(), csrf: base.csrf });
+    for (const field of ['name="name"', 'name="description"', 'name="emoji"', 'name="color"']) expect(html).toContain(field);
+    for (const action of ["/groups/casa/settings", "/groups/casa/ledger/archive"]) expect(html).toContain(action);
+    for (const absent of ['name="email"', 'name="targetParticipantId"', "/groups/casa/participants", "/groups/casa/invitations", "Participante sin cuenta"]) expect(html).not.toContain(absent);
+    expect(html).toContain('href="/groups/casa/people">Ir a Personas</a>');
     expect(html.indexOf("Nombre del grupo")).toBeLessThan(html.indexOf("Descripción"));
     expect(html.indexOf("Descripción")).toBeLessThan(html.indexOf("Emoji"));
-    expect(html.indexOf("Emoji")).toBeLessThan(html.indexOf("Participante sin cuenta"));
-    expect(html.indexOf("Participante sin cuenta")).toBeLessThan(html.indexOf("Archivar este grupo"));
+    expect(html.indexOf("Emoji")).toBeLessThan(html.indexOf("Ir a Personas"));
+    expect(html.indexOf("Ir a Personas")).toBeLessThan(html.indexOf("Archivar este grupo"));
+  });
+
+  it("Personas ofrece sumar y invitar solo a la persona titular y con el grupo activo", () => {
+    const owner = renderPeople({ ...base, invitations: [], owner: true });
+    for (const text of ['name="name"', 'name="email"', 'name="targetParticipantId"', "/groups/casa/participants", "/groups/casa/invitations", "Agregar participante", "Invitar por email"]) expect(owner).toContain(text);
+    const member = renderPeople({ ...base, invitations: [], owner: false });
+    for (const text of ["Agregar participante", "Invitar por email", "/groups/casa/participants"]) expect(member).not.toContain(text);
   });
 });
 

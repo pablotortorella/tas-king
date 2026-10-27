@@ -8,8 +8,8 @@ function balanceNote(data, personId) {
   return rows.length ? ` · ${rows.map(row => escapeHtml(signed(row.amountMinor, row.currency))).join(" · ")}` : "";
 }
 
-// Pantalla de personas del grupo: quiénes son, su estado y saldo, y (solo la titular) renombrar y unir. Agregar, invitar y administrar
-// el grupo vive en «Administrar grupo». Las personas unidas a otra se listan aparte, con la persona a la que pasaron.
+// Pantalla de personas del grupo: quiénes son, su estado y saldo, y (solo la titular) sumar, invitar, renombrar y unir. «Administrar
+// grupo» solo enlaza acá. Las personas unidas a otra se listan aparte, con la persona a la que pasaron.
 export function renderPeople({ data, group, members, invitations, csrf, owner, userId }) {
   const groupHref = path(group.slug);
   const archived = Boolean(data.ledger.archived_at);
@@ -39,8 +39,13 @@ export function renderPeople({ data, group, members, invitations, csrf, owner, u
   const nameOf = new Map([...data.participants, ...(data.mergedParticipants ?? [])].map(person => [person.id, person.displayName]));
   const mergedPeople = data.mergedParticipants ?? [];
   const merged = mergedPeople.length ? `<section class="ledger-section" id="unidas"><h2>Personas unidas</h2><p class="muted">Ya no figuran en los repartos ni en los saldos: sus movimientos pasaron a la persona indicada. Siguen apareciendo en el historial de cada movimiento.</p><ul class="plain-list">${mergedPeople.map(person => `<li><strong>${escapeHtml(person.displayName)}</strong> <span class="muted">unida a ${escapeHtml(nameOf.get(person.mergedIntoId) ?? "otra persona")}</span></li>`).join("")}</ul></section>` : "";
+  const invited = new Set(invitations.map(invitation => invitation.target_participant_id));
+  const nominal = data.participants.filter(person => !person.linkedUserId && person.active && !invited.has(person.id)).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.displayName)}</option>`).join("");
+  const addPerson = `<form class="ledger-form" action="${groupHref}/participants" method="post">${csrf}<label for="participant-name">Participante sin cuenta<span class="hint">Podés sumar a alguien sin invitarlo todavía: figura en los saldos aunque no tenga acceso.</span></label><input id="participant-name" name="name" required maxlength="120"><div class="form-actions"><button class="button secondary">Agregar participante</button></div></form>`;
+  const invite = `<form class="ledger-form" action="${groupHref}/invitations" method="post">${csrf}<label for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email" inputmode="email"><label for="target-participant">Vincular con participante (opcional)<span class="hint">Al aceptar, la cuenta se vincula a esa persona y conserva su historial y saldos.</span></label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominal}</select><div class="form-actions"><button class="button">Invitar</button></div></form>`;
+  const add = owner && !archived ? `<section class="ledger-section" id="sumar"><h2>Sumar personas</h2>${addPerson}${invite}</section>` : "";
   const lead = owner ? "Participar en las cuentas no es lo mismo que tener acceso." : "Participar en las cuentas no es lo mismo que tener acceso. La administración queda en manos del titular.";
-  return `<section class="ledger-section" id="personas"><h2>Personas · ${data.participants.length}</h2><p class="muted">${lead}</p>${people}${loose}</section>${merged}`;
+  return `<section class="ledger-section" id="personas"><h2>Personas · ${data.participants.length}</h2><p class="muted">${lead}</p>${people}${loose}</section>${add}${merged}`;
 }
 
 const backTo = (groupId, label = "← Volver a las personas") => `<a class="back-link" href="${path(groupId)}/people">${label}</a>`;

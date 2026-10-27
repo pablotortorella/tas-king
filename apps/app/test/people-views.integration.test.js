@@ -41,12 +41,13 @@ describe("pantalla de personas", () => {
     const owner = await (await request(t.owner, `${t.base}/people`)).text();
     expect(owner).toContain("<h1>Personas</h1>");
     for (const text of ["Ana", "Beto", "Sin cuenta", "Unir con otra persona", "Renombrar", "+COP 100,00", "−COP 100,00"]) expect(owner).toContain(text);
-    for (const text of ["Agregar participante", "Invitar por email", "Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
+    for (const text of ["Agregar participante", "Invitar por email", "Vincular con participante"]) expect(owner).toContain(text);
+    for (const text of ["Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
     expect(owner).toContain(`href="${t.base}/settings">Administrar grupo</a>`);
     expect(owner).toContain(`href="${t.base}/people/${t.anaId}/merge"`);
     const member = await (await request(t.member, `${t.base}/people`)).text();
     expect(member).toContain("Ana");
-    for (const text of ["Administrar grupo", "Agregar participante", "Unir con otra persona", "Guardar nombre"]) expect(member).not.toContain(text);
+    for (const text of ["Administrar grupo", "Agregar participante", "Invitar por email", "Unir con otra persona", "Guardar nombre"]) expect(member).not.toContain(text);
   });
 
   it("el libro ya no repite las herramientas de administración, pero enlaza a las personas", async () => {
@@ -79,10 +80,10 @@ describe("pantalla de personas", () => {
     expect(await duplicate.text()).toContain("Ya hay una persona con ese nombre");
   });
 
-  it("agregar una persona vuelve a «Administrar grupo» con su aviso", async () => {
+  it("agregar una persona vuelve a Personas con su aviso", async () => {
     const t = await book("pv-agregar");
     const added = await request(t.owner, `${t.base}/participants`, { method: "POST", body: form({ name: "Caro" }) });
-    expect(added.headers.get("location")).toBe(`${t.base}/settings?aviso=participante`);
+    expect(added.headers.get("location")).toBe(`${t.base}/people?aviso=participante`);
     expect(await (await request(t.owner, added.headers.get("location"))).text()).toContain("Participante agregado.");
   });
 });

@@ -481,7 +481,7 @@ app.post("/groups/:groupId/participants", async (c) => {
   const user = c.get("protectedUser");
   try {
     await addParticipant(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=participante`, 303);
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=participante`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
@@ -536,7 +536,7 @@ app.post("/groups/:groupId/invitations", async (c) => {
   try {
     const body = await c.req.parseBody();
     await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
-    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=invitacion`, 303);
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=invitacion`, 303);
   } catch {
     return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
   }

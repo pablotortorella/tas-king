@@ -7,7 +7,7 @@ import { noticeFor } from "../ui-parts.js";
 
 const IDENTITY_FIELDS = ["name", "description", "emoji", "color"];
 
-// «Administrar grupo»: nombre, descripción, emoji y color; personas e invitaciones; archivar. Solo la persona titular.
+// «Administrar grupo»: nombre, descripción, emoji y color; enlace a Personas; archivar. Solo la persona titular.
 export function registerGroupSettingsRoutes(app) {
   app.get("/groups/:groupId/settings", async (c) => {
     const user = await signedInUser(c);
@@ -16,12 +16,11 @@ export function registerGroupSettingsRoutes(app) {
     const group = await c.env.DB.prepare("SELECT g.id, g.name, g.slug, g.description, g.avatar_emoji, g.avatar_color, m.role FROM groups g JOIN memberships m ON m.group_id = g.id WHERE (g.id = ? OR g.slug = ?) AND m.user_id = ?").bind(key, key, user.user_id).first();
     if (!group) return c.html(formError("Grupo no encontrado", "No tenés acceso a este grupo.", 404), 404);
     if (group.role !== "owner") return c.html(formError("No podés administrar este grupo", "Sólo el titular puede administrarlo.", 403), 403);
-    const [csrf, data, invitations] = await Promise.all([
+    const [csrf, data] = await Promise.all([
       csrfInput(c, user),
       readLedger(c.env.DB, { groupId: group.id, userId: user.user_id }),
-      c.env.DB.prepare("SELECT id, target_participant_id FROM invitations WHERE group_id = ? AND status = 'pending'").bind(group.id).all(),
     ]);
-    const content = `${noticeFor(c.req.query("aviso"))}${renderGroupSettings({ group, data, invitations: invitations.results, csrf })}`;
+    const content = `${noticeFor(c.req.query("aviso"))}${renderGroupSettings({ group, data, csrf })}`;
     return c.html(page("Administrar grupo", content, { groupHref: `/groups/${encodeURIComponent(group.slug)}` }));
   });
 
