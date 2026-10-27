@@ -79,8 +79,8 @@ ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 
 - `/remanso` en HomeSuite App con inicio, sesión y cierre, usando el motor de sonido
   del paquete de Claude Design **sin modificar** (huella SHA-256 fijada por prueba).
-  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas); las dos mitades
-  de la suite siguen sin explorar.
+  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas). La suite no se divide
+  en «mitades» (decisión del 2026-10-27).
 - Acceso en dos niveles: **sin cuenta** 1, 2 y 5 min, silencio/agua/bosque y Gong
   brillante; **con cuenta** 10, 20 y 30 min, lluvia/fuego/noche, Gong profundo y
   Cuenco tibetano, más el nombre del perfil en el cierre. El cierre sin cuenta no

@@ -5,6 +5,8 @@
 > Origen: conversaciones de definición conceptual y de identidad de HomeSuite.
 > Estado: **marco conceptual acordado**, con propuestas de producto y copy aún sujetas a validación.
 > Este documento **no es una especificación de implementación** ni autoriza cambios automáticos en el código.
+>
+> **Decisiones posteriores (2026-10-27, Pablo):** «Pausa» sale como nombre de producto y Remanso, la meditación ya integrada, ocupa su lugar: donde este documento dice «Pausa» (§6, §6.1, §9.6, §11) léase Remanso. La suite no se divide en «mitades»; los tres verbos son dimensiones de la marca, no categorías de navegación (§2). Los textos de homesuite.info y de la app se alinearon con §9 (change `identidad-textos-suite`).
 
 ## 1. Contexto y evolución
 

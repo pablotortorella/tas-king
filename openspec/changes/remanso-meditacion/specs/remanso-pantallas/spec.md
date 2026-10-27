@@ -51,7 +51,7 @@ la sesión.
 HomeSuite SHALL mostrar Remanso como una herramienta más en la home, junto a Tareas,
 Cuentas Claras y Compras. El menú general (Inicio, Mis grupos y la cuenta) no lista
 herramientas, por lo que Remanso no aparece ahí (ajuste del 2026-10-27, al integrar
-con el menú de la app). No SHALL agrupar ni nombrar mitades de la suite en este corte.
+con el menú de la app). No SHALL agrupar herramientas ni presentar a Remanso como «una mitad» de la suite: organizar, cuidar y disfrutar son dimensiones de la marca, no categorías de navegación (decisión del 2026-10-27).
 
 #### Scenario: Elegir Remanso desde la home
 

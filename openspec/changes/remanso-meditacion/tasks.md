@@ -47,7 +47,7 @@ mismo commit.
 ## 6. Documentación
 
 - [x] 6.1 Crear `docs/productos/REMANSO.md` (ficha: alcance, niveles libre/con cuenta y su límite client-side, rutas, archivos, reglas, huella del motor, comandos, riesgos no verificados) y enlazarla desde `CLAUDE.md` y `QUICK_START.md`; verificar los enlaces locales.
-- [x] 6.2 Backlog: historial y su alcance (persona u hogar, sin rachas), navegación y nombre de las mitades, landing pública, modo oscuro global, grabaciones vs. sintetizados, y los tres riesgos de dispositivo con la marca «investigar a fondo en internet antes de decidir».
+- [x] 6.2 Backlog: historial y su alcance (persona u hogar, sin rachas), landing pública, modo oscuro global, grabaciones vs. sintetizados, y los tres riesgos de dispositivo con la marca «investigar a fondo en internet antes de decidir».
 - [x] 6.3 Registrar en STATUS el estado de la rama y, al publicar, el SHA, la versión, las pruebas y los límites. Actualizar APRENDIZAJES sólo si surge uno nuevo con evidencia.
 
 ## 7. Verificación local y publicación en staging

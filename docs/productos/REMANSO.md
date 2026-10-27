@@ -1,8 +1,11 @@
 # Remanso: particularidades de producto
 
 Hereda la [base común](../homesuite/README.md) y la [plataforma](PLATAFORMA.md).
-Remanso inicia la mitad de HomeSuite que *cuida* la casa (las otras herramientas
-la organizan): meditaciones de tiempo fijo, con gong y sonidos de fondo. Su
+Remanso es la herramienta de HomeSuite para descansar: meditaciones de tiempo fijo,
+con gong y sonidos de fondo. Es la exploración que el [marco de identidad](../HOMESUITE_IDENTIDAD_Y_VISION.md)
+llamaba «Pausa»; Pablo decidió el 2026-10-27 que ese nombre sale y Remanso ocupa su lugar.
+No es «una mitad» de la suite: organizar, cuidar y disfrutar son dimensiones de la marca,
+no categorías de navegación. Su
 especificación vive en el change `remanso-meditacion` (`openspec/changes/`, y en
 `openspec/specs/` cuando se archive); el paquete de diseño recibido está en
 [docs/diseno/remanso](../diseno/remanso/README.md). Ver [STATUS](../STATUS.md) para
@@ -144,7 +147,6 @@ investigar a fondo cómo se resuelven en la práctica:
 - **Dispositivo emulado ≠ físico:** las pruebas automáticas validan flujo, política y
   contraste, no calidad de sonido. WebKit/Safari no se probó.
 
-Pendientes de producto en el [backlog](../PRODUCT_BACKLOG.md): historial, navegación y
-nombre de las dos mitades, modo oscuro global, fondos grabados, elección del gong en el
+Pendientes de producto en el [backlog](../PRODUCT_BACKLOG.md): historial, modo oscuro global, fondos grabados, elección del gong en el
 perfil.
 No hay excepciones propuestas a la base común en esta ficha.

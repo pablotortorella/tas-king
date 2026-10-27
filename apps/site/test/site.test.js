@@ -100,7 +100,8 @@ describe("homesuite-site", () => {
     );
 
     expect(html).toContain("Te damos la bienvenida a casa");
-    expect(html).toContain("Conocé las herramientas");
+    expect(html).toContain("Organizá, cuidá y disfrutá tu hogar.");
+    expect(html).toContain("Explorá las herramientas");
     expect(html).toContain('href="/tareas"');
     expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('href="/compras"');
@@ -131,8 +132,8 @@ describe("homesuite-site", () => {
 
   it.each([
     ["tareas", "Fun TasKing!", true],
-    ["cuentas-claras", "Las cuentas compartidas, más claras.", false],
-    ["compras", "Una lista para comprar mejor, juntos.", false],
+    ["cuentas-claras", "Las cuentas claras, sin vueltas.", false],
+    ["compras", "Prepará tus listas con calma y evitá olvidos.", false],
     ["remanso", "Un rato de calma para la casa.", false],
   ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
     const html = await readFile(
@@ -154,5 +155,16 @@ describe("homesuite-site", () => {
       expect(html).not.toMatch(/<button\b|<form\b/i);
       expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     }
+  });
+
+  // Marco de identidad (docs/HOMESUITE_IDENTIDAD_Y_VISION.md, §4, §5 y §7): el hogar no presupone convivencia, las herramientas
+  // se describen por lo que hacen y ninguna se presenta como «una mitad» de la suite.
+  it.each(["index", "tareas", "cuentas-claras", "compras", "remanso"])("el texto de %s no presupone convivencia ni divide la suite", async (name) => {
+    const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+    const visible = html.replace(/<[^>]+>/g, " ");
+    for (const frase of ["vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
+      expect(visible.toLowerCase(), `«${frase}» en ${name}`).not.toContain(frase.toLowerCase());
+    }
+    expect(visible).toContain("Tu hogar, a tu ritmo.");
   });
 });

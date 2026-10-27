@@ -20,7 +20,6 @@ Ficha: [Remanso](productos/REMANSO.md). Primer corte en la rama `feature/remanso
 marcados **investigar** requieren una investigación a fondo en internet (qué
 conviene y cómo) antes de elegir, y su resultado se registra aquí.
 
-- **Navegación y nombre de las dos mitades de la suite** (organiza / cuida). Hoy Remanso es una herramienta más en la home; el menú general no lista herramientas. Aceptación: decisión de Pablo sobre nombres y navegación, explorada con `/opsx:explore` antes de proponer.
 - **Historial de sesiones** `{ fecha, minutos, fondo, ánimo }`: persona u hogar, para qué, sin rachas ni presión. Hoy el ánimo no se guarda ni se envía. Aceptación: exploración con Pablo; si se guarda, migración, privacidad y export definidos.
 - **Publicar Remanso en producción** (app y sitio público). La placa y la landing existen y funcionan en staging; el sitio de producción dice «en preparación». Aceptación: aprobación explícita de Pablo, publicación de la app y el sitio por separado según [operación](homesuite/OPERACION.md), y la landing de producción con enlace real a la app.
 - **Elección del gong en el perfil** para que siga a la persona entre dispositivos (hoy vive en el dispositivo). Aceptación: exploración con Pablo; si se guarda en el servidor, migración compatible, API con CSRF y qué pasa sin cuenta.
@@ -51,7 +50,7 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 - Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
 - Definir el alcance individual de TasKing y Compras y su comunicación.
 - Revisar la identidad visual actual (emblema, favicon, acento por producto) antes de proponer cambios.
-- Decidir si y cómo comunicar productos en exploración (Pausa, Rituales, Momentos, Bitácora) y sus nombres definitivos. Hay trabajo de meditación en la rama `feature/remanso` (aún no integrada); su relación con «Pausa» está por aclarar.
+- Decidir si y cómo comunicar productos en exploración (Rituales, Momentos, Bitácora) y sus nombres definitivos. «Pausa» salió el 2026-10-27: Remanso, la herramienta de meditación ya integrada, ocupa su lugar.
 - Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 
 ---

@@ -1,8 +1,8 @@
 ## Why
 
-HomeSuite organiza la casa (Tareas, Cuentas Claras, Compras); Remanso inicia la
-otra mitad: cuidarla, con meditaciones de tiempo fijo, gong y sonidos de fondo
-que generen calma. Existe un paquete de traspaso (motor de sonido ya funcional y
+HomeSuite reúne herramientas para organizar, cuidar y disfrutar el hogar (marco de
+identidad); Remanso es la primera dedicada al descanso, con meditaciones de tiempo
+fijo, gong y sonidos de fondo que generen calma. Existe un paquete de traspaso (motor de sonido ya funcional y
 una referencia visual) que hay que llevar a la suite respetando su identidad,
 sesión, perfil y cabeceras de seguridad, y ponerlo en staging desde la primera
 versión para probarlo en un teléfono real. Además, la calma no debería pedir
@@ -34,7 +34,7 @@ desbloquea las sesiones largas y el resto de los sonidos.
   sistema) de HomeSuite en lugar de la paleta y la fuente del paquete. La
   pantalla de sesión es siempre oscura.
 - Entrada provisional: Remanso aparece como una herramienta más en la home y en
-  el menú, sin dividir todavía la suite en mitades.
+  el menú. La suite no se divide en «mitades» (decisión del 2026-10-27).
 - Entrega segura: cero scripts ni estilos inline, cero fuentes ni recursos
   externos; la app sirve archivos estáticos propios (nuevo binding `assets`)
   sin pasar el HTML por el Asset Worker.
@@ -46,7 +46,6 @@ desbloquea las sesiones largas y el resto de los sonidos.
 
 - Historial de sesiones, rachas o cualquier dato guardado; el estado de ánimo
   del cierre no se persiste ni se envía.
-- Navegación o nombres de las dos mitades de la suite (decisión pendiente).
 - Publicar el sitio público en producción: sólo se despliega el sitio de staging.
 - Guardar la elección del gong en el perfil o el servidor (queda en el dispositivo).
 - Grabaciones de audio, app nativa o PWA con audio en segundo plano.

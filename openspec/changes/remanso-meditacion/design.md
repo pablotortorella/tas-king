@@ -304,7 +304,5 @@ revertir. La ruta y los archivos nuevos dejan de existir con el redeploy.
 
 ## Open Questions
 
-- Cómo se llamarán las dos mitades y cómo se navega entre ellas (decisión de
-  producto, ya diferida por Pablo).
 - Si la landing pública de Remanso entra antes o después del primer uso real.
 - Si el modo oscuro del shell se generaliza a toda la app.
