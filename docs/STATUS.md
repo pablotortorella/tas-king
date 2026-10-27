@@ -9,9 +9,14 @@
 
 ## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
 
-**Estado:** implementado en la rama `feature/grupos-con-identidad` (apilada sobre
-`feature/personas-menu-perfil`), sin publicar y **sin tocar staging todavía**. Cambio
-OpenSpec: `grupos-con-identidad`.
+**Estado:** integrado en `main` con el PR #105 (merge `c6cc955`, que lleva toda la pila de
+Cuentas Claras; los PR apilados #88–#90, #94–#98, #100 y #103 se cerraron como incluidos).
+Se publicó en staging desde el SHA `7b010d2` (Version ID `99964c9a`, base recreada con el
+script de reinicio y backup previo) y Pablo lo probó; los ajustes posteriores (ruedita
+junto al nombre, botones del encabezado y sumar personas en Personas) están en `main` y se
+verán en el próximo despliegue de staging. **HomeSuite App no tiene entorno de
+producción**, así que nada de esto está en producción. Cambio OpenSpec:
+`grupos-con-identidad`.
 
 - **Lenguaje único:** el término anterior de «grupo» desapareció de interfaz, URLs, API, código, base,
   pruebas y documentos vigentes (excepción: `openspec/changes/archive/`, el lema figurado
@@ -62,11 +67,13 @@ compartido), sin publicar. Cambio OpenSpec: `personas-del-grupo`.
 
 ## Remanso — primer corte (2026-10-26)
 
-**Estado:** implementado en la rama `feature/remanso` (base `97a592a`) y **publicado en
-staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`** (árbol
-limpio; los commits posteriores de la rama sólo cambian documentación). **Sin integrar en
-`main`, sin publicar en producción y sin aceptar** (falta la prueba de Pablo en su
-teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+**Estado:** implementado en la rama `feature/remanso` e **integrado con `main`
+(2026-10-27)** sobre el shell nuevo de la app: Remanso queda solo en la home (el menú
+general ya no lista herramientas) y sus E2E corren con `test:e2e:remanso`. Se publicó en
+staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`, pero ese
+despliegue **fue reemplazado el mismo día** por el de grupos (staging tiene un solo SHA
+activo por Worker); el próximo despliegue de `main` lo vuelve a publicar. **Sin publicar
+en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
 ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 [ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
 
