@@ -227,6 +227,8 @@ ${AVATAR_CSS}
 .tool-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;color:var(--ink);text-decoration:none}
 .tool-card:hover,.tool-card:focus-visible{border-color:var(--accent-line);color:var(--ink)}
 .tool-card strong{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem}
+.tool-card-tasks{--tool:var(--tool-tasks)}.tool-card-expenses{--tool:var(--tool-expenses)}.tool-card-calm{--tool:var(--tool-calm)}
+.tool-card-tasks,.tool-card-expenses,.tool-card-calm{border-color:var(--tool)}.tool-card-tasks strong,.tool-card-expenses strong,.tool-card-calm strong{color:var(--tool)}
 .tool-card span{color:var(--ink-2)}
 .person-tools{margin:2px 0 0 56px}.person-tools summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--accent-text)}.person-tools[open] summary{margin-bottom:4px}
 .profile-form h2:not(:first-child){margin-top:28px}

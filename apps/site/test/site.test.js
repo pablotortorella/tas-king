@@ -127,19 +127,17 @@ describe("homesuite-site", () => {
     expect(html).not.toContain("Estamos sumando");
     expect(html).toContain('href="/tareas"');
     expect(html).toContain('href="/cuentas-claras"');
-    expect(html).toContain('href="/compras"');
     expect(html).toContain('href="/remanso"');
     expect(html).toContain("Conocé Remanso");
     expect(html).toContain("Conocé Fun TasKing");
     expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     expect(html).toContain("Cuentas Claras");
-    expect(html).toContain("Compras");
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/\sstyle=/i);
   });
 
   it("usa el nuevo emblema y favicon en todas las páginas", async () => {
-    const pages = ["index", "tareas", "cuentas-claras", "compras", "remanso"];
+    const pages = ["index", "tareas", "cuentas-claras", "remanso"];
     for (const name of pages) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html).toContain('href="/HomeSuite-favicon-simplificado.svg"');
@@ -156,7 +154,6 @@ describe("homesuite-site", () => {
   it.each([
     ["tareas", "Fun TasKing!", true],
     ["cuentas-claras", "Las cuentas claras, sin vueltas.", false],
-    ["compras", "Prepará tus listas con calma y evitá olvidos.", false],
     ["remanso", "Un rato de calma para la casa.", false],
   ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
     const html = await readFile(
@@ -182,12 +179,58 @@ describe("homesuite-site", () => {
 
   // Marco de identidad (docs/HOMESUITE_IDENTIDAD_Y_VISION.md, §4, §5 y §7): el hogar no presupone convivencia, las herramientas
   // se describen por lo que hacen y ninguna se presenta como «una mitad» de la suite.
-  it.each(["index", "tareas", "cuentas-claras", "compras", "remanso"])("el texto de %s no presupone convivencia ni divide la suite", async (name) => {
+  it.each(["index", "tareas", "cuentas-claras", "remanso"])("el texto de %s no presupone convivencia ni divide la suite", async (name) => {
     const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
     const visible = html.replace(/<[^>]+>/g, " ");
     for (const frase of ["vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
       expect(visible.toLowerCase(), `«${frase}» en ${name}`).not.toContain(frase.toLowerCase());
     }
     expect(visible).toContain("Tu hogar, a tu ritmo.");
+  });
+
+  // Catálogo público: sólo las tres herramientas funcionales. Compras queda oculto hasta que exista (su landing espera en
+  // apps/site/pendientes/ y no se publica).
+  it("la portada y las landings muestran sólo las tres herramientas funcionales: Compras está oculto", async () => {
+    const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(home.match(/class="tool-card[ "]/g)).toHaveLength(3);
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso"]) {
+      const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+      expect(html, name).not.toMatch(/href="\/compras"|Compras/u);
+    }
+    await expect(readFile(new URL("../public/compras.html", import.meta.url))).rejects.toThrow();
+    await expect(readFile(new URL("../pendientes/compras.html", import.meta.url), "utf8")).resolves.toContain("Compras");
+  });
+
+  // Acentos por producto (verde, terracota y ámbar de la paleta de la suite): sólo en rótulos, bordes e íconos, nunca como fondo de
+  // texto blanco. Cada acento debe leerse (4,5:1) sobre la página, la tarjeta y su propio fondo suave, en claro y en oscuro.
+  describe("acentos por producto", async () => {
+    const css = await readFile(new URL("../public/styles.css", import.meta.url), "utf8");
+    const corte = css.indexOf("@media (prefers-color-scheme: dark)");
+    const luminance = (hex) => {
+      const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    const accent = (block, product) => {
+      const rule = block.match(new RegExp(`\\.tool-card-${product}[^{]*\\.product-page-${product}\\s*\\{([^}]*)\\}`, "u"));
+      expect(rule, `falta la regla del acento de ${product}`).not.toBeNull();
+      return Object.fromEntries([...rule[1].matchAll(/--product-accent(-soft)?:\s*(#[0-9a-f]{6})/gu)].map((m) => [m[1] ? "soft" : "accent", m[2]]));
+    };
+    const ESQUEMAS = [["claro", css.slice(0, corte), "#f7f2e8", "#fffdf8"], ["oscuro", css.slice(corte), "#161914", "#20251f"]];
+    it.each(ESQUEMAS.flatMap(([name, block, page, surface]) => ["tasks", "expenses", "calm"].map((product) => [name, product, block, page, surface])))(
+      "%s: el acento de %s se lee sobre la página, la tarjeta y su fondo suave", (_name, product, block, page, surface) => {
+        const { accent: color, soft } = accent(block, product);
+        for (const fondo of [page, surface, soft]) expect(ratio(color, fondo)).toBeGreaterThanOrEqual(4.5);
+      });
+
+    it("cada tarjeta de la portada y cada landing declaran su producto", async () => {
+      const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+      for (const product of ["tasks", "expenses", "calm"]) {
+        expect(home).toContain(`tool-card-${product}`);
+        const page = await readFile(new URL(`../public/${{ tasks: "tareas", expenses: "cuentas-claras", calm: "remanso" }[product]}.html`, import.meta.url), "utf8");
+        expect(page).toContain(`product-page-${product}`);
+      }
+    });
   });
 });

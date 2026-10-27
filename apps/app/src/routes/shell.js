@@ -6,7 +6,7 @@ import { ensureLocalUser } from "../groups.js";
 import { escapeHtml } from "../ui-parts.js";
 
 const html = escapeHtml;
-const TOOLS = `<section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para tus tareas y proyectos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos e ingresos claros, con repartos cuando se comparten.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Tus listas de compras, en preparación.</span></a><a class="tool-card" href="/remanso"><strong>Remanso</strong><span>Pausas de calma, con gong y sonidos de fondo.</span></a></section>`;
+const TOOLS = `<section class="tools" aria-label="Herramientas"><a class="tool-card tool-card-tasks" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para tus tareas y proyectos.</span></a><a class="tool-card tool-card-expenses" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos e ingresos claros, con repartos cuando se comparten.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Tus listas de compras, en preparación.</span></a><a class="tool-card tool-card-calm" href="/remanso"><strong>Remanso</strong><span>Pausas de calma, con gong y sonidos de fondo.</span></a></section>`;
 
 // Comportamiento común del encabezado: si la foto del avatar no carga se muestra la inicial, y el menú se cierra con
 // Escape, al tocar afuera o al elegir una opción que sólo cambia de lugar dentro de la misma página.

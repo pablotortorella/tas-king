@@ -45,11 +45,10 @@ Origen: [Identidad y visión](HOMESUITE_IDENTIDAD_Y_VISION.md), §11. Son tareas
 exploración y revisión, no un roadmap comprometido; ninguna autoriza cambios de código,
 logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 
-- Revisar el copy vigente de home y landings (`apps/site/public/`) frente a la nueva identidad: hoy habla de «vida compartida», «equipo» y cuentas «compartidas». Aceptación: diff acotado por página que separa hechos actuales de aspiraciones y mantiene el voseo.
-- Decidir la portada: copy principal o prudente (§9.1), según el catálogo publicado.
 - Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
 - Definir el alcance individual de TasKing y Compras y su comunicación.
-- Revisar la identidad visual actual (emblema, favicon, acento por producto) antes de proponer cambios.
+- Revisar la identidad visual actual (emblema y favicon) antes de proponer cambios. El acento por producto ya se aplicó (2026-10-27, `acentos-y-catalogo-publico`); el azul verdoso de Compras queda definido y sin uso.
+- Volver a publicar Compras en el sitio cuando la herramienta exista: mover `apps/site/pendientes/compras.html` a `public/`, reponer su tarjeta y los enlaces de las otras landings, y darle su clase de acento.
 - Decidir si y cómo comunicar productos en exploración (Rituales, Momentos, Bitácora) y sus nombres definitivos. «Pausa» salió el 2026-10-27: Remanso, la herramienta de meditación ya integrada, ocupa su lugar.
 - Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 

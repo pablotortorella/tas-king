@@ -238,6 +238,12 @@ h2 {
   gap: 20px;
 }
 
+/* Acento por producto: verde, terracota y ámbar de la paleta de la suite. Se usa en rótulos, bordes e íconos, nunca como
+   fondo de texto blanco (la terracota no cumple AA con blanco); los botones primarios siguen en el verde de la suite. */
+.tool-card-tasks, .product-page-tasks { --product-accent: #245c43; --product-accent-soft: #d9eadc; }
+.tool-card-expenses, .product-page-expenses { --product-accent: #904f2a; --product-accent-soft: #f5dfc6; }
+.tool-card-calm, .product-page-calm { --product-accent: #7a5418; --product-accent-soft: #f1e6c4; }
+
 .tool-card {
   display: flex;
   min-height: 390px;
@@ -248,6 +254,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: rgba(255, 253, 248, .7);
+}
+
+.tool-card-expenses,
+.tool-card-calm {
+  border-color: var(--product-accent);
 }
 
 .tool-card-active {
@@ -270,8 +281,8 @@ h2 {
   height: 50px;
   place-items: center;
   border-radius: 16px;
-  background: var(--green-soft);
-  color: var(--green);
+  background: var(--product-accent-soft, var(--green-soft));
+  color: var(--product-accent, var(--green));
   font-size: 1.4rem;
   font-weight: 850;
 }
@@ -281,19 +292,9 @@ h2 {
   color: #fff;
 }
 
-.tool-icon-expenses {
-  background: #f5dfc6;
-  color: #97562f;
-}
-
 .tool-icon-shopping {
   background: #dce9ed;
   color: #3e6d73;
-}
-
-.tool-icon-calm {
-  background: #f1e6c4;
-  color: #7a5418;
 }
 
 .tool-card-active .status {
@@ -316,6 +317,12 @@ h2 {
   margin-bottom: 9px;
   color: var(--muted);
   font-size: .7rem;
+}
+
+.tool-card-expenses .tool-kicker,
+.tool-card-calm .tool-kicker,
+.product-page .eyebrow {
+  color: var(--product-accent);
 }
 
 .tool-card h3 {
@@ -929,7 +936,9 @@ footer span:first-child {
 
   .calm-dot { background: #d4ad58; }
 
-  .tool-icon-calm { background: #3b3623; color: #d4ad58; }
+  .tool-card-tasks, .product-page-tasks { --product-accent: #8ac29c; --product-accent-soft: #2f4938; }
+  .tool-card-expenses, .product-page-expenses { --product-accent: #ef927e; --product-accent-soft: #4a3226; }
+  .tool-card-calm, .product-page-calm { --product-accent: #d4ad58; --product-accent-soft: #3b3623; }
 
   .wall {
     background: #e9dfc8;
