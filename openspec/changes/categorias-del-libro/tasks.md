@@ -6,7 +6,7 @@
 
 ## 2. Siembra
 
-- [x] 2.1 Sembrar la lista inicial en `createSpaceForUser` dentro del mismo `db.batch`, con una sola sentencia sobre un JSON, y verificar con una prueba de integración que un libro nuevo tiene todas las categorías activas.
+- [x] 2.1 Sembrar la lista inicial en `createGroupForUser` dentro del mismo `db.batch`, con una sola sentencia sobre un JSON, y verificar con una prueba de integración que un libro nuevo tiene todas las categorías activas.
 - [x] 2.2 Sembrar de forma diferida y con `INSERT OR IGNORE` los libros que no tienen lista, y verificar con una prueba de integración que un libro anterior la recibe una sola vez, también con dos accesos simultáneos.
 - [x] 2.3 Verificar con una prueba de integración el aislamiento: la lista y las categorías creadas en un libro no aparecen en otro.
 

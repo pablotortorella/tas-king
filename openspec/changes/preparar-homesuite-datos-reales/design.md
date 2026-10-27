@@ -1,6 +1,6 @@
 ## Context
 
-HomeSuite App tiene identidad, sesiones, espacios e invitaciones en una D1 de
+HomeSuite App tiene identidad, sesiones, grupos e invitaciones en una D1 de
 staging. Cuentas Claras ya define conceptualmente movimientos, monedas e
 invariantes, pero no existe esquema físico ni operación segura para datos reales.
 El cambio cruza persistencia, seguridad del Worker, tareas programadas, scripts de
@@ -28,16 +28,16 @@ registro de movimientos en la UI.
 
 ## Decisions
 
-### D1. Libro financiero uno a uno con espacio
+### D1. Libro financiero uno a uno con grupo
 
-`expense_ledgers` tendrá un `space_id` único, moneda predeterminada, revisión
+`expense_ledgers` tendrá un `group_id` único, moneda predeterminada, revisión
 monotónica y archivo opcional. `ledger_participants` representa personas del
 libro y puede vincularse a un `user`; desactivar reemplaza eliminar cuando ya hay
-historia. El propietario inicial del espacio podrá convertirse después en el
+historia. El propietario inicial del grupo podrá convertirse después en el
 primer participante, pero este cambio no crea libros automáticamente.
 
-Alternativa descartada: agregar columnas financieras directamente a `spaces`.
-Separar el libro mantiene la frontera del producto y permite que un espacio
+Alternativa descartada: agregar columnas financieras directamente a `groups`.
+Separar el libro mantiene la frontera del producto y permite que un grupo
 contenga otros módulos sin semántica monetaria.
 
 ### D2. Enteros en unidad menor y moneda explícita

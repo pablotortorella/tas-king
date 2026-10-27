@@ -2,7 +2,7 @@
 
 **Estado:** contrato implementado en `main` y publicado en staging el 2026-10-25. La integración con la actividad financiera se hará cuando ese módulo entre en `main`.
 
-Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y a los demás productos de la suite. El nombre y el avatar se guardan una vez por persona. El apodo pertenece a una membresía de espacio y comienza vacío. La edición del perfil global se ofrece en `/perfil` desde el avatar/nombre y el menú general; la edición del apodo por espacio espera la interfaz de espacios.
+Esta capacidad pertenece a la plataforma de HomeSuite y sirve a Cuentas Claras y a los demás productos de la suite. El nombre y el avatar se guardan una vez por persona. El apodo pertenece a una membresía de grupo y comienza vacío. La edición del perfil global se ofrece en `/perfil` desde el avatar/nombre y el menú general; la edición del apodo por grupo espera la interfaz de grupos.
 
 ## Modelo y migración
 
@@ -20,9 +20,9 @@ Todas las respuestas `/api/` usan `Cache-Control: private, no-store` y el Worker
 |---|---|
 | `GET /api/me/profile` | Perfil propio, nombre Google disponible, revisión y catálogo de colores. |
 | `PATCH /api/me/profile` | Edita sólo el perfil de la sesión. |
-| `GET /api/spaces/:spaceId/me/presentation` | Perfil propio contextual, apodo, revisión y generación de membresía. |
-| `PATCH /api/spaces/:spaceId/me/presentation` | Edita o vacía sólo el apodo de la sesión. |
-| `GET /api/spaces/:spaceId/members` | Presentaciones mínimas de integrantes vigentes, para integrantes vigentes. |
+| `GET /api/groups/:groupId/me/presentation` | Perfil propio contextual, apodo, revisión y generación de membresía. |
+| `PATCH /api/groups/:groupId/me/presentation` | Edita o vacía sólo el apodo de la sesión. |
+| `GET /api/groups/:groupId/members` | Presentaciones mínimas de integrantes vigentes, para integrantes vigentes. |
 
 `GET /api/me` conserva `id`, `email` y `displayName` y añade `profile` resuelto y `csrfToken` para mutaciones de la sesión. Es un contrato propio: el email nunca se agrega al contrato de integrantes. Las presentaciones ajenas entregan `userId`, `displayName`, `nickname`, `avatar` y `role`; no incluyen email, `sub`, nombre Google sin resolver, cookie ni sesión.
 
@@ -40,7 +40,7 @@ Ejemplos de cuerpos de edición:
 {"expectedRevision":0,"generation":"membership_...","nickname":"Papá de Celes"}
 ```
 
-Un apodo compuesto sólo de espacios se transforma en `null`. El cliente debe enviar la `generation` recibida al leer la presentación: una petición anterior a salir y reingresar al espacio recibe 409 aunque la revisión vuelva a cero. El titular no puede cambiar el apodo de otra persona.
+Un apodo compuesto sólo de espacios se transforma en `null`. El cliente debe enviar la `generation` recibida al leer la presentación: una petición anterior a salir y reingresar al grupo recibe 409 aunque la revisión vuelva a cero. El titular no puede cambiar el apodo de otra persona.
 
 ## Consumo en Cuentas Claras
 

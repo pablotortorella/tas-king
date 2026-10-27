@@ -22,7 +22,7 @@
 
 ## 5. Pantalla de personas
 
-- [x] 5.1 Crear `/spaces/:id/people` con la lista (estado, saldo, quién es la persona que mira), las personas unidas aparte, las herramientas de administración y los formularios de renombrar y unir en dos pasos, y verificar con pruebas de integración de permisos (integrante en solo lectura) y de que el libro ya no repite esas secciones.
+- [x] 5.1 Crear `/groups/:id/people` con la lista (estado, saldo, quién es la persona que mira), las personas unidas aparte y los formularios de renombrar y unir en dos pasos, y verificar con pruebas de integración de permisos (integrante en solo lectura) y de que el libro ya no repite esas secciones.
 - [x] 5.2 Mostrar «Cambió: unión de personas» en el historial y que un movimiento unido se reabra con importes exactos, y verificar con una prueba de integración y una E2E.
 - [x] 5.3 Verificar con E2E en 390 px y escritorio (Chromium y Firefox) el recorrido completo: renombrar, unir con vista previa, confirmar, doble clic, volver atrás, sin desborde, 44 px y contraste, y un recorrido solo con el teclado.
 

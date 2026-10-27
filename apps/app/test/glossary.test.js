@@ -21,6 +21,11 @@ const ALLOWED_PHRASES = [
   ["space-between", "valor CSS"], ["space-around", "valor CSS"], ["space-evenly", "valor CSS"],
   ["press(\"Space\")", "nombre de la tecla de espacio en Playwright"],
   ["un espacio para la vida compartida", "lema de marca del sitio público, uso figurado y no el concepto (decisión pendiente de Pablo)"],
+  ["feature/homesuite-authenticated-spaces", "nombre de una rama de git ya publicada, citado en documentos históricos"],
+  ["espacios sobrantes", "caracteres en blanco, no el concepto"], ["espacios internos", "caracteres en blanco, no el concepto"],
+  ["espacios y puntuación", "caracteres en blanco, no el concepto"], ["compuesto sólo de espacios", "caracteres en blanco, no el concepto"],
+  ["vacío/espacios", "caracteres en blanco, no el concepto"],
+  ["pasa a un espacio, espacios colapsados", "caracteres en blanco, no el concepto"], ["celdas con espacios", "caracteres en blanco, no el concepto"],
   ["espacios en blanco", "caracteres en blanco, no el concepto"], ["espacio en blanco", "caracteres en blanco, no el concepto"],
 ];
 
@@ -56,6 +61,7 @@ describe("lenguaje del dominio", () => {
   it("ningún archivo vigente usa el término descartado", () => {
     const found = [];
     for (const file of trackedFiles()) {
+      if (findDiscardedTerms(file).length) found.push(`${file}: el nombre del archivo`);
       const lines = fs.readFileSync(path.join(root, file), "utf8").split("\n");
       lines.forEach((line, index) => { if (findDiscardedTerms(line).length) found.push(`${file}:${index + 1}: ${line.trim().slice(0, 100)}`); });
     }

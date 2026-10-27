@@ -71,9 +71,9 @@ email, `sub`, sesión ni preferencias privadas. No habrá directorio global por 
 - **WHEN** una petición propia contiene una identidad ajena para cambiar su perfil
 - **THEN** el servidor la rechaza sin modificar ningún perfil
 
-#### Scenario: Lectura en espacio compartido
+#### Scenario: Lectura en grupo compartido
 
-- **WHEN** un integrante autorizado recibe la presentación de otra persona del espacio
+- **WHEN** un integrante autorizado recibe la presentación de otra persona del grupo
 - **THEN** sólo obtiene nombre/avatar y contexto permitido, sin datos privados del proveedor
 
 #### Scenario: Mutación sin sesión o sin CSRF válido

@@ -14,7 +14,7 @@ firmado, ligado a la sesión activa.
 
 - **WHEN** completa OAuth con un ID token válido y email verificado
 - **THEN** HomeSuite crea o recupera su usuario por `sub`, inicia una sesión
-  host-only y no concede acceso a espacios ajenos
+  host-only y no concede acceso a grupos ajenos
 
 #### Scenario: El proveedor declara un email nuevo para el mismo sub
 
@@ -34,29 +34,29 @@ firmado, ligado a la sesión activa.
   declara un origen distinto al de HomeSuite App
 - **THEN** HomeSuite la rechaza antes de modificar datos
 
-### Requirement: Una persona crea un espacio privado de Cuentas Claras
+### Requirement: Una persona crea un grupo privado de Cuentas Claras
 
-Una persona autenticada SHALL poder crear explícitamente un espacio con nombre
-libre y SHALL quedar como su único titular inicial. Crear el espacio y su
-membresía SHALL ser atómico. El espacio SHALL exponer Cuentas Claras como estado
+Una persona autenticada SHALL poder crear explícitamente un grupo con nombre
+libre y SHALL quedar como su único titular inicial. Crear el grupo y su
+membresía SHALL ser atómico. El grupo SHALL exponer Cuentas Claras como estado
 vacío, sin inventar movimientos, saldos ni datos financieros.
 
-#### Scenario: Primera persona sin espacios
+#### Scenario: Primera persona sin grupos
 
-- **WHEN** una persona autenticada no tiene espacios ni invitaciones pendientes
-- **THEN** HomeSuite le solicita un nombre y puede crear un espacio de Cuentas
+- **WHEN** una persona autenticada no tiene grupos ni invitaciones pendientes
+- **THEN** HomeSuite le solicita un nombre y puede crear un grupo de Cuentas
   Claras donde queda como titular
 
-#### Scenario: Persona ajena consulta un espacio
+#### Scenario: Persona ajena consulta un grupo
 
-- **WHEN** una persona sin membresía solicita un recurso de un espacio
-- **THEN** el servidor deniega la respuesta sin revelar datos del espacio
+- **WHEN** una persona sin membresía solicita un recurso de un grupo
+- **THEN** el servidor deniega la respuesta sin revelar datos del grupo
 
 ### Requirement: El titular administra invitaciones dirigidas por email
 
 El titular SHALL poder crear y cancelar una invitación pendiente para un email de
-Google. La invitación SHALL ser específica de un espacio y dirección normalizada;
-no habrá enlace, correo automático ni invitación reutilizable. Por cada espacio y
+Google. La invitación SHALL ser específica de un grupo y dirección normalizada;
+no habrá enlace, correo automático ni invitación reutilizable. Por cada grupo y
 email SHALL existir como máximo una invitación pendiente. Crear, cancelar y sus
 actores SHALL quedar auditados.
 
@@ -81,14 +81,14 @@ actores SHALL quedar auditados.
 
 HomeSuite SHALL presentar una invitación pendiente sólo a la persona cuyo email
 verificado coincida, antes de otorgarle membresía. Antes de aceptar SHALL revelar
-sólo el nombre del espacio, el nombre de quien invitó y que dará acceso a Cuentas
+sólo el nombre del grupo, el nombre de quien invitó y que dará acceso a Cuentas
 Claras. La persona SHALL poder aceptar o rechazar; la aceptación crea su
 membresía y cambia el estado de la invitación atómicamente.
 
 #### Scenario: Aceptar una invitación propia
 
 - **WHEN** la persona invitada acepta una invitación pendiente vigente
-- **THEN** obtiene rol integrante en ese espacio y puede entrar a Cuentas Claras
+- **THEN** obtiene rol integrante en ese grupo y puede entrar a Cuentas Claras
 
 #### Scenario: Rechazar una invitación propia
 
@@ -99,24 +99,24 @@ membresía y cambia el estado de la invitación atómicamente.
 
 - **WHEN** una persona autenticada no coincide con el email verificado de una
   invitación pendiente
-- **THEN** no ve la invitación ni información sobre su espacio o titular
+- **THEN** no ve la invitación ni información sobre su grupo o titular
 
 ### Requirement: Roles iniciales preservan una titularidad transferible
 
 Cada membresía SHALL ser `owner` o `member`. Sólo el titular puede administrar
-el espacio e invitaciones en este corte; integrantes pueden acceder al espacio
+el grupo e invitaciones en este corte; integrantes pueden acceder al grupo
 cuando su membresía está vigente. El modelo SHALL conservar la relación de rol de
 forma que una futura operación de transferencia pueda reemplazar al titular sin
 reescribir datos de Cuentas Claras, aunque dicha operación no forme parte de este
 change.
 
-#### Scenario: El titular renombra el espacio
+#### Scenario: El titular renombra el grupo
 
-- **WHEN** el titular actualiza el nombre de su espacio
+- **WHEN** el titular actualiza el nombre de su grupo
 - **THEN** el cambio queda disponible para sus integrantes y la acción queda
   auditada
 
-#### Scenario: Un integrante intenta renombrar el espacio
+#### Scenario: Un integrante intenta renombrar el grupo
 
-- **WHEN** un integrante intenta cambiar el nombre del espacio
+- **WHEN** un integrante intenta cambiar el nombre del grupo
 - **THEN** el servidor rechaza la operación y conserva el nombre anterior

@@ -10,7 +10,7 @@ permisos; hoy el login de HomeSuite además sobrescribe el nombre en cada acceso
   nombre y avatar explícito Google/emoji/inicial, con color y alternativa de inicial.
 - Inicialización y actualización desde Google que respetan elecciones propias;
   posibilidad de volver al nombre de Google, sin afectar avatar ni apodos.
-- Apodo opcional por membresía de espacio, inicialmente vacío, secundario al
+- Apodo opcional por membresía de grupo, inicialmente vacío, secundario al
   nombre global y editable sólo por la propia persona. Reingresar lo reinicia.
 - Contratos de gestión propia y presentación autorizada separados; consumidores
   de Cuentas Claras usan la misma resolución, sin copiar reglas a sus módulos.
@@ -23,7 +23,7 @@ permisos; hoy el login de HomeSuite además sobrescribe el nombre en cada acceso
 - UI nueva, componentes visuales, estilos, layout ni refresco en tiempo real.
 - Subida de fotos, almacenamiento de imágenes o proxy de fotos de Google.
 - Migración de TasKing, cookies compartidas, username público, descripción por
-  espacio, avatar por espacio, idioma, tema o notificaciones.
+  grupo, avatar por grupo, idioma, tema o notificaciones.
 - Construir microservicios de perfiles o reescribir la plataforma financiera.
 - Agregar ahora UI/API de salida o expulsión: se define el contrato del apodo al
   perder y recuperar membresía y se prueba en integración.
@@ -34,7 +34,7 @@ permisos; hoy el login de HomeSuite además sobrescribe el nombre en cada acceso
 
 - `perfil-compartido`: datos, edición propia, integración Google, contratos mínimos
   y resolución común de nombre/avatar para toda la suite.
-- `apodo-por-espacio`: apodo secundario asociado a membresía, aislamiento, gestión
+- `apodo-por-grupo`: apodo secundario asociado a membresía, aislamiento, gestión
   propia, ciclo de vida y presentación en actividad anterior.
 
 ### Modified Capabilities

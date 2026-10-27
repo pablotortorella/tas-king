@@ -30,9 +30,9 @@ explícitos distintos continúan rechazados.
 ## Verificación humana
 
 Completada el 2026-10-23 con dos cuentas Google reales. Se comprobó crear el
-espacio, invitar, denegar la URL directa antes de aceptar, mostrar únicamente
-espacio y nombre del invitante, rechazar sin obtener acceso, volver a invitar,
-aceptar y abrir el mismo espacio como integrante sin controles de titular. La
+grupo, invitar, denegar la URL directa antes de aceptar, mostrar únicamente
+grupo y nombre del invitante, rechazar sin obtener acceso, volver a invitar,
+aceptar y abrir el mismo grupo como integrante sin controles de titular. La
 vista del titular mostró a la nueva persona.
 
 D1 confirmó dos membresías (`owner` + `member`), una invitación `rejected`, otra

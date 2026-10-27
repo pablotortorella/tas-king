@@ -33,6 +33,6 @@ Hoy la categoría solo existe como texto en los movimientos importados: se busca
 ## Impact
 
 - `apps/app/migrations/`: una migración nueva (tabla de categorías y columna de categoría en los movimientos). Su numeración puede chocar con la de otras ramas.
-- `apps/app/src/`: creación del libro (`spaces.js`), lectura y escritura de movimientos (`ledger.js`), formulario y lista (`ledger-ui.js`, `overview-ui.js`), rutas de gestión de categorías (`index.js`), importación actual (reconocimiento por nombre normalizado) y exportación.
+- `apps/app/src/`: creación del libro (`groups.js`), lectura y escritura de movimientos (`ledger.js`), formulario y lista (`ledger-ui.js`, `overview-ui.js`), rutas de gestión de categorías (`index.js`), importación actual (reconocimiento por nombre normalizado) y exportación.
 - Pruebas unitarias de la normalización, de integración D1 de la migración, la siembra, la fusión y los permisos, y E2E del selector, la gestión y los filtros.
 - Depende de la cadena #68 → #71 → #75 → #76 → #81 y de los PR #88 → #89 → #90.

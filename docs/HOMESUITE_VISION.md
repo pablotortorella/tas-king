@@ -34,7 +34,7 @@ uso real en más de un producto.
   arquitectura no debe impedir incorporar después categorías, recurrencias,
   presupuestos, análisis de ingresos y flujo de caja, pero esas capacidades
   posteriores no forman parte del primer reemplazo de Splitwise.
-- HomeSuite Compras se diseñará después sobre la misma identidad, espacios e
+- HomeSuite Compras se diseñará después sobre la misma identidad, grupos e
   invitaciones. Las integraciones entre productos serán explícitas y confirmadas
   por la persona usuaria; no habrá automatismos sorpresivos.
 
@@ -46,7 +46,7 @@ HomeSuite comparte:
 
 - identidad y sesión;
 - perfil base de la persona (nombre visible, avatar emoji y color);
-- espacios, miembros e invitaciones;
+- grupos, miembros e invitaciones;
 - administración operativa de la suite y métricas agregadas de productos;
 - selector de herramientas y navegación global;
 - patrones visuales y de accesibilidad;
@@ -69,9 +69,9 @@ persona se autentique con la identidad estable correspondiente y confirme la
 operación; no habrá lectura silenciosa ni sincronización bidireccional.
 
 La administración de HomeSuite es un rol de plataforma distinto de ser titular
-de un espacio. Al comienzo estará asignado de forma explícita al administrador
+de un grupo. Al comienzo estará asignado de forma explícita al administrador
 de la suite y será visible desde su perfil. Podrá ofrecer salud operativa y
-conteos agregados por producto —usuarios, espacios, invitaciones y, cuando
+conteos agregados por producto —usuarios, grupos, invitaciones y, cuando
 existan, transacciones— sin conceder por ello lectura ordinaria de información
 privada. Cualquier acceso excepcional a contenido individual requerirá una
 capacidad aparte, motivo y auditoría.
@@ -118,7 +118,7 @@ El sitio público no necesita recibir ni compartir la sesión autenticada.
 
 ```text
 https://app.homesuite.info/
-├── /                 Selector de herramientas y espacios recientes
+├── /                 Selector de herramientas y grupos recientes
 ├── /tareas/*         TasKing dentro de HomeSuite
 ├── /cuentas-claras/* Cuentas Claras compartidas
 └── /compras/*        Listas compartidas
@@ -145,7 +145,7 @@ homesuite-site
 └── sitio público sin sesión, D1 ni secretos de la app
 
 homesuite-app / homesuite-app-staging
-├── platform       identidad, sesión, espacios e invitaciones
+├── platform       identidad, sesión, grupos e invitaciones
 ├── tasks          dominio actual de TasKing
 ├── expenses       grupos, transacciones, repartos y balances
 └── shopping       listas, catálogo y sincronización
@@ -197,22 +197,22 @@ La sesión contendrá el identificador interno, no usará el email como identida
 relacional. La cookie objetivo será host-only, `Secure`, `HttpOnly`,
 `SameSite=Lax`, `Path=/` y con nombre `__Host-homesuite_session`.
 
-### Acceso por espacio
+### Acceso por grupo
 
 La allowlist global actual sirve para una aplicación privada, pero no para viajes
-o grupos de amigos. HomeSuite usará invitaciones y membresías por espacio.
+o grupos de amigos. HomeSuite usará invitaciones y membresías por grupo.
 
-Un **espacio** representa el contexto compartido —por ejemplo, Familia, Viaje a
+Un **grupo** representa el contexto compartido —por ejemplo, Familia, Viaje a
 Cartagena o Proyecto X— y puede habilitar uno o más productos. Un tablero, libro
-de Cuentas Claras o lista pertenece a un espacio. Crear un grupo desde Cuentas Claras podrá crear
-el espacio y su primer libro en una sola operación.
+de Cuentas Claras o lista pertenece a un grupo. Crear un grupo desde Cuentas Claras podrá crear
+el grupo y su primer libro en una sola operación.
 
 No se migrarán obligatoriamente todos los tableros actuales al introducir el
 concepto. La compatibilidad y migración de TasKing se especificarán por separado.
 
 ### Acceso no equivale a participación financiera
 
-Los miembros de un espacio pueden abrir y modificar recursos según su rol. Los
+Los miembros de un grupo pueden abrir y modificar recursos según su rol. Los
 participantes de un libro aparecen en pagos, repartos y balances. Un participante
 puede no tener cuenta —por ejemplo, un hijo o un invitado— y podrá vincularse a un
 usuario después sin reescribir la historia.
@@ -256,7 +256,7 @@ al libro.
 3. Crear el sitio público y asociar apex y `www`.
 4. Preparar aplicación y recursos aislados de staging.
 5. Separar el frontend en superficies mantenibles sin detener TasKing.
-6. Extraer identidad estable, sesión, espacios, miembros e invitaciones.
+6. Extraer identidad estable, sesión, grupos, miembros e invitaciones.
 7. Preparar aplicación y recursos de producción.
 8. Implementar y validar Cuentas Claras.
 9. Mantener TasKing en su URL actual hasta completar una migración probada a
@@ -277,7 +277,7 @@ las especificaciones incrementales ni autoriza un despliegue.
 - **Despliegues de producto acoplados:** Tareas, Cuentas Claras y Compras se publican
   juntos inicialmente; se separarán si el costo se vuelve observable. Sitio y
   aplicación sí tienen deploy independiente desde el principio.
-- **Sobre-generalización:** espacios y membresías deben resolver casos presentes,
+- **Sobre-generalización:** grupos y membresías deben resolver casos presentes,
   no convertirse en un framework abstracto.
 - **Confianza financiera:** Cuentas Claras necesita más auditoría e invariantes que una
   herramienta de tareas.

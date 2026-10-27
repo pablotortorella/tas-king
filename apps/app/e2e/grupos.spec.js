@@ -101,7 +101,7 @@ test("no hay selector desplegable de grupos y «Mis grupos» del menú lleva a l
   await expect(page.getByRole("heading", { name: "Tus grupos", level: 1 })).toBeVisible();
 });
 
-test("las rutas anteriores dan 404 y las pantallas no dicen «espacio» ni «libro»", async ({ page }) => {
+test("las rutas anteriores dan 404 y las pantallas no usan el término anterior ni dicen «libro»", async ({ page }) => {
   const { book } = await openBook(page, "gr-lenguaje");
   const old = ["spa", "ces"].join("");
   const id = book.split("/").at(-1);

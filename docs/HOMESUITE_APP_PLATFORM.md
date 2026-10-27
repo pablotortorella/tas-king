@@ -7,7 +7,7 @@
 ## Alcance
 
 `apps/app` es el Worker autenticado de HomeSuite. En este corte ofrece identidad,
-sesiones, espacios privados, membresías e invitaciones para Cuentas Claras. El
+sesiones, grupos privados, membresías e invitaciones para Cuentas Claras. El
 esquema y el dominio monetario preparan libros y movimientos auditables, pero no
 hay todavía endpoints ni pantallas para registrar datos financieros.
 
@@ -31,7 +31,7 @@ a Gmail, Drive, Calendar ni otros datos de Google.
 
 ## Mutaciones y CSRF
 
-Toda mutación autenticada bajo `/spaces`, `/invitations` o `/auth/logout` exige:
+Toda mutación autenticada bajo `/groups`, `/invitations` o `/auth/logout` exige:
 
 1. una sesión vigente en D1;
 2. un token CSRF firmado y ligado al ID de esa sesión;
@@ -46,14 +46,14 @@ habilitan en staging o producción.
 
 ## Autorización y privacidad
 
-- `owner` puede renombrar el espacio y administrar invitaciones.
-- `member` puede abrir el espacio después de aceptar una invitación.
+- `owner` puede renombrar el grupo y administrar invitaciones.
+- `member` puede abrir el grupo después de aceptar una invitación.
 - Toda ruta consulta la membresía en D1; la cookie no contiene permisos.
-- Una persona ajena recibe 404 al consultar un espacio para no confirmar su
+- Una persona ajena recibe 404 al consultar un grupo para no confirmar su
   existencia.
-- Antes de aceptar, una invitación revela sólo espacio, nombre de quien invitó y
+- Antes de aceptar, una invitación revela sólo grupo, nombre de quien invitó y
   que concede acceso a Cuentas Claras.
-- Crear/renombrar espacios e invitar/cancelar/aceptar/rechazar quedan auditados.
+- Crear/renombrar grupos e invitar/cancelar/aceptar/rechazar quedan auditados.
 
 ## Ambientes
 
@@ -105,7 +105,7 @@ npm run deploy:homesuite-app:staging
 ```
 
 El E2E inicia un Worker local en `127.0.0.1:8791` con D1 persistida bajo
-`.wrangler/homesuite-app-e2e`. Cubre crear espacio, invitar, cancelar,
+`.wrangler/homesuite-app-e2e`. Cubre crear grupo, invitar, cancelar,
 privacidad previa, aceptar/rechazar y aislamiento; las integraciones cubren
 roles, auditoría, sesiones y CSRF.
 
@@ -113,11 +113,11 @@ Después de cada deploy de staging se verifica `/healthz`, cabeceras, redirect
 OAuth y Version ID. La prueba manual con dos cuentas Google, completada el
 2026-10-23, verificó:
 
-1. la primera crea un espacio e invita el email exacto de la segunda;
-2. la segunda entra en ventana separada y ve espacio y nombre del invitante, pero
+1. la primera crea un grupo e invita el email exacto de la segunda;
+2. la segunda entra en ventana separada y ve grupo y nombre del invitante, pero
    no participantes ni saldos;
 3. rechaza una invitación y confirma que no obtuvo acceso;
-4. recibe otra invitación, la acepta y abre el mismo espacio;
+4. recibe otra invitación, la acepta y abre el mismo grupo;
 5. la cuenta invitada no pudo abrir la URL directa antes de aceptar y, después,
    accedió como integrante sin controles de titular.
 
@@ -136,7 +136,7 @@ keys. Producción no fue creada ni modificada.
 
 - endpoints transaccionales que consuman las invariantes e idempotencia ya
   definidas, con autorización y concurrencia optimista;
-- exportación y eliminación administrada por espacio;
+- exportación y eliminación administrada por grupo;
 - backup externo y restore drill del ambiente productivo;
 - rotación del secreto OAuth antes de declarar producción lista;
 - monitoreo y alertas para cron, errores y backups.

@@ -9,7 +9,7 @@ pueden entrar al mismo contexto privado que luego contendrá Cuentas Claras.
 
 ## Goals / Non-Goals
 
-**Goals:** identidad Google estable, sesión host-only, aislamiento por espacio,
+**Goals:** identidad Google estable, sesión host-only, aislamiento por grupo,
 invitación dirigida y aceptada explícitamente, titular único y una interfaz
 mínima para iniciar Cuentas Claras.
 
@@ -37,7 +37,7 @@ estable a la persona. El email normalizado se guarda como dato de contacto y se
 usa para encontrar invitaciones, pero no autoriza por sí solo una sesión ajena.
 
 Cambiar el email que Google declara para el mismo `sub` actualiza el contacto sin
-alterar membresías. Una persona sin invitación puede crear su propio espacio;
+alterar membresías. Una persona sin invitación puede crear su propio grupo;
 una invitación pendiente sólo aparece si el email verificado coincide.
 
 ### D3. Sesión exclusiva del origen de la app
@@ -46,7 +46,7 @@ La cookie se llamará `__Host-homesuite_session`, con `Secure`, `HttpOnly`,
 `SameSite=Lax`, `Path=/` y sin atributo `Domain`. Será firmada, tendrá expiración
 acotada y contendrá sólo el identificador interno de usuario y metadatos mínimos
 de sesión. Cada API protegida cargará el usuario y verificará membresía desde D1;
-la cookie nunca concederá acceso a un espacio por sí sola.
+la cookie nunca concederá acceso a un grupo por sí sola.
 
 El estado de OAuth y el verificador PKCE viven en cookies temporales de la misma
 sesión de navegador. `returnTo` sólo acepta paths relativos permitidos.
@@ -65,12 +65,12 @@ La migración inicial define:
 | Entidad | Datos esenciales | Invariantes |
 |---|---|---|
 | `users` | id, google_sub único, email normalizado, nombre visible, timestamps | `google_sub` es inmutable; el email viene verificado por Google |
-| `spaces` | id, nombre, timestamps | ningún dato financiero en este corte |
-| `memberships` | space_id, user_id, role (`owner`/`member`), joined_at | una persona no se repite; el espacio tiene exactamente un `owner` |
-| `invitations` | id, space_id, invitee_email, inviter_user_id, estado, timestamps | sólo una pendiente por espacio/email; el email no se edita |
-| `platform_audit_events` | actor, espacio, acción, entidad, timestamps, metadatos mínimos | invitar, aceptar, rechazar y cancelar quedan trazables |
+| `groups` | id, nombre, timestamps | ningún dato financiero en este corte |
+| `memberships` | group_id, user_id, role (`owner`/`member`), joined_at | una persona no se repite; el grupo tiene exactamente un `owner` |
+| `invitations` | id, group_id, invitee_email, inviter_user_id, estado, timestamps | sólo una pendiente por grupo/email; el email no se edita |
+| `platform_audit_events` | actor, grupo, acción, entidad, timestamps, metadatos mínimos | invitar, aceptar, rechazar y cancelar quedan trazables |
 
-Crear espacio inserta en una misma transacción el espacio y la membresía `owner`.
+Crear grupo inserta en una misma transacción el grupo y la membresía `owner`.
 Aceptar una invitación valida que siga pendiente, crea la membresía `member` y la
 marca aceptada en una misma transacción. La autorización de toda ruta comprueba
 la membresía vigente. Aunque la transferencia de titularidad queda fuera de UI y
@@ -80,7 +80,7 @@ API, `role` no estará codificado como una bandera irreversible.
 
 Una invitación pasa por `pending`, `accepted`, `rejected` o `canceled`. Sólo el
 titular puede crear o cancelar una pendiente. La persona invitada ve antes de
-decidir exclusivamente: nombre del espacio, nombre del titular que invitó y que
+decidir exclusivamente: nombre del grupo, nombre del titular que invitó y que
 obtendrá acceso a Cuentas Claras. No ve integrantes, conteos, movimientos,
 saldos ni actividad.
 
@@ -90,11 +90,11 @@ que la persona debe entrar en `app.homesuite.info` con el email indicado.
 ### D6. Recorrido web mínimo
 
 - Sin sesión: una pantalla pública mínima con “Continuar con Google”.
-- Sesión sin espacios ni invitaciones: crear espacio, nombre requerido, sin tipos.
+- Sesión sin grupos ni invitaciones: crear grupo, nombre requerido, sin tipos.
 - Sesión con invitación pendiente: tarjeta de aceptación/rechazo antes del
-  contenido del espacio.
-- Sesión con espacio: selector simple y entrada a `/cuentas-claras`, que muestra
-  el nombre del espacio y estado vacío listo para el siguiente change financiero.
+  contenido del grupo.
+- Sesión con grupo: selector simple y entrada a `/cuentas-claras`, que muestra
+  el nombre del grupo y estado vacío listo para el siguiente change financiero.
 - Titular: vista de participantes con integrantes e invitaciones pendientes,
   formulario de email y cancelación.
 
@@ -121,7 +121,7 @@ no registran cookies, tokens, códigos OAuth, emails ni payloads de producto.
 - OAuth requiere configuración manual en Google Cloud por ambiente. Ningún
   secreto ni URI de entorno equivocado debe quedar en Git.
 - El primer shell no debe anticipar estructura financiera: el siguiente change
-  agregará el modelo de Cuentas Claras sobre `spaces` y `memberships`.
+  agregará el modelo de Cuentas Claras sobre `groups` y `memberships`.
 
 ## Migration Plan
 

@@ -1,11 +1,37 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-25
+**Última actualización**: 2026-10-26
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
+
+**Estado:** implementado en la rama `feature/grupos-con-identidad` (apilada sobre
+`feature/personas-menu-perfil`), sin publicar y **sin tocar staging todavía**. Cambio
+OpenSpec: `grupos-con-identidad`.
+
+- **Lenguaje único:** el término anterior de «grupo» desapareció de interfaz, URLs, API, código, base,
+  pruebas y documentos vigentes (excepción: `openspec/changes/archive/`, el lema figurado
+  del sitio y unas frases sobre caracteres en blanco). Una prueba (`glossary.test.js`) lo
+  vigila, junto con otra que recorre las pantallas buscando «libro». Las migraciones
+  `0001`–`0011` se **reescribieron** con `groups`/`group_id` (y `0006_group_slugs`); la base
+  de staging no es migrable en el lugar y se recreará desde cero con backup previo.
+- **Identidad del grupo:** nombre, descripción (500), emoji y color (reglas del avatar
+  personal); extracto de 150 en la lista. **Administrar grupo** (`/groups/:id/settings`,
+  solo titular) con ruedita y ítem de menú; Personas queda para ver, renombrar y unir.
+- **Entrada:** `/groups` lista siempre; `/cuentas-claras` abre el último grupo (cookie
+  `last_group`, validada contra la membresía). El nombre del grupo en el encabezado lleva
+  a la lista.
+- **Verificación:** unidad 347, integración 301, E2E 160+ en Chromium; Firefox sobre
+  grupos, menú, personas y diseño. Dos pruebas (`recategorizacion.spec.js:160` y alguna de
+  importación) fallan de forma intermitente en la corrida completa y pasan solas.
+- **Un error propio del renombre, detectado y corregido:** el reemplazo automático
+  convirtió un valor de CSS de alineación en uno inválido; ahora una prueba lo impide.
+- **Pendiente:** recrear y desplegar staging con Pablo (tareas 9.x), categorías y
+  subcategorías (backlog) y el glosario de categorías.
 
 ## Cuentas Claras: personas del grupo, menú y «Soy yo» en la importación — 2026-10-26
 
@@ -16,7 +42,7 @@ compartido), sin publicar. Cambio OpenSpec: `personas-del-grupo`.
   Clasificar, Importar), Inicio, Mis grupos, «Ver mi perfil» y «Cerrar sesión»; el avatar y el nombre
   llevan al perfil. Se cierra con Escape, al tocar afuera y al elegir una sección de la misma página.
   La lista de grupos con invitaciones vive en `/cuentas-claras`; `/` es el inicio de HomeSuite.
-- **Pantalla de personas** (`/spaces/:id/people`): estado y saldo de cada persona, personas unidas
+- **Pantalla de personas** (`/groups/:id/people`): estado y saldo de cada persona, personas unidas
   aparte y las herramientas de administración que estaban al final del libro. La titular renombra a una
   persona (nombre único entre vigentes) y la une a otra: vista previa sin escribir, confirmación con
   clave idempotente, un movimiento revisado por cada uno afectado, cuenta e invitaciones resueltas, y
@@ -53,8 +79,8 @@ Publicado desde ese SHA en dos Workers:
 - La raíz de la app presenta la suite. `/cuentas-claras` conserva «Muy pronto»
   para una sesión válida; sin sesión ofrece el acceso con Google y retorno a esa
   ruta. El avatar/nombre y el menú general llevan a `/perfil`, que edita el
-  perfil global usando la API común, CSRF y revisión. El apodo por espacio se
-  editará cuando exista la interfaz de espacios.
+  perfil global usando la API común, CSRF y revisión. El apodo por grupo se
+  editará cuando exista la interfaz de grupos.
 - Verificación: 18 unitarias de HomeSuite App, 14 integraciones D1, 10 pruebas
   del sitio, 230 generales, OpenSpec strict, dry-run de ambos Workers, [CI del
   PR](https://github.com/pablotortorella/tas-king/actions/runs/40230887372)
@@ -79,7 +105,7 @@ Publicado desde ese SHA en dos Workers:
 `homesuite-app-staging`, Version ID `955c8bf9-e892-4c21-8c85-b3d904cdf122`.
 
 - Exploración conversada: nombre y avatar globales, origen Google/personalización,
-  modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
+  modos de avatar y alternativa de inicial; apodo opcional por grupo, vacío por
   defecto, secundario y de edición propia; ciclo de reingreso e historial definidos.
 - [Change](../openspec/changes/perfil-compartido-homesuite/proposal.md): perfil
   global de plataforma y presentación de membresía separados; contratos propios
@@ -150,11 +176,11 @@ despliegue ni recursos remotos. La integración se comprueba en el historial Git
 ## HomeSuite: corte para integración visual - 2026-10-23
 
 - **Base consolidada:** `integration/homesuite-design-base`, sincronizada con
-  `main` v2.3.2 en `9e8a8c1`. Reúne espacios autenticados, preparación
+  `main` v2.3.2 en `9e8a8c1`. Reúne grupos autenticados, preparación
   financiera, núcleo cotidiano, importación Splitwise, ajustes de la revisión
   local y el arte nuevo. Es la rama de partida para aplicar el diseño a todo el
   recorrido, no una rama autorizada para producción.
-- **Cadena funcional abierta:** #68 (`main` -> espacios autenticados), #71
+- **Cadena funcional abierta:** #68 (`main` -> grupos autenticados), #71
   (preparación financiera), #75 (núcleo), #76 (Splitwise) y #81 (feedback).
   Deben integrarse en ese orden. El código financiero posterior a #71 todavía no
   fue desplegado en staging ni producción.
@@ -186,7 +212,7 @@ Sesión de diseño y planeamiento. **No se escribió código de producto ni se t
 | Change `importacion-splitwise-inicial` | ídem | Ídem |
 | Change `busqueda-movimientos-unificada` | ídem | Ídem |
 | Change `colaboracion-y-exportacion-del-libro` | ídem | Ídem |
-| `plataforma-homesuite-minima` | `openspec/changes/` en `main` | **Sin cambios.** Los cuatro changes nuevos dependen de que termine su grupo 3 de `tasks.md` (espacios, membresías e invitaciones) |
+| `plataforma-homesuite-minima` | `openspec/changes/` en `main` | **Sin cambios.** Los cuatro changes nuevos dependen de que termine su grupo 3 de `tasks.md` (grupos, membresías e invitaciones) |
 
 **Rediseño (10 pantallas), guardado en `docs/diseno/cuentas-claras/`.** Empezar un grupo: 1 Nuevo grupo, 2 Punto de partida, 3 Importar desde Splitwise. Día a día en móvil: 4 Saldos (con selector COP/USD), 5 Movimientos y búsqueda, 6 Agregar movimiento (gasto, ingreso, transferencia), 7 Detalle y revisiones, 8 «Por qué te deben». Escritorio y personas: 9 Libro de dos paneles, 10 Personas y acceso. Parte de `docs/HOMESUITE_CUENTAS_CLARAS_MVP.md`, el Journey, el Story Map y los estilos de `apps/site/public`. Todas usan los mismos datos sintéticos (Pablo, Ana, Laura, Mateo), de modo que los saldos cierran entre pantallas: saldo de Pablo +$1.748.350 en COP, que suma $0 con los demás, y USD aparte. El modo oscuro se aplicó pasando todos los colores a variables CSS con `prefers-color-scheme`; los pares de color listados en `tokens.json` se verificaron por cálculo de contraste (mínimo 5,1 en texto); no se auditaron todos los pares de todas las pantallas. La paleta oscura es provisoria: la identidad de temas de la suite (HT-01/HT-02) sigue pendiente.
 
@@ -251,7 +277,7 @@ Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden:
 
 ### ⚠️ HomeSuite App: plataforma colaborativa en staging — 2026-10-20
 
-- PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
+- PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear grupo/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
 - El primer login real detectó que el flujo generaba el desafío PKCE pero omitía `code_verifier` al canjear el código. El fix lo envía desde el estado firmado y agrega una regresión específica; 12 pruebas unitarias y 9 integraciones D1 pasan. Se desplegó desde `fd14035` como versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`, y Pablo confirmó login y sesión con su cuenta Google. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
 - `feature/homesuite-authenticated-spaces` incorpora rutas reales de creación/renombre, selección, invitación/cancelación y aceptación/rechazo. Toda mutación autenticada exige origen confiable y token CSRF firmado ligado a sesión; staging tiene observabilidad estructurada y `X-Request-Id`, sin registrar identidad ni payloads.
@@ -284,9 +310,9 @@ Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden:
 
 ### Cuentas Claras: uso cotidiano en rama de revisión — 2026-10-23
 
-- `feature/homesuite-financial-core`, apilada sobre #71, convierte cada espacio
+- `feature/homesuite-financial-core`, apilada sobre #71, convierte cada grupo
   nuevo en grupo con libro y participante propietario. La migración `0004` crea
-  libros y participantes vinculados para los espacios existentes de staging.
+  libros y participantes vinculados para los grupos existentes de staging.
 - El titular puede añadir participantes sin cuenta y elegir uno al invitar; la
   aceptación vincula la identidad confirmada sin trasladar saldos. Gastos e
   ingresos admiten un pagador o receptor y reparto igual o exacto. También hay

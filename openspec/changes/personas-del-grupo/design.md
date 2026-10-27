@@ -51,7 +51,7 @@ La vista previa usa `readLedger` (que ya trae movimientos, partes y saldos) y ca
 
 ### D7. La pantalla de personas reemplaza las secciones del final del libro
 
-`/spaces/:id/people` muestra `renderPeople` (personas, invitaciones, herramientas de administración) más renombrar y unir por persona, y las personas ya unidas. El libro deja de repetir esas secciones y conserva el aviso de invitaciones pendientes; la pestaña «Personas» del teléfono y el menú llevan a la pantalla nueva.
+`/groups/:id/people` muestra `renderPeople` (personas, invitaciones pendientes con su cancelación) más renombrar y unir por persona, y las personas ya unidas. El libro deja de repetir esas secciones y conserva el aviso de invitaciones pendientes; la pestaña «Personas» del teléfono y el menú llevan a la pantalla nueva.
 
 ### D8. Solo la titular administra personas
 

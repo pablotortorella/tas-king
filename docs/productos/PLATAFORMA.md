@@ -8,8 +8,8 @@ en [STATUS](../STATUS.md); no deducirla de los documentos de visión.
 ## Plataforma
 
 `apps/app/` implementa la app autenticada; su modelo compartido es identidad,
-sesiones, espacios, membresías, invitaciones y auditoría. Mantener invariantes de
-creación atómica del espacio/titular y aceptación atómica de invitaciones.
+sesiones, grupos, membresías, invitaciones y auditoría. Mantener invariantes de
+creación atómica del grupo/titular y aceptación atómica de invitaciones.
 Descubrir una invitación no concede acceso al contenido privado.
 
 La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
@@ -34,7 +34,7 @@ además de las generales y Playwright; el login real sigue requiriendo prueba
 dirigida. No equiparar `test:all` con verificar toda la suite de productos.
 
 La aceptación de identidad y colaboración requiere dos cuentas reales en staging:
-crear espacio, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
+crear grupo, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
 roles y aislamiento. Registrar el SHA y resultado de cada recorrido. Un login
 exitoso no demuestra el resto. Separar identidades locales de sesiones reales.
 
@@ -54,7 +54,7 @@ habilita publicar producción ni convierte condiciones pendientes en excepciones
 
 ## Perfil compartido
 
-Acuerdos de nombre, avatar y apodo por espacio en la
+Acuerdos de nombre, avatar y apodo por grupo en la
 [exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
 [change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
 La [API común](../HOMESUITE_PROFILE_API.md) implementa datos y gestión en la

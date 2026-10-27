@@ -28,3 +28,13 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 - El término anterior para «grupo» fue eliminado de todo el repositorio, salvo del
   registro histórico de `openspec/changes/archive/`. La prueba
   `apps/app/test/glossary.test.js` falla si reaparece.
+
+## Pendiente de unificar
+
+- **Categoría y subcategoría.** Hoy la pantalla de Categorías llama «grupo» al
+  agrupador de categorías («Casa» en «Casa - Otro»: campo «Grupo», columnas
+  `group_name` y `group_key`, `category.group`), lo que choca con «grupo» como lugar
+  compartido. Decisión de Pablo (2026-10-26): «Casa» será la **categoría** y «Otro»
+  la **subcategoría**. Se hace en un cambio propio (ver backlog); hasta entonces ese
+  uso interno de `group` en categorías es una excepción conocida.
+

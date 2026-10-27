@@ -1,6 +1,6 @@
 ## Why
 
-HomeSuite ya puede autenticar y compartir espacios, pero todavía no debe recibir
+HomeSuite ya puede autenticar y compartir grupos, pero todavía no debe recibir
 datos financieros reales: carece de un esquema monetario físico, protección ante
 reintentos y abuso, mantenimiento de datos efímeros y un procedimiento de backup
 y restauración comprobado. Este cambio deja esas garantías operativas listas
@@ -35,7 +35,7 @@ antes de implementar el primer movimiento de Cuentas Claras.
 ### Modified Capabilities
 
 Ninguna capacidad canónica cambia; la plataforma mínima continúa siendo la base
-de identidad y espacios sobre la que se agregan estas garantías.
+de identidad y grupos sobre la que se agregan estas garantías.
 
 ## Impact
 

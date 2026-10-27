@@ -27,7 +27,7 @@ directorio temporal nuevo, nunca `--remote`, y verifica:
 
 - `PRAGMA quick_check` con resultado `ok`;
 - ninguna fila en `PRAGMA foreign_key_check`;
-- presencia de `users`, `spaces`, `memberships`, `invitations` y `sessions`.
+- presencia de `users`, `groups`, `memberships`, `invitations` y `sessions`.
 
 D1 no autoriza `PRAGMA integrity_check`; `quick_check` es la comprobación de
 integridad compatible usada deliberadamente.
@@ -70,4 +70,4 @@ comprueba su manifiesto y checksum. Un rollback de Worker no revierte D1.
 - cifrado, acceso mínimo y retención automática;
 - restore drill de la D1 productiva vacía antes de aceptar usuarios;
 - RPO/RTO acordados y alertas por backup o cron fallidos;
-- procedimiento de exportación y eliminación de espacios.
+- procedimiento de exportación y eliminación de grupos.

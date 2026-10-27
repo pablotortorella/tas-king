@@ -25,7 +25,7 @@ SHALL asignar residuos mediante un orden estable y reproducible.
 
 ### Requirement: Modelo financiero explicable y aislado
 
-Cada libro SHALL pertenecer a un único espacio. Participantes y componentes de un
+Cada libro SHALL pertenecer a un único grupo. Participantes y componentes de un
 movimiento SHALL pertenecer al mismo libro. Gastos, ingresos y transferencias
 SHALL satisfacer sus sumas y producir efectos netos cuya suma por moneda sea cero.
 

@@ -20,8 +20,8 @@
 | OAuth temporal | `state`, nonce, PKCE verifier | Sólo cookie firmada durante el flujo; vence a los 10 minutos y no se persiste en D1. |
 | Sesión | cookie e identificador aleatorio en D1 | Vigente hasta 14 días. El cron elimina sesiones vencidas o revocadas hace más de 30 días. |
 | Identidad | Google `sub`, email verificado, nombre | Mientras exista la cuenta o sea necesaria para una membresía o auditoría. No se usa el email como identidad estable. |
-| Colaboración | espacios, membresías e invitaciones | Mientras exista el espacio. Una invitación pendiente vence a los 30 días; se conserva como `expired` para auditoría. |
-| Finanzas | libros, participantes, movimientos y componentes | Mientras exista el espacio. No hay purga temporal automática ni borrado físico de participantes con historia. |
+| Colaboración | grupos, membresías e invitaciones | Mientras exista el grupo. Una invitación pendiente vence a los 30 días; se conserva como `expired` para auditoría. |
+| Finanzas | libros, participantes, movimientos y componentes | Mientras exista el grupo. No hay purga temporal automática ni borrado físico de participantes con historia. |
 | Historial | revisiones y eventos | Inmutable y retenido junto al libro para explicar cada cambio. |
 | Idempotencia | claves, hash y respuesta confirmada | Se conserva mientras pueda repetirse la operación correspondiente; no se purga hasta fijar la ventana de reintentos de la API. |
 | Operación | request ID y logs estructurados | Según la retención configurada en Workers Observability. Nunca incluye cookies, tokens, email ni cuerpos. |
@@ -33,9 +33,9 @@ El export de infraestructura actual produce un SQL completo para recuperación,
 pero no sustituye una exportación de producto entendible por una persona. Antes
 de aceptar datos financieros reales deben existir:
 
-1. exportación de un espacio con miembros, movimientos, componentes, moneda,
+1. exportación de un grupo con miembros, movimientos, componentes, moneda,
    revisiones y eventos en un formato documentado;
-2. eliminación administrada del espacio completo, con confirmación reforzada y
+2. eliminación administrada del grupo completo, con confirmación reforzada y
    autorización exclusiva de quien corresponda;
 3. exportación previa a la eliminación y comprobación de que no quedan filas
    financieras huérfanas;

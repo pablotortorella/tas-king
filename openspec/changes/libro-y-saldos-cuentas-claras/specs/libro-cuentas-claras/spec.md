@@ -1,8 +1,8 @@
 ## ADDED Requirements
 
-### Requirement: Cada espacio tiene un libro con participantes
+### Requirement: Cada grupo tiene un libro con participantes
 
-Crear un espacio SHALL crear, en la misma transacción, su libro de Cuentas Claras
+Crear un grupo SHALL crear, en la misma transacción, su libro de Cuentas Claras
 con una moneda predeterminada y un participante vinculado a la persona titular. La
 moneda predeterminada SHALL ser un valor por defecto y no una restricción: cada
 movimiento elige la suya y cambiar la predeterminada no convierte movimientos
@@ -10,9 +10,9 @@ anteriores.
 
 #### Scenario: Crear un grupo nuevo
 
-- **WHEN** una persona autenticada crea un espacio con nombre, moneda COP y tres
+- **WHEN** una persona autenticada crea un grupo con nombre, moneda COP y tres
   nombres de participantes
-- **THEN** existen el espacio, la membresía de titular, un libro en COP y cuatro
+- **THEN** existen el grupo, la membresía de titular, un libro en COP y cuatro
   participantes (la persona titular más los tres nombres), o ninguno de ellos si
   alguna escritura falla
 
@@ -46,10 +46,10 @@ poder desactivarse pero NO eliminarse.
 - **THEN** sigue apareciendo en el historial y en los saldos, y no puede elegirse
   en movimientos nuevos
 
-### Requirement: Un libro sólo es accesible para quienes son miembros de su espacio
+### Requirement: Un libro sólo es accesible para quienes son miembros de su grupo
 
 El servidor SHALL autorizar cada operación sobre un libro por la membresía vigente
-en su espacio. Una persona sin membresía SHALL recibir una respuesta que no revele
+en su grupo. Una persona sin membresía SHALL recibir una respuesta que no revele
 la existencia del libro, y ningún movimiento SHALL referenciar participantes de
 otro libro.
 

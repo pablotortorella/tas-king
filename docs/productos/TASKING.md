@@ -12,7 +12,7 @@ método, seguridad, pruebas ni autorización de despliegue.
   evitar parpadeo; no es una excepción a la política de scripts externos.
 - Tableros con roles owner/member, tablero personal no eliminable y allowlist
   global heredada. Esa incorporación no se generaliza a HomeSuite: allí se usan
-  espacios e invitaciones. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
+  grupos e invitaciones. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
   conserva el detalle de revocación de TasKing.
 - Columnas de cierre múltiples: objetivos, métricas, urgencia y celebración deben
   considerar todas. Validar pertenencia de columna al tablero en cada escritura.

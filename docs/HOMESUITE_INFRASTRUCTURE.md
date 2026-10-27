@@ -188,7 +188,7 @@ Worker full-stack de producción para `app.homesuite.info`. Contendrá:
 
 - assets y shell autenticado;
 - OAuth y sesión;
-- plataforma: usuarios, espacios, membresías e invitaciones;
+- plataforma: usuarios, grupos, membresías e invitaciones;
 - dominios Tasks, Expenses y Shopping;
 - API Hono;
 - bindings de D1, R2 y backups.

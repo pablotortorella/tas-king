@@ -45,9 +45,9 @@
 
 ## 8. Documentación y OpenSpec
 
-- [ ] 8.1 Renombrar en `docs/` (excepto `openspec/changes/archive/`), incluidos `docs/HOMESUITE_PROFILE_API.md`, las fichas de producto, STATUS y backlog; verificar con la prueba de 1.2 en verde sobre los documentos
-- [ ] 8.2 Actualizar `openspec/changes/personas-del-grupo`, `importacion-como-movimientos` y los demás cambios activos al vocabulario nuevo, y verificar con `openspec validate --all --strict`
-- [ ] 8.3 Documentar en `docs/productos/CUENTAS-CLARAS.md` las decisiones de pantalla (administración, cambio de grupo, cookie, «libro» no visible) y en `docs/homesuite/OPERACION.md` la regla sobre reescribir migraciones antes del primer dato real; verificar que los enlaces resuelven
+- [x] 8.1 Renombrar en `docs/` (excepto `openspec/changes/archive/`), incluidos `docs/HOMESUITE_PROFILE_API.md`, las fichas de producto, STATUS y backlog; verificar con la prueba de 1.2 en verde sobre los documentos
+- [x] 8.2 Actualizar `openspec/changes/personas-del-grupo`, `importacion-como-movimientos` y los demás cambios activos al vocabulario nuevo, y verificar con `openspec validate --all --strict`
+- [x] 8.3 Documentar en `docs/productos/CUENTAS-CLARAS.md` las decisiones de pantalla (administración, cambio de grupo, cookie, «libro» no visible) y en `docs/homesuite/OPERACION.md` la regla sobre reescribir migraciones antes del primer dato real; verificar que los enlaces resuelven
 
 ## 9. Staging y cierre
 

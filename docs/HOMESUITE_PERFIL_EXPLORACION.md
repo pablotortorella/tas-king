@@ -41,29 +41,29 @@ Compartir código visual con TasKing no sincroniza por sí solo sus bases actual
 - Elegir emoji o inicial reemplaza visualmente la foto, sin borrar su referencia;
   se puede volver a elegir Google. Emoji y color pueden conservarse mientras se
   muestra la foto. La personalización del avatar es independiente de la del nombre.
-- Cada persona consulta y edita su propio perfil. Integrantes con un espacio
+- Cada persona consulta y edita su propio perfil. Integrantes con un grupo
   compartido ven nombre y avatar; ser titular no habilita editar perfiles ajenos.
 - El contrato de presentación no expone email, identidad Google ni datos de sesión.
   Esto no cambia las reglas del email usado para invitaciones.
 - En actividad pasada mostrar nombre/avatar actuales y el apodo actual del
-  espacio con menor jerarquía visual. Si se vacía el apodo o la persona deja el
-  espacio, deja de mostrarse; la autoría se conserva por ID estable.
+  grupo con menor jerarquía visual. Si se vacía el apodo o la persona deja el
+  grupo, deja de mostrarse; la autoría se conserva por ID estable.
   Los datos históricos que deba preservar el registro financiero no cambian por
   editar el perfil o apodo. No se conserva una copia histórica del apodo para
   presentar actividad. Al reingresar con apodo vacío tampoco se recupera el anterior.
-- Al dejar un espacio y volver a ingresar, el apodo comienza vacío, como en una
+- Al dejar un grupo y volver a ingresar, el apodo comienza vacío, como en una
   nueva membresía. Se conservan el perfil global y la autoría histórica por ID.
 - Cada persona puede editar o vaciar únicamente su propio apodo. Ser titular
-  del espacio no habilita modificar apodos ajenos.
-- Nombre para mostrar común a toda la suite y apodo opcional por espacio.
+  del grupo no habilita modificar apodos ajenos.
+- Nombre para mostrar común a toda la suite y apodo opcional por grupo.
   El apodo se inicializa vacío, sin copiar el nombre global ni datos de Google.
 - El nombre global sigue siendo la identificación principal. El apodo acompaña
-  con menor jerarquía visual dentro de su espacio; no sustituye al nombre.
+  con menor jerarquía visual dentro de su grupo; no sustituye al nombre.
   Si está vacío no se muestra una segunda identificación. No se define aún
   tipografía, posición o componente visual concreto.
 - Permitir volver explícitamente al nombre de Google: dejar de usar el nombre
   personalizado y retomar las actualizaciones de Google en futuros logins.
-  Esta acción no afecta avatar ni apodos por espacio.
+  Esta acción no afecta avatar ni apodos por grupo.
 - Subida de fotos propias fuera del primer alcance acordado.
 
 ## Evidencia del código revisado en main df25195
@@ -105,21 +105,21 @@ La apariencia y el nombre visible no cambian permisos ni propiedad de registros.
 Los nombres de participantes contables sin cuenta mantienen su semántica de dominio;
 no se convierten automáticamente en perfiles de personas con acceso.
 
-## Presentación contextual: nombre común y apodo por espacio
+## Presentación contextual: nombre común y apodo por grupo
 
 Acuerdo explícito de Pablo: nombre para mostrar común a toda la suite y apodo
-por espacio, inicialmente en blanco y con menor jerarquía visual. Esto reemplaza
-la propuesta anterior de usar el apodo en lugar del nombre dentro del espacio.
+por grupo, inicialmente en blanco y con menor jerarquía visual. Esto reemplaza
+la propuesta anterior de usar el apodo en lugar del nombre dentro del grupo.
 
 Ejemplos conceptuales (sin definir layout): nombre principal «Pablo», apodo
 secundario «Papá de Celes» en colegio; mismo nombre principal y apodo secundario
-«Torto (9)» en fútbol. Fuera del espacio se usa sólo el perfil global. Un espacio
-nuevo no hereda apodos de otros espacios ni inicializa el apodo con el nombre.
+«Torto (9)» en fútbol. Fuera del grupo se usa sólo el perfil global. Un grupo
+nuevo no hereda apodos de otros grupos ni inicializa el apodo con el nombre.
 
 Consecuencia para el contrato: entregar el nombre global y el apodo contextual
 como campos separados; no combinarlos ni reemplazar uno por otro en persistencia.
 Propuesta técnica: guardar el apodo asociado a la membresía y resolverlo en la
-plataforma con autorización del espacio. El avatar continúa global; no se acordó
+plataforma con autorización del grupo. El avatar continúa global; no se acordó
 personalización contextual del avatar. El diseño visual concreto queda para después.
 
 El apodo no cambia identidad, autoría, permisos ni nombres históricos financieros.
@@ -149,7 +149,7 @@ propuestas no se presentan como capacidades ya implementadas.
 |---|---|
 | Identidad de acceso | ID estable, vínculo Google y datos verificados; sin cambios de permisos por personalización |
 | Perfil global | Fuente del nombre, nombre personalizado, foto Google, modo de avatar, emoji y color |
-| Presentación en espacio | Nombre y avatar globales más apodo propio de membresía, separado y opcional |
+| Presentación en grupo | Nombre y avatar globales más apodo propio de membresía, separado y opcional |
 | Gestión propia | Consultar/editar perfil, volver al nombre Google y editar/vaciar apodo propio |
 | Lectura autorizada | Presentación mínima para integrantes; sin filtrar preferencias internas ni identidad del proveedor |
 | Integración Google | Actualizar valores automáticos sin sobrescribir preferencias explícitas |

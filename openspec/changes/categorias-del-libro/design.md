@@ -1,8 +1,8 @@
 ## Context
 
 - El único dato de categoría que existe es `splitwise_import_entries.category`, un texto de hasta 120 caracteres que `readLedger` expone en los movimientos importados. `searchLedger` lo busca; `renderEntryDetail` lo muestra solo en el detalle de un importado.
-- `ledger_entries` no tiene columna de categoría. La creación del libro es un único `db.batch` (`createSpaceForUser`), y la ruta de movimientos usa campos de formulario fijados por pruebas E2E.
-- Las migraciones llegan a `0006_space_slugs.sql` en la rama de integración; otras ramas pueden agregar la siguiente.
+- `ledger_entries` no tiene columna de categoría. La creación del libro es un único `db.batch` (`createGroupForUser`), y la ruta de movimientos usa campos de formulario fijados por pruebas E2E.
+- Las migraciones llegan a `0006_group_slugs.sql` en la rama de integración; otras ramas pueden agregar la siguiente.
 - La CSP prohíbe estilos y scripts en línea, así que los íconos se dibujan con SVG insertado en el HTML.
 
 Ver `proposal.md` para el motivo y `specs/categorias-de-movimientos/spec.md` para el comportamiento exigido. Las decisiones vienen de `docs/diseno/cuentas-claras/DECISIONES-EXPLORE.md` (D11).

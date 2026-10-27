@@ -29,7 +29,7 @@ Fecha: 2026-10-23 (noche). Rama: `diseno/cuentas-claras-ui`, creada desde `origi
 
 | # | Pantalla del diseño | Vista actual | Qué ya existe | Brecha visual | Brecha funcional (lógica, rutas o DB nuevas) | Contratos que podría romper |
 |---|---|---|---|---|---|---|
-| 1 | Nuevo grupo | `GET /spaces/new` (`index.js`) | Nombre + moneda (17 monedas), `POST /spaces` con CSRF, redirige a `/spaces/<slug>` | Encabezado con «Paso 1 de 2», campos y selector con el estilo nuevo | «¿Para qué es?» (no hay columna de propósito); «¿Quiénes participan?» al crear (hoy se agregan después); «Paso 2» | Etiqueta exacta «Nombre»; `name="name"` y `name="currency"`; `_csrf`; redirección 303 a la URL con slug |
+| 1 | Nuevo grupo | `GET /groups/new` (`index.js`) | Nombre + moneda (17 monedas), `POST /groups` con CSRF, redirige a `/groups/<slug>` | Encabezado con «Paso 1 de 2», campos y selector con el estilo nuevo | «¿Para qué es?» (no hay columna de propósito); «¿Quiénes participan?» al crear (hoy se agregan después); «Paso 2» | Etiqueta exacta «Nombre»; `name="name"` y `name="currency"`; `_csrf`; redirección 303 a la URL con slug |
 | 2 | Punto de partida | No existe: tras crear, se aterriza en el libro vacío | «Empezar en cero» es el estado por defecto; «Importar Splitwise» (solo titular) existe | Estado vacío del libro con las dos opciones | Pantalla/ruta intermedia tras crear; «saldos anteriores» no tiene change (debe mostrarse deshabilitada) | E2E espera ver el encabezado del grupo justo después de crear; cambiar la redirección lo rompe |
 | 3 | Importar desde Splitwise | `splitwise-ui.js`: subir, vista previa, revisión, lote; rutas `/ledger/import/*` | Todo el flujo: vista previa, mapeo por columna, decisiones por fila (excluir; usar moneda por defecto), conciliación, casilla de diferencia, idempotencia por huella, 2 MiB | Pasos numerados, filas de incidente con insignia «Fila N», tablas con scroll, panel de resumen | «Usar un supuesto» para la fila 12 (falta el efecto de Mateo): hoy el único supuesto es la moneda faltante; atribuir cada diferencia a filas concretas (hoy solo muestra diferencia); un solo lote confirmado por libro (índice único `splitwise_one_committed_batch_per_ledger`) | `mapping_i`, `decision_i`, `acknowledgeDifference`, `_csrf`, límite 2 MiB, textos «1 movimientos válidos · 2 incidentes · 1 filas de resumen.», «Así quedará el libro», «Importación completada» |
 | 4 | Saldos | Sección «Balances» de `renderLedgerOverview` (tabla participante/moneda/saldo) | Saldos por moneda, palabras «Le deben / Debe», suma cero garantizada por validación | Tarjeta verde «Tu saldo», filas con avatar y barra, un bloque por moneda | «¿Por qué?» (pantalla 8) y «Para quedar a mano» (sugerencias): ambos requieren cálculo y rutas nuevas; selector COP/USD (se resuelve visualmente agrupando por moneda, sin lógica) | `Le deben COP 50,00` en un solo elemento |
@@ -46,7 +46,7 @@ Los cuatro se escribieron sin ver este código. Resumen: **el código ya impleme
 
 ### Contradicciones con lo implementado
 
-1. **API.** `libro-y-saldos` D7 propone rutas `/api/expenses/*` y una app de un solo documento en `/cuentas-claras`. El código real usa páginas renderizadas en el servidor bajo `/spaces/:slug/ledger/*` con formularios POST y CSRF. Aplicar D7 tal cual duplicaría todo. **[leído]**
+1. **API.** `libro-y-saldos` D7 propone rutas `/api/expenses/*` y una app de un solo documento en `/cuentas-claras`. El código real usa páginas renderizadas en el servidor bajo `/groups/:slug/ledger/*` con formularios POST y CSRF. Aplicar D7 tal cual duplicaría todo. **[leído]**
 2. **`entry_effects`.** `importacion-splitwise` D2 propone una tabla única de efectos para todos los movimientos y que los saldos se calculen desde ella. El código tiene dos caminos: `entry_cash_parties` + `entry_allocations` para movimientos propios y `splitwise_import_effects` para importados, unificados en memoria en `readLedger`. Migrar a `entry_effects` es una decisión de arquitectura para `explore`, no una consecuencia del diseño visual. **[leído]**
 3. **Concurrencia.** El spec habla de la revisión *del libro*; el código usa `expectedRevision` *por movimiento* (la del libro se incrementa pero no se exige). **[leído]**
 4. **Búsqueda en base de datos.** `busqueda-movimientos` D1/D2 proponen texto normalizado e índices en D1. El código carga todo el libro en memoria y filtra con JavaScript (`searchLedger`). Funciona para un libro chico; no cumple el presupuesto «independiente del número de resultados» ni pagina. **[leído]**
@@ -59,7 +59,7 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ nuevo · ⚠️ contradice
 **`libro-y-saldos-cuentas-claras`**
 | Requisito | Estado | Nota |
 |---|---|---|
-| Libro por espacio creado en la misma transacción, con titular vinculado | ✅ | `createSpaceForUser` (un `db.batch`) |
+| Libro por grupo creado en la misma transacción, con titular vinculado | ✅ | `createGroupForUser` (un `db.batch`) |
 | Moneda predeterminada no restringe; cambiarla no convierte | 🟡 | Se elige al crear; no hay forma de cambiarla después |
 | Participantes con o sin cuenta | ✅ | `addParticipant` |
 | Nombre único entre activos | ❌ | No se valida |
@@ -134,7 +134,7 @@ Ver «Estado de avance» al final: la lista completa, con commits y pruebas.
 ## 5. Contratos que las pruebas fijan (verificado leyendo `apps/app/e2e/platform.spec.js`)
 
 - Etiquetas: «Nombre» (exacta), «Invitar por email», «Participante sin cuenta», «Descripción», «Importe» (exacta), «Archivo CSV», «Buscar».
-- Botones/enlaces: «Crear espacio», «Invitar», «Agregar participante», «Gasto» (exacto), «Guardar», «Volver al libro», «Corregir», «Anular», «Confirmar anulación», «Importar Splitwise», «Previsualizar», «Revisar saldos y decisiones», «Confirmar importación», «Ver el libro», «Buscar», «Aceptar invitación», «Rechazar».
+- Botones/enlaces: «Crear grupo», «Invitar», «Agregar participante», «Gasto» (exacto), «Guardar», «Volver al libro», «Corregir», «Anular», «Confirmar anulación», «Importar Splitwise», «Previsualizar», «Revisar saldos y decisiones», «Confirmar importación», «Ver el libro», «Buscar», «Aceptar invitación», «Rechazar».
 - Textos únicos: «Le deben COP 50,00», «COP 120,00» (una sola vez en el detalle), «Importado de Splitwise» (una sola vez por resultado), «Efecto original, no vigente».
 - Sin desborde horizontal a 390 px.
 
@@ -172,7 +172,7 @@ Rama `diseno/cuentas-claras-ui`, solo local (no se hizo push ni deploy). Cada pu
 - Avisos de confirmación tras cada acción (lista cerrada; el parámetro de la URL nunca se muestra tal cual).
 
 **Funcionalidad agregada (los specs la determinan; no pasó por `explore`, revisala):**
-- «¿Por qué?»: `GET /spaces/:s/ledger/balance?moneda=&persona=` con acumulado y comprobación (spec `saldos-cuentas-claras`).
+- «¿Por qué?»: `GET /groups/:s/ledger/balance?moneda=&persona=` con acumulado y comprobación (spec `saldos-cuentas-claras`).
 - «Para quedar a mano»: regla D6 (mayor con mayor, determinista, sin guardar nada) con «Registrar» que abre la transferencia prellenada (se valida contra los participantes del libro). **El algoritmo es la pregunta abierta n.º 3 del change: se adoptó el que propone D6.**
 - Búsqueda con términos combinados (Y), búsqueda en la nota y «Ver 40 más».
 - Archivar y restaurar el grupo (solo el titular, auditado en `ledger_events`; bloquea movimientos, personas por invitación e importación; la lectura y la exportación siguen).

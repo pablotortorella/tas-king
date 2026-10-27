@@ -31,7 +31,7 @@ toda historia financiera.
 
 #### Scenario: Sesión vencida antigua
 - **WHEN** el cron encuentra una sesión cuya ventana de conservación terminó
-- **THEN** elimina esa sesión sin modificar usuario, membresías ni espacios
+- **THEN** elimina esa sesión sin modificar usuario, membresías ni grupos
 
 #### Scenario: Invitación pendiente vencida
 - **WHEN** el cron encuentra una invitación pendiente después de `expires_at`
