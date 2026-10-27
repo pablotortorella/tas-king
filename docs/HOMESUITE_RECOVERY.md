@@ -93,6 +93,14 @@ personalizado de Cloudflare; el alcance exacto de su permiso D1 debe confirmarse
 en el panel. R2 usa `Workers R2 Storage Bucket Item Write` limitado al bucket
 de backups. No usar una clave global ni un token S3 exclusivo de R2.
 
+**Consulta abierta (2026-10-27):** ¿el permiso `D1 Edit` concedido para que
+`wrangler d1 export` funcione está restringido a `homesuite-app-db` o habilita
+edición de todas las D1 de la cuenta, incluidas las de TasKing? La ejecución
+exitosa sólo acredita que el token puede exportar HomeSuite; no permite inferir
+su alcance. Revisar las políticas del token en Cloudflare, registrar el alcance
+real y, si es global, decidir cómo reducir la exposición antes de considerar
+cerrado el control de acceso mínimo. Seguimiento en el [backlog](PRODUCT_BACKLOG.md).
+
 El primer ensayo del workflow falló al exportar D1: `D1 Read` permitió obtener
 el bookmark, pero la exportación devolvió código 10000. Se desactivó la variable
 y Pablo actualizó el token. El ensayo manual #40576626163 (2026-10-27) pasó:
