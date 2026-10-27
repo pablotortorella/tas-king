@@ -42,9 +42,8 @@ controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
 
 Las páginas públicas de privacidad y términos de HomeSuite, Cuentas Claras y
 Remanso están en preparación en la misma rama. Pablo confirmó nombre, país,
-correo y dirección comercial de contacto en Rionegro; falta un teléfono de
-contacto público para publicar la política conforme a los datos exigidos en
-Colombia.
+correo, domicilio en Rionegro, dirección comercial de contacto y teléfono
+público. El borrador ya no contiene campos pendientes.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
