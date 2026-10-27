@@ -11,12 +11,12 @@
 
 **Estado:** en el PR #108 (rama `cambio/identidad-textos`), **sin integrar** hasta que Pablo revise
 staging. Publicado en staging con el árbol limpio y la rama ya subida (la app desde el SHA `6c99f5f`; el
-sitio se republicó después desde `2220652`, que sólo cambia la landing de Remanso; el código de la app es el mismo):
+sitio se republicó después desde `d633eb2`, que sólo cambia textos del sitio; el código de la app es el mismo):
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
 | HomeSuite App (`staging.homesuite.info`) | `3764a231` | «PR #108 · SHA 6c99f5f · Remanso ajustes, identidad y acentos» |
-| Sitio (`site-staging.homesuite.info`) | `72a5d3ae` (SHA `2220652`; antes `eedd49c5`) | «PR #108 · SHA 2220652 · Remanso sin mención a cuentas» |
+| Sitio (`site-staging.homesuite.info`) | `3329dc03` (SHA `d633eb2`; antes `72a5d3ae` y `eedd49c5`) | «PR #108 · SHA d633eb2 · rótulo Versión Beta» |
 
 Antes de publicar se comprobó con `wrangler deployments list` que nadie más había desplegado
 (las versiones activas eran las propias). Backup de la base de la app antes de migrar (sin
@@ -31,6 +31,12 @@ producción no se publicó; nada de esto está allí.
 - **Identidad (`identidad-textos-suite`):** textos del sitio y de la app alineados con el marco
   (PR #104); sin «mitades»; «Pausa» sale y Remanso ocupa su lugar; la portada se conecta con
   Remanso sólo en staging («Probá Remanso»).
+- **Estado de cada herramienta:** Fun TasKing «Disponible»; Cuentas Claras y Remanso «Versión Beta»
+  (decisión de Pablo; sin «Próximamente» ni «En preparación»). La landing de Remanso no habla de cuentas.
+  **Pendiente para el primer deploy a producción de la app** (el entorno lo prepara Pablo en paralelo): las
+  landings en producción no traen botón a la app y el «Probá Remanso» de la portada existe sólo en staging;
+  hay que decidir su enlace cuando la app tenga dominio de producción, y no publicar el sitio de
+  producción con rótulos «beta» antes.
 - **Acentos y catálogo (`acentos-y-catalogo-publico`):** verde, terracota (`#904f2a`) y ámbar
   en rótulos, bordes e íconos; el sitio muestra tres herramientas y Compras queda oculto
   (landing en `apps/site/pendientes/`, `/compras` responde 404). La app conserva la tarjeta
