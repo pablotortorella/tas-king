@@ -177,21 +177,48 @@ fuertes y parecidas a la lluvia).
 ### Requirement: La lluvia es menos densa
 
 En el fondo `lluvia`, la suite SHALL reproducir sólo una parte de las gotas que programa
-el motor del paquete (35 %) y SHALL bajar el lecho continuo de ruido al 60 % de su
+el motor del paquete (24,5 %: primero 35 %, luego un 30 % menos) y SHALL bajar el lecho continuo de ruido al 60 % de su
 nivel, sin editar el motor: `SuiteEngine` reemplaza `drop()` (filtrando) y envuelve
 `buildAmbient()` (sumando una ganancia al lecho). La intensidad que sube y baja en tramos
 no cambia. Ambos valores SHALL poder afinarse con una constante cada uno (2026-10-27,
-pedido de Pablo: sonido muy denso).
+pedido de Pablo: sonido muy denso y, tras la segunda ronda, todavía torrencial).
 
 #### Scenario: Menos gotas
 
 - **WHEN** el motor programa miles de gotas con `SuiteEngine`
-- **THEN** llega a sonar entre el 25 % y el 45 % de ellas
+- **THEN** llega a sonar entre el 15 % y el 35 % de ellas
 
 #### Scenario: Lecho más bajo
 
 - **WHEN** se construye el fondo `lluvia` con `SuiteEngine`
 - **THEN** el lecho de ruido llega al fondo a través de una ganancia de 0,6, y los demás fondos se construyen igual que con el motor del paquete
+
+### Requirement: Los gongs suenan un 25 % más bajo que en el paquete
+
+Cada gong (inicio, intermedios y final) y «Probar gong» SHALL sonar a 0,75 del volumen
+que tenían, en los tres sonidos, conservando la relación entre el de inicio/fin y el
+intermedio. El nivel SHALL poder afinarse con una sola constante (`NIVEL_GONG`) y sin
+editar el motor (2026-10-27, pedido de Pablo: gong demasiado fuerte).
+
+#### Scenario: Nivel del gong
+
+- **WHEN** se sintetiza un gong de inicio/fin o intermedio
+- **THEN** su ganancia de salida es 0,75 de la que calcula el motor para ese momento
+
+### Requirement: El fuego suma chispazos esporádicos
+
+En el fondo `fuego`, la suite SHALL sumar de vez en cuando a un chasquido un chispazo:
+un estallido más fuerte que cualquiera del paquete y entre 4 y 8 chispas agudas en unas
+décimas de segundo. Con unos 5 chasquidos por segundo y una probabilidad de 0,025 por
+chasquido llega a uno cada ~8 s. Los chasquidos comunes SHALL seguir siendo los del
+paquete. Se logra reemplazando `crackle()` en `SuiteEngine`, sin editar el motor, y la
+probabilidad SHALL poder afinarse con una constante (`PROB_CHISPAZO`; 2026-10-27, Pablo:
+las chispas «están geniales», quiere algunas más fuertes cada tanto).
+
+#### Scenario: Chispazos esporádicos
+
+- **WHEN** se generan miles de chasquidos con `SuiteEngine`
+- **THEN** entre el 1 % y el 5 % trae un chispazo con más de un chasquido y un estallido de más de 0,45 de nivel, y el resto es exactamente el chasquido del paquete
 
 ### Requirement: Pausa, silencio del fondo y fin anticipado
 

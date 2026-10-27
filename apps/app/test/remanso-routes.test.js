@@ -10,9 +10,9 @@ const SECRET = "s".repeat(32);
 const WITH_GOOGLE = { GOOGLE_CLIENT_ID: "client", GOOGLE_CLIENT_SECRET: "secret", SESSION_SECRET: SECRET };
 
 describe("niveles de acceso de Remanso", () => {
-  it("el volumen inicial del fondo es 72 en los dos niveles y el control lo muestra", () => {
-    expect(REMANSO_ACCESO.libre.inicial.volumen).toBe(72);
-    expect(REMANSO_ACCESO.cuenta.inicial.volumen).toBe(72);
+  it("el volumen inicial del fondo es 58 en los dos niveles y el control lo muestra", () => {
+    expect(REMANSO_ACCESO.libre.inicial.volumen).toBe(58);
+    expect(REMANSO_ACCESO.cuenta.inicial.volumen).toBe(58);
   });
 
   it("el nivel libre es un subconjunto de lo que ofrece el motor y sus valores iniciales son válidos", () => {
@@ -48,7 +48,7 @@ describe("GET /remanso sin sesión", () => {
     expect(html).toContain('data-acceso="libre"');
     expect(html).toContain('data-libre-minutos="1,2,5"');
     expect(html).toContain('data-libre-fondos="silencio,agua,bosque"');
-    expect(html).toContain('data-inicial-minutos="5" data-inicial-fondo="agua" data-inicial-gong="brillante" data-inicial-volumen="72"');
+    expect(html).toContain('data-inicial-minutos="5" data-inicial-fondo="agua" data-inicial-gong="brillante" data-inicial-volumen="58"');
     expect(html).toContain('data-libre-gongs="brillante"');
     expect(html).toContain('id="rem-sonidos"');
     expect(html).not.toContain("data-nombre=");

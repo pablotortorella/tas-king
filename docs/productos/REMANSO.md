@@ -17,7 +17,7 @@ Ruta `/remanso` en HomeSuite App, con tres pantallas (inicio, sesión, cierre).
 | Duraciones | 1, 2 y 5 min | 1, 2, 5, 10, 20 y 30 min |
 | Fondos | silencio, agua, bosque | los seis (suma lluvia, fuego, noche) |
 | Sonido del gong | Gong brillante | Gong brillante, Gong profundo y Cuenco tibetano |
-| Valores iniciales | 5 min · agua · Gong brillante · volumen 72 | 10 min · lluvia · Gong brillante · volumen 72 |
+| Valores iniciales | 5 min · agua · Gong brillante · volumen 58 | 10 min · lluvia · Gong brillante · volumen 58 |
 | Cierre | duración, sin nombre ni mención a la cuenta | duración y saludo por el nombre del perfil |
 
 «Crear cuenta» es entrar con Google: la primera vez se crea la cuenta. Las opciones
@@ -52,7 +52,7 @@ fundido de 4 s y sale con uno de 6 s. El estado de ánimo del cierre es opcional
 |---|---|
 | `apps/app/src/remanso.js` | Ruta `GET /remanso`, niveles de acceso y armazón HTML de las tres pantallas |
 | `apps/app/public/remanso/remanso-engine.js` | Motor de sonido del paquete, **sin modificar** |
-| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()`, `windGust()`, `drop()` y `buildAmbient()` (viento del bosque a 0,15 del nivel del paquete y al doble de espaciado, `FACTOR_VIENTO`; lluvia con el 35 % de las gotas y el lecho al 60 %, `DENSIDAD_GOTAS` y `NIVEL_LECHO_LLUVIA`) |
+| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()` (a 0,75 del volumen, `NIVEL_GONG`), `crackle()` (chispazos esporádicos del fuego, `PROB_CHISPAZO`), `windGust()`, `drop()` y `buildAmbient()` (viento del bosque a 0,15 del nivel del paquete y al doble de espaciado, `FACTOR_VIENTO`; lluvia con el 24,5 % de las gotas y el lecho al 60 %, `DENSIDAD_GOTAS` y `NIVEL_LECHO_LLUVIA`) |
 | `apps/app/public/remanso/remanso.js` | Interfaz (módulo ES): arma opciones, sesión y cierre con DOM |
 | `apps/app/public/remanso/remanso.css` | Tokens y estilos: claro, oscuro y noche |
 | `apps/app/public/_headers` | `nosniff` para los recursos de `/remanso/*` |

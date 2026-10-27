@@ -200,9 +200,10 @@ listas. El motor no se modifica: la restricción vive en la interfaz, que no lla
 `start()` con una opción fuera del nivel de quien la ve. Las pruebas fijan que la
 lista libre ⊂ opciones del motor y que cada nivel inicial es válido.
 
-Valores iniciales: con sesión 10 min / lluvia / 72; sin sesión 5 min / agua / 72. El
-volumen era 55 (referencia del paquete) y dejaba el fondo muy bajo frente al gong; 72
-es un 30 % más sobre el control (2026-10-27). «Crear cuenta» es entrar con Google: la primera vez se
+Valores iniciales: con sesión 10 min / lluvia / 58; sin sesión 5 min / agua / 58. El
+volumen era 55 (referencia del paquete) y dejaba el fondo bajo frente al gong; se subió a 72
+(+30 % sobre el control) y, al bajar los gongs un 25 %, a 58 (−20 % sobre 72), todo el
+2026-10-27. Se mide sobre el control, no sobre la amplitud: el motor aplica `(v/100)²`. «Crear cuenta» es entrar con Google: la primera vez se
 crea la cuenta de HomeSuite; no hay registro aparte.
 
 **Límite honesto:** el motor, sus archivos y todo el audio son estáticos y se

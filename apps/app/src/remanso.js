@@ -4,7 +4,7 @@ import { readOwnProfile } from "./profiles.js";
 
 // Volumen inicial del fondo (0–100; el motor lo eleva al cuadrado). Era 55, el del paquete; con él el fondo quedaba muy bajo
 // frente al gong, así que sube un 30 % sobre el control (2026-10-27).
-const VOLUMEN_INICIAL = 72;
+const VOLUMEN_INICIAL = 58;
 
 // Qué puede usar quien no tiene cuenta y qué quien sí. Es la única definición:
 // el navegador recibe las opciones libres por atributos de datos y no las repite.

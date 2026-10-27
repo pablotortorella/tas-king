@@ -70,9 +70,10 @@ del fondo, probar el gong y comenzar. Los tres sonidos de gong SHALL mostrarse c
 opciones con nombre; las que requieren cuenta SHALL seguir el mismo tratamiento que
 las demás opciones con cuenta. SHALL mostrar los momentos de gong de la duración
 elegida y el rótulo del botón con los minutos («Comenzar · N min»). Los valores
-iniciales SHALL ser 10 minutos, lluvia y volumen 72 con sesión, y 5 minutos, agua
-y volumen 72 sin sesión (ajuste del 2026-10-27: el fondo quedaba muy bajo frente al
-gong con 55; 72 es un 30 % más sobre el control).
+iniciales SHALL ser 10 minutos, lluvia y volumen 58 con sesión, y 5 minutos, agua
+y volumen 58 sin sesión (ajustes del 2026-10-27: con 55 el fondo quedaba bajo frente al
+gong, se subió a 72; al bajar el gong un 25 % y probarlo de nuevo, Pablo pidió el fondo un
+20 % más bajo que ese 72, es decir 58).
 
 #### Scenario: Cambiar la duración
 
