@@ -21,3 +21,5 @@ jobs:
       - run: npm run test:homesuite-site
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run test:homesuite-app:e2e
+      - run: npm run test:homesuite-site:e2e

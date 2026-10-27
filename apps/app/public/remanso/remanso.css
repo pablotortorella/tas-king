@@ -1,0 +1,180 @@
+/* Remanso · identidad de HomeSuite (claro, oscuro y noche).
+ *
+ * Paleta del sitio público de HomeSuite y tipografía del shell de la app (Georgia
+ * en títulos, sans del sistema en el cuerpo). Sin fuentes ni recursos externos.
+ *
+ * Los tres bloques `@tokens` los lee apps/app/test/remanso-contrast.test.js, que
+ * exige contraste AA entre sus pares. Cambiar un color es cambiarlo ahí.
+ *   claro  : esquema claro del sistema (por defecto)
+ *   oscuro : prefers-color-scheme: dark
+ *   noche  : la sesión, siempre oscura (data-pantalla="sesion" en <body>)
+ */
+
+/* @tokens claro */
+body.remanso {
+  --rem-page: #f7f2e8;
+  --rem-surface: #fffaf0;
+  --rem-soft: #efe8db;
+  --rem-ink: #20342a;
+  --rem-muted: #52665b;
+  --rem-link: #206447;
+  --rem-accent: #206447;
+  --rem-on-accent: #ffffff;
+  --rem-line: #8a826f;
+  --rem-eyebrow: #b0412a;
+  --rem-focus: #206447;
+  --rem-gold: #94661a;
+  --rem-track: #d9d0c0;
+  background: var(--rem-page);
+  color: var(--rem-ink);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* @tokens oscuro */
+  body.remanso {
+    --rem-page: #161914;
+    --rem-surface: #20251f;
+    --rem-soft: #262c25;
+    --rem-ink: #edf1e9;
+    --rem-muted: #a9b1a7;
+    --rem-link: #8ac29c;
+    --rem-accent: #315f45;
+    --rem-on-accent: #ffffff;
+    --rem-line: #6f7a6c;
+    --rem-eyebrow: #ef927e;
+    --rem-focus: #8ac29c;
+    --rem-gold: #d4ad58;
+    --rem-track: #3b433a;
+  }
+}
+
+/* @tokens noche */
+body.remanso[data-pantalla="sesion"] {
+  --rem-page: #0f1410;
+  --rem-surface: #172019;
+  --rem-soft: #1c261f;
+  --rem-ink: #e9efe6;
+  --rem-muted: #a9b8ae;
+  --rem-link: #9ccfae;
+  --rem-accent: #e9efe6;
+  --rem-on-accent: #0f1410;
+  --rem-line: #5f6f64;
+  --rem-eyebrow: #d4ad58;
+  --rem-focus: #d4ad58;
+  --rem-gold: #d4ad58;
+  --rem-track: #2b362e;
+}
+
+/* El fondo del documento acompaña al esquema aunque el rebote del scroll lo muestre. */
+html:has(body.remanso) { background: #f7f2e8; }
+@media (prefers-color-scheme: dark) { html:has(body.remanso) { background: #161914; } }
+html:has(body.remanso[data-pantalla="sesion"]) { background: #0f1410; }
+
+body.remanso [hidden] { display: none !important; }
+
+/* ---------- shell de la app, acompañando el esquema ---------- */
+body.remanso .brand,
+body.remanso .shell-header nav a,
+body.remanso .menu button { color: var(--rem-link); }
+body.remanso .account-link { color: var(--rem-ink); }
+body.remanso .menu summary { border-color: var(--rem-line); color: var(--rem-ink); }
+body.remanso .menu nav { background: var(--rem-surface); border-color: var(--rem-track); box-shadow: 0 12px 32px #00000033; }
+body.remanso p { color: var(--rem-muted); }
+body.remanso .eyebrow { color: var(--rem-eyebrow); margin-top: 28px; }
+body.remanso .button { background: var(--rem-accent); color: var(--rem-on-accent); }
+body.remanso :focus-visible { outline: 3px solid var(--rem-focus); outline-offset: 2px; }
+body.remanso .notice { background: var(--rem-soft); color: var(--rem-ink); }
+body.remanso[data-pantalla="sesion"] .shell-header { display: none; }
+body.remanso .shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding-bottom: 32px; }
+
+/* ---------- estructura ---------- */
+.remanso-app { flex: 1; width: 100%; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; }
+.rem-pantalla { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+/* El gap de la pantalla separaría de más al título; se compensa con el margen negativo. */
+.remanso-app .rem-pantalla > .eyebrow { margin: 24px 0 -16px; }
+.remanso-app h1 { font-size: clamp(1.8rem, 7vw, 2.4rem); font-weight: 400; line-height: 1.15; margin: 8px 0 0; color: var(--rem-ink); }
+.rem-label { font-family: inherit; font-size: .8125rem; font-weight: 700; margin: 0 0 12px; color: var(--rem-muted); }
+.rem-bloque { margin: 0; }
+.rem-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- chips (duración, fondo, ánimo) ---------- */
+.rem-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.rem-chip {
+  font: inherit; cursor: pointer; color: var(--rem-ink); background: var(--rem-surface);
+  border: 1px solid var(--rem-line); border-radius: 16px; padding: 8px 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 56px; text-align: center;
+}
+.rem-chip[aria-pressed="true"] { background: var(--rem-accent); color: var(--rem-on-accent); border-color: var(--rem-link); border-width: 2px; padding: 7px 5px; }
+.rem-chip[aria-disabled="true"] { border-style: dashed; color: var(--rem-muted); }
+.rem-dur { min-height: 88px; border-radius: 18px; }
+.rem-dur b { font-size: 1.625rem; font-weight: 700; line-height: 1.1; }
+.rem-dur span { font-size: .75rem; }
+.rem-fondo { min-height: 76px; font-size: .8125rem; font-weight: 600; }
+.rem-fondo svg { width: 22px; height: 22px; flex: none; }
+.rem-tag { display: inline-flex; align-items: center; gap: 3px; font-size: .6875rem; font-weight: 600; color: var(--rem-muted); }
+.rem-tag svg { width: 11px; height: 11px; }
+.rem-animo { min-height: 48px; border-radius: 24px; font-size: .875rem; background: var(--rem-page); flex-direction: row; }
+
+/* ---------- línea de gongs ---------- */
+.rem-gongs { margin-top: 12px; padding: 14px 16px 4px; border-radius: 14px; background: var(--rem-soft); }
+.rem-pista { position: relative; height: 12px; }
+.rem-pista::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--rem-track); }
+.rem-punto { position: absolute; top: 0; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--rem-gold); }
+.rem-marcas { position: relative; height: 18px; margin-top: 8px; font-size: .6875rem; color: var(--rem-muted); }
+.rem-marcas span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.rem-regla { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .75rem; color: var(--rem-muted); padding-bottom: 10px; }
+.rem-sonido { min-height: 64px; font-size: .8125rem; font-weight: 600; }
+.rem-probar { display: flex; justify-content: flex-end; margin-top: 4px; }
+.rem-enlace { font: inherit; font-size: .8125rem; font-weight: 700; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--rem-link); text-decoration: underline; cursor: pointer; white-space: nowrap; }
+a.rem-enlace { display: inline-flex; align-items: center; }
+
+/* ---------- volumen, aviso y botones ---------- */
+.rem-volumen { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: .8125rem; color: var(--rem-muted); }
+.rem-volumen input { width: 100%; min-height: 44px; padding: 0; accent-color: var(--rem-gold); background: none; border: 0; }
+.rem-aviso { border: 1px solid var(--rem-line); border-radius: 14px; padding: 14px 16px; background: var(--rem-surface); }
+.rem-aviso p { margin: 0; font-size: .9375rem; line-height: 1.5; color: var(--rem-ink); }
+.rem-aviso .button { margin-top: 10px; }
+.rem-primario, .rem-secundario { font: inherit; cursor: pointer; border-radius: 999px; font-weight: 700; letter-spacing: .02em; }
+.rem-primario { min-height: 60px; border: 0; background: var(--rem-accent); color: var(--rem-on-accent); font-size: 1.0625rem; margin-top: auto; }
+.rem-secundario { min-height: 52px; border: 1px solid var(--rem-line); background: transparent; color: var(--rem-ink); font-size: .9375rem; font-weight: 600; }
+.rem-pila { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- sesión (siempre noche) ---------- */
+.rem-noche { align-items: center; gap: 20px; color: var(--rem-ink); justify-content: space-between; padding-top: 12px; }
+.rem-arriba { align-self: stretch; display: flex; justify-content: space-between; gap: 12px; font-size: 1rem; color: var(--rem-muted); }
+.rem-anillo { position: relative; width: min(300px, 100%); aspect-ratio: 1; }
+.rem-anillo svg { display: block; width: 100%; height: 100%; }
+.rem-anillo-pista { stroke: var(--rem-track); }
+.rem-anillo-progreso { stroke: var(--rem-gold); }
+.rem-marcador { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid var(--rem-gold); background: var(--rem-page); }
+.rem-marcador.rem-hecho { background: var(--rem-gold); }
+.rem-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.rem-tiempo { font-size: clamp(2.75rem, 17vw, 4rem); font-weight: 300; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--rem-ink); }
+.rem-sub { font-size: 1.125rem; color: var(--rem-muted); }
+.rem-proximo { margin: 0; min-height: 1.4em; font-size: 1.1875rem; text-align: center; font-variant-numeric: tabular-nums; }
+.rem-frase { margin: 0; font-family: Georgia, serif; font-size: 1.4375rem; line-height: 1.5; text-align: center; color: var(--rem-ink); }
+.rem-controles { display: flex; align-items: center; justify-content: center; gap: 28px; }
+.rem-redondo, .rem-grande { display: flex; align-items: center; justify-content: center; font: inherit; cursor: pointer; border-radius: 50%; }
+.rem-redondo { width: 52px; height: 52px; border: 1px solid var(--rem-line); background: transparent; color: var(--rem-muted); }
+.rem-grande { width: 76px; height: 76px; border: 0; background: var(--rem-accent); color: var(--rem-on-accent); }
+/* Con fondo «silencio» el control se oculta sin mover los demás. */
+.rem-redondo.rem-oculto { visibility: hidden; }
+
+/* ---------- cierre ---------- */
+.rem-cierre-centro { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.rem-cierre-centro h1 { max-width: 20ch; }
+.rem-cierre-centro p { margin: 0; font-size: 1rem; line-height: 1.5; }
+#rem-c-saludo { color: var(--rem-ink); font-weight: 600; }
+.rem-calma-1 { stroke: var(--rem-track); }
+.rem-calma-2 { stroke: var(--rem-gold); }
+.rem-calma-3 { fill: var(--rem-gold); }
+.rem-animos { margin: 0; padding: 18px 16px; border: 0; border-radius: 18px; background: var(--rem-surface); }
+.rem-animos legend { float: left; width: 100%; padding: 0; margin-bottom: 12px; font-size: .8125rem; font-weight: 700; color: var(--rem-muted); }
+.rem-animos legend span { font-weight: 400; }
+.rem-animos .rem-grid { clear: both; gap: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.remanso *, body.remanso *::before, body.remanso *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

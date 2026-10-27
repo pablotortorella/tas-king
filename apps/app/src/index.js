@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
+import { registerRemansoRoutes } from "./remanso.js";
 import { AVATAR_COLORS, readOwnProfile } from "./profiles.js";
 import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "./profile-ui.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
@@ -82,10 +83,17 @@ function avatar(profile) {
   return `<span class="avatar avatar-${html(value.color)}" aria-hidden="true">${image}</span>`;
 }
 
-function page(title, content, profile = null) {
+const REMANSO_CARD = `<a class="tool-card" href="/remanso"><strong>Remanso</strong><span>Pausas de calma, con gong y sonidos de fondo.</span></a>`;
+
+// `extras` permite que un producto sume hojas de estilo y scripts propios (de este
+// mismo origen) y una clase en <body>; sin él la salida es la de siempre.
+function page(title, content, profile = null, extras = {}) {
+  const styles = (extras.styles ?? []).map((href) => `<link rel="stylesheet" href="${html(href)}">`).join("");
+  const scripts = (extras.scripts ?? []).map((src) => `<script type="module" src="${html(src)}"></script>`).join("");
+  const bodyClass = extras.bodyClass ? ` class="${html(extras.bodyClass)}"` : "";
   const account = profile ? `<a class="account-link" href="/perfil" aria-label="Mi perfil: ${html(profile.displayName)}">${avatar(profile)}<span>${html(profile.displayName)}</span></a>` : "";
   const accountMenu = profile ? `<a href="/perfil">Mi perfil</a><form action="/auth/logout" method="post"><button type="submit">Cerrar sesión</button></form>` : "";
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/shell.js" defer></script><body><main class="shell"><header class="shell-header"><a class="brand" href="/">⌂ HomeSuite</a><nav class="desktop-nav" aria-label="Herramientas de HomeSuite"><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a></nav><div class="header-actions">${account}<details class="menu"><summary aria-label="Abrir menú de HomeSuite">☰</summary><nav aria-label="Menú de HomeSuite"><a href="/">Inicio</a><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a>${accountMenu}</nav></details></div></header>${content}</main></body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css">${styles}<script src="/shell.js" defer></script>${scripts}<body${bodyClass}><main class="shell"><header class="shell-header"><a class="brand" href="/">⌂ HomeSuite</a><nav class="desktop-nav" aria-label="Herramientas de HomeSuite"><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a><a href="/remanso">Remanso</a></nav><div class="header-actions">${account}<details class="menu"><summary aria-label="Abrir menú de HomeSuite">☰</summary><nav aria-label="Menú de HomeSuite"><a href="/">Inicio</a><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a><a href="/remanso">Remanso</a>${accountMenu}</nav></details></div></header>${content}</main></body></html>`;
 }
 
 const AVATAR_CSS = Object.entries(AVATAR_COLORS).map(([token, color]) =>
@@ -109,7 +117,7 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
-  if (new URL(c.req.url).pathname.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(new URL(c.req.url).pathname)) c.header("Cache-Control", "private, no-store");
+  if (new URL(c.req.url).pathname.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil", "/remanso"].includes(new URL(c.req.url).pathname)) c.header("Cache-Control", "private, no-store");
 });
 
 app.use("*", async (c, next) => {
@@ -161,6 +169,7 @@ function localUser(c) {
 }
 
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
+registerRemansoRoutes(app, { page, html, signedInUser, localUser, ensureLocalUser, googleConfigured: (env) => Boolean(authConfig(env)) });
 
 app.get("/api/me", async (c) => {
   const email = localUser(c);
@@ -379,16 +388,16 @@ app.get("/shell.js", (c) => c.body(`document.querySelectorAll('.avatar img').for
 
 app.get("/", async (c) => {
   if (c.env?.DEV_LOCAL_MODE === "true") {
-    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`));
+    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a>${REMANSO_CARD}</section>`));
   }
   const config = authConfig(c.env);
   const session = await signedInUser(c);
   if (session) {
     const profile = await readOwnProfile(c.env.DB, session.user_id);
-    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(profile.displayName)}.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Entrá a ver el estado de esta herramienta.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`, profile));
+    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(profile.displayName)}.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Entrá a ver el estado de esta herramienta.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a>${REMANSO_CARD}</section>`, profile));
   }
   const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
-  return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section><section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
+  return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a>${REMANSO_CARD}</section><section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
 });
 
 app.get("/cuentas-claras", async (c) => {
