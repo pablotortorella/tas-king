@@ -9,9 +9,11 @@
 
 ## Remanso — primer corte (2026-10-26)
 
-**Estado:** implementado en la rama `feature/remanso` (base `97a592a`); ver más abajo si
-ya se publicó en staging. **Sin integrar en `main`, sin publicar en producción y sin
-aceptar.** Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+**Estado:** implementado en la rama `feature/remanso` (base `97a592a`) y **publicado en
+staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`** (árbol
+limpio; los commits posteriores de la rama sólo cambian documentación). **Sin integrar en
+`main`, sin publicar en producción y sin aceptar** (falta la prueba de Pablo en su
+teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
 ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 [ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
 
@@ -49,9 +51,27 @@ ficha [Remanso](productos/REMANSO.md); decisión de plataforma
   «En pausa» hasta pulsar «Reanudar» (Chromium 0/8); es el comportamiento diseñado del
   motor. WebKit no se probó. El gong intermedio del cuenco oscila 3,1 dB (umbral de
   3 dB no aplica al cuenco: 4 dB).
+- **Publicación en staging (2026-10-26, Pablo la autorizó: «vamos a staging»):**
+
+  | Superficie | URL | Worker y Version ID |
+  |---|---|---|
+  | App | `https://staging.homesuite.info/remanso` | `homesuite-app-staging` · `b0678fb3-23d7-49c9-bcf3-161c6d0acaed` |
+  | Sitio público | `https://site-staging.homesuite.info/` | `homesuite-site-staging` · `98be1931-4c86-4a5b-9bae-207258d8647d` |
+
+  Antes se corrieron las suites sobre ese árbol y un `--dry-run` de cada Worker. D1 de
+  staging: «No migrations to apply», sin migraciones por este cambio. Esto reemplazó la
+  versión activa anterior (`90bf4b5`, mismo código de `apps/` que `main`).
+- **Smoke remoto del mismo SHA:** `/healthz` 200; `/remanso` 200 con política de
+  contenido, `X-Frame-Options`, `nosniff` y `Cache-Control: private, no-store`;
+  `/remanso/*.js|css` 200 con su tipo y `nosniff` (confirma `_headers` fuera de
+  `wrangler dev`); `/remanso/index.html` 404; el motor servido tiene la huella del
+  paquete; `/perfil` sin sesión 302. En el sitio: portada con la tarjeta, `/remanso` con
+  «Entrar a Remanso →» hacia `https://staging.homesuite.info/remanso`, `noindex`, y
+  `/tareas`, `/cuentas-claras` y `/compras` siguen en 200 con el enlace cruzado.
+  Producción no cambió: `homesuite.info/remanso` da 404 y la portada no tiene la tarjeta.
 - **No verificado:** audio real en teléfono (iPhone en silencio, pantalla bloqueada,
-  volumen entre fondos), `_headers` fuera de `wrangler dev`, la ejecución en CI y
-  cualquier despliegue. Pendientes de producto en el [backlog](PRODUCT_BACKLOG.md).
+  volumen entre fondos), el recorrido autenticado con Google en staging, la ejecución en
+  CI y WebKit/Safari. Pendientes de producto en el [backlog](PRODUCT_BACKLOG.md).
 
 ## HomeSuite en staging: sitio, navegación y perfil — 2026-10-25
 

@@ -48,14 +48,14 @@ mismo commit.
 
 - [x] 6.1 Crear `docs/productos/REMANSO.md` (ficha: alcance, niveles libre/con cuenta y su límite client-side, rutas, archivos, reglas, huella del motor, comandos, riesgos no verificados) y enlazarla desde `CLAUDE.md` y `QUICK_START.md`; verificar los enlaces locales.
 - [x] 6.2 Backlog: historial y su alcance (persona u hogar, sin rachas), navegación y nombre de las mitades, landing pública, modo oscuro global, grabaciones vs. sintetizados, y los tres riesgos de dispositivo con la marca «investigar a fondo en internet antes de decidir».
-- [ ] 6.3 Registrar en STATUS el estado de la rama y, al publicar, el SHA, la versión, las pruebas y los límites. Actualizar APRENDIZAJES sólo si surge uno nuevo con evidencia.
+- [x] 6.3 Registrar en STATUS el estado de la rama y, al publicar, el SHA, la versión, las pruebas y los límites. Actualizar APRENDIZAJES sólo si surge uno nuevo con evidencia.
 
 ## 7. Verificación local y publicación en staging
 
 - [x] 7.1 Ejecutar `npm test`, `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:homesuite-app:e2e`, `npm run test:homesuite-site` y `openspec validate remanso-meditacion --strict`; registrar comandos, SHA y resultados.
-- [ ] 7.2 Agregar el script `dev:homesuite-app:anonimo` (igual que `dev:homesuite-app` sin `DEV_LOCAL_EMAIL`), levantar el servidor local y ofrecer a Pablo `http://localhost:8787/remanso` en ambos modos con qué mirar (opciones libres y con cuenta, los seis fondos con cuenta, claro/oscuro, pausa, fin anticipado, nombre en el cierre) y esperar su OK.
-- [ ] 7.3 Con árbol limpio, correr `wrangler deploy --dry-run --env staging --config apps/app/wrangler.jsonc`, avisar que el despliegue reemplaza el SHA activo de staging y pedir confirmación inmediatamente antes de ejecutar `npm run deploy:homesuite-app:staging`.
-- [ ] 7.4 Smoke del mismo SHA en staging: `/healthz`, `/remanso` (200 con sesión o invitación sin ella), recursos 200 con tipo y `nosniff`, cabeceras de las demás rutas y `X-Request-Id`; registrar el resultado.
+- [x] 7.2 Agregar el script `dev:homesuite-app:anonimo` (igual que `dev:homesuite-app` sin `DEV_LOCAL_EMAIL`), levantar el servidor local y ofrecer a Pablo `http://localhost:8787/remanso` en ambos modos con qué mirar (opciones libres y con cuenta, los seis fondos con cuenta, claro/oscuro, pausa, fin anticipado, nombre en el cierre) y esperar su OK.
+- [x] 7.3 Con árbol limpio, correr `wrangler deploy --dry-run --env staging --config apps/app/wrangler.jsonc`, avisar que el despliegue reemplaza el SHA activo de staging y pedir confirmación inmediatamente antes de ejecutar `npm run deploy:homesuite-app:staging`.
+- [x] 7.4 Smoke del mismo SHA en staging: `/healthz`, `/remanso` (200 con sesión o invitación sin ella), recursos 200 con tipo y `nosniff`, cabeceras de las demás rutas y `X-Request-Id`; registrar el resultado.
 - [ ] 7.5 Entregar a Pablo la lista de prueba para su teléfono (sin cuenta y con cuenta, iPhone/Android, modo silencio, pantalla bloqueada, cambio de pestaña, claro/oscuro, los seis fondos seguidos) y registrar sus hallazgos en el backlog.
 - [ ] 7.6 Abrir el PR con problema, resultado, validación y límites; archivar el change sólo cuando esté verificado e integrado, no por tener los documentos.
 
@@ -78,5 +78,5 @@ mismo commit.
 - [x] 10.1 Tarjeta de Remanso en `apps/site/public/index.html` y landing `remanso.html` con estilos en claro y oscuro; verificar sin JavaScript, sin `style=` y con las pruebas del sitio actualizadas (cuatro landings, cuatro páginas).
 - [x] 10.2 Worker del sitio: reemplazar el marcador de `/remanso` sólo en staging por el enlace a la app y su aclaración; pruebas unitarias de staging vs. producción y de `noindex`.
 - [x] 10.3 E2E del sitio: portada → landing de Remanso, sin enlace a la app ni controles en producción, 360 px, modo oscuro y cabeceras; el E2E del sitio entra al CI si falta.
-- [ ] 10.4 Despliegue del sitio de staging (`wrangler deploy --env staging --config apps/site/wrangler.jsonc`): `--dry-run` antes, confirmar que no toca producción, smoke del recorrido portada → landing → app y registro.
+- [x] 10.4 Despliegue del sitio de staging (`wrangler deploy --env staging --config apps/site/wrangler.jsonc`): `--dry-run` antes, confirmar que no toca producción, smoke del recorrido portada → landing → app y registro.
 
