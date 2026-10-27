@@ -10,11 +10,13 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
   await expect(page.getByText("Cuentas Claras", { exact: true })).toBeVisible();
   await expect(page.getByText("Compras", { exact: true })).toBeVisible();
+  await expect(page.getByText("Remanso", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Conocé las herramientas" })).toBeVisible();
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
   await expect(page.getByRole("link", { name: "Conocé Compras" })).toHaveAttribute("href", "/compras");
+  await expect(page.getByRole("link", { name: "Conocé Remanso" })).toHaveAttribute("href", "/remanso");
 });
 
 test("entrega la portada con cabeceras de seguridad", async ({ request }) => {
@@ -53,6 +55,7 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
 for (const [slug, heading] of [
   ["cuentas-claras", "Las cuentas compartidas, más claras."],
   ["compras", "Una lista para comprar mejor, juntos."],
+  ["remanso", "Un rato de calma para la casa."],
 ]) {
   test(`/${slug} explica el producto sin fingir una app disponible`, async ({ page }) => {
     await page.goto(`/${slug}`);
@@ -65,7 +68,7 @@ for (const [slug, heading] of [
   });
 }
 
-for (const slug of ["tareas", "cuentas-claras", "compras"]) {
+for (const slug of ["tareas", "cuentas-claras", "compras", "remanso"]) {
   test(`/${slug} sirve HTML con cabeceras de seguridad`, async ({ request }) => {
     const response = await request.get(`/${slug}`);
 
