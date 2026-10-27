@@ -7,8 +7,8 @@ Este archivo es una entrada; no mantiene una segunda copia de esas reglas.
 
 Elegir la ficha del área afectada: [TasKing](docs/productos/TASKING.md),
 [plataforma y sitio](docs/productos/PLATAFORMA.md),
-[Cuentas Claras](docs/productos/CUENTAS-CLARAS.md) o
-[Compras](docs/productos/COMPRAS.md). Leer instrucciones locales adicionales si existen.
+[Cuentas Claras](docs/productos/CUENTAS-CLARAS.md),
+[Compras](docs/productos/COMPRAS.md) o [Remanso](docs/productos/REMANSO.md). Leer instrucciones locales adicionales si existen.
 
 Para hechos y pendientes consultar [STATUS](docs/STATUS.md),
 [backlog](docs/PRODUCT_BACKLOG.md) y cambios OpenSpec pertinentes. El handoff es una

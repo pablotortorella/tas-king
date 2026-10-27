@@ -1,11 +1,57 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-25
+**Última actualización**: 2026-10-26
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Remanso — primer corte (2026-10-26)
+
+**Estado:** implementado en la rama `feature/remanso` (base `97a592a`); ver más abajo si
+ya se publicó en staging. **Sin integrar en `main`, sin publicar en producción y sin
+aceptar.** Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+ficha [Remanso](productos/REMANSO.md); decisión de plataforma
+[ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
+
+- `/remanso` en HomeSuite App con inicio, sesión y cierre, usando el motor de sonido
+  del paquete de Claude Design **sin modificar** (huella SHA-256 fijada por prueba).
+  Entrada provisional como una herramienta más en la home y el menú; las dos mitades
+  de la suite siguen sin explorar.
+- Acceso en dos niveles: **sin cuenta** 1, 2 y 5 min, silencio/agua/bosque y Gong
+  brillante; **con cuenta** 10, 20 y 30 min, lluvia/fuego/noche, Gong profundo y
+  Cuenco tibetano, más el nombre del perfil en el cierre. El cierre sin cuenta no
+  menciona la cuenta. El nivel libre es un incentivo de producto, no un control de
+  seguridad (el audio es estático y se sintetiza en el navegador).
+- **Gong elegible** (pedido de Pablo tras probar variantes de oído): tres sonidos
+  propios en `remanso-gongs.js`, sin editar el motor; la elección se recuerda en el
+  dispositivo y se ignora si el nivel no la permite. El gong del paquete oscilaba ~21 dB
+  de volumen («wa-wa», cancelaciones completas cada 1,25 s); los nuevos oscilan ~0,7 dB
+  (hasta ~3,1 dB el cuenco, a propósito) y un E2E lo vigila.
+- **Placa en el sitio público:** tarjeta «Remanso» en la portada y landing `/remanso`
+  («en preparación»); sólo el Worker del sitio de staging la conecta con
+  `https://staging.homesuite.info/remanso`. El sitio de producción no cambia.
+- Identidad de HomeSuite en claro y oscuro (según el sistema); la sesión es siempre
+  oscura (decisión confirmada por Pablo). Sin fuentes ni recursos externos; contraste AA
+  verificado por prueba.
+- Plataforma: binding `assets` en `apps/app/wrangler.jsonc` (sin `run_worker_first`),
+  `page()` acepta estilos/scripts propios, nuevas suites Playwright de la app y del
+  sitio (`test:homesuite-app:e2e`, `test:homesuite-site:e2e`, ambas agregadas a CI) y
+  script `dev:homesuite-app:anonimo`. Sin migraciones ni datos nuevos.
+- Verificación local sobre la rama (sin confirmar aún): 230 pruebas generales, 115
+  unitarias y 20 integraciones D1 de HomeSuite App, 12 del sitio, 30 E2E de Remanso y 17
+  E2E del sitio (Chromium), y OpenSpec strict. Los 101 E2E de TasKing pasaron en una
+  corrida anterior de la rama; el código de TasKing no cambió desde entonces. Cabeceras
+  de documentos y recursos probadas sobre `wrangler dev`.
+- Hallazgos: Firefox (headless) pasó 19/20 en la corrida inicial y su única falla es
+  intermitente: ~1 de 8 arranques deja el `AudioContext` suspendido y la sesión aparece
+  «En pausa» hasta pulsar «Reanudar» (Chromium 0/8); es el comportamiento diseñado del
+  motor. WebKit no se probó. El gong intermedio del cuenco oscila 3,1 dB (umbral de
+  3 dB no aplica al cuenco: 4 dB).
+- **No verificado:** audio real en teléfono (iPhone en silencio, pantalla bloqueada,
+  volumen entre fondos), `_headers` fuera de `wrangler dev`, la ejecución en CI y
+  cualquier despliegue. Pendientes de producto en el [backlog](PRODUCT_BACKLOG.md).
 
 ## HomeSuite en staging: sitio, navegación y perfil — 2026-10-25
 

@@ -23,6 +23,9 @@ Desde la raíz, comandos actualmente disponibles:
 - `npm run dev:homesuite-app`
 - `npm run test:homesuite-app`
 - `npm run test:homesuite-app:integration`
+- `npm run test:homesuite-app:e2e` (Playwright sobre `wrangler dev`; ver [Remanso](REMANSO.md))
+- `npm run dev:homesuite-app:anonimo` (sin usuario local)
+- `npm run test:homesuite-site:e2e` (Playwright del sitio público)
 - `npm run test:homesuite-site`
 - `npm run db:migrate:homesuite-app:local`
 - `npm run deploy:homesuite-app:staging`
