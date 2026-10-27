@@ -134,6 +134,23 @@ describe("homesuite-site", () => {
     expect(html).toContain("Cuentas Claras");
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/\sstyle=/i);
+    expect(html).toContain('href="/privacidad"');
+    expect(html).toContain('href="/terminos"');
+  });
+
+  it.each([
+    ["privacidad", "Política de privacidad"],
+    ["terminos", "Términos y condiciones"],
+  ])("publica /%s como documento legal de la suite", async (slug, heading) => {
+    const html = await readFile(new URL(`../public/${slug}.html`, import.meta.url), "utf8");
+    expect(html).toContain(`<h1>${heading}</h1>`);
+    expect(html).toContain(`href="https://homesuite.info/${slug}"`);
+    expect(html).toContain("Cuentas Claras");
+    expect(html).toContain("Remanso");
+    expect(html).toContain('href="/privacidad"');
+    expect(html).toContain('href="/terminos"');
+    expect(html).not.toMatch(/\{\{[^}]+\}\}/u);
+    expect(html).not.toMatch(/<script\b|\sstyle=/iu);
   });
 
   it("usa el nuevo emblema y favicon en todas las páginas", async () => {

@@ -29,6 +29,21 @@ test("entrega la portada con cabeceras de seguridad", async ({ request }) => {
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
 });
 
+for (const [slug, title] of [["privacidad", "Política de privacidad"], ["terminos", "Términos y condiciones"]]) {
+  test(`la portada enlaza a /${slug} y el documento cabe en móvil`, async ({ page, request }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/");
+    await page.getByRole("link", { name: title === "Política de privacidad" ? "Privacidad" : title }).click();
+    await expect(page).toHaveURL(new RegExp(`/${slug}$`));
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+    expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+    const response = await request.get(`/${slug}`);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-security-policy"]).toContain("script-src 'none'");
+  });
+}
+
 test("mantiene el contenido accesible en 360 píxeles", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");

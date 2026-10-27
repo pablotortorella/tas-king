@@ -13,6 +13,9 @@ Worker, configuración, bindings, base y entorno explícitos.
 
 Cargar secretos por el mecanismo seguro del entorno o un gestor autorizado. Nunca
 pedir pegarlos en la conversación, versionarlos o imprimirlos en diagnósticos.
+Al solicitar más de una credencial, separar cada paso e indicar proveedor de
+origen, finalidad, destino y nombre exacto: un secreto OAuth no es un token de
+infraestructura. Comprobar únicamente los nombres configurados en cada destino.
 Revisar diff y archivos preparados; una comprobación por nombre no es un escáner
 de secretos. Si se expone uno, revocarlo/rotarlo y tratar el incidente, además de
 retirarlo del código. No asumir que borrarlo del último commit elimina la exposición.

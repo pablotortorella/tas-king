@@ -3,6 +3,61 @@
 **Última actualización**: 2026-10-27
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
+## HomeSuite: preparación de infraestructura productiva — 2026-10-27
+
+Pablo pidió expresamente crear y configurar el entorno productivo de HomeSuite.
+Esta autorización puntual permite preparar recursos vacíos; no acredita una
+publicación de la app ni habilita cargar datos reales antes de completar los
+controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
+
+- La D1 `homesuite-app-db` (`51f6a3b1-3c48-409a-b750-b87e4593c8ca`, ENAM)
+  se creó vacía. Se aplicaron las 12 migraciones iniciales desde la rama
+  `feature/homesuite-production-environment`; no quedan pendientes.
+  `PRAGMA quick_check` devolvió `ok`; usuarios, grupos y movimientos: cero.
+- Se creó el bucket R2 privado `homesuite-app-backups`, con expiración a los
+  90 días para objetos bajo `production/`. El respaldo
+  `production/20261027T193248Z` contiene SQL, bookmark y manifiesto; se
+  recuperó desde R2, se comprobó su SHA-256 y se restauró en D1 local con
+  integridad y claves foráneas correctas. No hay bucket de archivos de la app
+  porque el código actual no tiene ese binding.
+- `main` contiene `env.production` en `apps/app/wrangler.jsonc` para
+  `homesuite-app`, `app.homesuite.info`, D1, rate limits, cron, logs y trazas.
+  El dry-run de Wrangler empaquetó la app y mostró los bindings productivos.
+- Se creó `homesuite-app` con una versión inicial sin rutas, `workers.dev` ni
+  cron (`f292f8da-1f91-4939-85b0-dcc5ab5a6fd0`). Se generó e instaló
+  `SESSION_SECRET` y Pablo cargó `GOOGLE_CLIENT_SECRET` como secretos de versiones
+  aún no desplegadas. El dominio
+  `app.homesuite.info` permanece sin tráfico hasta publicar la configuración
+  completa. El ID de cliente OAuth productivo ya figura en la configuración.
+- Por una instrucción ambigua, el secreto de Google también se guardó
+  temporalmente en GitHub bajo el nombre `HOMESUITE_PROD_BACKUP_API_TOKEN`.
+  Se eliminó y se comprobó que el nombre ya no figura entre los secretos del
+  repositorio. El workflow de backup no está integrado ni activado; no se
+  ejecutó con ese valor. Falta crear un token de Cloudflare independiente.
+- El control automático de aprobación rechazó inicialmente trasladar el
+  respaldo interno a R2. Pablo autorizó explícitamente esta exportación,
+  carga y ensayo de restauración; la operación se completó. La primera
+  ejecución de Wrangler imprimió una URL temporal de exportación en la salida
+  del terminal; se suprimió esa salida en el script para respaldos futuros.
+
+Las páginas públicas de privacidad y términos de HomeSuite, Cuentas Claras y
+Remanso están completas y publicadas. Pablo confirmó nombre, país, correo,
+domicilio en Rionegro, dirección comercial de contacto y teléfono público.
+
+El PR #109 se integró en `main` (`b00b6f8`) con CI verde. El sitio de staging
+se publicó desde ese SHA como versión `1c7f0699` y se comprobó por HTTPS;
+el sitio productivo como versión `91bc0078` responde 200 en home, privacidad,
+términos y Remanso, y `www` redirige 308 al apex. La app sigue sin dominio
+público ni usuarios.
+
+El secreto de backup se cargó en GitHub y se activó el workflow diario para
+ensayarlo. La primera ejecución manual (#40574868057) falló en `d1 export`;
+un segundo ensayo en rama diagnóstica (#40575078638) confirmó código Cloudflare
+10000. `D1 Read` sí obtuvo el bookmark, de modo que el fallo está en el permiso
+de exportación; el destino R2 no se alcanzó. Se desactivó
+`HOMESUITE_PROD_BACKUPS_ENABLED` hasta resolver el alcance necesario del token.
+El respaldo manual desde Wrangler OAuth ya comprobado sigue disponible.
+
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
@@ -57,8 +112,8 @@ Cuentas Claras; los PR apilados #88–#90, #94–#98, #100 y #103 se cerraron co
 Se publicó en staging desde el SHA `7b010d2` (Version ID `99964c9a`, base recreada con el
 script de reinicio y backup previo) y Pablo lo probó; los ajustes posteriores (ruedita
 junto al nombre, botones del encabezado y sumar personas en Personas) están en `main` y se
-verán en el próximo despliegue de staging. **HomeSuite App no tiene entorno de
-producción**, así que nada de esto está en producción. Cambio OpenSpec:
+verán en el próximo despliegue de staging. **HomeSuite App no recibe tráfico de
+producción**, así que nada de esto está publicado allí. Cambio OpenSpec:
 `grupos-con-identidad`.
 
 - **Lenguaje único:** el término anterior de «grupo» desapareció de interfaz, URLs, API, código, base,

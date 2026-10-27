@@ -747,6 +747,100 @@ h2 {
   font-weight: 650;
 }
 
+.legal-page {
+  padding-bottom: 100px;
+}
+
+.legal-heading {
+  max-width: 790px;
+  padding: 72px 0 66px;
+}
+
+.legal-heading h1 {
+  font-size: clamp(3rem, 6vw, 5.6rem);
+}
+
+.legal-heading > p:last-child {
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+
+.legal-updated {
+  margin: 24px 0 18px;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.legal-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(36px, 7vw, 110px);
+  border-top: 1px solid var(--line);
+  padding-top: 45px;
+}
+
+.legal-toc {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 13px;
+  font-size: .86rem;
+}
+
+.legal-toc a,
+.legal-content a,
+footer a {
+  color: var(--green);
+  text-underline-offset: 4px;
+}
+
+.legal-toc a:focus-visible,
+.legal-content a:focus-visible,
+footer a:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 4px;
+}
+
+.legal-content {
+  max-width: 760px;
+}
+
+.legal-content section {
+  scroll-margin-top: 30px;
+  padding: 0 0 40px;
+}
+
+.legal-content section + section {
+  border-top: 1px solid var(--line);
+  padding-top: 40px;
+}
+
+.legal-content h2 {
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+}
+
+.legal-content p,
+.legal-content li {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.legal-content li + li {
+  margin-top: 12px;
+}
+
+.legal-content strong {
+  color: var(--ink);
+}
+
+.legal-content code {
+  color: var(--ink);
+  font-size: .9em;
+}
+
 footer {
   display: flex;
   align-items: center;
@@ -762,7 +856,20 @@ footer span:first-child {
   font-weight: 800;
 }
 
+footer a {
+  color: inherit;
+}
+
 @media (max-width: 900px) {
+  .legal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .legal-toc {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .hero {
     min-height: auto;
     grid-template-columns: 1fr;
@@ -791,6 +898,14 @@ footer span:first-child {
 }
 
 @media (max-width: 560px) {
+  .legal-heading {
+    padding: 48px 0 38px;
+  }
+
+  .legal-toc {
+    grid-template-columns: 1fr;
+  }
+
   .site-header,
   main,
   footer {
