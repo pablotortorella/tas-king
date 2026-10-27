@@ -84,20 +84,22 @@ comprueba su manifiesto y checksum. Un rollback de Worker no revierte D1.
   `npm run db:verify-backup:homesuite-app -- production/20261027T193248Z`:
   SHA-256, `quick_check`, claves foráneas y tablas esenciales correctos.
 
-La tarea diaria de `.github/workflows/homesuite-production-backup.yml` queda
-preparada a las 05:17 UTC, con restauración local antes de subir y verificación
-de descarga desde R2 después. Se activa al configurar el secreto de repositorio
+La tarea diaria `.github/workflows/homesuite-production-backup.yml` está activa
+a las 05:17 UTC, con restauración local antes de subir y verificación de descarga
+desde R2 después. Usa el secreto de repositorio
 `HOMESUITE_PROD_BACKUP_API_TOKEN` y la variable
 `HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial es un Account API token
-personalizado de Cloudflare con permiso de acceso a D1 y
-`Workers R2 Storage Bucket Item Write` limitado al bucket de backups. No usar
-una clave global ni un token S3 exclusivo de R2. El primer ensayo del workflow
-falló al exportar D1: `D1 Read` permitió obtener el bookmark, pero la
-exportación devolvió código 10000. Se desactivó la variable y se está
-comprobando si Cloudflare permite `D1 Edit` restringido a la base productiva.
-Hasta corregir permisos y completar una ejecución manual, no existe respaldo
-periódico acreditado.
+personalizado de Cloudflare; el alcance exacto de su permiso D1 debe confirmarse
+en el panel. R2 usa `Workers R2 Storage Bucket Item Write` limitado al bucket
+de backups. No usar una clave global ni un token S3 exclusivo de R2.
 
-Pendientes operativos: activar la tarea diaria, comprobar alerta por fallos,
-acordar RPO/RTO y documentar exportación y eliminación de grupos. La regla de
-retención no crea respaldos por sí sola.
+El primer ensayo del workflow falló al exportar D1: `D1 Read` permitió obtener
+el bookmark, pero la exportación devolvió código 10000. Se desactivó la variable
+y Pablo actualizó el token. El ensayo manual #40576626163 (2026-10-27) pasó:
+exportó la D1, restauró localmente, subió a R2 y descargó/verificó el respaldo
+`production/20261027T201717Z` con SHA-256 e integridad correctos. La variable
+volvió a `true`. Esta prueba acredita una ejecución; comprobar la primera
+ejecución programada y las notificaciones de fallo sigue pendiente.
+
+Pendientes operativos: comprobar la primera ejecución programada y alerta por
+fallos, acordar RPO/RTO y documentar exportación y eliminación de grupos.

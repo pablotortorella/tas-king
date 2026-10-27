@@ -11,7 +11,7 @@ Los ítems restantes no quedan cerrados por el despliegue de staging.
 - Revisar la detección de secretos de `verify-ready` y definir control efectivo. Aceptación: un fixture sintético demuestra detección sin exponer secretos reales.
 - Corregir el aislamiento de `scripts/db-restore.sh` local: hoy elimina `.wrangler/state` completo. Aceptación: restaurar en estado descartable sin borrar D1/R2 ajenos al ensayo.
 - Ensayar restauración aislada completa de TasKing y definir/comprobar recuperación y ciclo de vida de datos de HomeSuite antes de información irreemplazable. Incluir índices, triggers y archivos aplicables; registrar RPO/RTO y resultados.
-- Activar y ensayar el respaldo diario de la D1 productiva de HomeSuite preparado en GitHub Actions: token de acceso mínimo, secreto y variable del repositorio, ejecución manual con descarga y restauración verificadas, alerta por fallo y RPO/RTO acordados. El ensayo del 2026-10-27 cubre sólo la D1 vacía y no acredita automatización.
+- Seguir la primera ejecución programada del respaldo diario de HomeSuite, comprobar la notificación de fallos y acordar RPO/RTO; registrar el alcance exacto del token D1. El ensayo manual del workflow del 2026-10-27 verificó exportación, carga en R2, descarga y restauración de la base vacía; no prueba aún el cron ni el comportamiento con datos reales.
 - Automatizar enlaces internos de documentación en CI. Aceptación: un enlace local roto falla y los enlaces válidos pasan sin consultar red.
 
 ## 🧘 Remanso: decisiones y riesgos pendientes (2026-10-26)
