@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { appCss } from "../src/styles.js";
 
 // El glosario (docs/homesuite/GLOSARIO.md) fija una palabra por concepto. El término anterior de «grupo» no puede
 // reaparecer en el código, la base, las pruebas, los scripts ni los documentos vigentes.
@@ -74,5 +75,13 @@ describe("lenguaje del dominio", () => {
       });
     }
     expect(found.slice(0, 40), `${found.length} línea(s) con «libro»`).toEqual([]);
+  });
+
+  // El renombre automático ya rompió una vez `space-between` al leerlo como el término descartado.
+  it("el renombre no alteró valores de CSS legítimos", () => {
+    const css = appCss();
+    expect(css).toContain("justify-content:space-between");
+    expect(css).toContain("white-space:nowrap");
+    expect(css).not.toMatch(/group-(between|around|evenly)/u);
   });
 });

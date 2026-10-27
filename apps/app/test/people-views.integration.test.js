@@ -40,7 +40,9 @@ describe("pantalla de personas", () => {
     const t = await book("pv-lista");
     const owner = await (await request(t.owner, `${t.base}/people`)).text();
     expect(owner).toContain("<h1>Personas</h1>");
-    for (const text of ["Ana", "Beto", "Sin cuenta", "Administrar grupo", "Agregar participante", "Unir con otra persona", "Renombrar", "+COP 100,00", "−COP 100,00"]) expect(owner).toContain(text);
+    for (const text of ["Ana", "Beto", "Sin cuenta", "Unir con otra persona", "Renombrar", "+COP 100,00", "−COP 100,00"]) expect(owner).toContain(text);
+    for (const text of ["Agregar participante", "Invitar por email", "Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
+    expect(owner).toContain(`href="${t.base}/settings">Administrar grupo</a>`);
     expect(owner).toContain(`href="${t.base}/people/${t.anaId}/merge"`);
     const member = await (await request(t.member, `${t.base}/people`)).text();
     expect(member).toContain("Ana");
@@ -50,9 +52,9 @@ describe("pantalla de personas", () => {
   it("el libro ya no repite las herramientas de administración, pero enlaza a las personas", async () => {
     const t = await book("pv-libro");
     const html = await (await request(t.owner, t.base)).text();
-    expect(html).not.toContain("Administrar grupo");
     expect(html).not.toContain("Agregar participante");
     expect(html).toContain(`href="${t.base}/people"`);
+    expect(html).toContain(`href="${t.base}/settings"`);
   });
 
   it("sin sesión pide iniciar sesión y quien no es del grupo no la ve", async () => {
@@ -77,10 +79,10 @@ describe("pantalla de personas", () => {
     expect(await duplicate.text()).toContain("Ya hay una persona con ese nombre");
   });
 
-  it("agregar una persona vuelve a la pantalla de personas con su aviso", async () => {
+  it("agregar una persona vuelve a «Administrar grupo» con su aviso", async () => {
     const t = await book("pv-agregar");
     const added = await request(t.owner, `${t.base}/participants`, { method: "POST", body: form({ name: "Caro" }) });
-    expect(added.headers.get("location")).toBe(`${t.base}/people?aviso=participante`);
+    expect(added.headers.get("location")).toBe(`${t.base}/settings?aviso=participante`);
     expect(await (await request(t.owner, added.headers.get("location"))).text()).toContain("Participante agregado.");
   });
 });
@@ -150,12 +152,12 @@ describe("unir por la web", () => {
 });
 
 describe("menú y lista de grupos", () => {
-  it("con un solo grupo, «Mis grupos» muestra la lista (con crear e invitaciones) en lugar de entrar al grupo", async () => {
+  it("con un solo grupo, «Cuentas Claras» entra al grupo y «Mis grupos» muestra la lista (con crear e invitaciones)", async () => {
     const t = await book("pv-mis-grupos");
     const direct = await request(t.owner, "/cuentas-claras");
     expect(direct.status).toBe(303);
     expect(direct.headers.get("location")).toBe(t.base);
-    const all = await request(t.owner, "/cuentas-claras?todos=1");
+    const all = await request(t.owner, "/groups");
     expect(all.status).toBe(200);
     const html = await all.text();
     expect(html).toContain("Crear grupo");
@@ -166,7 +168,7 @@ describe("menú y lista de grupos", () => {
   it("el menú del grupo ofrece sus secciones, el perfil propio y «Mis grupos» completo", async () => {
     const t = await book("pv-menu");
     const html = await (await request(t.owner, t.base)).text();
-    for (const href of [`${t.base}#saldos`, `${t.base}#movimientos`, `${t.base}/people`, `${t.base}/ledger/categories`, `${t.base}/ledger/classify`, `${t.base}/ledger/import`, "/perfil", "/cuentas-claras?todos=1"]) expect(html).toContain(`href="${href}"`);
+    for (const href of [`${t.base}#saldos`, `${t.base}#movimientos`, `${t.base}/people`, `${t.base}/ledger/categories`, `${t.base}/ledger/classify`, `${t.base}/ledger/import`, "/perfil", "/groups"]) expect(html).toContain(`href="${href}"`);
     expect(html).toContain("Ver mi perfil");
     expect(html).toContain("Cerrar sesión");
   });

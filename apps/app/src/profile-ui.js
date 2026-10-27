@@ -1,3 +1,5 @@
+import { COLOR_LABELS } from "./profiles.js";
+
 function escape(value) {
   return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
@@ -5,11 +7,6 @@ function escape(value) {
 function option(value, label, selected) {
   return `<option value="${escape(value)}"${selected ? " selected" : ""}>${escape(label)}</option>`;
 }
-
-const COLOR_LABELS = Object.freeze({
-  ocean: "Océano", forest: "Bosque", clay: "Arcilla", violet: "Violeta",
-  rose: "Rosa", mint: "Menta", cyan: "Cian", slate: "Pizarra", amber: "Ámbar",
-});
 
 export function renderProfileForm(profile, csrfToken, saved = false) {
   const source = profile.nameSource;

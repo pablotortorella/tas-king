@@ -48,7 +48,10 @@ describe("perfil compartido en D1 y HTTP", () => {
     expect(html).toContain('class="account-link" href="/perfil"');
     expect(html).toContain('<a href="/perfil">Ver mi perfil</a>');
     expect(html).not.toContain("Muy pronto.");
-    const cuentas = await request(user, "/cuentas-claras");
+    const entry = await request(user, "/cuentas-claras");
+    expect(entry.status).toBe(303);
+    expect(entry.headers.get("Location")).toBe("/groups");
+    const cuentas = await request(user, "/groups");
     expect(cuentas.status).toBe(200);
     const cuentasHtml = await cuentas.text();
     expect(cuentasHtml).toContain("Crear grupo");

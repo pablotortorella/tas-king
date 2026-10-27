@@ -21,7 +21,7 @@ async function seededBook(page) {
   await page.getByRole("button", { name: "Guardar" }).click();
   await openRecent(page, "Supermercado");
   const detail = new URL(page.url()).pathname;
-  return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/groups/new", "/cuentas-claras", "/invitations"] };
+  return { suffix, book, detail, pages: [book, `${book}/ledger/categories`, `${book}/ledger/new`, `${book}/ledger/new?type=transfer`, detail, `${detail}/void`, `${book}/ledger/import`, "/groups/new", `${book}/settings`, `${book}/people`, "/groups", "/invitations"] };
 }
 
 test("ninguna página pide recursos ni estilos que la CSP bloquee", async ({ page }) => {
@@ -156,7 +156,7 @@ test("un error del servidor al guardar se muestra en el formulario y permite rei
 
 test("las acciones confirman con un aviso y la URL no puede inyectar texto", async ({ page }) => {
   const { book, detail } = await seededBook(page);
-  await page.goto(`${book}/people`);
+  await page.goto(`${book}/settings`);
   await page.getByLabel("Participante sin cuenta").fill("Carla");
   await page.getByRole("button", { name: "Agregar participante" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Participante agregado." })).toBeVisible();
@@ -188,7 +188,7 @@ test("se explica el saldo y se registra una sugerencia hasta quedar a mano", asy
 
 test("archivar deja el grupo de sólo lectura y restaurar lo reabre", async ({ page }) => {
   const { book } = await seededBook(page);
-  await page.goto(`${book}/people`);
+  await page.goto(`${book}/settings`);
   await page.getByText("Archivar este grupo").click();
   await page.getByRole("button", { name: "Archivar grupo" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Grupo archivado." })).toBeVisible();
@@ -198,7 +198,7 @@ test("archivar deja el grupo de sólo lectura y restaurar lo reabre", async ({ p
   await expect(page.getByRole("link", { name: "Gasto", exact: true })).toHaveCount(0);
   await page.goto(`${book}/ledger/new`);
   await expect(page.getByRole("alert")).toContainText("El grupo está archivado.");
-  await page.goto(`${book}/people`);
+  await page.goto(`${book}/settings`);
   await page.getByRole("button", { name: "Restaurar grupo" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Grupo restaurado." })).toBeVisible();
   await page.goto(book);

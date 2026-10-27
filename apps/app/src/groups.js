@@ -1,8 +1,16 @@
 import { createPlatformId, normalizeEmail, normalizeGroupName } from "./platform.js";
+import { normalizeGroupPatch } from "./group-identity.js";
 import { normalizeCurrency } from "./finance.js";
 import { seedCategoriesStatement } from "./categories.js";
 
 const RESERVED_SLUGS = new Set(["new"]);
+
+export class GroupError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
 
 export function groupSlugBase(name) {
   const normalized = name.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
@@ -36,7 +44,7 @@ async function ensureGroupSlug(db, group) {
 }
 
 export async function resolveGroup(db, idOrSlug) {
-  const group = await db.prepare("SELECT id, name, slug FROM groups WHERE id = ? OR slug = ?").bind(idOrSlug, idOrSlug).first();
+  const group = await db.prepare("SELECT id, name, slug, description, avatar_emoji, avatar_color FROM groups WHERE id = ? OR slug = ?").bind(idOrSlug, idOrSlug).first();
   return group ? { ...group, slug: await ensureGroupSlug(db, group) } : null;
 }
 
@@ -141,17 +149,23 @@ export async function ensureLocalUser(db, email) {
 }
 
 
-export async function renameGroup(db, { groupId, userId, name }) {
-  const groupName = normalizeGroupName(name);
-  if (!groupName) throw new Error("Nombre de grupo inválido.");
+// Cambia la identidad del grupo (nombre, descripción, emoji y color); solo la persona titular. Lo que no se envía no cambia.
+export async function updateGroup(db, { groupId, userId, ...patch }) {
+  const next = normalizeGroupPatch(patch);
   const group = await resolveGroup(db, groupId);
-  if (!group) throw new Error("Grupo no encontrado.");
-  groupId = group.id;
-  const membership = await db.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(groupId, userId).first();
-  if (membership?.role !== "owner") throw new Error("Sólo el titular puede renombrar el grupo.");
+  if (!group) throw new GroupError("Grupo no encontrado.", 404);
+  const membership = await db.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(group.id, userId).first();
+  if (!membership) throw new GroupError("Grupo no encontrado.", 404);
+  if (membership.role !== "owner") throw new GroupError("Sólo el titular puede administrar el grupo.", 403);
+  const merged = {
+    name: next.name ?? group.name,
+    description: "description" in next ? next.description : group.description,
+    emoji: "emoji" in next ? next.emoji : group.avatar_emoji,
+    color: "color" in next ? next.color : group.avatar_color,
+  };
   await db.batch([
-    db.prepare("UPDATE groups SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(groupName, groupId),
-    db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, group_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'group_renamed', 'group', ?)").bind(createPlatformId("audit"), userId, groupId, groupId),
+    db.prepare("UPDATE groups SET name = ?, description = ?, avatar_emoji = ?, avatar_color = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(merged.name, merged.description, merged.emoji, merged.color, group.id),
+    db.prepare("INSERT INTO platform_audit_events (id, actor_user_id, group_id, action, entity_type, entity_id) VALUES (?, ?, ?, 'group_updated', 'group', ?)").bind(createPlatformId("audit"), userId, group.id, group.id),
   ]);
-  return { id: groupId, name: groupName, slug: group.slug };
+  return { id: group.id, slug: group.slug, ...merged };
 }

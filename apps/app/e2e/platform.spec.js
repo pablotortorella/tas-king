@@ -16,7 +16,7 @@ test("la segunda cuenta entra directo a sus invitaciones pendientes", async ({ p
   await page.goto(`/api/local/session?as=owner-${suffix}%40example.test`);
   await page.getByLabel("Nombre", { exact: true }).fill(`Casa invitación ${suffix}`);
   await page.getByRole("button", { name: "Crear grupo" }).click();
-  await page.goto(`${new URL(page.url()).pathname}/people`);
+  await page.goto(`${new URL(page.url()).pathname}/settings`);
   await page.getByLabel("Invitar por email").fill(invitee);
   await page.getByRole("button", { name: "Invitar" }).click();
 

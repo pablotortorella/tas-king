@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { createSession, currentSession, revokeSession } from "../src/sessions.js";
-import { createGroupForUser, ensureLocalUser, renameGroup, resolveGroup } from "../src/groups.js";
+import { createGroupForUser, ensureLocalUser, resolveGroup, updateGroup } from "../src/groups.js";
 
 describe("URLs estables de grupos", () => {
   it("normaliza acentos, numera duplicados y conserva la URL al renombrar", async () => {
@@ -12,7 +12,7 @@ describe("URLs estables de grupos", () => {
     const second = await createGroupForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
     const third = await createGroupForUser(env.DB, { userId: owner.id, name: "Casa Bogotá" });
     expect([first.slug, second.slug, third.slug]).toEqual(["casa-bogota", "casa-bogota-2", "casa-bogota-3"]);
-    const renamed = await renameGroup(env.DB, { groupId: first.slug, userId: owner.id, name: "Otra casa" });
+    const renamed = await updateGroup(env.DB, { groupId: first.slug, userId: owner.id, name: "Otra casa" });
     expect(renamed.slug).toBe(first.slug);
     expect((await resolveGroup(env.DB, first.id)).slug).toBe(first.slug);
     const reserved = await createGroupForUser(env.DB, { userId: owner.id, name: "New" });
@@ -185,11 +185,11 @@ describe("recorrido web con sesión real", () => {
     expect(location).toBe("/groups/casa-hyrule");
     const page = await authenticatedRequest(owner, `https://app.test${location}`);
     expect(await page.text()).toContain("Casa Hyrule");
-    const renamed = await authenticatedRequest(owner, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
+    const renamed = await authenticatedRequest(owner, `https://app.test${location}/settings`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Hyrule+compartido" });
     expect(renamed.status).toBe(303);
-    expect(renamed.headers.get("location")).toBe(`${location}/people?aviso=renombrado`);
+    expect(renamed.headers.get("location")).toBe(`${location}/settings?aviso=grupo-guardado`);
     const confirmed = await authenticatedRequest(owner, `https://app.test${renamed.headers.get("location")}`);
-    expect(await confirmed.text()).toContain("Nombre del grupo guardado.");
+    expect(await confirmed.text()).toContain("Cambios del grupo guardados.");
     const forged = await authenticatedRequest(owner, `https://app.test${location}?aviso=%3Cscript%3Ealert(1)%3C/script%3E`);
     expect(await forged.text()).not.toContain("<script>alert(1)");
     const group = await env.DB.prepare("SELECT id, name, slug FROM groups WHERE slug = ?").bind(location.split("/").at(-1)).first();
@@ -199,10 +199,10 @@ describe("recorrido web con sesión real", () => {
     expect(legacy.status).toBe(308);
     expect(legacy.headers.get("location")).toBe(location);
     const audit = await env.DB.prepare("SELECT action FROM platform_audit_events WHERE group_id = ? ORDER BY created_at DESC LIMIT 1").bind(group.id).first();
-    expect(audit.action).toBe("group_renamed");
+    expect(audit.action).toBe("group_updated");
     const outsider = await realIdentity("ganon-real");
-    const forbidden = await authenticatedRequest(outsider, `https://app.test${location}/rename`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Nope" });
-    expect(forbidden.status).toBe(403);
+    const forbidden = await authenticatedRequest(outsider, `https://app.test${location}/settings`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "name=Nope" });
+    expect(forbidden.status).toBe(404);
   });
 
   it("mantiene la invitación privada, acepta una vez y aísla a terceras personas", async () => {

@@ -10,6 +10,9 @@ export const plural = (count, one, many) => `${count} ${count === 1 ? one : many
 // Marcas del encabezado que el servidor reemplaza con la cuenta de quien tiene sesión (ver account-ui.js).
 export const ACCOUNT_MARKER = "<!--account-->";
 export const ACCOUNT_MENU_MARKER = "<!--account-menu-->";
+// Marcas que el servidor completa con el grupo de la URL (nombre con avatar en el encabezado y, para la persona titular, «Administrar grupo»).
+export const GROUP_MARKER = "<!--group-->";
+export const GROUP_MENU_MARKER = "<!--group-menu-->";
 
 export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -27,6 +30,7 @@ export const ICONS = Object.freeze({
   balance: svg(24, '<path d="M12 4v16M6 20h12M5 8h14M7 8l-3 7a3 3 0 0 0 6 0Zm10 0-3 7a3 3 0 0 0 6 0Z"/>'),
   list: svg(24, '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>'),
   people: svg(24, '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14a5.5 5.5 0 0 1 3 5"/>'),
+  gear: svg(24, '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
   groups: svg(24, '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'),
 });
 
@@ -53,7 +57,7 @@ const NOTICES = Object.freeze({
   participante: "Participante agregado.",
   invitacion: "Invitación creada. Hasta que se acepte, la persona no puede ver el grupo.",
   cancelada: "Invitación cancelada.",
-  renombrado: "Nombre del grupo guardado.",
+  "grupo-guardado": "Cambios del grupo guardados.",
   "persona-renombrada": "Nombre guardado.",
   "personas-unidas": "Personas unidas. Los movimientos de la persona unida pasaron a la destinataria y ya cuentan en su saldo.",
   guardado: "Movimiento guardado.",
@@ -83,18 +87,18 @@ export function shortDate(isoDate) {
   return `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
 }
 
-// Menú de la aplicación (sin JavaScript: un <details>). Dentro de un grupo ofrece sus secciones; siempre ofrece lo común.
-export function appMenu(groupHref) {
-  const group = groupHref ? `<p class="menu-title">Este grupo</p><a href="${groupHref}#saldos">Saldos</a><a href="${groupHref}#movimientos">Movimientos</a><a href="${groupHref}/people">Personas</a><a href="${groupHref}/ledger/categories">Categorías</a><a href="${groupHref}/ledger/classify">Clasificar rápido</a><a href="${groupHref}/ledger/import">Importar de Splitwise</a><p class="menu-title">HomeSuite</p>` : "";
-  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${group}<a href="/">Inicio</a><a href="/cuentas-claras?todos=1">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
+// Menú de la aplicación (sin JavaScript: un <details>). Lo común va siempre; las secciones del grupo las completa el servidor cuando la
+// URL es de un grupo (GROUP_MENU_MARKER).
+export function appMenu() {
+  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${GROUP_MENU_MARKER}<a href="/">Inicio</a><a href="/groups">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
 }
 
 export function tabbar(groupHref) {
   const item = (href, icon, label) => `<a href="${href}">${icon}<span>${label}</span></a>`;
-  return `<nav class="tabbar" aria-label="Secciones del grupo">${item(`${groupHref}#saldos`, ICONS.balance, "Saldos")}${item(`${groupHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${groupHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${groupHref}/people`, ICONS.people, "Personas")}${item("/cuentas-claras", ICONS.groups, "Grupos")}</nav>`;
+  return `<nav class="tabbar" aria-label="Secciones del grupo">${item(`${groupHref}#saldos`, ICONS.balance, "Saldos")}${item(`${groupHref}#movimientos`, ICONS.list, "Movimientos")}<a class="fab" href="${groupHref}/ledger/new" aria-label="Agregar movimiento">${ICONS.plus}</a>${item(`${groupHref}/people`, ICONS.people, "Personas")}${item("/groups", ICONS.groups, "Grupos")}</nav>`;
 }
 
 export function renderPage(title, content, { wide = false, groupHref = null } = {}) {
   const shellClass = `shell${wide ? " wide" : ""}${groupHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a><div class="header-actions">${ACCOUNT_MARKER}${appMenu(groupHref)}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><body><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a>${GROUP_MARKER}<div class="header-actions">${ACCOUNT_MARKER}${appMenu()}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
 }

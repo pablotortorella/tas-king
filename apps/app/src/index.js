@@ -8,9 +8,12 @@ import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerEntryRoutes, recentFor } from "./routes/entries.js";
 import { registerImportRoutes } from "./routes/import.js";
 import { recategorizationNoticeFor, registerRecategorizeRoutes } from "./routes/recategorize.js";
+import { registerGroupSettingsRoutes } from "./routes/group-settings.js";
 import { registerPeopleRoutes } from "./routes/people.js";
 import { registerShellRoutes } from "./routes/shell.js";
 import { fillAccount } from "./account-ui.js";
+import { groupMenuItems, groupSwitch, renderGroupList } from "./group-ui.js";
+import { entryTarget, lastGroupCookie, readLastGroup } from "./last-group.js";
 import { csrfInput, formError, ledgerFailure, page, requestId, sessionSecret, signedInUser, signInRequired } from "./route-kit.js";
 import { CURRENCY_MINOR_UNITS, currencyLabel } from "./finance.js";
 import { addParticipant, exportLedger, readLedger } from "./ledger.js";
@@ -18,11 +21,11 @@ import { ledgerCsv } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview } from "./overview-ui.js";
 import { slowBookEvent } from "./perf.js";
-import { ACCOUNT_MARKER, avatar, escapeHtml, noticeFor } from "./ui-parts.js";
+import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, noticeFor } from "./ui-parts.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
-import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, renameGroup, resolveInvitation, resolveGroup } from "./groups.js";
+import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation, resolveGroup } from "./groups.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
@@ -148,6 +151,22 @@ app.use("*", async (c, next) => {
   const session = await signedInUser(c);
   const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
   c.res = new Response(fillAccount(body, profile), c.res);
+});
+
+// En las pantallas de un grupo: completa el encabezado con el grupo (nombre con avatar que lleva a la lista) y el menú con sus secciones
+// (y «Administrar grupo» para la persona titular), y recuerda el grupo en una cookie del navegador para volver a él al entrar a
+// Cuentas Claras. Fuera de un grupo quita las marcas.
+const GROUP_PAGE = /^\/groups\/([^/]+)(?:\/|$)/u;
+app.use("*", async (c, next) => {
+  await next();
+  if (c.req.method !== "GET" || !c.res.headers.get("Content-Type")?.includes("text/html")) return;
+  const body = await c.res.clone().text();
+  if (!body.includes(GROUP_MARKER)) return;
+  const key = GROUP_PAGE.exec(new URL(c.req.url).pathname)?.[1];
+  const user = key && key !== "new" ? await signedInUser(c) : null;
+  const row = user ? await c.env.DB.prepare("SELECT g.id, g.name, g.slug, g.description, g.avatar_emoji, g.avatar_color, m.role FROM groups g JOIN memberships m ON m.group_id = g.id WHERE (g.id = ? OR g.slug = ?) AND m.user_id = ?").bind(key, key, user.user_id).first() : null;
+  c.res = new Response(body.replace(GROUP_MARKER, row ? groupSwitch(row) : "").replace(GROUP_MENU_MARKER, row ? groupMenuItems(row, row.role) : ""), c.res);
+  if (row && c.res.status === 200) c.res.headers.append("Set-Cookie", lastGroupCookie(row.id, isSecureRequest(c)));
 });
 
 app.use("*", async (c, next) => {
@@ -445,7 +464,7 @@ app.get("/groups/:groupId", async (c) => {
   const started = Date.now();
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const group = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
+  const group = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, s.description, s.avatar_emoji, s.avatar_color, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
   if (!group) return c.html(formError("Grupo no encontrado", "No tenés acceso a este grupo.", 404), 404);
   const [csrf, ledger] = await Promise.all([
     csrfInput(c, user),
@@ -462,11 +481,12 @@ app.post("/groups/:groupId/participants", async (c) => {
   const user = c.get("protectedUser");
   try {
     await addParticipant(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=participante`, 303);
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=participante`, 303);
   } catch (error) { return ledgerFailure(c, error); }
 });
 
 registerPeopleRoutes(app);
+registerGroupSettingsRoutes(app);
 
 registerImportRoutes(app);
 
@@ -503,20 +523,10 @@ for (const [action, archived, notice] of [["archive", true, "archivado"], ["rest
     const user = c.get("protectedUser");
     try {
       await setLedgerArchived(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, archived });
-      return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=${notice}`, 303);
+      return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=${notice}`, 303);
     } catch (error) { return ledgerFailure(c, error); }
   });
 }
-
-app.post("/groups/:groupId/rename", async (c) => {
-  const user = c.get("protectedUser");
-  try {
-    await renameGroup(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
-    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=renombrado`, 303);
-  } catch {
-    return c.html(formError("No pudimos guardar el nombre", "Sólo el titular puede usar un nombre válido."), 403);
-  }
-});
 
 app.post("/groups/:groupId/invitations", async (c) => {
   const user = c.get("protectedUser");
@@ -526,7 +536,7 @@ app.post("/groups/:groupId/invitations", async (c) => {
   try {
     const body = await c.req.parseBody();
     await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
-    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=invitacion`, 303);
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=invitacion`, 303);
   } catch {
     return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
   }
@@ -567,18 +577,24 @@ app.post("/invitations/:invitationId", async (c) => {
   }
 });
 
-function groupRow(group) {
-  return `<div class="person-row">${avatar(group.name, { seed: group.id })}<div class="grow"><a href="/groups/${encodeURIComponent(group.slug)}"><strong>${html(group.name)}</strong></a><span class="muted">${group.role === "owner" ? "Titular" : "Integrante"}</span></div></div>`;
+async function myGroups(c, user) {
+  const rows = await c.env.DB.prepare("SELECT g.id, m.role FROM groups g JOIN memberships m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY g.name").bind(user.user_id).all();
+  return Promise.all(rows.results.map(async row => ({ ...(await resolveGroup(c.env.DB, row.id)), role: row.role })));
 }
 
+// La lista de grupos de la persona: siempre se muestra, también con un solo grupo.
+app.get("/groups", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  return c.html(page("Tus grupos", renderGroupList(await myGroups(c, user))));
+});
+
+// Entrar a Cuentas Claras: abre el último grupo visitado en este navegador (si la persona sigue siendo integrante), el único grupo
+// que tenga, o la lista. Un valor recordado que no es de la persona se ignora sin decir si existe.
 app.get("/cuentas-claras", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  const rows = await c.env.DB.prepare("SELECT s.id, s.name, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE m.user_id = ? ORDER BY s.name").bind(user.user_id).all();
-  const listed = await Promise.all(rows.results.map(async row => ({ ...row, slug: (await resolveGroup(c.env.DB, row.id)).slug })));
-  if (listed.length === 1 && c.req.query("todos") !== "1") return c.redirect(`/groups/${encodeURIComponent(listed[0].slug)}`, 303);
-  const groups = listed.map((group) => groupRow(group)).join("") || "<p>No tenés grupos todavía.</p>";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Elegí un grupo.</h1><p>Cada grupo conserva sus integrantes y, cuando exista, su propia historia de movimientos.</p><section class="card">${groups}<a class="button" href="/groups/new">Crear grupo</a><a class="button secondary" href="/invitations">Invitaciones</a></section>`));
+  return c.redirect(entryTarget({ groups: await myGroups(c, user), lastGroupId: readLastGroup(c.req.header("Cookie")) }), 303);
 });
 
 registerAssetRoutes(app);

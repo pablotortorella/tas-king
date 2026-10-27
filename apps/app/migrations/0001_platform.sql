@@ -12,6 +12,9 @@ CREATE TABLE users (
 CREATE TABLE groups (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL CHECK(length(trim(name)) BETWEEN 1 AND 120),
+  description TEXT CHECK(description IS NULL OR length(description) <= 500),
+  avatar_emoji TEXT,
+  avatar_color TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

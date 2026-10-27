@@ -83,7 +83,7 @@ describe("archivar y restaurar el grupo", () => {
 
     const archived = await request(owner, `/groups/${group.slug}/ledger/archive`, { method: "POST", body: "" });
     expect(archived.status).toBe(303);
-    expect(archived.headers.get("location")).toBe(`/groups/${group.slug}/people?aviso=archivado`);
+    expect(archived.headers.get("location")).toBe(`/groups/${group.slug}/settings?aviso=archivado`);
     await expect(setLedgerArchived(env.DB, { groupId: group.id, userId: owner.user.id, archived: true })).rejects.toMatchObject({ status: 409 });
 
     const writes = [
@@ -99,9 +99,11 @@ describe("archivar y restaurar el grupo", () => {
     expect(view).toContain(`href="/groups/${group.slug}/people">Personas</a>`);
     expect(view).not.toContain("Para quedar a mano");
     const people = await (await request(owner, `/groups/${group.slug}/people`)).text();
-    expect(people).toContain("Restaurar grupo");
-    expect(people).not.toContain("Archivar grupo");
     expect(people).not.toContain("Unir con otra persona");
+    const settings = await (await request(owner, `/groups/${group.slug}/settings`)).text();
+    expect(settings).toContain("Restaurar grupo");
+    expect(settings).not.toContain("Archivar grupo");
+    expect(settings).not.toContain("Agregar participante");
     expect((await request(member, `/groups/${group.slug}/ledger/export.json`)).status).toBe(200);
     const data = await exportLedger(env.DB, { groupId: group.id, userId: owner.user.id });
     expect(data.events.map(event => event.action)).toContain("ledger_archived");

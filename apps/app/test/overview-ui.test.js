@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderBookHead, renderLedgerOverview } from "../src/overview-ui.js";
+import { renderGroupSettings } from "../src/group-ui.js";
 import { renderPeople } from "../src/people-ui.js";
 import { selectionBar } from "../src/recategorize-ui.js";
 import { amountFit } from "../src/ui-parts.js";
@@ -107,26 +108,29 @@ describe("libro: personas", () => {
   const invitations = [{ id: "i1", invitee_email: "laura@example.test", target_participant_id: "p2" }];
   const base = { data: data(), group: { slug: "casa", name: "Casa" }, members, csrf: '<input type="hidden" name="_csrf" value="t">', userId: "u1" };
 
-  it("distingue propietario, invitación pendiente y sin cuenta, y ofrece cancelar sólo al titular", () => {
+  it("distingue titular, invitación pendiente y sin cuenta, y ofrece cancelar sólo al titular", () => {
     const owner = renderPeople({ ...base, invitations, owner: true });
-    expect(owner).toContain("Propietario");
+    expect(owner).toContain("Titular");
     expect(owner).toContain("Invitación pendiente");
     expect(owner).toContain("laura@example.test");
     expect(owner).toContain("Cancelar invitación");
     expect(owner).toContain('name="_csrf"');
-    expect(owner).toContain("Administrar grupo");
+    expect(owner).not.toContain("Administrar grupo");
+    for (const text of ["Agregar participante", "Invitar por email", "Archivar", "Nombre del grupo"]) expect(owner).not.toContain(text);
     const member = renderPeople({ ...base, invitations: [], owner: false });
     expect(member).not.toContain("Administrar grupo");
     expect(member).not.toContain("Cancelar invitación");
     expect(member).toContain("Sin cuenta");
   });
 
-  it("conserva los nombres de campos de administración", () => {
-    const html = renderPeople({ ...base, invitations: [], owner: true });
-    for (const field of ['name="name"', 'name="email"', 'name="targetParticipantId"']) expect(html).toContain(field);
-    expect(html).toContain("/groups/casa/participants");
-    expect(html).toContain("/groups/casa/invitations");
-    expect(html).toContain("/groups/casa/rename");
+  it("la administración del grupo conserva los nombres de campos y vive en su propia pantalla", () => {
+    const html = renderGroupSettings({ group: { id: "group_1", slug: "casa", name: "Casa" }, data: data(), invitations: [], csrf: base.csrf });
+    for (const field of ['name="name"', 'name="description"', 'name="emoji"', 'name="color"', 'name="email"', 'name="targetParticipantId"']) expect(html).toContain(field);
+    for (const action of ["/groups/casa/settings", "/groups/casa/participants", "/groups/casa/invitations", "/groups/casa/ledger/archive"]) expect(html).toContain(action);
+    expect(html.indexOf("Nombre del grupo")).toBeLessThan(html.indexOf("Descripción"));
+    expect(html.indexOf("Descripción")).toBeLessThan(html.indexOf("Emoji"));
+    expect(html.indexOf("Emoji")).toBeLessThan(html.indexOf("Participante sin cuenta"));
+    expect(html.indexOf("Participante sin cuenta")).toBeLessThan(html.indexOf("Archivar este grupo"));
   });
 });
 

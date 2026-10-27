@@ -19,29 +19,29 @@
 
 ## 4. Identidad del grupo
 
-- [ ] 4.1 Agregar `description`, `avatar_emoji` y `avatar_color` a `groups` (en `0001`) con la restricción de 500 caracteres; verificar con una prueba de integración que rechaza 501 caracteres y acepta nulos
-- [ ] 4.2 Implementar `updateGroup` en `groups.js` (titular, nombre, descripción, emoji con `normalizeEmoji`, color de `AVATAR_COLORS`, evento `group_updated` en un `batch`) reemplazando `renameGroup`; verificar con pruebas de integración de permisos, emoji inválido, nombre vacío, descripción larga y auditoría
-- [ ] 4.3 Hacer que `avatar()` acepte emoji y color con el contraste de `inkFor`, y usarlo en listado, encabezado y página del grupo; verificar con pruebas unitarias del marcado (emoji, inicial, color por defecto estable y escape de HTML)
-- [ ] 4.4 Mostrar descripción como texto plano en el encabezado de la página del grupo y un extracto de hasta 150 caracteres en el listado; verificar con pruebas que `<script>` se ve literal y que 400 caracteres se cortan a 150 con «…»
+- [x] 4.1 Agregar `description`, `avatar_emoji` y `avatar_color` a `groups` (en `0001`) con la restricción de 500 caracteres; verificar con una prueba de integración que rechaza 501 caracteres y acepta nulos
+- [x] 4.2 Implementar `updateGroup` en `groups.js` (titular, nombre, descripción, emoji con `normalizeEmoji`, color de `AVATAR_COLORS`, evento `group_updated` en un `batch`) reemplazando `renameGroup`; verificar con pruebas de integración de permisos, emoji inválido, nombre vacío, descripción larga y auditoría
+- [x] 4.3 Hacer que `avatar()` acepte emoji y color con el contraste de `inkFor`, y usarlo en listado, encabezado y página del grupo; verificar con pruebas unitarias del marcado (emoji, inicial, color por defecto estable y escape de HTML)
+- [x] 4.4 Mostrar descripción como texto plano en el encabezado de la página del grupo y un extracto de hasta 150 caracteres en el listado; verificar con pruebas que `<script>` se ve literal y que 400 caracteres se cortan a 150 con «…»
 
 ## 5. Administrar grupo
 
-- [ ] 5.1 Implementar `GET/POST /groups/:id/settings` con identidad arriba, agregar participante e invitar después, y archivar al final; verificar con pruebas de integración de vistas (orden de secciones, 403 para integrantes, avisos de guardado)
-- [ ] 5.2 Quitar de la pantalla de Personas los formularios de agregar, invitar, renombrar grupo y archivar; verificar que un integrante y la persona titular ven Personas solo con lista, renombrar persona y unir
-- [ ] 5.3 Agregar la ruedita al encabezado del grupo y «Administrar grupo» al menú, solo para la persona titular, con 44 px de área táctil y etiqueta accesible; verificar con E2E (titular llega por ambas vías, integrante no ve ninguna) en 390 px y escritorio
-- [ ] 5.4 Verificar el recorrido completo del formulario en el navegador (cambiar nombre, descripción, emoji y color y verlos reflejados en listado y encabezado) en Chromium y Firefox, incluido modo oscuro y contraste
+- [x] 5.1 Implementar `GET/POST /groups/:id/settings` con identidad arriba, agregar participante e invitar después, y archivar al final; verificar con pruebas de integración de vistas (orden de secciones, 403 para integrantes, avisos de guardado)
+- [x] 5.2 Quitar de la pantalla de Personas los formularios de agregar, invitar, renombrar grupo y archivar; verificar que un integrante y la persona titular ven Personas solo con lista, renombrar persona y unir
+- [x] 5.3 Agregar la ruedita al encabezado del grupo y «Administrar grupo» al menú, solo para la persona titular, con 44 px de área táctil y etiqueta accesible (la auditoría también llevó a dar 44 px al enlace «N personas» y al de importar del grupo vacío); verificar con E2E (la persona titular llega por ambas vías) en 390 px y escritorio, y con integración que un integrante no ve ninguna (el E2E local no tiene una segunda cuenta)
+- [x] 5.4 Verificar el recorrido completo del formulario en el navegador (cambiar nombre, descripción, emoji y color y verlos reflejados en listado y encabezado) en Chromium y Firefox, incluido modo oscuro y contraste
 
 ## 6. Último grupo y cambio de grupo
 
-- [ ] 6.1 Crear `/groups` como listado siempre visible (sin redirección, con avatar, nombre, extracto y rol) y quitar `?todos=1`; verificar con una prueba de integración con uno y con varios grupos
-- [ ] 6.2 Implementar la cookie `last_group` (escritura en las pantallas HTML del grupo, nunca en `/groups/new` ni en errores) y su lectura en `/cuentas-claras` y tras el inicio de sesión, con validación de membresía; verificar con pruebas de integración de los cinco escenarios (volver, cambiar, ya no es integrante, otra cuenta, sin recuerdo) y que la respuesta no distingue entre grupo inexistente y ajeno
-- [ ] 6.3 Hacer que el nombre con avatar del grupo en el encabezado enlace a `/groups`, y que «Mis grupos» del menú también; verificar con E2E que se llega desde cualquier pantalla del grupo y que no existe un `<select>` de grupos
-- [ ] 6.4 Recorrido E2E de dos grupos en un mismo navegador: entrar a uno, cerrar y volver a `/cuentas-claras`, cambiar de grupo y volver; verificar en Chromium y Firefox, y que una segunda cuenta en el mismo navegador no abre el grupo recordado
+- [x] 6.1 Crear `/groups` como listado siempre visible (sin redirección, con avatar, nombre, extracto y rol) y quitar `?todos=1`; verificar con una prueba de integración con uno y con varios grupos
+- [x] 6.2 Implementar la cookie `last_group` (escritura en las pantallas HTML del grupo, nunca en `/groups/new` ni en errores) y su lectura en `/cuentas-claras` y tras el inicio de sesión, con validación de membresía; verificar con pruebas de integración de los cinco escenarios (volver, cambiar, ya no es integrante, otra cuenta, sin recuerdo) y que la respuesta no distingue entre grupo inexistente y ajeno
+- [x] 6.3 Hacer que el nombre con avatar del grupo en el encabezado enlace a `/groups`, y que «Mis grupos» del menú también; verificar con E2E que se llega desde cualquier pantalla del grupo y que no existe un `<select>` de grupos
+- [x] 6.4 Recorrido E2E de dos grupos en un mismo navegador: entrar a uno, cerrar y volver a `/cuentas-claras`, cambiar de grupo y volver; verificar en Chromium y Firefox, y por integración que una segunda cuenta en el mismo navegador no abre el grupo recordado
 
 ## 7. Ajustes visuales ya acordados
 
-- [ ] 7.1 Verificar que el saldo grande y el panel de cambio masivo plegado (commit `df8d4cb`) siguen intactos tras el renombre, con su E2E en verde
-- [ ] 7.2 Capturas de las pantallas nuevas y modificadas a 360 px y escritorio, claro y oscuro, sin desbordes horizontales ni controles menores a 44 px; verificar con las auditorías existentes (`lowContrast`, desbordes) extendidas a las pantallas nuevas
+- [x] 7.1 Verificar que el saldo grande y el panel de cambio masivo plegado (commit `df8d4cb`) siguen intactos tras el renombre, con su E2E en verde
+- [x] 7.2 Capturas de las pantallas nuevas y modificadas a 360 px y escritorio, claro y oscuro, sin desbordes horizontales ni controles menores a 44 px; verificar con las auditorías existentes (`lowContrast`, desbordes) extendidas a las pantallas nuevas
 
 ## 8. Documentación y OpenSpec
 

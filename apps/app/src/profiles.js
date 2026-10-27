@@ -14,6 +14,11 @@ export const AVATAR_COLORS = Object.freeze({
   cyan: "#00aecc", slate: "#838c91", amber: "#d29034",
 });
 
+export const COLOR_LABELS = Object.freeze({
+  ocean: "Océano", forest: "Bosque", clay: "Arcilla", violet: "Violeta",
+  rose: "Rosa", mint: "Menta", cyan: "Cian", slate: "Pizarra", amber: "Ámbar",
+});
+
 const COLOR_TOKENS = Object.keys(AVATAR_COLORS);
 const EMOJI_SEGMENTER = new Intl.Segmenter("und", { granularity: "grapheme" });
 const TEXT_CONTROLS = /[\p{Cc}\p{Cf}]/u;
@@ -67,13 +72,14 @@ export function googlePictureUrl(value) {
   } catch { return null; }
 }
 
-function initial(name) {
+export function initial(name) {
   return [...EMOJI_SEGMENTER.segment(name || "Usuario")][0]?.segment.toLocaleUpperCase("es") || "U";
 }
 
-function defaultColor(userId) {
+// Un color estable a partir de un identificador (de una cuenta o de un grupo).
+export function defaultColor(seed) {
   let hash = 0;
-  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return COLOR_TOKENS[hash % COLOR_TOKENS.length];
 }
 
