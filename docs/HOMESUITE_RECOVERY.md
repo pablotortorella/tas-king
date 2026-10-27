@@ -88,9 +88,10 @@ La tarea diaria de `.github/workflows/homesuite-production-backup.yml` queda
 preparada a las 05:17 UTC, con restauración local antes de subir y verificación
 de descarga desde R2 después. Se activa al configurar el secreto de repositorio
 `HOMESUITE_PROD_BACKUP_API_TOKEN` y la variable
-`HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial debe tener acceso de lectura
-a la D1 productiva y lectura/escritura de objetos únicamente en el bucket de
-backups. No usar una clave global de Cloudflare. Hasta activar y comprobar una
+`HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial es un Account API token
+personalizado de Cloudflare con permiso `D1 Read` en la cuenta y
+`Workers R2 Storage Bucket Item Write` limitado al bucket de backups. No usar
+una clave global ni un token S3 exclusivo de R2. Hasta activar y comprobar una
 ejecución manual, no existe respaldo periódico acreditado.
 
 Pendientes operativos: activar la tarea diaria, comprobar alerta por fallos,
