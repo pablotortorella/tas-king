@@ -20,7 +20,7 @@ controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
   recuperó desde R2, se comprobó su SHA-256 y se restauró en D1 local con
   integridad y claves foráneas correctas. No hay bucket de archivos de la app
   porque el código actual no tiene ese binding.
-- La rama prepara `env.production` en `apps/app/wrangler.jsonc` para
+- `main` contiene `env.production` en `apps/app/wrangler.jsonc` para
   `homesuite-app`, `app.homesuite.info`, D1, rate limits, cron, logs y trazas.
   El dry-run de Wrangler empaquetó la app y mostró los bindings productivos.
 - Se creó `homesuite-app` con una versión inicial sin rutas, `workers.dev` ni
@@ -41,9 +41,22 @@ controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
   del terminal; se suprimió esa salida en el script para respaldos futuros.
 
 Las páginas públicas de privacidad y términos de HomeSuite, Cuentas Claras y
-Remanso están en preparación en la misma rama. Pablo confirmó nombre, país,
-correo, domicilio en Rionegro, dirección comercial de contacto y teléfono
-público. El borrador ya no contiene campos pendientes.
+Remanso están completas y publicadas. Pablo confirmó nombre, país, correo,
+domicilio en Rionegro, dirección comercial de contacto y teléfono público.
+
+El PR #109 se integró en `main` (`b00b6f8`) con CI verde. El sitio de staging
+se publicó desde ese SHA como versión `1c7f0699` y se comprobó por HTTPS;
+el sitio productivo como versión `91bc0078` responde 200 en home, privacidad,
+términos y Remanso, y `www` redirige 308 al apex. La app sigue sin dominio
+público ni usuarios.
+
+El secreto de backup se cargó en GitHub y se activó el workflow diario para
+ensayarlo. La primera ejecución manual (#40574868057) falló en `d1 export`;
+un segundo ensayo en rama diagnóstica (#40575078638) confirmó código Cloudflare
+10000. `D1 Read` sí obtuvo el bookmark, de modo que el fallo está en el permiso
+de exportación; el destino R2 no se alcanzó. Se desactivó
+`HOMESUITE_PROD_BACKUPS_ENABLED` hasta resolver el alcance necesario del token.
+El respaldo manual desde Wrangler OAuth ya comprobado sigue disponible.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
