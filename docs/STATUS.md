@@ -1,11 +1,42 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-26
+**Última actualización**: 2026-10-27
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## HomeSuite App en staging: Cuentas Claras completa y Remanso en un solo SHA — 2026-10-27
+
+**Estado:** `main` en `2b43586` (PR #105, pila de Cuentas Claras y grupos con identidad, y PR #106, Remanso)
+publicado en el staging de la app. **No está en producción**: HomeSuite App no tiene entorno de producción
+(solo existe `staging` en `apps/app/wrangler.jsonc`), y TasKing y el sitio público no cambiaron.
+
+| Superficie | URL | Worker y Version ID |
+|---|---|---|
+| App | `https://staging.homesuite.info/` | `homesuite-app-staging` · `165d1833-83f8-41ba-b34a-6ebc8796663b` · SHA `2b43586` |
+| Sitio público | `https://site-staging.homesuite.info/` | `homesuite-site-staging` · `98be1931-4c86-4a5b-9bae-207258d8647d` (sin cambios: `apps/site` es idéntico entre `527e668` y `2b43586`) |
+
+- **Qué cambió respecto del despliegue anterior de la app** (`99964c9a`, SHA `7b010d2`): ruedita junto al nombre del grupo,
+  botones del encabezado alineados, sumar personas e invitar en Personas, Remanso en `/remanso` y en la home, y el cierre
+  de bloques del encabezado del grupo. Sin migraciones: «No migrations to apply». La base conserva los datos de la prueba
+  de Pablo; el backup previo quedó en `backups/homesuite-app/staging/20261027T154229Z`.
+- **Chequeo previo al despliegue:** la versión activa de la app era `99964c9a` (sin despliegues en paralelo desde el 2026-10-27
+  02:34 UTC). El 2026-10-27 a las 02:34 UTC el despliegue de grupos había **reemplazado** la versión de Remanso
+  (`b0678fb3`) por no haber mirado el historial antes de publicar; la base se recreó el mismo día (script de reinicio, con
+  backup). Lección registrada: antes de publicar o vaciar un ambiente compartido se mira `wrangler deployments list`.
+- **Pruebas antes de integrar** (sobre el árbol de cada PR; CI verde en ambos): TasKing 230 y 101 E2E; app 448 unitarias y 307
+  de integración; sitio 12 y 17 E2E; Remanso 30 E2E en Chromium y Firefox; app 165 E2E en Chromium y 165 en Firefox.
+- **Smoke remoto del SHA publicado:** `/healthz` 200; `/` y `/remanso` 200 con política de contenido, `X-Frame-Options`,
+  `nosniff` y `no-store`; `/remanso/remanso.js` y `.css` 200; `/remanso/index.html` 404; `/groups`, `/cuentas-claras` y `/perfil`
+  sin sesión redirigen al acceso; `/spaces` 404; `/api/me` 401; la home trae la tarjeta de Remanso. Producción
+  (`homesuite.info/remanso`) sigue en 404.
+- **Para que Pablo revise a mano:** entrar con Google en `staging.homesuite.info`; grupos (identidad, Administrar grupo, último
+  grupo, sumar personas en Personas, importar Splitwise); Remanso en el teléfono (audio, iPhone en silencio, pantalla
+  bloqueada), que sigue **sin aceptar**.
+- **No verificado:** audio real en teléfono, el recorrido autenticado con Google sobre este SHA, WebKit/Safari y la ejecución
+  de los E2E de la app en CI (la CI corre TasKing, la app unitaria e integración, el sitio y los E2E de Remanso y del sitio).
 
 ## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
 
