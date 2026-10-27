@@ -15,9 +15,13 @@ lista de tareas. Cambios de home, landings, descripciones y metadatos:
 - presentar por separado productos disponibles, en desarrollo y exploraciones; no
   anunciar exploraciones ni fechas sin decisión de Pablo;
 - no prometer funciones, privacidad, sincronización ni colaboración sin verificarlas;
-- no cambiar logo, favicon ni paleta antes de revisar la identidad vigente;
-- el copy publicado hoy usa «vida compartida» y fue escrito antes de esta dirección;
-  su revisión es pendiente de backlog y no se infiere de este documento.
+- no cambiar logo, favicon ni paleta antes de revisar la identidad vigente; el acento por
+  producto (verde, terracota y ámbar, sólo en rótulo, borde e ícono) usa colores que la
+  suite ya tenía y se aprobó el 2026-10-27 (change `acentos-y-catalogo-publico`);
+- el copy de home y landings se alineó con esta dirección el 2026-10-27 (change
+  `identidad-textos-suite`); el sitio público muestra sólo herramientas funcionales: Compras
+  espera oculto en `apps/site/pendientes/compras.html`; Cuentas Claras y Remanso se rotulan «Versión
+  Beta» y Fun TasKing «Disponible».
 
 ## Plataforma
 

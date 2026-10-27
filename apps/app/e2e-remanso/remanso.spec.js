@@ -401,3 +401,52 @@ test.describe("teclado, pantallas angostas y esquemas de color", () => {
     }
   });
 });
+
+// El inicio y el cierre se ven completos, sin desplazarse, con el encabezado de la app visible.
+for (const [label, size] of [["teléfono", { width: 390, height: 720 }], ["escritorio", { width: 1280, height: 680 }]]) {
+  for (const scheme of ["light", "dark"]) {
+    test.describe(`caben en la ventana · ${label} · ${scheme}`, () => {
+      test.use({ viewport: size, colorScheme: scheme });
+
+      const sinDesplazamiento = async (page) => page.evaluate(() => ({ alto: document.documentElement.scrollHeight, ventana: window.innerHeight, ancho: document.documentElement.scrollWidth, anchoVentana: window.innerWidth }));
+      const visible = async (locator, ventana) => { const box = await locator.boundingBox(); return box.y >= 0 && box.y + box.height <= ventana; };
+
+      // Holgura que queda con el contenido a su altura natural (sin el estirado de «Comenzar»). Una fuente más ancha parte renglones:
+      // el CI usa DejaVu Sans, donde «Cuenco tibetano» ocupa dos líneas y el inicio crecía 16 px. Se exige margen para que cambiar de fuente no lo desborde.
+      const HOLGURA_MINIMA = 20; // cubre un renglón extra (16 px) más un poco de margen
+      const holgura = async (page) => page.evaluate(() => {
+        const boton = document.querySelector("#rem-comenzar");
+        boton.style.setProperty("margin-top", "0", "important");
+        const caja = boton.getBoundingClientRect();
+        const resto = parseFloat(getComputedStyle(document.querySelector(".shell")).paddingBottom);
+        boton.style.removeProperty("margin-top");
+        return window.innerHeight - (caja.bottom + resto);
+      });
+
+      test("el inicio con todos sus controles no necesita desplazarse y «Comenzar» se ve completo", async ({ page }) => {
+        await page.goto("/remanso");
+        await expect(page.locator(".shell-header, header.topbar").first()).toBeVisible();
+        expect(await holgura(page)).toBeGreaterThanOrEqual(HOLGURA_MINIMA);
+        const medida = await sinDesplazamiento(page);
+        expect(medida.alto).toBeLessThanOrEqual(medida.ventana);
+        expect(medida.ancho).toBeLessThanOrEqual(medida.anchoVentana);
+        expect(await visible(page.locator("#rem-comenzar"), medida.ventana)).toBe(true);
+        for (const box of await page.locator("#rem-inicio button, #rem-inicio input").evaluateAll((nodes) => nodes.filter((node) => node.offsetParent).map((node) => node.getBoundingClientRect().height))) expect(box).toBeGreaterThanOrEqual(43.5);
+      });
+
+      test("el cierre con los estados de ánimo y los dos botones no necesita desplazarse", async ({ page }) => {
+        await page.goto("/remanso");
+        await page.locator('[data-m="1"]').click();
+        await page.locator('[data-a="silencio"]').click();
+        await page.getByRole("button", { name: "Comenzar · 1 min" }).click();
+        await page.getByRole("button", { name: "Terminar sesión" }).click();
+        await expect(page.locator("#rem-cierre")).toBeVisible();
+        const medida = await sinDesplazamiento(page);
+        expect(medida.alto).toBeLessThanOrEqual(medida.ventana);
+        expect(medida.ancho).toBeLessThanOrEqual(medida.anchoVentana);
+        expect(await visible(page.getByRole("button", { name: "Volver al inicio" }), medida.ventana)).toBe(true);
+        expect(await visible(page.getByRole("button", { name: "Repetir sesión" }), medida.ventana)).toBe(true);
+      });
+    });
+  }
+}

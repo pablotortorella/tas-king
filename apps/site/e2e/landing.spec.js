@@ -5,17 +5,18 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
 
   await expect(page.getByRole("heading", {
     level: 1,
-    name: "Organizarnos puede ser más simple.",
+    name: "Organizá, cuidá y disfrutá tu hogar.",
   })).toBeVisible();
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
   await expect(page.getByText("Cuentas Claras", { exact: true })).toBeVisible();
-  await expect(page.getByText("Compras", { exact: true })).toBeVisible();
+  await expect(page.getByText("Compras")).toHaveCount(0); // oculto hasta que exista
   await expect(page.getByText("Remanso", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Conocé las herramientas" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explorá las herramientas" })).toBeVisible();
+  // El acceso a la app de Remanso desde el hero existe solo en staging; sin ese ambiente no se ofrece.
+  await expect(page.getByRole("link", { name: /Probá Remanso/ })).toHaveCount(0);
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
-  await expect(page.getByRole("link", { name: "Conocé Compras" })).toHaveAttribute("href", "/compras");
   await expect(page.getByRole("link", { name: "Conocé Remanso" })).toHaveAttribute("href", "/remanso");
 });
 
@@ -68,22 +69,21 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
 });
 
 for (const [slug, heading] of [
-  ["cuentas-claras", "Las cuentas compartidas, más claras."],
-  ["compras", "Una lista para comprar mejor, juntos."],
+  ["cuentas-claras", "Las cuentas claras, sin vueltas."],
   ["remanso", "Un rato de calma para la casa."],
 ]) {
   test(`/${slug} explica el producto sin fingir una app disponible`, async ({ page }) => {
     await page.goto(`/${slug}`);
 
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
-    await expect(page.getByText("Esta herramienta todavía está en preparación.")).toBeVisible();
+    await expect(page.getByText("Esta herramienta está en versión beta.")).toBeVisible();
     await expect(page.getByRole("link", { name: /Todas las herramientas/ })).toHaveAttribute("href", "/#herramientas");
     await expect(page.getByRole("link", { name: "Abrir Fun TasKing" })).toHaveCount(0);
     await expect(page.locator("form, button")).toHaveCount(0);
   });
 }
 
-for (const slug of ["tareas", "cuentas-claras", "compras", "remanso"]) {
+for (const slug of ["tareas", "cuentas-claras", "remanso"]) {
   test(`/${slug} sirve HTML con cabeceras de seguridad`, async ({ request }) => {
     const response = await request.get(`/${slug}`);
 
@@ -122,4 +122,11 @@ test("/gastos ya no conserva una landing ni redirige", async ({ request }) => {
   expect(response.status()).toBe(404);
   expect(response.headers().location).toBeUndefined();
   expect(await response.text()).not.toContain("Cuentas Claras");
+});
+
+test("/compras no se publica mientras la herramienta no exista", async ({ request }) => {
+  for (const ruta of ["/compras", "/compras.html"]) {
+    const response = await request.get(ruta, { maxRedirects: 0 });
+    expect(response.status(), ruta).toBe(404);
+  }
 });

@@ -2,6 +2,10 @@ import { AMBIENTS, DURATIONS } from "../public/remanso/remanso-engine.js";
 import { DEFAULT_GONG, GONG_IDS } from "../public/remanso/remanso-gongs.js";
 import { readOwnProfile } from "./profiles.js";
 
+// Volumen inicial del fondo (0–100; el motor lo eleva al cuadrado). Era 55, el del paquete; con él el fondo quedaba muy bajo
+// frente al gong, así que sube un 30 % sobre el control (2026-10-27).
+const VOLUMEN_INICIAL = 58;
+
 // Qué puede usar quien no tiene cuenta y qué quien sí. Es la única definición:
 // el navegador recibe las opciones libres por atributos de datos y no las repite.
 // Es una decisión de producto, no un control de seguridad (design.md, D8): el audio
@@ -11,13 +15,13 @@ export const REMANSO_ACCESO = Object.freeze({
     minutos: Object.freeze([1, 2, 5]),
     fondos: Object.freeze(["silencio", "agua", "bosque"]),
     gongs: Object.freeze([DEFAULT_GONG]),
-    inicial: Object.freeze({ minutos: 5, fondo: "agua", gong: DEFAULT_GONG }),
+    inicial: Object.freeze({ minutos: 5, fondo: "agua", gong: DEFAULT_GONG, volumen: VOLUMEN_INICIAL }),
   }),
   cuenta: Object.freeze({
     minutos: Object.freeze([...DURATIONS]),
     fondos: Object.freeze([...AMBIENTS]),
     gongs: Object.freeze([...GONG_IDS]),
-    inicial: Object.freeze({ minutos: 10, fondo: "lluvia", gong: DEFAULT_GONG }),
+    inicial: Object.freeze({ minutos: 10, fondo: "lluvia", gong: DEFAULT_GONG, volumen: VOLUMEN_INICIAL }),
   }),
 });
 
@@ -51,6 +55,7 @@ export function renderRemanso({ html, nombre = null, loginDisponible = true }) {
     `data-inicial-minutos="${inicial.minutos}"`,
     `data-inicial-fondo="${inicial.fondo}"`,
     `data-inicial-gong="${inicial.gong}"`,
+    `data-inicial-volumen="${inicial.volumen}"`,
     nombre ? `data-nombre="${html(nombre)}"` : "",
     loginDisponible ? `data-login="${LOGIN_URL}"` : "",
   ].filter(Boolean).join(" ");
@@ -78,15 +83,14 @@ export function renderRemanso({ html, nombre = null, loginDisponible = true }) {
   </section>
 
   <section class="rem-bloque" aria-labelledby="rem-l-gong">
-    <h2 id="rem-l-gong" class="rem-label">Sonido del gong</h2>
+    <div class="rem-fila"><h2 id="rem-l-gong" class="rem-label">Sonido del gong</h2><button type="button" id="rem-probar" class="rem-enlace">Probar gong</button></div>
     <div id="rem-sonidos" class="rem-grid" role="group" aria-labelledby="rem-l-gong"></div>
-    <div class="rem-probar"><button type="button" id="rem-probar" class="rem-enlace">Probar gong</button></div>
   </section>
 
   <section class="rem-bloque" aria-labelledby="rem-l-fondo">
     <h2 id="rem-l-fondo" class="rem-label">Fondo</h2>
     <div id="rem-fondos" class="rem-grid" role="group" aria-labelledby="rem-l-fondo"></div>
-    <div class="rem-volumen"><label for="rem-volumen">Volumen del fondo</label><input id="rem-volumen" type="range" min="0" max="100" value="55"></div>
+    <div class="rem-volumen"><label for="rem-volumen">Volumen del fondo</label><input id="rem-volumen" type="range" min="0" max="100" value="${inicial.volumen}"></div>
   </section>
 
   <div id="rem-aviso" class="rem-aviso" role="status" hidden>

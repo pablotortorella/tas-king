@@ -9,6 +9,8 @@ export const LIGHT = Object.freeze({
   sunken: "#fbf7ee", "teal-soft": "#e3eeeb", "teal-text": "#24504b", "teal-line": "#5b8a7f",
   "line-soft": "#efe8db", line: "#e4dccd", "line-strong": "#c9c1b2", "line-mid": "#d9d2c5", field: "#7d887f", chip: "#ece4d5",
   shadow: "rgba(31,44,36,.2)",
+  // Acento por producto: rótulo y borde de las tarjetas de herramientas (verde, terracota y ámbar de la paleta de la suite).
+  "tool-tasks": "#245c43", "tool-expenses": "#904f2a", "tool-calm": "#7a5418",
 });
 
 export const DARK = Object.freeze({
@@ -19,6 +21,7 @@ export const DARK = Object.freeze({
   sunken: "#1f2c26", "teal-soft": "#1f3a39", "teal-text": "#a3d6ce", "teal-line": "#7fb3a6",
   "line-soft": "#2a3931", line: "#31423a", "line-strong": "#50625a", "line-mid": "#3c4c43", field: "#8a998f", chip: "#26352d",
   shadow: "rgba(0,0,0,.55)",
+  "tool-tasks": "#7fd0a6", "tool-expenses": "#ef927e", "tool-calm": "#d4ad58",
 });
 
 // Iguales en ambos modos: texto sobre el verde de acento y marcas que no cambian con el tema.

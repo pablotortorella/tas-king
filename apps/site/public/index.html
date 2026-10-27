@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="HomeSuite reúne herramientas simples para organizar la vida compartida.">
+  <meta name="description" content="HomeSuite reúne herramientas simples para organizar lo cotidiano y, de a poco, también para cuidar y disfrutar tu hogar.">
   <meta name="theme-color" content="#f7f2e8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#161914" media="(prefers-color-scheme: dark)">
-  <title>HomeSuite — herramientas para la vida compartida</title>
+  <title>HomeSuite — organizá, cuidá y disfrutá tu hogar</title>
   <link rel="icon" href="/HomeSuite-favicon-simplificado.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/HomeSuite-favicon-simplificado-preview.png">
   <meta property="og:image" content="https://homesuite.info/HomeSuite-emblema-preview.png">
@@ -25,15 +25,18 @@
     <section class="hero" aria-labelledby="welcome-title">
       <div class="hero-copy">
         <p class="eyebrow">Te damos la bienvenida a casa</p>
-        <h1 id="welcome-title">Organizarnos puede ser más simple.</h1>
+        <h1 id="welcome-title">Organizá, cuidá y disfrutá tu hogar.</h1>
         <p class="hero-lede">
-          HomeSuite es un lugar para organizar tareas, gastos y compras con las
-          personas que forman parte de tu día a día.
+          HomeSuite reúne herramientas sencillas para organizar lo cotidiano y
+          encontrar momentos de calma. Usá las que necesites, a tu manera.
         </p>
-        <a class="primary-action" href="#herramientas">
-          Conocé las herramientas
-          <span aria-hidden="true">↓</span>
-        </a>
+        <div class="hero-actions">
+          <a class="primary-action" href="#herramientas">
+            Explorá las herramientas
+            <span aria-hidden="true">↓</span>
+          </a>
+          <!-- staging-app-entry -->
+        </div>
       </div>
 
       <img class="hero-emblem" src="/HomeSuite-emblema.svg" alt="Emblema de HomeSuite: una casa con ventanas iluminadas" width="800" height="800">
@@ -47,7 +50,7 @@
       </div>
 
       <div class="tool-grid">
-        <article class="tool-card tool-card-active">
+        <article class="tool-card tool-card-active tool-card-tasks">
           <div class="tool-topline">
             <span class="tool-icon" aria-hidden="true">✓</span>
             <span class="status status-available">Disponible</span>
@@ -55,7 +58,7 @@
           <div>
             <p class="tool-kicker">Tareas</p>
             <h3>Fun TasKing</h3>
-            <p>Un tablero compartido para hacer visible el trabajo y avanzar en equipo.</p>
+            <p>Tableros para organizar tus tareas y proyectos, solo o con otras personas.</p>
           </div>
           <a class="tool-link" href="/tareas">
             Conocé Fun TasKing
@@ -63,15 +66,15 @@
           </a>
         </article>
 
-        <article class="tool-card">
+        <article class="tool-card tool-card-expenses">
           <div class="tool-topline">
             <span class="tool-icon tool-icon-expenses" aria-hidden="true">$</span>
-            <span class="status">Próximamente</span>
+            <span class="status">Versión Beta</span>
           </div>
           <div>
             <p class="tool-kicker">Cuentas Claras</p>
-            <h3>Las cuentas compartidas, más claras.</h3>
-            <p>Seguimiento claro de gastos e ingresos para hogares, viajes y proyectos.</p>
+            <h3>Las cuentas claras, sin vueltas.</h3>
+            <p>Gastos e ingresos claros para tu hogar, un viaje o un proyecto, con repartos y saldos cuando se comparten.</p>
           </div>
           <a class="tool-link tool-link-outline" href="/cuentas-claras">
             Conocé Cuentas Claras
@@ -79,26 +82,10 @@
           </a>
         </article>
 
-        <article class="tool-card">
-          <div class="tool-topline">
-            <span class="tool-icon tool-icon-shopping" aria-hidden="true">＋</span>
-            <span class="status">Próximamente</span>
-          </div>
-          <div>
-            <p class="tool-kicker">Compras</p>
-            <h3>La lista que se arma con vos</h3>
-            <p>Una experiencia compartida para planear la compra y recorrer el supermercado.</p>
-          </div>
-          <a class="tool-link tool-link-outline" href="/compras">
-            Conocé Compras
-            <span aria-hidden="true">→</span>
-          </a>
-        </article>
-
-        <article class="tool-card">
+        <article class="tool-card tool-card-calm">
           <div class="tool-topline">
             <span class="tool-icon tool-icon-calm" aria-hidden="true">◎</span>
-            <span class="status">Próximamente</span>
+            <span class="status">Versión Beta</span>
           </div>
           <div>
             <p class="tool-kicker">Remanso</p>
@@ -120,7 +107,7 @@
 
   <footer>
     <span>HomeSuite</span>
-    <span>Construyendo un espacio para la vida compartida.</span>
+    <span>Tu hogar, a tu ritmo.</span>
     <span><a href="/privacidad">Privacidad</a> · <a href="/terminos">Términos y condiciones</a></span>
   </footer>
 </body>

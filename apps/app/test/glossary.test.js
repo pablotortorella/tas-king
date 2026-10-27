@@ -21,7 +21,6 @@ const ALLOWED_PHRASES = [
   ["white-space", "propiedad CSS"],
   ["space-between", "valor CSS"], ["space-around", "valor CSS"], ["space-evenly", "valor CSS"],
   ["press(\"Space\")", "nombre de la tecla de espacio en Playwright"],
-  ["un espacio para la vida compartida", "lema de marca del sitio público, uso figurado y no el concepto (decisión pendiente de Pablo)"],
   ["feature/homesuite-authenticated-spaces", "nombre de una rama de git ya publicada, citado en documentos históricos"],
   ["espacios sobrantes", "caracteres en blanco, no el concepto"], ["espacios internos", "caracteres en blanco, no el concepto"],
   ["espacios y puntuación", "caracteres en blanco, no el concepto"], ["compuesto sólo de espacios", "caracteres en blanco, no el concepto"],

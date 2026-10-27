@@ -47,7 +47,7 @@ mismo commit.
 ## 6. Documentación
 
 - [x] 6.1 Crear `docs/productos/REMANSO.md` (ficha: alcance, niveles libre/con cuenta y su límite client-side, rutas, archivos, reglas, huella del motor, comandos, riesgos no verificados) y enlazarla desde `CLAUDE.md` y `QUICK_START.md`; verificar los enlaces locales.
-- [x] 6.2 Backlog: historial y su alcance (persona u hogar, sin rachas), navegación y nombre de las mitades, landing pública, modo oscuro global, grabaciones vs. sintetizados, y los tres riesgos de dispositivo con la marca «investigar a fondo en internet antes de decidir».
+- [x] 6.2 Backlog: historial y su alcance (persona u hogar, sin rachas), landing pública, modo oscuro global, grabaciones vs. sintetizados, y los tres riesgos de dispositivo con la marca «investigar a fondo en internet antes de decidir».
 - [x] 6.3 Registrar en STATUS el estado de la rama y, al publicar, el SHA, la versión, las pruebas y los límites. Actualizar APRENDIZAJES sólo si surge uno nuevo con evidencia.
 
 ## 7. Verificación local y publicación en staging
@@ -80,3 +80,14 @@ mismo commit.
 - [x] 10.3 E2E del sitio: portada → landing de Remanso, sin enlace a la app ni controles en producción, 360 px, modo oscuro y cabeceras; el E2E del sitio entra al CI si falta.
 - [x] 10.4 Despliegue del sitio de staging (`wrangler deploy --env staging --config apps/site/wrangler.jsonc`): `--dry-run` antes, confirmar que no toca producción, smoke del recorrido portada → landing → app y registro.
 
+## 11. Ajustes tras probar staging (pedido de Pablo, 2026-10-27)
+
+- [x] 11.1 Escribir las pruebas que fallan primero: E2E de «el inicio y el cierre caben en la ventana» (390 × 720 y 1280 × 680, con y sin cuenta), Vitest del nivel máximo de `windGust` en `SuiteEngine` y de la huella del motor intacta, y la prueba de ruta del volumen inicial 72.
+- [x] 11.2 Que la pantalla entre sin scroll: el contenedor de la app dejaba `min-height: 100dvh` bajo el encabezado, así que siempre excedía la ventana; pasar a una columna de la altura de la ventana y compactar duración, línea de gongs, fondos, volumen y cierre; verificar con el E2E y con capturas a 390 y 1280 px, claro y oscuro.
+- [x] 11.3 Volumen inicial del fondo 72 (un 30 % más que 55) en `REMANSO_ACCESO`, el atributo de datos y el cliente; verificar con las pruebas de ruta y de contraste.
+- [x] 11.4 Bajar las ráfagas de viento del bosque reemplazando `windGust()` en `SuiteEngine` con una constante de nivel; verificar con la prueba Vitest y que la huella del motor no cambia.
+- [ ] 11.5 Suites completas en Chromium y Firefox, levantar en local para que Pablo lo revise de oído y de vista, y recién después pasar a staging con su aprobación.
+- [x] 11.6 Primera revisión de Pablo: la pantalla quedó comprimida y el encabezado se encogió y se centró (el body en columna flex encogía `.topbar` y `.shell`, que usan `margin: 0 auto`); dar ancho completo a ambos y hacer que espaciado y controles crezcan con la altura de la ventana (`--rem-x`), conservando el mínimo que entra en 390 × 720; verificar con el E2E de «caben en la ventana» y con capturas a 791 × 1298.
+- [x] 11.7 Segunda ronda de sonido (Pablo): lluvia menos densa (35 % de las gotas y lecho al 60 %) y viento todavía más suave y espaciado (nivel máximo 0,10, cadencia ×2, hojas proporcionales); pruebas Vitest de cada valor, E2E de los seis fondos sin error y huella del motor intacta.
+- [x] 11.8 Tercera ronda de sonido (Pablo): gongs un 25 % más bajos (`NIVEL_GONG` 0,75 en `synthGong`), volumen inicial del fondo 58 (un 20 % menos que 72), lluvia con un 30 % menos de gotas (`DENSIDAD_GOTAS` 0,245) y chispazos esporádicos del fuego (`crackle()` en `SuiteEngine`, `PROB_CHISPAZO`); pruebas Vitest de cada valor, rutas e integración con 58, E2E de los seis fondos sin error y huella del motor intacta.
+- [x] 11.9 El CI del PR #108 mostró que el inicio medía 736 px en 390 × 720 (la fuente de CI, DejaVu Sans, parte «Cuenco tibetano» en dos líneas; con la fuente local sobraba 1 px). Reproducido localmente forzando DejaVu con fontconfig; compactación extra sólo en ventanas de hasta 760 px de alto (gap, rótulos, íconos de fondo, tamaño del nombre del gong) que deja unos 23 px de holgura con ambas fuentes, y el E2E «caben en la ventana» exige 20 px de holgura para que la fuente no vuelva a decidirlo.

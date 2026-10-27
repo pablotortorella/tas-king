@@ -1,6 +1,6 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-26
+**Última actualización**: 2026-10-27
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 ## HomeSuite: preparación de infraestructura productiva — 2026-10-27
@@ -68,6 +68,49 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Remanso, identidad de la suite y acentos por producto — staging 2026-10-27
+
+**Estado:** en el PR #108 (rama `cambio/identidad-textos`), **sin integrar** hasta que Pablo revise
+staging. Publicado en staging con el árbol limpio y la rama ya subida (la app desde el SHA `6c99f5f`; el
+sitio se republicó después desde `d633eb2`, que sólo cambia textos del sitio; el código de la app es el mismo):
+
+| Unidad | Versión activa | Mensaje de versión |
+|---|---|---|
+| HomeSuite App (`staging.homesuite.info`) | `3764a231` | «PR #108 · SHA 6c99f5f · Remanso ajustes, identidad y acentos» |
+| Sitio (`site-staging.homesuite.info`) | `3329dc03` (SHA `d633eb2`; antes `72a5d3ae` y `eedd49c5`) | «PR #108 · SHA d633eb2 · rótulo Versión Beta» |
+
+Antes de publicar se comprobó con `wrangler deployments list` que nadie más había desplegado
+(las versiones activas eran las propias). Backup de la base de la app antes de migrar (sin
+migraciones nuevas): `backups/homesuite-app/staging/` (ignorado por git). Referencias anteriores:
+app `a233a6bc` (SHA `0d68411`, sólo ajustes de sonido de Remanso) y `165d1833` (SHA `2b43586`,
+`main`). **Producción:** HomeSuite App no tiene entorno de producción y el sitio público de
+producción no se publicó; nada de esto está allí.
+
+- **Remanso:** inicio y cierre sin scroll; fondo a 58; gongs al 75 %; lluvia con el 24,5 % de las
+  gotas; viento más suave y espaciado; chispazos esporádicos del fuego. Motor sin editar
+  (huella fijada por prueba). Change `remanso-meditacion`, sección 11.
+- **Identidad (`identidad-textos-suite`):** textos del sitio y de la app alineados con el marco
+  (PR #104); sin «mitades»; «Pausa» sale y Remanso ocupa su lugar; la portada se conecta con
+  Remanso sólo en staging («Probá Remanso»).
+- **Estado de cada herramienta:** Fun TasKing «Disponible»; Cuentas Claras y Remanso «Versión Beta»
+  (decisión de Pablo; sin «Próximamente» ni «En preparación»). La landing de Remanso no habla de cuentas.
+  **Pendiente para el primer deploy a producción de la app** (el entorno lo prepara Pablo en paralelo): las
+  landings en producción no traen botón a la app y el «Probá Remanso» de la portada existe sólo en staging;
+  hay que decidir su enlace cuando la app tenga dominio de producción, y no publicar el sitio de
+  producción con rótulos «beta» antes.
+- **Acentos y catálogo (`acentos-y-catalogo-publico`):** verde, terracota (`#904f2a`) y ámbar
+  en rótulos, bordes e íconos; el sitio muestra tres herramientas y Compras queda oculto
+  (landing en `apps/site/pendientes/`, `/compras` responde 404). La app conserva la tarjeta
+  de Compras «en preparación».
+- **Evidencia:** unitarias de la app 470, integración 307, raíz 230, sitio 24; E2E de la app 165
+  (Chromium), del sitio 15 y de Remanso 76 (Chromium y Firefox); `openspec validate` estricto
+  de los tres changes. Servido comprobado en ambos dominios (títulos, tarjetas, volumen 58,
+  `/compras` 404, botón «Probá Remanso» sólo en staging, `X-Robots-Tag: noindex`).
+- **Límites:** el audio sólo se probó de oído en local (iPhone en silencio, pantalla bloqueada y
+  volumen entre fondos siguen sin verificar). `openspec validate --all --strict` falla por
+  `landings-productos-homesuite`, que no es de este PR; ese change y `identidad-textos-suite`
+  tocan el mismo spec de landing y habrá que reconciliarlos al archivar.
 
 ## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
 
@@ -141,8 +184,8 @@ ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 
 - `/remanso` en HomeSuite App con inicio, sesión y cierre, usando el motor de sonido
   del paquete de Claude Design **sin modificar** (huella SHA-256 fijada por prueba).
-  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas); las dos mitades
-  de la suite siguen sin explorar.
+  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas). La suite no se divide
+  en «mitades» (decisión del 2026-10-27).
 - Acceso en dos niveles: **sin cuenta** 1, 2 y 5 min, silencio/agua/bosque y Gong
   brillante; **con cuenta** 10, 20 y 30 min, lluvia/fuego/noche, Gong profundo y
   Cuenco tibetano, más el nombre del perfil en el cierre. El cierre sin cuenta no

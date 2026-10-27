@@ -20,6 +20,9 @@ const TEXT = [
   ["accent-text", "bg"], ["accent-text", "surface"], ["accent-deep", "accent-soft"], ["accent-text", "accent-soft"], ["accent-deep", "bg"],
   ["neg", "bg"], ["neg", "surface"], ["coral-text", "coral-soft"], ["yel-text", "yel-soft"], ["yel-text", "warn-bg"],
   ["teal-text", "teal-soft"], ["ink-2", "chip"], ["ink", "chip"], ["accent-deep", "ok-bg"],
+  // Acento por producto (rótulo y borde de las tarjetas de herramientas): verde, terracota y ámbar.
+  ["tool-tasks", "bg"], ["tool-tasks", "surface"], ["tool-expenses", "bg"], ["tool-expenses", "surface"],
+  ["tool-calm", "bg"], ["tool-calm", "surface"],
 ];
 const BORDERS = [["field", "surface"], ["field", "bg"], ["accent-line", "bg"], ["accent-line", "surface"]];
 

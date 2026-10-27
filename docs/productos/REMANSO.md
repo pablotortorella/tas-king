@@ -1,8 +1,11 @@
 # Remanso: particularidades de producto
 
 Hereda la [base común](../homesuite/README.md) y la [plataforma](PLATAFORMA.md).
-Remanso inicia la mitad de HomeSuite que *cuida* la casa (las otras herramientas
-la organizan): meditaciones de tiempo fijo, con gong y sonidos de fondo. Su
+Remanso es la herramienta de HomeSuite para descansar: meditaciones de tiempo fijo,
+con gong y sonidos de fondo. Es la exploración que el [marco de identidad](../HOMESUITE_IDENTIDAD_Y_VISION.md)
+llamaba «Pausa»; Pablo decidió el 2026-10-27 que ese nombre sale y Remanso ocupa su lugar.
+No es «una mitad» de la suite: organizar, cuidar y disfrutar son dimensiones de la marca,
+no categorías de navegación. Su
 especificación vive en el change `remanso-meditacion` (`openspec/changes/`, y en
 `openspec/specs/` cuando se archive); el paquete de diseño recibido está en
 [docs/diseno/remanso](../diseno/remanso/README.md). Ver [STATUS](../STATUS.md) para
@@ -17,7 +20,7 @@ Ruta `/remanso` en HomeSuite App, con tres pantallas (inicio, sesión, cierre).
 | Duraciones | 1, 2 y 5 min | 1, 2, 5, 10, 20 y 30 min |
 | Fondos | silencio, agua, bosque | los seis (suma lluvia, fuego, noche) |
 | Sonido del gong | Gong brillante | Gong brillante, Gong profundo y Cuenco tibetano |
-| Valores iniciales | 5 min · agua · Gong brillante · volumen 55 | 10 min · lluvia · Gong brillante · volumen 55 |
+| Valores iniciales | 5 min · agua · Gong brillante · volumen 58 | 10 min · lluvia · Gong brillante · volumen 58 |
 | Cierre | duración, sin nombre ni mención a la cuenta | duración y saludo por el nombre del perfil |
 
 «Crear cuenta» es entrar con Google: la primera vez se crea la cuenta. Las opciones
@@ -52,7 +55,7 @@ fundido de 4 s y sale con uno de 6 s. El estado de ánimo del cierre es opcional
 |---|---|
 | `apps/app/src/remanso.js` | Ruta `GET /remanso`, niveles de acceso y armazón HTML de las tres pantallas |
 | `apps/app/public/remanso/remanso-engine.js` | Motor de sonido del paquete, **sin modificar** |
-| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()` |
+| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()` (a 0,75 del volumen, `NIVEL_GONG`), `crackle()` (chispazos esporádicos del fuego, `PROB_CHISPAZO`), `windGust()`, `drop()` y `buildAmbient()` (viento del bosque a 0,15 del nivel del paquete y al doble de espaciado, `FACTOR_VIENTO`; lluvia con el 24,5 % de las gotas y el lecho al 60 %, `DENSIDAD_GOTAS` y `NIVEL_LECHO_LLUVIA`) |
 | `apps/app/public/remanso/remanso.js` | Interfaz (módulo ES): arma opciones, sesión y cierre con DOM |
 | `apps/app/public/remanso/remanso.css` | Tokens y estilos: claro, oscuro y noche |
 | `apps/app/public/_headers` | `nosniff` para los recursos de `/remanso/*` |
@@ -128,6 +131,9 @@ explícita de Pablo.
 - `npm run test:e2e:remanso` · Playwright sobre `wrangler dev` real (cabeceras,
   política, recorridos, teclado, 360 px, claro/oscuro). Firefox es opcional:
   `REMANSO_E2E_FIREFOX=1 npx playwright test --config apps/app/playwright.config.mjs --project firefox`.
+  **Las pruebas de layout dependen de la fuente del sistema:** el CI usa DejaVu Sans, más ancha que la de muchos
+  equipos (Noto Sans). «Caben en la ventana» exige además 20 px de holgura. Para reproducir el CI localmente:
+  `FONTCONFIG_FILE=<conf que asigna DejaVu Sans a system-ui y sans-serif> npm run test:e2e:remanso`.
 
 ## Riesgos y límites no verificados
 
@@ -144,7 +150,6 @@ investigar a fondo cómo se resuelven en la práctica:
 - **Dispositivo emulado ≠ físico:** las pruebas automáticas validan flujo, política y
   contraste, no calidad de sonido. WebKit/Safari no se probó.
 
-Pendientes de producto en el [backlog](../PRODUCT_BACKLOG.md): historial, navegación y
-nombre de las dos mitades, modo oscuro global, fondos grabados, elección del gong en el
+Pendientes de producto en el [backlog](../PRODUCT_BACKLOG.md): historial, modo oscuro global, fondos grabados, elección del gong en el
 perfil.
 No hay excepciones propuestas a la base común en esta ficha.

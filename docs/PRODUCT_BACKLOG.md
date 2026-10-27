@@ -21,7 +21,6 @@ Ficha: [Remanso](productos/REMANSO.md). Primer corte en la rama `feature/remanso
 marcados **investigar** requieren una investigación a fondo en internet (qué
 conviene y cómo) antes de elegir, y su resultado se registra aquí.
 
-- **Navegación y nombre de las dos mitades de la suite** (organiza / cuida). Hoy Remanso es una herramienta más en la home; el menú general no lista herramientas. Aceptación: decisión de Pablo sobre nombres y navegación, explorada con `/opsx:explore` antes de proponer.
 - **Historial de sesiones** `{ fecha, minutos, fondo, ánimo }`: persona u hogar, para qué, sin rachas ni presión. Hoy el ánimo no se guarda ni se envía. Aceptación: exploración con Pablo; si se guarda, migración, privacidad y export definidos.
 - **Publicar Remanso en producción** (app y sitio público). La placa y la landing existen y funcionan en staging; el sitio de producción dice «en preparación». Aceptación: aprobación explícita de Pablo, publicación de la app y el sitio por separado según [operación](homesuite/OPERACION.md), y la landing de producción con enlace real a la app.
 - **Elección del gong en el perfil** para que siga a la persona entre dispositivos (hoy vive en el dispositivo). Aceptación: exploración con Pablo; si se guarda en el servidor, migración compatible, API con CSRF y qué pasa sin cuenta.
@@ -47,12 +46,11 @@ Origen: [Identidad y visión](HOMESUITE_IDENTIDAD_Y_VISION.md), §11. Son tareas
 exploración y revisión, no un roadmap comprometido; ninguna autoriza cambios de código,
 logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 
-- Revisar el copy vigente de home y landings (`apps/site/public/`) frente a la nueva identidad: hoy habla de «vida compartida», «equipo» y cuentas «compartidas». Aceptación: diff acotado por página que separa hechos actuales de aspiraciones y mantiene el voseo.
-- Decidir la portada: copy principal o prudente (§9.1), según el catálogo publicado.
 - Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
 - Definir el alcance individual de TasKing y Compras y su comunicación.
-- Revisar la identidad visual actual (emblema, favicon, acento por producto) antes de proponer cambios.
-- Decidir si y cómo comunicar productos en exploración (Pausa, Rituales, Momentos, Bitácora) y sus nombres definitivos. Hay trabajo de meditación en la rama `feature/remanso` (aún no integrada); su relación con «Pausa» está por aclarar.
+- Revisar la identidad visual actual (emblema y favicon) antes de proponer cambios. El acento por producto ya se aplicó (2026-10-27, `acentos-y-catalogo-publico`); el azul verdoso de Compras queda definido y sin uso.
+- Volver a publicar Compras en el sitio cuando la herramienta exista: mover `apps/site/pendientes/compras.html` a `public/`, reponer su tarjeta y los enlaces de las otras landings, y darle su clase de acento.
+- Decidir si y cómo comunicar productos en exploración (Rituales, Momentos, Bitácora) y sus nombres definitivos. «Pausa» salió el 2026-10-27: Remanso, la herramienta de meditación ya integrada, ocupa su lugar.
 - Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 
 ---

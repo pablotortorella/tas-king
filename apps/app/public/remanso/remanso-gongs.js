@@ -3,7 +3,8 @@
 // Se sintetizan en el dispositivo, con el mismo grafo de audio que el gong del paquete
 // (osciladores sinusoidales con caída exponencial + un golpe de ruido filtrado), pero
 // con los parámetros de cada sonido. `SuiteEngine` reemplaza únicamente `gong()`:
-// el motor (remanso-engine.js) sigue siendo el del paquete, sin editar.
+// el motor (remanso-engine.js) sigue siendo el del paquete, sin editar. Con el mismo método
+// reemplaza `windGust()` (ráfagas del bosque, ver FACTOR_VIENTO), `drop()`/`buildAmbient()` (lluvia) y `crackle()` (chispazos).
 //
 // Los tres sonidos se afinaron de oído con Pablo (2026-10-26). Ninguno oscila de
 // volumen («wa-wa»): el desafinado entre los dos osciladores de cada parcial es mínimo
@@ -48,12 +49,15 @@ export const GONG_IDS = Object.freeze(Object.keys(GONGS));
 export const GONG_NAMES = Object.freeze(Object.fromEntries(GONG_IDS.map((id) => [id, GONGS[id].nombre])));
 export const DEFAULT_GONG = "brillante";
 
+// Volumen de todos los gongs respecto del paquete: 25 % más bajo (ajuste del 2026-10-27, tercera ronda con Pablo).
+export const NIVEL_GONG = 0.75;
+
 /** Sintetiza un gong en `t`. `amp` es el volumen relativo del motor (1,5 inicio/fin, 1 medio). */
 export function synthGong(ctx, noise, dest, t, amp, main, sound) {
   const base = main ? sound.base.inicioFin : sound.base.medio;
   const dm = main ? sound.duracion.inicioFin : sound.duracion.medio;
   const bus = ctx.createGain();
-  bus.gain.value = 0.26 * amp;
+  bus.gain.value = 0.26 * amp * NIVEL_GONG;
   bus.connect(dest);
   for (const [ratio, level, seconds] of sound.parciales) {
     for (const [offset, share] of sound.pares) {
@@ -82,7 +86,33 @@ export function synthGong(ctx, noise, dest, t, amp, main, sound) {
   strike.start(t, Math.random() * 7); strike.stop(t + sound.golpe.dur + 0.03);
 }
 
-/** El motor del paquete con gong elegible: sólo se reemplaza `gong()`. */
+// Ajustes de oído con Pablo (2026-10-27). Cada número se afina por separado.
+//
+// Las ráfagas de viento del bosque del paquete llegan a un nivel de 0,30–0,65: sonaban muy fuertes y, como son ruido filtrado,
+// parecidas a la lluvia. Se multiplican por este factor (0,0975 como máximo, igual que las hojas) y se espacian al doble.
+export const FACTOR_VIENTO = 0.15;
+// De las gotas de lluvia que programa el motor sólo suena esta proporción (el sonido original era muy denso).
+export const DENSIDAD_GOTAS = 0.245;
+// Nivel del lecho continuo de la lluvia (ruido blanco y marrón) respecto del paquete.
+export const NIVEL_LECHO_LLUVIA = 0.6;
+
+// Probabilidad de que cada chasquido del fuego venga acompañado de un chispazo (un estallido más fuerte y una lluvia de chispas).
+// El motor lanza unos 5 chasquidos por segundo, así que 0,025 da un chispazo cada 8 s en promedio.
+export const PROB_CHISPAZO = 0.025;
+
+// Un chasquido suelto con el mismo grafo que `crackle` del paquete: ruido blanco filtrado con caída exponencial.
+function chasquido(engine, t, dest, nivel, largo, filtro) {
+  const src = engine.ctx.createBufferSource();
+  src.buffer = engine.buf.white;
+  const gain = engine.ctx.createGain();
+  gain.gain.setValueAtTime(nivel, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + largo);
+  src.connect(filtro); filtro.connect(gain);
+  engine.pan(gain, dest);
+  src.start(t, Math.random() * 7); src.stop(t + largo + 0.01);
+}
+
+/** El motor del paquete con gong elegible, viento más suave, lluvia menos densa y chispazos en el fuego: sólo se reemplazan `gong()`, `crackle()`, `windGust()`, `drop()` y `buildAmbient()`. */
 export class SuiteEngine extends RemansoEngine {
   constructor() {
     super();
@@ -96,5 +126,57 @@ export class SuiteEngine extends RemansoEngine {
 
   gong(t, amp, dest, main) {
     synthGong(this.ctx, this.buf.white, dest, t, amp, main, GONGS[this.gongId]);
+  }
+
+  // El chasquido del paquete y, de vez en cuando, un chispazo: un estallido grave más fuerte que cualquiera del paquete (0,5–0,7
+  // según el calor) seguido de 4 a 8 chispas agudas en unas décimas de segundo.
+  crackle(t, dest, heat) {
+    super.crackle(t, dest, heat);
+    if (Math.random() >= PROB_CHISPAZO) return;
+    const calor = 0.7 + heat * 0.6;
+    chasquido(this, t, dest, 0.5 * calor, 0.03, this.filter("bandpass", 800 + Math.random() * 1000, 1.2));
+    const chispas = 4 + Math.floor(Math.random() * 5);
+    let tc = t + 0.02;
+    for (let i = 0; i < chispas; i += 1) {
+      tc += 0.015 + Math.random() * 0.045;
+      chasquido(this, tc, dest, (0.12 + Math.random() * 0.2) * calor, 0.004 + Math.random() * 0.004, this.filter("highpass", 2500 + Math.random() * 3500));
+    }
+  }
+
+  // Igual que `windGust` del paquete, con el nivel de la ráfaga y de las hojas reducido por FACTOR_VIENTO y la espera hasta la
+  // siguiente ráfaga al doble (24–74 s después de terminar la anterior, no 12–37 s). Las frecuencias no cambian.
+  windGust(s, t) {
+    const rise = 1.5 + Math.random() * 2;
+    const hold = 0.5 + Math.random() * 2;
+    const fall = 2 + Math.random() * 3;
+    const peak = (0.3 + Math.random() * 0.35) * FACTOR_VIENTO;
+    const end = t + rise + hold + fall;
+    s.wind.gain.setValueAtTime(0, t);
+    s.wind.gain.linearRampToValueAtTime(peak, t + rise);
+    s.wind.gain.linearRampToValueAtTime(peak * (0.6 + Math.random() * 0.4), t + rise + hold);
+    s.wind.gain.linearRampToValueAtTime(0, end);
+    s.windBp.frequency.setValueAtTime(400, t);
+    s.windBp.frequency.linearRampToValueAtTime(650 + Math.random() * 450, t + rise);
+    s.windBp.frequency.linearRampToValueAtTime(420, end);
+    s.leaves.gain.setValueAtTime(0, t);
+    s.leaves.gain.linearRampToValueAtTime((0.012 + Math.random() * 0.015) * FACTOR_VIENTO, t + rise + 0.3);
+    s.leaves.gain.linearRampToValueAtTime(0, end);
+    return (end - t) + 24 + Math.random() * 50;
+  }
+
+  // Sólo suena una parte de las gotas que programa el motor: menos densidad sin tocar la intensidad que sube y baja.
+  drop(t, bus, level) {
+    if (Math.random() < DENSIDAD_GOTAS) super.drop(t, bus, level);
+  }
+
+  // Construye el fondo del paquete y, en la lluvia, pasa el lecho continuo por una ganancia que lo baja.
+  buildAmbient(s) {
+    super.buildAmbient(s);
+    if (s.ambient === "lluvia") {
+      const recorte = this.gain(NIVEL_LECHO_LLUVIA);
+      s.rain.disconnect();
+      s.rain.connect(recorte);
+      recorte.connect(s.amb);
+    }
   }
 }
