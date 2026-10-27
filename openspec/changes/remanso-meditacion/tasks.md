@@ -38,7 +38,7 @@ mismo commit.
 
 ## 5. E2E sobre servidor real y CI
 
-- [x] 5.1 Crear `apps/app/playwright.config.mjs` y `apps/app/e2e/` (puerto propio, estado de D1 local descartable, migraciones aplicadas antes, `DEV_LOCAL_MODE` sin `DEV_LOCAL_EMAIL`; las pruebas con cuenta usan la cabecera `X-HomeSuite-Dev-Email`) y el script `test:homesuite-app:e2e`; verificar que corre en limpio dos veces seguidas.
+- [x] 5.1 Crear `apps/app/playwright.config.mjs` y `apps/app/e2e/` (puerto propio, estado de D1 local descartable, migraciones aplicadas antes, `DEV_LOCAL_MODE` sin `DEV_LOCAL_EMAIL`; las pruebas con cuenta usan la cabecera `X-HomeSuite-Dev-Email`) y el script `test:e2e:remanso`; verificar que corre en limpio dos veces seguidas.
 - [x] 5.2 E2E de cabeceras sobre `wrangler dev`: política, `X-Frame-Options` y `nosniff` en `/`, `/tareas`, `/cuentas-claras`, `/compras`, `/perfil`, `/remanso` y en los recursos de Remanso.
 - [x] 5.3 E2E del recorrido, sin cuenta (inicio libre → sesión de 1 min → terminar antes → cierre sin nombre ni mención a la cuenta) y con cuenta (→ cierre con nombre), sin violaciones de política (`securitypolicyviolation`) ni errores de consola; teclado (Tab/Enter/Espacio), 360 px sin desborde y `colorScheme` claro/oscuro con `emulateMedia`.
 - [x] 5.4 Intentar el mismo recorrido en Firefox o WebKit; registrar el resultado o el límite si no se pueden instalar.
@@ -52,7 +52,7 @@ mismo commit.
 
 ## 7. Verificación local y publicación en staging
 
-- [x] 7.1 Ejecutar `npm test`, `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:homesuite-app:e2e`, `npm run test:homesuite-site` y `openspec validate remanso-meditacion --strict`; registrar comandos, SHA y resultados.
+- [x] 7.1 Ejecutar `npm test`, `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:remanso`, `npm run test:homesuite-site` y `openspec validate remanso-meditacion --strict`; registrar comandos, SHA y resultados.
 - [x] 7.2 Agregar el script `dev:homesuite-app:anonimo` (igual que `dev:homesuite-app` sin `DEV_LOCAL_EMAIL`), levantar el servidor local y ofrecer a Pablo `http://localhost:8787/remanso` en ambos modos con qué mirar (opciones libres y con cuenta, los seis fondos con cuenta, claro/oscuro, pausa, fin anticipado, nombre en el cierre) y esperar su OK.
 - [x] 7.3 Con árbol limpio, correr `wrangler deploy --dry-run --env staging --config apps/app/wrangler.jsonc`, avisar que el despliegue reemplaza el SHA activo de staging y pedir confirmación inmediatamente antes de ejecutar `npm run deploy:homesuite-app:staging`.
 - [x] 7.4 Smoke del mismo SHA en staging: `/healthz`, `/remanso` (200 con sesión o invitación sin ella), recursos 200 con tipo y `nosniff`, cabeceras de las demás rutas y `X-Request-Id`; registrar el resultado.

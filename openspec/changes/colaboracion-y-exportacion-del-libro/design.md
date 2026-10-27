@@ -1,7 +1,7 @@
 ## Context
 
 La plataforma separa tres cosas: usuario (identidad Google), membresía (acceso a
-un espacio) e invitación (promesa de acceso a un email). El libro agrega una
+un grupo) e invitación (promesa de acceso a un email). El libro agrega una
 cuarta: el participante, que puede o no tener usuario. El MVP exige que aceptar una
 invitación «nunca traslade balances entre dos participantes distintos de forma
 implícita».

@@ -4,11 +4,11 @@ HomeSuite ya tiene una superficie pública, pero Cuentas Claras necesita una
 frontera privada real antes de importar historia financiera. La autenticación de
 TasKing no se puede reutilizar como plataforma: está ligada a otro Worker,
 identifica sesiones por email y usa una lista global de acceso en lugar de
-permisos por espacio.
+permisos por grupo.
 
 El primer corte debe probar la colaboración de dos personas sin adelantar el
 modelo de gastos. Una persona tiene que poder entrar con Google, nombrar su
-espacio, invitar a otra por email y compartir sólo ese espacio cuando ambas lo
+grupo, invitar a otra por email y compartir sólo ese grupo cuando ambas lo
 confirmen.
 
 ## What Changes
@@ -18,14 +18,14 @@ confirmen.
 - Google es el único proveedor inicial. La identidad se vincula al claim estable
   `sub`; el email verificado sirve para localizar invitaciones, no como identidad
   primaria.
-- Se incorporan usuarios, espacios, membresías, invitaciones y auditoría mínima
+- Se incorporan usuarios, grupos, membresías, invitaciones y auditoría mínima
   en una D1 propia de HomeSuite App.
-- Una persona autenticada crea explícitamente un espacio con nombre libre y queda
-  como titular; el espacio muestra un Cuentas Claras vacío, sin movimientos ni
+- Una persona autenticada crea explícitamente un grupo con nombre libre y queda
+  como titular; el grupo muestra un Cuentas Claras vacío, sin movimientos ni
   saldos todavía.
 - El titular invita por email exacto, ve invitaciones pendientes y puede
   cancelarlas. La persona invitada inicia sesión con esa cuenta de Google, ve el
-  espacio, el titular y Cuentas Claras, y acepta o rechaza antes de acceder.
+  grupo, el titular y Cuentas Claras, y acepta o rechaza antes de acceder.
 - La aplicación se prueba localmente y se prepara para staging aislado en
   `staging.homesuite.info`; producción en `app.homesuite.info` queda sujeta a
   revisión y aprobación explícita.
@@ -48,7 +48,7 @@ confirmen.
 
 ### Added Capabilities
 
-- `plataforma-homesuite-minima`: identidad, sesiones, espacios privados,
+- `plataforma-homesuite-minima`: identidad, sesiones, grupos privados,
   membresías e invitaciones dirigidas por email para la primera colaboración de
   Cuentas Claras.
 

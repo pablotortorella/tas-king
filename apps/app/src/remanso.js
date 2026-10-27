@@ -157,6 +157,6 @@ export function registerRemansoRoutes(app, { page, html, googleConfigured, ...de
       nombre: profile?.displayName ?? null,
       loginDisponible: googleConfigured(c.env),
     });
-    return c.html(page("Remanso", content, profile, REMANSO_ASSETS));
+    return c.html(page("Remanso", content, REMANSO_ASSETS));
   });
 }

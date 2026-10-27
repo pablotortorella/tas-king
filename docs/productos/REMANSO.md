@@ -125,7 +125,7 @@ explícita de Pablo.
 - `npm run test:homesuite-app:integration` · rutas con sesión sobre D1
 - `npm run test:homesuite-site` y `npm run test:homesuite-site:e2e` · sitio público
   (la placa y la landing de Remanso; el E2E del sitio también corre en CI)
-- `npm run test:homesuite-app:e2e` · Playwright sobre `wrangler dev` real (cabeceras,
+- `npm run test:e2e:remanso` · Playwright sobre `wrangler dev` real (cabeceras,
   política, recorridos, teclado, 360 px, claro/oscuro). Firefox es opcional:
   `REMANSO_E2E_FIREFOX=1 npx playwright test --config apps/app/playwright.config.mjs --project firefox`.
 

@@ -7,6 +7,59 @@
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
+
+**Estado:** implementado en la rama `feature/grupos-con-identidad` (apilada sobre
+`feature/personas-menu-perfil`), sin publicar y **sin tocar staging todavía**. Cambio
+OpenSpec: `grupos-con-identidad`.
+
+- **Lenguaje único:** el término anterior de «grupo» desapareció de interfaz, URLs, API, código, base,
+  pruebas y documentos vigentes (excepción: `openspec/changes/archive/`, el lema figurado
+  del sitio y unas frases sobre caracteres en blanco). Una prueba (`glossary.test.js`) lo
+  vigila, junto con otra que recorre las pantallas buscando «libro». Las migraciones
+  `0001`–`0011` se **reescribieron** con `groups`/`group_id` (y `0006_group_slugs`); la base
+  de staging no es migrable en el lugar y se recreará desde cero con backup previo.
+- **Identidad del grupo:** nombre, descripción (500), emoji y color (reglas del avatar
+  personal); extracto de 150 en la lista. **Administrar grupo** (`/groups/:id/settings`,
+  solo titular) con ruedita y ítem de menú; Personas queda para ver, renombrar y unir.
+- **Entrada:** `/groups` lista siempre; `/cuentas-claras` abre el último grupo (cookie
+  `last_group`, validada contra la membresía). El nombre del grupo en el encabezado lleva
+  a la lista.
+- **Verificación:** unidad 347, integración 301, E2E 160+ en Chromium; Firefox sobre
+  grupos, menú, personas y diseño. Dos pruebas (`recategorizacion.spec.js:160` y alguna de
+  importación) fallan de forma intermitente en la corrida completa y pasan solas.
+- **Un error propio del renombre, detectado y corregido:** el reemplazo automático
+  convirtió un valor de CSS de alineación en uno inválido; ahora una prueba lo impide.
+- **Pendiente:** recrear y desplegar staging con Pablo (tareas 9.x), categorías y
+  subcategorías (backlog) y el glosario de categorías.
+
+## Cuentas Claras: personas del grupo, menú y «Soy yo» en la importación — 2026-10-26
+
+**Estado:** implementado en la rama `feature/personas-menu-perfil` (integra `main` con el perfil
+compartido), sin publicar. Cambio OpenSpec: `personas-del-grupo`.
+
+- **Menú de la app** en el encabezado: secciones del grupo (Saldos, Movimientos, Personas, Categorías,
+  Clasificar, Importar), Inicio, Mis grupos, «Ver mi perfil» y «Cerrar sesión»; el avatar y el nombre
+  llevan al perfil. Se cierra con Escape, al tocar afuera y al elegir una sección de la misma página.
+  La lista de grupos con invitaciones vive en `/cuentas-claras`; `/` es el inicio de HomeSuite.
+- **Pantalla de personas** (`/groups/:id/people`): estado y saldo de cada persona, personas unidas
+  aparte y las herramientas de administración que estaban al final del libro. La titular renombra a una
+  persona (nombre único entre vigentes) y la une a otra: vista previa sin escribir, confirmación con
+  clave idempotente, un movimiento revisado por cada uno afectado, cuenta e invitaciones resueltas, y
+  la persona unida se conserva como registro (`0011_person_merge.sql`).
+- **Importación**: cada columna pregunta «¿Quién es “X” en este grupo?» con «Soy yo (nombre)» primero;
+  se preselecciona por nombre; la revisión avisa si dos columnas van a la misma persona o si ninguna es
+  quien importa.
+- **Evidencia (2026-10-26):** unitarias 330, integración 279 (incluye unión por tandas con corte a mitad,
+  doble confirmación en simultáneo y corrección concurrente; 2.500 movimientos en 189 ms en D1 local),
+  sitio 10 y base 230; E2E 153 en Chromium y 153 en Firefox (menú, personas y correspondencia a 390 px y
+  escritorio, claro y oscuro). Un intermitente conocido de Firefox (`importacion-recorridos`, recarga del
+  progreso) pasó 6 de 6 al repetirlo. Se corrigieron dos pruebas que pasaban por un motivo equivocado
+  (un «Guardar» que coincidía con «Guardar nombre» del libro) y una medición de desborde que ocurría antes de
+  cargar la hoja de estilos. Los límites de D1 remoto de la unión se verifican en staging antes de cerrar el cambio.
+- **Pendiente:** probar en staging la unión de las dos personas duplicadas del caso real; deshacer una
+  unión queda fuera de este cambio.
+
 ## Remanso — primer corte (2026-10-26)
 
 **Estado:** implementado en la rama `feature/remanso` (base `97a592a`) y **publicado en
@@ -19,7 +72,7 @@ ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 
 - `/remanso` en HomeSuite App con inicio, sesión y cierre, usando el motor de sonido
   del paquete de Claude Design **sin modificar** (huella SHA-256 fijada por prueba).
-  Entrada provisional como una herramienta más en la home y el menú; las dos mitades
+  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas); las dos mitades
   de la suite siguen sin explorar.
 - Acceso en dos niveles: **sin cuenta** 1, 2 y 5 min, silencio/agua/bosque y Gong
   brillante; **con cuenta** 10, 20 y 30 min, lluvia/fuego/noche, Gong profundo y
@@ -92,8 +145,8 @@ Publicado desde ese SHA en dos Workers:
 - La raíz de la app presenta la suite. `/cuentas-claras` conserva «Muy pronto»
   para una sesión válida; sin sesión ofrece el acceso con Google y retorno a esa
   ruta. El avatar/nombre y el menú general llevan a `/perfil`, que edita el
-  perfil global usando la API común, CSRF y revisión. El apodo por espacio se
-  editará cuando exista la interfaz de espacios.
+  perfil global usando la API común, CSRF y revisión. El apodo por grupo se
+  editará cuando exista la interfaz de grupos.
 - Verificación: 18 unitarias de HomeSuite App, 14 integraciones D1, 10 pruebas
   del sitio, 230 generales, OpenSpec strict, dry-run de ambos Workers, [CI del
   PR](https://github.com/pablotortorella/tas-king/actions/runs/40230887372)
@@ -118,7 +171,7 @@ Publicado desde ese SHA en dos Workers:
 `homesuite-app-staging`, Version ID `955c8bf9-e892-4c21-8c85-b3d904cdf122`.
 
 - Exploración conversada: nombre y avatar globales, origen Google/personalización,
-  modos de avatar y alternativa de inicial; apodo opcional por espacio, vacío por
+  modos de avatar y alternativa de inicial; apodo opcional por grupo, vacío por
   defecto, secundario y de edición propia; ciclo de reingreso e historial definidos.
 - [Change](../openspec/changes/perfil-compartido-homesuite/proposal.md): perfil
   global de plataforma y presentación de membresía separados; contratos propios
@@ -146,6 +199,30 @@ Publicado desde ese SHA en dos Workers:
   migración de TasKing sigue pendiente. No habilita producción ni datos
   financieros reales.
 
+## Cuentas Claras: repartos, categorías, importación, recategorización y lista - 2026-10-25
+
+**Alcance:** cinco cambios OpenSpec implementados en ramas apiladas sobre la pila de diseño (PR #94 a #98), más el
+arreglo de Firefox (#100) y una revisión integral de código. **Nada desplegado**: ni staging ni producción.
+
+- **Repartos** (`repartos-del-libro`): cinco métodos con una sola regla (`split.js`) compartida por el servidor y la vista
+  previa; el método y lo ingresado se guardan en la revisión.
+- **Categorías** (`categorias-del-libro`): lista propia por libro, nombres normalizados, categoría en el movimiento,
+  gestión por la persona titular (renombrar, reagrupar, archivar, fusionar con alias), filtro y exportación.
+- **Importación** (`importacion-como-movimientos`): las filas de Splitwise son gastos normales con pagadores inferidos;
+  carga por tandas, reanudable y de publicación atómica; punto de partida del grupo. Las tareas 7.1 y 7.2 siguen abiertas:
+  la conversión de lotes del modelo anterior corre sola en el mantenimiento diario y el retiro de las tablas viejas
+  (`apps/app/ops/retire-legacy-import-tables.sql`) va en un release posterior, con la guarda que se detiene si queda algo.
+- **Recategorización** (`recategorizacion-masiva`): cambio en lote con auditoría y deshacer, y «Clasificar rápido» con
+  sugerencias conservadoras y atajos (con interruptor).
+- **Lista y búsqueda** (`lista-y-busqueda-del-libro`): índice por petición (de ~337 ms a ~6 ms con 2.500 movimientos),
+  criterios por persona, regreso a la lista con franja «Recién agregado» y aviso `slow_book_open`.
+- **Revisión integral:** corrige varios pagadores al corregir un movimiento, «todos los resultados» con filtro de persona,
+  categorías genéricas, exportación que no mostraba lo oculto, huella de las solicitudes idempotentes, orden de «deshacer la
+  última», nombres de categoría largos en la importación y confirmación repetida; parte `index.js` en módulos de rutas.
+- **Pruebas:** unitarias, de integración (D1 local) y E2E en Chromium y Firefox, con recorridos exploratorios por cambio.
+- **Sin verificar:** límites de D1 remoto (tamaño de sentencia, sentencias por lote, CPU por petición); las mediciones de
+  `CASO-REAL-INTERNO.md` son contra D1 local. Sin WebKit ni dispositivo físico. Antes de producción: cadena operativa
+  (respaldo, migraciones `0008`–`0010`, Worker) y smoke en staging del mismo SHA.
 
 ## Base común de buenas prácticas — 2026-10-24
 
@@ -165,11 +242,11 @@ despliegue ni recursos remotos. La integración se comprueba en el historial Git
 ## HomeSuite: corte para integración visual - 2026-10-23
 
 - **Base consolidada:** `integration/homesuite-design-base`, sincronizada con
-  `main` v2.3.2 en `9e8a8c1`. Reúne espacios autenticados, preparación
+  `main` v2.3.2 en `9e8a8c1`. Reúne grupos autenticados, preparación
   financiera, núcleo cotidiano, importación Splitwise, ajustes de la revisión
   local y el arte nuevo. Es la rama de partida para aplicar el diseño a todo el
   recorrido, no una rama autorizada para producción.
-- **Cadena funcional abierta:** #68 (`main` -> espacios autenticados), #71
+- **Cadena funcional abierta:** #68 (`main` -> grupos autenticados), #71
   (preparación financiera), #75 (núcleo), #76 (Splitwise) y #81 (feedback).
   Deben integrarse en ese orden. El código financiero posterior a #71 todavía no
   fue desplegado en staging ni producción.
@@ -201,7 +278,7 @@ Sesión de diseño y planeamiento. **No se escribió código de producto ni se t
 | Change `importacion-splitwise-inicial` | ídem | Ídem |
 | Change `busqueda-movimientos-unificada` | ídem | Ídem |
 | Change `colaboracion-y-exportacion-del-libro` | ídem | Ídem |
-| `plataforma-homesuite-minima` | `openspec/changes/` en `main` | **Sin cambios.** Los cuatro changes nuevos dependen de que termine su grupo 3 de `tasks.md` (espacios, membresías e invitaciones) |
+| `plataforma-homesuite-minima` | `openspec/changes/` en `main` | **Sin cambios.** Los cuatro changes nuevos dependen de que termine su grupo 3 de `tasks.md` (grupos, membresías e invitaciones) |
 
 **Rediseño (10 pantallas), guardado en `docs/diseno/cuentas-claras/`.** Empezar un grupo: 1 Nuevo grupo, 2 Punto de partida, 3 Importar desde Splitwise. Día a día en móvil: 4 Saldos (con selector COP/USD), 5 Movimientos y búsqueda, 6 Agregar movimiento (gasto, ingreso, transferencia), 7 Detalle y revisiones, 8 «Por qué te deben». Escritorio y personas: 9 Libro de dos paneles, 10 Personas y acceso. Parte de `docs/HOMESUITE_CUENTAS_CLARAS_MVP.md`, el Journey, el Story Map y los estilos de `apps/site/public`. Todas usan los mismos datos sintéticos (Pablo, Ana, Laura, Mateo), de modo que los saldos cierran entre pantallas: saldo de Pablo +$1.748.350 en COP, que suma $0 con los demás, y USD aparte. El modo oscuro se aplicó pasando todos los colores a variables CSS con `prefers-color-scheme`; los pares de color listados en `tokens.json` se verificaron por cálculo de contraste (mínimo 5,1 en texto); no se auditaron todos los pares de todas las pantallas. La paleta oscura es provisoria: la identidad de temas de la suite (HT-01/HT-02) sigue pendiente.
 
@@ -264,11 +341,94 @@ Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden:
 - Publicación inicial desde `main` SHA `f8cb9b6`, Version ID `48847d8f-86de-4b18-b2ad-def62e348bba`. Las landings del PR #52 se publicaron desde `main` SHA `45f5222`, Version ID `cc65ff3f-6747-41d3-98e0-c0b3742b81b9`. El PR #56 renombró Gastos a Cuentas Claras y se publicó desde `main` SHA `aef6306`, Version ID `76bdcbe9-3a69-403b-a1e7-e327528ec17b`; CI, las verificaciones específicas del sitio y la comprobación pública aprobaron. El favicon del sitio usa la casita de HomeSuite con el techo coral por delante.
 - `staging.homesuite.info` quedó asociado el 2026-09-23 a `homesuite-app-staging`, aislado del sitio público y de TasKing. Usa D1 exclusiva `homesuite-app-db-staging` (`7d270a78-adbb-45fc-b5fc-7550c547af68`) con las migraciones `0001_platform` y `0002_sessions`. El 2026-10-16 quedaron configurados el cliente OAuth `HomeSuite Staging`, el client ID público versionado y `GOOGLE_CLIENT_SECRET`/`SESSION_SECRET` como secretos cifrados fuera de Git. HTTPS, `/healthz`, autorización Google, callback, sesión y logout fueron verificados con una cuenta real en la versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`. `qa.homesuite.info` continúa sin uso. Ver [infraestructura de HomeSuite](HOMESUITE_INFRASTRUCTURE.md#decisión-para-el-sitio-público-y-la-futura-app-2026-09-21).
 
-### ⚠️ HomeSuite App: OAuth real operativo en staging — 2026-10-16
+### ⚠️ HomeSuite App: plataforma colaborativa en staging — 2026-10-20
 
-- PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear espacio/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
+- PR #60 integrado en `main` (SHA `e7c9990`). Implementa D1 local para crear grupo/titular, invitar, cancelar, descubrir de forma privada y aceptar/rechazar con auditoría.
 - PR #62 integrado en `main` (SHA `2e75083`). Implementa OAuth Google con PKCE, `state` firmado, nonce y validación criptográfica del ID token; las sesiones viven en D1 con cookie host-only y el entorno sin secretos responde de forma honesta, sin simular login.
-- El primer login real detectó que el flujo generaba el desafío PKCE pero omitía `code_verifier` al canjear el código. El fix lo envía desde el estado firmado y agrega una regresión específica; 12 pruebas unitarias y 9 integraciones D1 pasan. Se desplegó desde `fd14035` como versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`, y Pablo confirmó login y sesión con su cuenta Google. Sigue pendiente el recorrido completo con dos cuentas, espacios e invitaciones. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
+- El primer login real detectó que el flujo generaba el desafío PKCE pero omitía `code_verifier` al canjear el código. El fix lo envía desde el estado firmado y agrega una regresión específica; 12 pruebas unitarias y 9 integraciones D1 pasan. Se desplegó desde `fd14035` como versión `1aae7e65-f9f1-4878-81ba-d9a962b0c62f`, y Pablo confirmó login y sesión con su cuenta Google. La eventual reutilización del perfil de TasKing seguirá siendo una migración consentida; no se comparten sus cookies, Worker, base ni preferencias.
+- `feature/homesuite-authenticated-spaces` incorpora rutas reales de creación/renombre, selección, invitación/cancelación y aceptación/rechazo. Toda mutación autenticada exige origen confiable y token CSRF firmado ligado a sesión; staging tiene observabilidad estructurada y `X-Request-Id`, sin registrar identidad ni payloads.
+- Verificación al 2026-10-23: 16 pruebas unitarias, 14 integraciones D1 y 4 E2E pasan. El nuevo E2E con sesión real reprodujo el 403 de Chrome por `Origin: null` bajo `no-referrer`; el fix sólo acepta ese caso con `Sec-Fetch-Site: same-origin` y token firmado válido.
+- Desplegado dentro de SHA `4d9bfdc` como versión `7098716d-2685-4371-a573-f890a7a5244e`. El recorrido manual con dos cuentas reales comprobó privacidad previa, nombre del invitante, rechazo sin acceso, nueva invitación, aceptación, rol de integrante y visibilidad para el titular. D1 confirmó `owner` + `member`, invitaciones `rejected`/`accepted` y la auditoría esperada. Producción permanece intacta.
+
+### Cuentas Claras: base segura para datos financieros — 2026-10-20
+
+- `feature/homesuite-financial-readiness` añade el esquema `0003` para libros,
+  participantes, movimientos, componentes, revisiones inmutables, eventos e
+  idempotencia. Los importes usan enteros en unidad menor y las invariantes de
+  gasto, ingreso, transferencia, reparto y suma cero tienen pruebas propias.
+- El Worker rechaza cuerpos mutables mayores a 16 KiB, usa Rate Limiting separado
+  para OAuth y mutaciones, y ejecuta un cron diario que vence invitaciones y
+  purga sesiones antiguas sin tocar historia financiera.
+- El deploy de staging creó primero el backup UTC `20261020T053821Z`; el SQL de
+  3210 bytes pasó `quick_check`, foreign keys y tablas esenciales en una D1 local
+  aislada. La cadena operativa queda fijada como backup → migración → Worker.
+- Verificación: 23 unitarias, 22 integraciones D1, 3 E2E, ambos OpenSpec strict,
+  dry-run de Wrangler y escaneo de secretos. En staging, health y cabeceras
+  responden, 16 KiB + 1 devuelve 413 y OAuth conserva PKCE.
+- Desplegado desde SHA `a0d9155` como versión
+  `cff2c319-b514-483f-aa49-c0b29e6b2169`. `0003` figura aplicada, existen las
+  ocho tablas financieras, sus conteos siguen en cero y no hay violaciones de
+  foreign keys. El PR apilado es el #71, sobre #68. Producción no fue creada ni
+  modificada.
+- La política de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md) mantiene bloqueados
+  los datos reales y producción hasta contar con exportación/eliminación de
+  producto, backup externo, restore drill productivo y credenciales rotadas.
+
+### Cuentas Claras: uso cotidiano en rama de revisión — 2026-10-23
+
+- `feature/homesuite-financial-core`, apilada sobre #71, convierte cada grupo
+  nuevo en grupo con libro y participante propietario. La migración `0004` crea
+  libros y participantes vinculados para los grupos existentes de staging.
+- El titular puede añadir participantes sin cuenta y elegir uno al invitar; la
+  aceptación vincula la identidad confirmada sin trasladar saldos. Gastos e
+  ingresos admiten un pagador o receptor y reparto igual o exacto. También hay
+  transferencias, saldos por participante y moneda, cronología y detalle.
+- Corregir crea una revisión inmutable; anular conserva el movimiento y retira
+  su efecto de los saldos. Cada escritura usa una clave idempotente y las
+  correcciones simultáneas se resuelven mediante la revisión esperada.
+- El libro se exporta en JSON con participantes, movimientos, revisiones y
+  eventos; el CSV incluye efectos por participante en unidades menores. Las
+  páginas financieras usan `Cache-Control: private, no-store` y ofrecen un
+  formulario móvil con estado provisional mientras se confirma la escritura.
+- Verificación local: pruebas monetarias, integración D1 con dos identidades,
+  permisos, reintentos y concurrencia; Playwright cubre gasto, corrección y
+  anulación a 390 px. Esta rama no se desplegó en staging ni en producción.
+- En esta rama aún faltaba la importación de Splitwise. También quedan pendientes
+  la copia externa y el restore drill productivos descritos en
+  [recuperación](HOMESUITE_RECOVERY.md). No habilita datos financieros reales.
+
+### Cuentas Claras: importación Splitwise en rama apilada — 2026-10-23
+
+- `feature/homesuite-splitwise-import` añade una previsualización de CSV con
+  nombres dinámicos, movimientos válidos, incidentes por fila y saldos de origen.
+  El titular mapea participantes y decide explícitamente excluir una fila o
+  asumir la moneda predeterminada si falta ese dato.
+- La confirmación conserva lote, archivo, supuestos, filas excluidas, diferencias
+  de conciliación y efectos originales. Los lotes pendientes son invisibles para
+  el libro hasta completarse; repetir el mismo archivo no duplica dinero.
+- Los movimientos importados aparecen en la cronología, balances, exportación y
+  búsqueda libre junto con los nuevos, con origen y fila visibles. La búsqueda
+  explica coincidencias por descripción, categoría, persona, total o efecto.
+- Documentación operativa y límites en
+  [Importar Splitwise](HOMESUITE_CUENTAS_CLARAS_IMPORT.md). Esta rama todavía no
+  se desplegó. Producción y datos financieros reales siguen bloqueados por las
+  condiciones de recuperación y ciclo de vida existentes.
+
+### Cuentas Claras: ajustes de la revisión local — 2026-10-23
+
+- La selección monetaria incorpora todas las monedas vigentes de Sudamérica,
+  MXN y las monedas ya admitidas. CLP y PYG usan cero decimales; KWD usa tres.
+- Cada grupo recibe una URL legible y estable al crearse, con sufijos `-2`, `-3`
+  ante nombres repetidos. Renombrar el grupo no modifica su URL; los grupos
+  existentes reciben una al primer acceso y sus rutas antiguas redirigen.
+- En desarrollo local, una segunda cuenta con invitaciones pendientes entra
+  directamente a la pantalla para aceptar o rechazar. La importación explica
+  dentro de la interfaz qué filas requieren decisión.
+- La búsqueda monetaria ignora los separadores de miles y encuentra fragmentos
+  del importe entero: `1000`, `1.000`, `10` y `100` encuentran `1.000`; `14`,
+  `45` y `145` encuentran `145`. Las monedas siguen sin convertirse entre sí.
+- Los ajustes viven en `feature/homesuite-review-feedback`, apilada sobre la
+  importación; no fueron desplegados en staging ni producción.
 
 ## 🚀 Deploy a producción v2.3.0 — 2026-09-18
 

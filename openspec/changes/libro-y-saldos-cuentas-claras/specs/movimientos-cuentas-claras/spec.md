@@ -52,11 +52,11 @@ NO SHALL ser tipos: pueden escribirse en la descripción sin cambiar el cálculo
 
 ### Requirement: Repartos exactos con residuo determinista
 
-El reparto de gastos e ingresos SHALL poder ser igual, exacto, porcentual o por
-partes. En todos los métodos la suma de importes asignados SHALL ser exactamente
-el total; los residuos de redondeo SHALL asignarse con una regla determinista y
-SHALL mostrarse al usuario antes de confirmar. El resultado SHALL ser idéntico ante
-las mismas entradas.
+Los métodos de reparto, la regla de residuo y su vista previa SHALL regirse por la
+capability `reparto-de-movimientos` (cambio `repartos-del-libro`), que reemplaza el
+texto original de este requisito. Aquí se conserva solo la exigencia general: en
+todos los métodos la suma de importes asignados SHALL ser exactamente el total y el
+resultado SHALL ser idéntico ante las mismas entradas.
 
 #### Scenario: Reparto que no divide exacto
 

@@ -16,6 +16,19 @@ controles estén implementados: consultar la matriz de cumplimiento más abajo.
 | [Verificación](VERIFICACION.md) | Escenarios, regresiones y evidencia de aceptación |
 | [Operación](OPERACION.md) | Entornos, publicación, migraciones, recuperación y secretos |
 | [Aprendizajes](APRENDIZAJES.md) | Incidentes, causas, controles y asuntos abiertos |
+| [Glosario](GLOSARIO.md) | Una palabra por concepto, igual en interfaz, URLs, código y base |
+
+## Identidad y visión de marca
+
+[Identidad, visión y evolución de productos](../HOMESUITE_IDENTIDAD_Y_VISION.md)
+(2026-10-26) es la fuente de intención de marca para home, landings, textos de
+producto y documentación: propósito, ejes organizar/cuidar/disfrutar, principios,
+tono y voseo, y borradores de copy. Se consulta al redactar o revisar cualquier texto
+público o ficha. Es intención, no capacidad: no prueba que exista un producto, no
+fija roadmap ni autoriza cambios de código, logo o paleta, y sus textos de sitio son
+borradores. Cada afirmación sobre lo que HomeSuite hace hoy se contrasta con código,
+[STATUS](../STATUS.md) y specs. Si choca con otro documento o con el comportamiento
+real, se señala la discrepancia antes de resolverla.
 
 ## Precedencia y mantenimiento
 

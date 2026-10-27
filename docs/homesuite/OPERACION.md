@@ -49,6 +49,15 @@ Para cambios incompatibles, planificar expansión, transición y retiro en relea
 separados. No recomendar invertir ciegamente el orden. Definir qué código puede
 convivir con cada esquema y el punto seguro de rollback.
 
+Excepción vigente mientras HomeSuite App no tenga datos reales (decisión de Pablo,
+2026-10-26): las migraciones del esquema inicial pueden reescribirse en lugar de
+agregar una de renombre, siempre que la base de staging se recree desde cero con
+backup previo y confirmación explícita. Deja de valer en cuanto exista un primer
+dato real que preservar: desde ese momento cada cambio de esquema es una migración
+nueva. Una base local persistida (`.wrangler/homesuite-app-e2e`) conserva los
+nombres de migraciones ya aplicadas, así que tras reescribirlas se recrea esa base
+descartable, y sólo esa.
+
 Antes de operar con datos irreemplazables, cada unidad debe tener responsable,
 frecuencia y retención de backups, objetivos de pérdida tolerable (RPO) y tiempo
 de recuperación (RTO), acceso seguro y restauración ensayada. Verificar en un

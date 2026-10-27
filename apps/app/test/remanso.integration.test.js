@@ -64,12 +64,13 @@ describe("GET /remanso con sesión (D1)", () => {
     expect(html).toMatch(/data-nombre="[^"]+"/u);
   });
 
-  it("la home con sesión suma la tarjeta de Remanso sin alterar las otras tres", async () => {
+  it("la home con sesión suma la tarjeta de Remanso sin alterar las otras tres, y el menú no lista herramientas", async () => {
     const { cookie } = await signedIn("Home");
     const html = await (await app.request(`${ORIGIN}/`, { headers: { Cookie: cookie } }, CONTEXT)).text();
     expect(html).toContain('<a class="tool-card" href="/remanso"><strong>Remanso</strong>');
     for (const href of ["/tareas", "/cuentas-claras", "/compras"]) expect(html).toContain(`<a class="tool-card" href="${href}">`);
     expect(html.match(/class="tool-card"/gu)).toHaveLength(4);
-    expect(html.match(/<a href="\/remanso">Remanso<\/a>/gu)).toHaveLength(2);
+    // El menú general ya no lista herramientas (Inicio, Mis grupos y la cuenta), así que Remanso solo está en la home.
+    expect(html.match(/<a href="\/remanso">Remanso<\/a>/gu)).toBeNull();
   });
 });

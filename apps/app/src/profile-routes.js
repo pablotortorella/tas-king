@@ -60,28 +60,28 @@ export function registerProfileRoutes(app, { signedInUser, localUser, ensureLoca
     catch (error) { return sendError(c, error); }
   });
 
-  app.get("/api/spaces/:spaceId/me/presentation", async c => {
+  app.get("/api/groups/:groupId/me/presentation", async c => {
     const userId = await actor(c);
     if (!userId) return c.json({ error: "Una sesión es requerida." }, 401);
-    try { return c.json(await readOwnPresentation(c.env.DB, c.req.param("spaceId"), userId)); }
+    try { return c.json(await readOwnPresentation(c.env.DB, c.req.param("groupId"), userId)); }
     catch (error) { return sendError(c, error); }
   });
 
-  app.patch("/api/spaces/:spaceId/me/presentation", async c => {
+  app.patch("/api/groups/:groupId/me/presentation", async c => {
     const userId = await actor(c);
     if (!userId) return c.json({ error: "Una sesión es requerida." }, 401);
-    try { return c.json(await saveOwnNickname(c.env.DB, c.req.param("spaceId"), userId, await boundedJson(c.req.raw))); }
+    try { return c.json(await saveOwnNickname(c.env.DB, c.req.param("groupId"), userId, await boundedJson(c.req.raw))); }
     catch (error) { return sendError(c, error); }
   });
 
-  app.get("/api/spaces/:spaceId/members", async c => {
+  app.get("/api/groups/:groupId/members", async c => {
     const userId = await actor(c);
     if (!userId) return c.json({ error: "Una sesión es requerida." }, 401);
-    const spaceIdOrSlug = c.req.param("spaceId");
-    const space = await c.env.DB.prepare("SELECT id FROM spaces WHERE id = ?")
-      .bind(spaceIdOrSlug).first();
-    if (!space) return c.json({ error: "Espacio no encontrado." }, 404);
-    try { return c.json({ members: await listMemberPresentations(c.env.DB, space.id, userId) }); }
+    const groupIdOrSlug = c.req.param("groupId");
+    const group = await c.env.DB.prepare("SELECT id FROM groups WHERE id = ?")
+      .bind(groupIdOrSlug).first();
+    if (!group) return c.json({ error: "Grupo no encontrado." }, 404);
+    try { return c.json({ members: await listMemberPresentations(c.env.DB, group.id, userId) }); }
     catch (error) { return sendError(c, error); }
   });
 }

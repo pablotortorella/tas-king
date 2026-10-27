@@ -1,0 +1,59 @@
+import { formatMoney } from "./finance.js";
+import { mappingChoices, mappingWarnings, NEW_PERSON } from "./import-mapping.js";
+import { escapeHtml } from "./ledger-ui.js";
+
+function basePath(groupId) { return `/groups/${encodeURIComponent(groupId)}/ledger/import`; }
+const STEPS = ["Archivo", "Personas", "Revisión y conciliación", "Confirmar"];
+function steps(current) {
+  return `<ol class="steps" aria-label="Pasos de la importación">${STEPS.map((name, index) => {
+    const state = index < current ? "done" : "";
+    const aria = index === current ? ' aria-current="step"' : "";
+    return `<li class="${state}"${aria}><span class="n" aria-hidden="true">${index < current ? "✓" : index + 1}</span>${name}</li>`;
+  }).join("")}</ol>`;
+}
+function list(items, render) { return items.length ? `<ul>${items.map(render).join("")}</ul>` : "<p>Ninguno.</p>"; }
+
+export function renderImportUpload({ groupId, csrf }) {
+  return `<a class="back-link" href="/groups/${encodeURIComponent(groupId)}">← Volver al grupo</a><p class="eyebrow">Cuentas Claras</p><h1>Importar Splitwise</h1>${steps(0)}<p>Elegí el CSV exportado de este grupo o relación. Verás personas, filas y saldos antes de confirmar.</p><form class="ledger-form" method="post" enctype="multipart/form-data" action="${basePath(groupId)}/preview">${csrf}<label>Archivo CSV<input type="file" name="file" accept=".csv,text/csv" required></label><div class="form-actions"><button class="button" type="submit">Previsualizar</button><a class="button secondary" href="/groups/${encodeURIComponent(groupId)}">Cancelar</a></div></form>`;
+}
+
+export function renderImportPreview({ groupId, csrf, preview, participants, summary, ledger, ownId = null }) {
+  const base = basePath(groupId);
+  const meta = preview.meta;
+  const saved = preview.review ?? { mapping: [], decisions: {} };
+  const options = (sourceName, index) => {
+    const { options: choices, selected } = mappingChoices({ sourceName, participants, ownId, saved: saved.mapping[index] ?? null });
+    return `<label>¿Quién es “${escapeHtml(sourceName)}” en este grupo?<select name="mapping_${index}" required>${choices.map(choice => `<option value="${escapeHtml(choice.value)}"${selected === choice.value ? " selected" : ""}>${escapeHtml(choice.label)}</option>`).join("")}</select></label>`;
+  };
+  const incidentControls = summary.incidents.map(incident => `<div class="incident-row"><strong>Fila ${incident.line}</strong><span>${escapeHtml(incident.reason)}</span><select name="decision_${incident.line}" aria-label="Qué hacer con la fila ${incident.line}"><option value="">Elegí qué hacer</option><option value="exclude"${saved.decisions[incident.line] === "exclude" ? " selected" : ""}>Excluir esta fila</option>${incident.code === "missing_currency" ? `<option value="assume_default"${saved.decisions[incident.line] === "assume_default" ? " selected" : ""}>Usar ${escapeHtml(ledger.default_currency)} para esta fila</option>` : ""}</select></div>`).join("");
+  const decided = Object.keys(saved.decisions).length;
+  const pager = summary.pages > 1 ? `<nav class="pager" aria-label="Páginas de incidentes"><span>Página ${summary.page} de ${summary.pages} · ${decided} de ${meta.counts.incidents} resueltas</span>${summary.page > 1 ? `<button class="button secondary" type="submit" name="accion" value="pagina:${summary.page - 1}" formnovalidate>Anterior</button>` : ""}${summary.page < summary.pages ? `<button class="button secondary" type="submit" name="accion" value="pagina:${summary.page + 1}" formnovalidate>Siguiente</button>` : ""}</nav>` : "";
+  const balanceRows = summary.balances.map(row => `<tr><td>${escapeHtml(row.sourceName)}</td><td>${escapeHtml(formatMoney(row.amountMinor, row.currency))}</td></tr>`).join("");
+  return `<p class="eyebrow">Vista previa · ${escapeHtml(preview.fileName)}</p><h1>Revisá el archivo</h1>${steps(1)}<p class="lead-count">${meta.counts.movements} movimientos válidos · ${meta.counts.incidents} incidentes · ${meta.counts.summaries} filas de resumen.</p><section class="ledger-section"><h2>Saldos de filas válidas</h2><div class="table-scroll"><table class="balance-table"><thead><tr><th scope="col">Persona</th><th scope="col">Saldo</th></tr></thead><tbody>${balanceRows}</tbody></table></div></section><form class="ledger-form" method="post" action="${base}/previews/${encodeURIComponent(preview.id)}/review">${csrf}<input type="hidden" name="pagina" value="${summary.page}"><fieldset><legend>Personas del archivo</legend><p class="muted">Elegí, para cada persona del archivo, quién es en este grupo.${ownId ? " Si una de ellas sos vos, elegí «Soy yo»: así no se crea una persona repetida." : ""}</p><div class="share-grid">${meta.participantNames.map(options).join("")}</div></fieldset><fieldset><legend>Filas que necesitan una decisión</legend><p class="muted">Estas filas no se pueden importar automáticamente. Podés excluirlas o, cuando sólo falta la moneda, usar la moneda predeterminada del grupo. La decisión quedará registrada en el lote.</p>${incidentControls || "<p>No hay filas problemáticas.</p>"}${pager}</fieldset><div class="form-actions"><button class="button" type="submit" name="accion" value="revisar">Revisar saldos y decisiones</button></div></form><form method="post" action="${base}/previews/${encodeURIComponent(preview.id)}/cancel">${csrf}<button class="button secondary" type="submit">Cancelar importación</button></form>`;
+}
+
+export function renderImportReview({ groupId, csrf, preview, plan, participants, ownId = null }) {
+  const base = basePath(groupId);
+  const people = new Map(participants.map(person => [person.id, person.displayName]));
+  const label = choice => choice === NEW_PERSON ? "Una persona nueva" : choice === ownId ? `Soy yo (${people.get(choice)})` : people.get(choice) ?? "Desconocido";
+  const mapping = preview.meta.participantNames.map((name, index) => `<li>${escapeHtml(name)} → ${escapeHtml(label(preview.review.mapping[index]))}</li>`).join("");
+  const warnings = mappingWarnings({ names: preview.meta.participantNames, mapping: preview.review.mapping, participants, ownId });
+  const notices = [
+    ...warnings.shared.map(shared => `${shared.columns.map(name => `«${name}»`).join(" y ")} se cargan a la misma persona (${shared.personName}): sus movimientos y saldos se suman.`),
+    ...(warnings.ownMissing ? [`Ninguna persona del archivo es “Soy yo (${warnings.ownName})”: quedarás fuera de estos movimientos. Si una de ellas sos vos, volvé a «Modificar decisiones» y elegila.`] : []),
+  ].map(text => `<p class="notice" role="status">${escapeHtml(text)}</p>`).join("");
+  const balances = plan.totals.map(row => `<tr><td>${escapeHtml(row.sourceName)}</td><td>${escapeHtml(formatMoney(row.amountMinor, row.currency))}</td></tr>`).join("");
+  const comparison = plan.reconciliation.map(row => `<tr><td>${escapeHtml(row.sourceName)}</td><td>${escapeHtml(row.currency)}</td><td>${escapeHtml(formatMoney(row.sourceMinor, row.currency))}</td><td>${escapeHtml(formatMoney(row.importedMinor, row.currency))}</td><td>${escapeHtml(formatMoney(row.differenceMinor, row.currency))}</td></tr>`).join("");
+  const hasGap = plan.reconciliation.some(row => row.differenceMinor !== 0) || plan.warnings.length > 0;
+  return `<p class="eyebrow">Confirmación · ${escapeHtml(preview.fileName)}</p><h1>Así quedará el grupo</h1>${steps(2)}<p class="lead-count">${plan.rows.length} movimientos a importar como gastos normales: después podrás corregirlos, anularlos y categorizarlos como cualquier otro. El pagador y el reparto se deducen de los saldos del archivo y quedan marcados como inferidos. Ninguna fila de resumen se guarda como movimiento.</p><section class="ledger-section"><h2>Personas</h2>${notices}<ul>${mapping}</ul></section><section class="ledger-section"><h2>Saldos a incorporar</h2><div class="table-scroll"><table class="balance-table"><thead><tr><th scope="col">Persona</th><th scope="col">Saldo</th></tr></thead><tbody>${balances}</tbody></table></div></section><section class="ledger-section"><h2>Conciliación con el origen</h2>${comparison ? `<div class="table-scroll"><table class="balance-table wide"><thead><tr><th>Persona</th><th>Moneda</th><th>Origen</th><th>Importado</th><th>Diferencia</th></tr></thead><tbody>${comparison}</tbody></table></div>` : "<p>El archivo no tiene un resumen comparable.</p>"}${list(plan.warnings, warning => `<li>${escapeHtml(warning)}</li>`)}</section><section class="ledger-section"><h2>Supuestos</h2>${list(plan.assumptions, row => `<li>Fila ${row.line}: ${escapeHtml(row.assumption)}</li>`)}<h2>Filas excluidas</h2>${list(plan.excluded, row => `<li>Fila ${row.line}: ${escapeHtml(row.reason)}</li>`)}</section><form class="ledger-form" method="post" action="${base}/previews/${encodeURIComponent(preview.id)}/confirm">${csrf}${hasGap ? `<label class="check-row"><input type="checkbox" name="acknowledgeDifference" value="yes" required>Revisé la diferencia o la falta de saldo fuente</label>` : ""}<div class="form-actions"><button class="button" type="submit">Confirmar importación</button><a class="button secondary" href="${base}/previews/${encodeURIComponent(preview.id)}">Modificar decisiones</a></div></form>`;
+}
+
+export function renderImportBatch({ groupId, batch }) {
+  const reconciliation = batch.reconciliation.rows.map(row => `<li>${escapeHtml(row.sourceName)} · ${escapeHtml(row.currency)} · diferencia ${escapeHtml(formatMoney(row.differenceMinor, row.currency))}</li>`).join("");
+  return `<p class="eyebrow">Splitwise · ${escapeHtml(batch.fileName)}</p><h1>Importación completada</h1><ol class="steps" aria-label="Pasos de la importación">${STEPS.map((name, index) => `<li class="done"><span class="n" aria-hidden="true">✓</span>${name}</li>`).join("")}</ol><p class="lead-count">${batch.importedCount} movimientos importados el ${escapeHtml(batch.committedAt)}.</p><section class="ledger-section"><h2>Conciliación</h2>${reconciliation ? `<ul>${reconciliation}</ul>` : "<p>No había saldo fuente para comparar.</p>"}${list(batch.reconciliation.warnings, warning => `<li>${escapeHtml(warning)}</li>`)}</section><section class="ledger-section"><h2>Supuestos</h2>${list(batch.assumptions, row => `<li>Fila ${row.line}: ${escapeHtml(row.assumption)}</li>`)}<h2>Filas excluidas</h2>${list(batch.excluded, row => `<li>Fila ${row.line}: ${escapeHtml(row.reason)}</li>`)}</section><a class="button" href="/groups/${encodeURIComponent(groupId)}">Ver el grupo</a>`;
+}
+
+export function renderImportProgress({ groupId, csrf, progress }) {
+  const base = `${basePath(groupId)}/batches/${encodeURIComponent(progress.id)}`;
+  return `<p class="eyebrow">Splitwise · ${escapeHtml(progress.fileName)}</p><h1>Importando tus movimientos</h1><ol class="steps" aria-label="Pasos de la importación">${STEPS.map((name, index) => `<li class="${index < 3 ? "done" : ""}"${index === 3 ? ' aria-current="step"' : ""}><span class="n" aria-hidden="true">${index < 3 ? "✓" : 4}</span>${name}</li>`).join("")}</ol><section class="ledger-section import-progress" data-import-progress data-batch-url="${base}"><p class="lead-count" role="status" aria-live="polite" data-progress-text>Importando ${progress.loaded} de ${progress.planned}</p><progress max="${progress.planned}" value="${progress.loaded}" aria-label="Avance de la importación"></progress><p class="muted">Los movimientos no aparecen en el grupo hasta que termina: se publican todos juntos. Si cerrás la pestaña, volvé a esta pantalla para seguir desde donde quedó.</p><p class="form-feedback" role="alert" data-progress-error></p><form method="post" action="${base}/load" data-import-load>${csrf}<button class="button" type="submit">Continuar la importación</button></form><form method="post" action="${base}/cancel">${csrf}<button class="button secondary" type="submit">Cancelar y descartar lo cargado</button></form></section><script type="module" src="/import-progress.js"></script>`;
+}

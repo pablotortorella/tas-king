@@ -177,7 +177,7 @@ descartan: la política los bloquea y la suite ya tiene tipografía.
 Un nuevo proyecto Playwright en `apps/app/e2e` (puerto propio, estado de D1 local
 propio y migraciones aplicadas antes; `DEV_LOCAL_MODE` sin `DEV_LOCAL_EMAIL`, de
 modo que por defecto la visita es anónima y las pruebas con cuenta envían la
-cabecera `X-HomeSuite-Dev-Email`) y un script `test:homesuite-app:e2e` que se
+cabecera `X-HomeSuite-Dev-Email`) y un script `test:e2e:remanso` que se
 suma al CI, igual que las demás suites de HomeSuite. La sesión completa de un
 minuto no se recorre en CI: el fin natural lo cubre la prueba física y las reglas
 del motor; el E2E termina antes de tiempo.

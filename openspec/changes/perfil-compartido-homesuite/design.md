@@ -8,7 +8,7 @@ Revisión local: `main` `df25195`; integración funcional `973ce4a` (referencia 
 local, no una consulta al servicio desplegado). Ambas ramas tienen `users` con
 `google_sub`, email y `display_name`; OAuth descarta `picture` y actualiza el
 nombre en cada login. La base funcional agrega seis migraciones hasta
-`0006_space_slugs`, CSRF en `src/csrf.js`, libros, participantes vinculados y eventos.
+`0006_group_slugs`, CSRF en `src/csrf.js`, libros, participantes vinculados y eventos.
 El nombre de participante se persiste en `ledger_participants.display_name`.
 No se importa ni integra esa rama como parte de este cambio documental.
 
@@ -58,7 +58,7 @@ ID interno, no por email, con token de paleta común.
 
 Agregar `nickname` nullable, `presentation_revision` y `membership_generation`
 a `memberships`. Vacío se normaliza a NULL; nunca se inicializa desde el nombre.
-Creación de espacio, aceptación y cualquier futuro reingreso crean generación
+Creación de grupo, aceptación y cualquier futuro reingreso crean generación
 nueva y apodo vacío. No cambiar generación por editar rol o apodo.
 
 El control de edición incluye generación y revisión: una petición retenida antes
@@ -76,7 +76,7 @@ al reactivar. No implementar ahora un flujo nuevo de salida/expulsión.
 ### D4. Resolver presentación sin mezclar contabilidad
 
 Representación mínima de persona: `{ userId, displayName, avatar }`. Dentro de un
-espacio agrega `nickname: string | null`, siempre separado y secundario.
+grupo agrega `nickname: string | null`, siempre separado y secundario.
 `avatar` incluye modo elegido, tipo efectivo, URL cuando corresponde, emoji,
 color y alternativa de inicial según el caso; no expone preferencias privadas
 ni datos Google innecesarios. Un fallo de carga se resuelve con la alternativa
@@ -101,11 +101,11 @@ Contratos propuestos, con sesión real y autorización vigente en servidor:
 |---|---|
 | `GET /api/me/profile` | Perfil propio editable, revisión, presentación y catálogo válido |
 | `PATCH /api/me/profile` | Cambios explícitos de nombre/avatar/color con `expectedRevision` |
-| `GET /api/spaces/:spaceId/me/presentation` | Presentación propia, apodo, generación y revisión |
-| `PATCH /api/spaces/:spaceId/me/presentation` | Sólo apodo propio con generación y revisión esperadas |
+| `GET /api/groups/:groupId/me/presentation` | Presentación propia, apodo, generación y revisión |
+| `PATCH /api/groups/:groupId/me/presentation` | Sólo apodo propio con generación y revisión esperadas |
 
 No aceptar `userId`, email, `sub`, rol ni URL de foto suministrada por el usuario
-en las escrituras. Sesión identifica al actor; la ruta de espacio sólo identifica
+en las escrituras. Sesión identifica al actor; la ruta de grupo sólo identifica
 el contexto. `PATCH` conserva campos omitidos y rechaza campos desconocidos.
 Nombre Google se selecciona mediante `nameSource: google`; no mediante vaciar
 accidentalmente un input. En modo custom se requiere nombre no vacío.
@@ -113,7 +113,7 @@ accidentalmente un input. En modo custom se requiere nombre no vacío.
 Mantener `GET /api/me` compatible, calculando su `displayName` desde plataforma.
 Inyectar presentaciones en lecturas autorizadas ya existentes de integrantes y
 actividad mediante función colectiva. No crear un endpoint por persona en cada
-producto. Acceso a espacio por ID o slug pasa por el resolver vigente.
+producto. Acceso a grupo por ID o slug pasa por el resolver vigente.
 
 Mutaciones requieren JSON, tamaño acotado, protección CSRF y origen según el
 mecanismo de la base funcional. No rebajar ese mecanismo para que funcione en main
@@ -138,7 +138,7 @@ su módulo DOM. Catálogo y resolver se prueban juntos. La futura UI consume tok
 
 Cada escritura usa compare-and-swap; conflicto → 409 `profile_conflict` o
 `presentation_conflict`, sin escribir parcialmente ni registrar éxito. Falta de
-sesión → 401; CSRF fallido → 403; espacio inaccesible/no encontrado → 404 sin
+sesión → 401; CSRF fallido → 403; grupo inaccesible/no encontrado → 404 sin
 filtrar existencia; validación → 400. La respuesta exitosa devuelve estado
 confirmado y revisión, evitando una lectura global adicional.
 
@@ -167,9 +167,9 @@ carga directa del navegador consulta al proveedor; no prometer privacidad de pro
 
 Escritura de perfil/proyección y auditoría mínima como unidad atómica. Auditoría
 sólo de actor, entidad, campos cambiados y revisión; no snapshots de nombres,
-apodos ni URL de foto. Apodo usa evento de espacio sin registrar su contenido.
+apodos ni URL de foto. Apodo usa evento de grupo sin registrar su contenido.
 Un conflicto o fallo revierte cambios y evento; no emitir evento incondicional
-tras UPDATE con cero filas. Nombre global no produce avisos a todos sus espacios.
+tras UPDATE con cero filas. Nombre global no produce avisos a todos sus grupos.
 
 Google actualiza columnas de proveedor y proyección resolviendo la preferencia
 vigente en la transacción: no guardar un perfil completo leído antes del canje.

@@ -26,9 +26,10 @@ describe("shell compartido de HomeSuite", () => {
   });
 
   it("las rutas HTML conservan política, no-store y cabeceras de seguridad", async () => {
-    for (const path of ["/", "/tareas", "/cuentas-claras", "/compras"]) {
+    // Sin sesión, /cuentas-claras no muestra una página: redirige al acceso (303).
+    for (const [path, status] of [["/", 200], ["/tareas", 200], ["/cuentas-claras", 303], ["/compras", 200]]) {
       const response = await app.request(`${ORIGIN}${path}`);
-      expect(response.status, path).toBe(200);
+      expect(response.status, path).toBe(status);
       expect(response.headers.get("Cache-Control"), path).toBe("private, no-store");
       expect(response.headers.get("Content-Security-Policy"), path).toContain("script-src 'self'; style-src 'self'");
       expect(response.headers.get("X-Frame-Options"), path).toBe("DENY");

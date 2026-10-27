@@ -34,7 +34,7 @@ El nombre de una categoría SHALL compararse ignorando mayúsculas, acentos, esp
 
 #### Scenario: Se conserva el nombre original
 
-- **WHEN** se crea «Café  y  Panadería» con espacios de más
+- **WHEN** se crea «Café  y  Panadería» con grupos de más
 - **THEN** la categoría se muestra con el nombre ingresado y se compara por su forma normalizada
 
 #### Scenario: Renombrar a un nombre ya usado

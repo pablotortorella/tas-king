@@ -438,7 +438,7 @@ preservar estas restricciones conceptuales.
 
 El proposal probablemente deba separar al menos estas capacidades:
 
-1. espacios, miembros, participantes e invitaciones;
+1. grupos, miembros, participantes e invitaciones;
 2. libro y ciclo de vida del grupo;
 3. registro y revisión de gastos;
 4. registro y revisión de ingresos;

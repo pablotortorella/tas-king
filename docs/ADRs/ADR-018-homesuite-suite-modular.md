@@ -31,7 +31,7 @@ aplicación autenticada que funciona como monolito modular evolutivo:
   base, sesión ni secretos de la aplicación.
 - Producción se despliega como `homesuite-app` y staging como
   `homesuite-app-staging`.
-- Un shell común resuelve sesión, perfil, espacios, membresías, invitaciones y
+- Un shell común resuelve sesión, perfil, grupos, membresías, invitaciones y
   selector de herramientas.
 - Tareas, Gastos y Compras son dominios separados, con rutas, tablas, reglas y
   pruebas propias.
@@ -42,7 +42,7 @@ aplicación autenticada que funciona como monolito modular evolutivo:
 - La identidad migra de email como clave relacional a `user_id` interno más
   identidad externa Google `sub`.
 - La allowlist global no será el modelo de incorporación de HomeSuite: el acceso
-  se concederá mediante membresías e invitaciones por espacio.
+  se concederá mediante membresías e invitaciones por grupo.
 - La cookie autenticada será exclusiva de `app.homesuite.info`, sin atributo
   `Domain`, idealmente `__Host-homesuite_session`.
 - El callback OAuth será canónico en `app.homesuite.info` y aceptará únicamente
@@ -58,7 +58,7 @@ aplicación autenticada que funciona como monolito modular evolutivo:
 
 - cuentas e identidades externas;
 - sesión y cierre de sesión;
-- espacios, roles, miembros e invitaciones;
+- grupos, roles, miembros e invitaciones;
 - navegación general;
 - auditoría transversal, exportación y operación.
 
@@ -143,7 +143,7 @@ amplía su superficie de seguridad. Rechazada para la primera etapa.
 
 ### Cloudflare Access como identidad de producto
 
-Puede proteger hosts, pero no reemplaza membresías por espacio, participantes sin
+Puede proteger hosts, pero no reemplaza membresías por grupo, participantes sin
 cuenta ni permisos propios del dominio. No se adopta como modelo de usuario.
 
 ## Cuándo separar servicios o bases

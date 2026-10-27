@@ -80,8 +80,8 @@ desbloquea las sesiones largas y el resto de los sonidos.
 ## Impact
 
 - `apps/app/src/index.js`: función `page()` con soporte de hoja de estilos,
-  script y clase de página propios; ruta `/remanso`; tarjeta y enlaces de
-  Remanso en la home y el menú; `Cache-Control: private, no-store` para la ruta.
+  script y clase de página propios; ruta `/remanso`; tarjeta de
+  Remanso en la home (el menú general ya no lista herramientas); `Cache-Control: private, no-store` para la ruta.
 - `apps/app/public/remanso/`: motor (idéntico al paquete), módulo de sonidos de
   gong, código de interfaz y hoja de estilos nuevos.
 - `apps/site/`: tarjeta en la portada, `remanso.html`, estilos y Worker (enlace a la

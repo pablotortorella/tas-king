@@ -48,9 +48,10 @@ la sesión.
 
 ### Requirement: Entrada provisional en la suite
 
-HomeSuite SHALL mostrar Remanso como una herramienta más en la home y en el menú
-general, junto a Tareas, Cuentas Claras y Compras. No SHALL agrupar ni nombrar
-mitades de la suite en este corte.
+HomeSuite SHALL mostrar Remanso como una herramienta más en la home, junto a Tareas,
+Cuentas Claras y Compras. El menú general (Inicio, Mis grupos y la cuenta) no lista
+herramientas, por lo que Remanso no aparece ahí (ajuste del 2026-10-27, al integrar
+con el menú de la app). No SHALL agrupar ni nombrar mitades de la suite en este corte.
 
 #### Scenario: Elegir Remanso desde la home
 

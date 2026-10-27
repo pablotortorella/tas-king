@@ -7,7 +7,7 @@ en cada ficha. No confundir política requerida con cobertura ya implementada.
 
 Antes de implementar, enumerar criterio, estado inicial, acción y resultado
 observable. Para un recorrido, considerar como corresponda: éxito; entrada
-inválida; identidad ausente o ajena; permiso revocado; relaciones de otro espacio;
+inválida; identidad ausente o ajena; permiso revocado; relaciones de otro grupo;
 estado vacío; doble envío; reintento; concurrencia; borrado y fallo parcial.
 Cada caso debe proteger un comportamiento, no copiar el algoritmo implementado.
 

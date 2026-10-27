@@ -3,6 +3,13 @@
 Hereda la [base común de HomeSuite](../homesuite/README.md). Esta ficha no redefine
 método, seguridad, pruebas ni autorización de despliegue.
 
+## Identidad y copy
+
+Marco de marca en [Identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md) (§3, §5, §9.3).
+FUN TasKing! conserva su personalidad lúdica y puede servir también para trabajo; el
+tablero personal ya permite uso individual. Los textos sugeridos son borradores:
+validar cada promesa contra lo implementado antes de publicarlos.
+
 ## Implementación y contratos propios
 
 - Worker Hono en `src/`: composición en `index.js`, rutas, middleware y acceso D1.
@@ -12,7 +19,7 @@ método, seguridad, pruebas ni autorización de despliegue.
   evitar parpadeo; no es una excepción a la política de scripts externos.
 - Tableros con roles owner/member, tablero personal no eliminable y allowlist
   global heredada. Esa incorporación no se generaliza a HomeSuite: allí se usan
-  espacios e invitaciones. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
+  grupos e invitaciones. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
   conserva el detalle de revocación de TasKing.
 - Columnas de cierre múltiples: objetivos, métricas, urgencia y celebración deben
   considerar todas. Validar pertenencia de columna al tablero en cada escritura.

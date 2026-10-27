@@ -3,8 +3,8 @@
 El MVP (`docs/HOMESUITE_CUENTAS_CLARAS_MVP.md`) fija el vocabulario, las
 invariantes y la dirección del modelo, y deja a esta fase OpenSpec el esquema
 físico y varias decisiones (sección 17). `apps/app/` ya tiene Worker Hono, D1,
-usuarios, sesiones y espacios; este change agrega el dominio financiero sobre
-`spaces` y `memberships` sin tocar su contrato.
+usuarios, sesiones y grupos; este change agrega el dominio financiero sobre
+`groups` y `memberships` sin tocar su contrato.
 
 Referencia visual (en `docs/diseno/cuentas-claras/`): lienzo «Cuentas Claras» (Claude Design), pantallas 1,
 4, 6, 7, 8 y 9. Datos de demostración sintéticos: Pablo, Ana, Laura y Mateo.
@@ -34,7 +34,7 @@ corresponde el efecto»:
 
 | Tabla | Contenido | Invariante |
 |---|---|---|
-| `expense_ledgers` | espacio, moneda predeterminada, `revision` monótona, estado | un libro por espacio |
+| `expense_ledgers` | grupo, moneda predeterminada, `revision` monótona, estado | un libro por grupo |
 | `ledger_participants` | libro, nombre visible, usuario opcional, activo | nombre único por libro entre activos |
 | `ledger_entries` | libro, tipo, moneda, importe, fecha, descripción, nota, estado, revisión actual | importe > 0 |
 | `entry_cash_parties` | movimiento, participante, importe, sentido (`in`/`out`) | suma por sentido = importe |
@@ -86,7 +86,7 @@ fuente citable.)
 Rutas conceptuales del MVP, sección 10: libros, participantes, movimientos,
 revisiones y saldos. Las respuestas de escritura incluyen el movimiento
 confirmado y la nueva `revision` del libro para que el cliente actualice su estado
-sin recargar colecciones. Autorización en servidor por membresía del espacio.
+sin recargar colecciones. Autorización en servidor por membresía del grupo.
 
 ### D8. Interfaz
 
@@ -118,7 +118,7 @@ movimientos recientes, independientes del número de participantes o movimientos
 
 ## Migration Plan
 
-Los espacios creados antes de este change reciben un libro vacío en la migración,
+Los grupos creados antes de este change reciben un libro vacío en la migración,
 con la moneda predeterminada COP y un participante para su titular. No hay
 movimientos que migrar. Revertir el despliegue oculta la interfaz; las tablas no
 se deshacen automáticamente.

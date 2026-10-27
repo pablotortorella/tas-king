@@ -5,11 +5,25 @@ Hereda la [base común](../homesuite/README.md). Diseño objetivo en
 [infraestructura](../HOMESUITE_INFRASTRUCTURE.md). Implementación por rama/entorno
 en [STATUS](../STATUS.md); no deducirla de los documentos de visión.
 
+## Identidad, home y landings
+
+Propósito, ejes, tono, voseo y borradores de copy en
+[Identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md); es intención de marca, no
+lista de tareas. Cambios de home, landings, descripciones y metadatos:
+
+- proponer un diff acotado y distinguir hechos actuales de aspiraciones;
+- presentar por separado productos disponibles, en desarrollo y exploraciones; no
+  anunciar exploraciones ni fechas sin decisión de Pablo;
+- no prometer funciones, privacidad, sincronización ni colaboración sin verificarlas;
+- no cambiar logo, favicon ni paleta antes de revisar la identidad vigente;
+- el copy publicado hoy usa «vida compartida» y fue escrito antes de esta dirección;
+  su revisión es pendiente de backlog y no se infiere de este documento.
+
 ## Plataforma
 
 `apps/app/` implementa la app autenticada; su modelo compartido es identidad,
-sesiones, espacios, membresías, invitaciones y auditoría. Mantener invariantes de
-creación atómica del espacio/titular y aceptación atómica de invitaciones.
+sesiones, grupos, membresías, invitaciones y auditoría. Mantener invariantes de
+creación atómica del grupo/titular y aceptación atómica de invitaciones.
 Descubrir una invitación no concede acceso al contenido privado.
 
 La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
@@ -23,7 +37,7 @@ Desde la raíz, comandos actualmente disponibles:
 - `npm run dev:homesuite-app`
 - `npm run test:homesuite-app`
 - `npm run test:homesuite-app:integration`
-- `npm run test:homesuite-app:e2e` (Playwright sobre `wrangler dev`; ver [Remanso](REMANSO.md))
+- `npm run test:e2e:remanso` (Playwright sobre `wrangler dev`; ver [Remanso](REMANSO.md))
 - `npm run dev:homesuite-app:anonimo` (sin usuario local)
 - `npm run test:homesuite-site:e2e` (Playwright del sitio público)
 - `npm run test:homesuite-site`
@@ -37,7 +51,7 @@ además de las generales y Playwright; el login real sigue requiriendo prueba
 dirigida. No equiparar `test:all` con verificar toda la suite de productos.
 
 La aceptación de identidad y colaboración requiere dos cuentas reales en staging:
-crear espacio, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
+crear grupo, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
 roles y aislamiento. Registrar el SHA y resultado de cada recorrido. Un login
 exitoso no demuestra el resto. Separar identidades locales de sesiones reales.
 
@@ -57,7 +71,7 @@ habilita publicar producción ni convierte condiciones pendientes en excepciones
 
 ## Perfil compartido
 
-Acuerdos de nombre, avatar y apodo por espacio en la
+Acuerdos de nombre, avatar y apodo por grupo en la
 [exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
 [change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
 La [API común](../HOMESUITE_PROFILE_API.md) implementa datos y gestión en la

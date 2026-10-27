@@ -20,7 +20,7 @@ Ficha: [Remanso](productos/REMANSO.md). Primer corte en la rama `feature/remanso
 marcados **investigar** requieren una investigación a fondo en internet (qué
 conviene y cómo) antes de elegir, y su resultado se registra aquí.
 
-- **Navegación y nombre de las dos mitades de la suite** (organiza / cuida). Hoy Remanso es una herramienta más en la home y el menú. Aceptación: decisión de Pablo sobre nombres y navegación, explorada con `/opsx:explore` antes de proponer.
+- **Navegación y nombre de las dos mitades de la suite** (organiza / cuida). Hoy Remanso es una herramienta más en la home; el menú general no lista herramientas. Aceptación: decisión de Pablo sobre nombres y navegación, explorada con `/opsx:explore` antes de proponer.
 - **Historial de sesiones** `{ fecha, minutos, fondo, ánimo }`: persona u hogar, para qué, sin rachas ni presión. Hoy el ánimo no se guarda ni se envía. Aceptación: exploración con Pablo; si se guarda, migración, privacidad y export definidos.
 - **Publicar Remanso en producción** (app y sitio público). La placa y la landing existen y funcionan en staging; el sitio de producción dice «en preparación». Aceptación: aprobación explícita de Pablo, publicación de la app y el sitio por separado según [operación](homesuite/OPERACION.md), y la landing de producción con enlace real a la app.
 - **Elección del gong en el perfil** para que siga a la persona entre dispositivos (hoy vive en el dispositivo). Aceptación: exploración con Pablo; si se guarda en el servidor, migración compatible, API con CSRF y qué pasa sin cuenta.
@@ -37,6 +37,22 @@ conviene y cómo) antes de elegir, y su resultado se registra aquí.
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
+
+---
+
+## Identidad de marca: aplicación pendiente (2026-10-26)
+
+Origen: [Identidad y visión](HOMESUITE_IDENTIDAD_Y_VISION.md), §11. Son tareas de
+exploración y revisión, no un roadmap comprometido; ninguna autoriza cambios de código,
+logo ni paleta por sí sola. Priorización y aprobación: Pablo.
+
+- Revisar el copy vigente de home y landings (`apps/site/public/`) frente a la nueva identidad: hoy habla de «vida compartida», «equipo» y cuentas «compartidas». Aceptación: diff acotado por página que separa hechos actuales de aspiraciones y mantiene el voseo.
+- Decidir la portada: copy principal o prudente (§9.1), según el catálogo publicado.
+- Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
+- Definir el alcance individual de TasKing y Compras y su comunicación.
+- Revisar la identidad visual actual (emblema, favicon, acento por producto) antes de proponer cambios.
+- Decidir si y cómo comunicar productos en exploración (Pausa, Rituales, Momentos, Bitácora) y sus nombres definitivos. Hay trabajo de meditación en la rama `feature/remanso` (aún no integrada); su relación con «Pausa» está por aclarar.
+- Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 
 ---
 
@@ -57,18 +73,19 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 **Estado:** visión y MVP documentados; landing pública en producción desde el
 2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
-autenticada, Cuentas Claras y Compras aún no están implementados. Esto no reemplaza
+autenticada funciona en staging; el núcleo cotidiano de Cuentas Claras está en
+una rama de revisión y Compras aún no está implementada. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
-HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
-compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
+HomeSuite será la marca paraguas en `homesuite.info` para herramientas de la vida
+cotidiana del hogar (ver [identidad](HOMESUITE_IDENTIDAD_Y_VISION.md)). La dirección acordada es reutilizar Cloudflare, autenticación y
 operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
 sesión; la aplicación autenticada será un monolito modular con staging aislado,
 manteniendo separados los dominios de Tareas, Cuentas Claras y Compras.
 
 Orden estratégico inicial:
 
-1. plataforma mínima: identidad estable, sesión, espacios e invitaciones;
+1. plataforma mínima: identidad estable, sesión, grupos e invitaciones;
 2. **Cuentas Claras**, con el objetivo concreto de reemplazar Splitwise;
 3. migración gradual de TasKing a `/tareas`, sin big bang;
 4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
@@ -116,14 +133,14 @@ TasKing.
 
 #### Capacidad transversal posterior: administración y temas de la suite
 
-La titularidad de un espacio no equivale a administrar HomeSuite. Existirá un
+La titularidad de un grupo no equivale a administrar HomeSuite. Existirá un
 rol técnico y explícito de **administración de la suite**, inicialmente asignado
 al usuario administrador de la plataforma. Su perfil ofrecerá una entrada a la
 administración global y a la de cada producto habilitado.
 
-La primera consola deberá priorizar salud y operación: usuarios, espacios,
+La primera consola deberá priorizar salud y operación: usuarios, grupos,
 invitaciones, uso por producto y conteos agregados de registros (por ejemplo,
-transacciones). El acceso al contenido privado de un espacio o a movimientos
+transacciones). El acceso al contenido privado de un grupo o a movimientos
 individuales no será implícito por ser administrador: requerirá una capacidad
 separada, justificación visible y auditoría, si alguna vez resulta necesaria.
 
@@ -134,14 +151,14 @@ usable; no se congelan nombres ni colores antes de esa conversación de diseño.
 
 | Orden | Historia | Resultado observable |
 |---|---|---|
-| HA-01 | Como administrador de HomeSuite, quiero acceder desde mi perfil a una consola de suite y a las administraciones de productos para operar la plataforma sin confundir ese poder con la titularidad de un espacio. | El acceso sólo aparece y funciona para administradores de plataforma; toda acción administrativa queda auditada. |
-| HA-02 | Como administrador, quiero ver indicadores agregados de usuarios, espacios y uso de cada producto para conocer el estado de la suite sin exponer contenidos privados por defecto. | La consola muestra métricas agregadas y separa expresamente cualquier acceso excepcional a datos individuales. |
+| HA-01 | Como administrador de HomeSuite, quiero acceder desde mi perfil a una consola de suite y a las administraciones de productos para operar la plataforma sin confundir ese poder con la titularidad de un grupo. | El acceso sólo aparece y funciona para administradores de plataforma; toda acción administrativa queda auditada. |
+| HA-02 | Como administrador, quiero ver indicadores agregados de usuarios, grupos y uso de cada producto para conocer el estado de la suite sin exponer contenidos privados por defecto. | La consola muestra métricas agregadas y separa expresamente cualquier acceso excepcional a datos individuales. |
 | HT-01 | Como persona usuaria, quiero elegir temas visuales coherentes entre productos para reconocer mi experiencia de HomeSuite en Tareas, Cuentas Claras y Compras. | La selección usa tokens compartidos; cada producto conserva su composición y preferencias específicas. |
 | HT-02 | Como persona usuaria, quiero temas con nombres e historias inspirados en América Latina para que la suite tenga una identidad cercana y no genérica. | La paleta y sus nombres se definen en una exploración visual posterior, con referencias culturales cuidadosas y sin apropiación superficial. |
 
 | Orden | Historia | Resultado observable |
 |---|---|---|
-| HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
+| HG-01 | Como titular, quiero iniciar sesión y crear un grupo con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su grupo y su libro nuevo. |
 | HG-02 | Como titular, quiero invitar a una persona por email para que ambos veamos el mismo libro sin compartir una cuenta. | La invitación se acepta una vez; ambas personas acceden al mismo grupo y no a grupos ajenos. |
 | HG-03 | Como titular, quiero previsualizar un CSV de exportación de Splitwise y mapear sus participantes para saber qué se importará antes de guardar. | Se distinguen participantes, movimientos y fila de resumen; se muestran conteos y saldos previstos por moneda. |
 | HG-04 | Como titular, quiero decidir qué hacer ante cada incidente de importación para no perder control sobre mi historia. | Cada incidente muestra fila y motivo; puedo cancelar, aplicar un supuesto explícito o importar el subconjunto seguro. |
@@ -151,11 +168,30 @@ usable; no se congelan nombres ni colores antes de esa conversación de diseño.
 
 **Estado 2026-09-22:** `plataforma-homesuite-minima` está en WIP. PR #59 dejó
 integrados Worker aislado, esquema D1, restricciones de owner/invitación y demo
-local. El corte en curso convierte creación de espacio e invitación en operaciones
+local. El corte en curso convierte creación de grupo e invitación en operaciones
 D1 locales cubiertas por integración; Google OAuth, sesión host-only, staging y
 producción siguen pendientes. Después, `importacion-splitwise-inicial` cubre
 HG-03 a HG-05; no se mezclarán autenticación, modelo financiero y parser de
 importación en un solo change.
+
+**Estado 2026-10-23:** el recorrido con dos cuentas y la base financiera están
+verificados en staging (#68 y #71, aún abiertos). La rama
+`feature/homesuite-financial-core` implementa HG-01, HG-02 y el uso cotidiano
+de HG-06, además de ingresos, transferencias, balances, correcciones y
+exportación. HG-03 a HG-05 y HG-07 quedan para el cambio de importación y
+búsqueda. No hay publicación productiva de Cuentas Claras.
+
+**Avance del mismo corte:** `feature/homesuite-splitwise-import`, apilada sobre
+el núcleo, implementa HG-03 a HG-05 y HG-07 con CSV, mapeo, incidentes,
+conciliación, importación idempotente y búsqueda conjunta. Falta integrar y
+validar ambas ramas en staging antes de cambiar el estado de estas historias a
+completado.
+
+**Ajustes de revisión 2026-10-23:** la rama apilada
+`feature/homesuite-review-feedback` amplía monedas a Sudamérica y México,
+incorpora URLs de grupo legibles pero estables, lleva a la segunda cuenta
+directamente a sus invitaciones pendientes y permite buscar fragmentos de
+montos ignorando separadores de miles.
 
 ---
 
@@ -244,6 +280,8 @@ Ideas de evolución, en orden de qué falta:
   - *Reordenar adjuntos (drag to reorder)*: requiere columna `position` en tabla `attachments`, drag handlers por adjunto, endpoint `PUT /api/attachments/reorder`.
 - **Panel lateral de actividad del tablero**: el historial existe por tarjeta y en Admin — falta un feed lateral tipo "¿qué pasó hoy en el tablero?" sin ir al panel de administración (similar a Notion/Linear).
 - **Notificaciones** (asignación de tarjeta, vencimiento próximo): badge en el tab del navegador, email, o Web Push. 🟡/🔴 esfuerzo.
+- **Cuentas Claras: envío de correo electrónico** (pedido por Pablo el 2026-10-27; prioridad por confirmar). Hoy invitar crea un registro: la persona invitada lo ve solo si entra con Google con ese mismo email y abre `/invitations`; nadie recibe un aviso. El primer caso es el correo de la invitación; más adelante podrían sumarse otros avisos (aceptación, recordatorios). Esfuerzo 🔴. Necesita su propia exploración: proveedor (hay Cloudflare Email Service) y dominio remitente con SPF/DKIM, qué dice el correo sin revelar datos del grupo antes de aceptar (hoy la invitación solo muestra quién invita), estado de entrega y reintentos, límites de envío por titular y por email, qué pasa si el correo rebota, y cómo se prueba sin enviar correos reales (local y staging).
+- **Cuentas Claras: borrar personas del grupo** (pedido por Pablo el 2026-10-27; prioridad por confirmar). Hoy no hay forma de quitar a nadie: una persona solo puede **unirse** con otra (sus movimientos pasan a la otra y deja de figurar) y la invitación pendiente se puede cancelar. Hay dos casos distintos y conviene decidirlos por separado: **quitar a un integrante** (con acceso: pierde el acceso al grupo, sus sesiones dejan de ver los saldos, el titular no puede quitarse a sí mismo y habría que ver «salir del grupo» por cuenta propia) y **borrar una persona que participa** (con o sin cuenta, que ya figura en movimientos y saldos). Preguntas abiertas: borrar de verdad o desactivar y ocultar (los movimientos viejos no pueden quedar sin nombre), qué pasa si tiene saldo distinto de cero o movimientos, si se puede volver a invitar, qué queda en la auditoría y en las revisiones, y cómo se habla de esto en el [glosario](homesuite/GLOSARIO.md) (integrante = tiene acceso; persona = participa). Esfuerzo 🟠.
 
 ## 🟢 Baja prioridad / ideas a futuro
 
@@ -255,10 +293,12 @@ Ideas de evolución, en orden de qué falta:
 - **Papelera (soft-delete)**: recuperar tarjetas borradas (distinto del archivo actual, que ya permite restaurar tarjetas archivadas — evaluar si esto ya cubre la necesidad antes de construir algo nuevo).
 - **Rol "solo lectura"** en tableros compartidos.
 - **PWA instalable** + mejoras de mobile.
+- **Cuentas Claras: categorías y subcategorías** (decidido 2026-10-26 con Pablo al unificar el lenguaje de «grupo»). Hoy «Casa» en «Casa - Otro» se llama «grupo de la categoría» (campo «Grupo», `group_name`, `group_key`, `category.group`) y choca con «grupo» como lugar compartido. Decisión: «Casa» es la categoría y «Otro» la subcategoría; el movimiento se asigna a una subcategoría. Esto reformula el modelo (`ledger_categories`, la pantalla de Categorías, filtros «Todo Casa», selectores con `optgroup`, recategorización, importación de Splitwise, pruebas) y necesita su propia exploración: qué nombre lleva lo que se asigna, cómo se muestra «Sin categoría», y qué pasa con las categorías sin subcategoría. Esfuerzo 🔴. Hasta entonces el código conserva `group` en las categorías como excepción conocida del [glosario](homesuite/GLOSARIO.md).
+- **Cuentas Claras: más de un libro por grupo** (decidido 2026-10-26 con Pablo: el concepto se conserva, la capacidad queda para después). El grupo es quiénes están y quién es titular; el libro (`ledger`) es donde viven movimientos, categorías y saldos, y hoy hay uno solo por grupo (`expense_ledgers.group_id` es `UNIQUE`). Mientras haya uno, la UI habla de «grupo», «movimientos» y «saldos», y «libro» aparece cuando exista el segundo. Las rutas ya separan `/ledger/…` del grupo, así que no hay que reescribirlas. Para abrirlo hará falta decidir: cómo se crea un libro y cuál es el principal, si los saldos son por libro o del grupo, si las categorías y las personas se comparten entre libros, y cómo elige el libro la persona al entrar. Esfuerzo 🔴. Se abre como cambio propio: la base solo quita el `UNIQUE` y suma un nombre de libro.
 - **Tips a medida basados en comportamiento** (explorado 2026-09-09, pensado junto con el tip diario de onboarding pero implementable por separado):
   - *Enfoque decidido*: mirada **sistémica** (el estado del flujo del tablero) mostrando además **cómo el comportamiento concreto de la persona contribuye a ese estado**. Ni acusación individual ("moviste 6 tarjetas y no terminaste ninguna") ni estadística abstracta que no le habla a nadie. Fundamento Lean: el problema es el proceso, no la persona; la persona necesita ver su aporte al flujo, no ser juzgada.
   - *Hallazgo técnico*: no requiere instrumentar nada nuevo. `audit_log` (migración 0005) ya registra `board_id | card_id | action | email | ts | details(JSON)` con 10 acciones (`card_created/moved/edited/archived/restored/deleted`, `column_created/renamed/moved/deleted`). Es un lector sobre un stream de eventos existente, no un feature de captura de datos.
-  - *Riesgo principal*: molestar o sonar vigilante. Necesita control de frecuencia explícito y un espacio de UI propio, distinto del tip diario.
+  - *Riesgo principal*: molestar o sonar vigilante. Necesita control de frecuencia explícito y un grupo de UI propio, distinto del tip diario.
 
 ---
 

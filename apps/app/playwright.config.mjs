@@ -1,47 +1,22 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 
-const appDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(appDir, "../..");
-const PORT = 8791;
-const STATE = ".wrangler/app-e2e-state"; // estado de D1 descartable, sólo de esta suite
-
-// `localhost` (no 127.0.0.1 de otro host) importa: el usuario local sólo existe ahí.
-// Sin DEV_LOCAL_EMAIL la visita es anónima; las pruebas con cuenta envían la
-// cabecera X-HomeSuite-Dev-Email. Los valores de Google y de sesión son ficticios.
-const vars = [
-  "DEV_LOCAL_MODE:true",
-  "GOOGLE_CLIENT_ID:e2e-client",
-  "GOOGLE_CLIENT_SECRET:e2e-secret",
-  "SESSION_SECRET:e2e-session-secret-0123456789abcdef",
-].map((pair) => `--var ${pair}`).join(" ");
-
-const projects = [{ name: "chromium", use: devices["Desktop Chrome"] }];
-if (process.env.REMANSO_E2E_FIREFOX) projects.push({ name: "firefox", use: devices["Desktop Firefox"] });
+// El puerto y el estado se pueden cambiar (E2E_PORT, E2E_STATE) para correr dos worktrees a la vez sin pisarse.
+const port = process.env.E2E_PORT ?? "8791";
 
 export default defineConfig({
   testDir: "./e2e",
+  timeout: 30_000,
   fullyParallel: false,
   workers: 1,
-  reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: `http://127.0.0.1:${port}`,
     trace: "retain-on-failure",
-    screenshot: "only-on-failure",
   },
-  projects,
   webServer: {
-    command: [
-      `rm -rf ${STATE}`,
-      `npx wrangler d1 migrations apply homesuite-app-local --local --persist-to ${STATE} --config apps/app/wrangler.jsonc`,
-      `npx wrangler dev --config apps/app/wrangler.jsonc --port ${PORT} --persist-to ${STATE} ${vars}`,
-    ].join(" && "),
-    cwd: repoRoot,
-    url: `http://localhost:${PORT}/healthz`,
+    command: "npm run dev:e2e:homesuite-app",
+    cwd: "../..",
+    url: `http://127.0.0.1:${port}/healthz`,
     reuseExistingServer: false,
     timeout: 120_000,
-    stdout: "ignore",
-    stderr: "pipe",
   },
 });
