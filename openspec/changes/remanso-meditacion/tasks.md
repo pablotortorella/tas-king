@@ -80,3 +80,10 @@ mismo commit.
 - [x] 10.3 E2E del sitio: portada → landing de Remanso, sin enlace a la app ni controles en producción, 360 px, modo oscuro y cabeceras; el E2E del sitio entra al CI si falta.
 - [x] 10.4 Despliegue del sitio de staging (`wrangler deploy --env staging --config apps/site/wrangler.jsonc`): `--dry-run` antes, confirmar que no toca producción, smoke del recorrido portada → landing → app y registro.
 
+## 11. Ajustes tras probar staging (pedido de Pablo, 2026-10-27)
+
+- [x] 11.1 Escribir las pruebas que fallan primero: E2E de «el inicio y el cierre caben en la ventana» (390 × 720 y 1280 × 680, con y sin cuenta), Vitest del nivel máximo de `windGust` en `SuiteEngine` y de la huella del motor intacta, y la prueba de ruta del volumen inicial 72.
+- [x] 11.2 Que la pantalla entre sin scroll: el contenedor de la app dejaba `min-height: 100dvh` bajo el encabezado, así que siempre excedía la ventana; pasar a una columna de la altura de la ventana y compactar duración, línea de gongs, fondos, volumen y cierre; verificar con el E2E y con capturas a 390 y 1280 px, claro y oscuro.
+- [x] 11.3 Volumen inicial del fondo 72 (un 30 % más que 55) en `REMANSO_ACCESO`, el atributo de datos y el cliente; verificar con las pruebas de ruta y de contraste.
+- [x] 11.4 Bajar las ráfagas de viento del bosque reemplazando `windGust()` en `SuiteEngine` con una constante de nivel; verificar con la prueba Vitest y que la huella del motor no cambia.
+- [ ] 11.5 Suites completas en Chromium y Firefox, levantar en local para que Pablo lo revise de oído y de vista, y recién después pasar a staging con su aprobación.

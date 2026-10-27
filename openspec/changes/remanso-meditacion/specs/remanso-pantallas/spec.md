@@ -70,8 +70,9 @@ del fondo, probar el gong y comenzar. Los tres sonidos de gong SHALL mostrarse c
 opciones con nombre; las que requieren cuenta SHALL seguir el mismo tratamiento que
 las demás opciones con cuenta. SHALL mostrar los momentos de gong de la duración
 elegida y el rótulo del botón con los minutos («Comenzar · N min»). Los valores
-iniciales SHALL ser 10 minutos, lluvia y volumen 55 con sesión, y 5 minutos, agua
-y volumen 55 sin sesión.
+iniciales SHALL ser 10 minutos, lluvia y volumen 72 con sesión, y 5 minutos, agua
+y volumen 72 sin sesión (ajuste del 2026-10-27: el fondo quedaba muy bajo frente al
+gong con 55; 72 es un 30 % más sobre el control).
 
 #### Scenario: Cambiar la duración
 
@@ -179,6 +180,29 @@ cumplir contraste AA en ambos esquemas.
 
 - **WHEN** el sistema prefiere esquema oscuro
 - **THEN** inicio y cierre usan la paleta oscura de la suite, incluido el encabezado
+
+### Requirement: El inicio y el cierre caben en la ventana
+
+El inicio y el cierre SHALL mostrarse completos, con todos sus botones («Comenzar»;
+«Volver al inicio» y «Repetir sesión»), sin desplazamiento vertical, en una ventana de
+390 × 720 px (teléfono) y de 1280 × 680 px (escritorio), con el encabezado de la app
+visible y sin perder los objetivos táctiles de 44 px. En ventanas más bajas SHALL poder
+desplazarse, nunca desbordar a los costados.
+
+#### Scenario: Inicio en el teléfono
+
+- **WHEN** se abre `/remanso` en una ventana de 390 × 720 px
+- **THEN** la altura del documento no supera la de la ventana y «Comenzar» se ve completo
+
+#### Scenario: Inicio en escritorio
+
+- **WHEN** se abre `/remanso` en una ventana de 1280 × 680 px
+- **THEN** la altura del documento no supera la de la ventana y «Comenzar» se ve completo
+
+#### Scenario: Cierre
+
+- **WHEN** termina una sesión en cualquiera de las dos ventanas
+- **THEN** el cierre se ve completo, con los estados de ánimo y los dos botones, sin desplazarse
 
 ### Requirement: Accesibilidad y adaptación al dispositivo
 
