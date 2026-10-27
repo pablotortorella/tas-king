@@ -69,13 +69,31 @@ describe("homesuite-site", () => {
     expect(await production.text()).not.toContain('href="https://staging.homesuite.info/cuentas-claras"');
   });
 
+  it("conecta la landing de Remanso con la app del mismo staging, sólo en staging", async () => {
+    const body = '<p>En preparación.</p><!-- staging-app-entry -->';
+    for (const path of ["/remanso", "/remanso.html"]) {
+      const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${path}`),
+        { ...assetEnvironment(body), SITE_ENV: "staging" });
+      expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+      expect(staging.headers.get("Cache-Control")).toBe("no-store");
+      const html = await staging.text();
+      expect(html).toContain('href="https://staging.homesuite.info/remanso"');
+      expect(html).toContain("Las sesiones cortas no piden cuenta.");
+      expect(html).not.toContain("staging-app-entry");
+    }
+    const production = await worker.fetch(new Request("https://homesuite.info/remanso"), assetEnvironment(body));
+    const html = await production.text();
+    expect(html).not.toContain("staging.homesuite.info");
+    expect(production.headers.get("X-Robots-Tag")).toBeNull();
+  });
+
   it("en la landing de Tareas apunta al TasKing de staging", async () => {
     const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/tareas"),
       { ...assetEnvironment('<a href="https://tas-king.pablotortorella.workers.dev">Tareas</a>'), SITE_ENV: "staging" });
     expect(await staging.text()).toContain('href="https://tas-king-staging.pablotortorella.workers.dev"');
   });
 
-  it("mantiene la portada sin JavaScript y enlaza las tres landings", async () => {
+  it("mantiene la portada sin JavaScript y enlaza las cuatro landings", async () => {
     const html = await readFile(
       new URL("../public/index.html", import.meta.url),
       "utf8",
@@ -86,6 +104,8 @@ describe("homesuite-site", () => {
     expect(html).toContain('href="/tareas"');
     expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('href="/compras"');
+    expect(html).toContain('href="/remanso"');
+    expect(html).toContain("Conocé Remanso");
     expect(html).toContain("Conocé Fun TasKing");
     expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     expect(html).toContain("Cuentas Claras");
@@ -94,8 +114,8 @@ describe("homesuite-site", () => {
     expect(html).not.toMatch(/\sstyle=/i);
   });
 
-  it("usa el nuevo emblema y favicon en las cuatro páginas", async () => {
-    const pages = ["index", "tareas", "cuentas-claras", "compras"];
+  it("usa el nuevo emblema y favicon en todas las páginas", async () => {
+    const pages = ["index", "tareas", "cuentas-claras", "compras", "remanso"];
     for (const name of pages) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html).toContain('href="/HomeSuite-favicon-simplificado.svg"');
@@ -113,6 +133,7 @@ describe("homesuite-site", () => {
     ["tareas", "Fun TasKing!", true],
     ["cuentas-claras", "Las cuentas compartidas, más claras.", false],
     ["compras", "Una lista para comprar mejor, juntos.", false],
+    ["remanso", "Un rato de calma para la casa.", false],
   ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
     const html = await readFile(
       new URL(`../public/${slug}.html`, import.meta.url),

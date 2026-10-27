@@ -13,6 +13,26 @@ Los ítems restantes no quedan cerrados por el despliegue de staging.
 - Ensayar restauración aislada completa de TasKing y definir/comprobar recuperación y ciclo de vida de datos de HomeSuite antes de información irreemplazable. Incluir índices, triggers y archivos aplicables; registrar RPO/RTO y resultados.
 - Automatizar enlaces internos de documentación en CI. Aceptación: un enlace local roto falla y los enlaces válidos pasan sin consultar red.
 
+## 🧘 Remanso: decisiones y riesgos pendientes (2026-10-26)
+
+Ficha: [Remanso](productos/REMANSO.md). Primer corte en la rama `feature/remanso`
+(ver [STATUS](STATUS.md)). Nada de lo siguiente está decidido ni resuelto; los ítems
+marcados **investigar** requieren una investigación a fondo en internet (qué
+conviene y cómo) antes de elegir, y su resultado se registra aquí.
+
+- **Navegación y nombre de las dos mitades de la suite** (organiza / cuida). Hoy Remanso es una herramienta más en la home; el menú general no lista herramientas. Aceptación: decisión de Pablo sobre nombres y navegación, explorada con `/opsx:explore` antes de proponer.
+- **Historial de sesiones** `{ fecha, minutos, fondo, ánimo }`: persona u hogar, para qué, sin rachas ni presión. Hoy el ánimo no se guarda ni se envía. Aceptación: exploración con Pablo; si se guarda, migración, privacidad y export definidos.
+- **Publicar Remanso en producción** (app y sitio público). La placa y la landing existen y funcionan en staging; el sitio de producción dice «en preparación». Aceptación: aprobación explícita de Pablo, publicación de la app y el sitio por separado según [operación](homesuite/OPERACION.md), y la landing de producción con enlace real a la app.
+- **Elección del gong en el perfil** para que siga a la persona entre dispositivos (hoy vive en el dispositivo). Aceptación: exploración con Pablo; si se guarda en el servidor, migración compatible, API con CSRF y qué pasa sin cuenta.
+- **Más sonidos de gong o campanas** si hace falta; hoy son tres (brillante, profundo, cuenco) y los dos últimos requieren cuenta.
+- **Modo oscuro para todo el shell de la app.** Hoy sólo Remanso adapta el encabezado. Aceptación: tokens compartidos y snapshots de las demás rutas actualizados con revisión visual.
+- **Investigar: iPhone en modo silencio.** Web Audio probablemente no suene con el interruptor activado. Aceptación: prueba en dispositivo en ambas posiciones y solución o aviso decidido.
+- **Investigar: pantalla bloqueada o app en segundo plano.** El audio puede cortarse; el Wake Lock no se renueva al volver a la pestaña. Evaluar PWA/app nativa con reproducción en segundo plano. Aceptación: opciones comparadas con fuentes y decisión.
+- **Investigar: arranque suspendido del audio.** En Firefox headless ~1 de cada 8 inicios queda «En pausa» hasta pulsar «Reanudar». Aceptación: reproducir en iOS/Android reales y decidir si la interfaz debe reintentar.
+- **Volumen relativo entre fondos:** calibrado a mano. Aceptación: escuchar los seis seguidos en el teléfono y ajustar.
+- **Investigar: fondos sintetizados vs. grabados.** Sintetizados no tienen licencias ni peso pero suenan menos reales; si se pasa a grabaciones, verificar la licencia de cada archivo (p. ej. CC0). Si el nivel con cuenta llegara a incluir grabaciones, mover la restricción de nivel al servidor.
+- **Segundo motor de navegador (WebKit/Safari)** para las pruebas automáticas de Remanso; hoy Chromium y, de forma opcional e intermitente, Firefox.
+
 **Última actualización**: 2026-10-26
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 

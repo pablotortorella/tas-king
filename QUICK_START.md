@@ -5,7 +5,8 @@
 1. [Base común](docs/homesuite/README.md): documentos madre y estado de controles.
 2. Ficha del área: [TasKing](docs/productos/TASKING.md),
    [plataforma/sitio](docs/productos/PLATAFORMA.md),
-   [Cuentas Claras](docs/productos/CUENTAS-CLARAS.md) o [Compras](docs/productos/COMPRAS.md).
+   [Cuentas Claras](docs/productos/CUENTAS-CLARAS.md), [Compras](docs/productos/COMPRAS.md)
+   o [Remanso](docs/productos/REMANSO.md).
 3. [Estado fechado](docs/STATUS.md), [backlog](docs/PRODUCT_BACKLOG.md) y change OpenSpec afectado.
 
 No se copian aquí versiones desplegadas ni cantidades de tests. El

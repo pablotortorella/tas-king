@@ -261,6 +261,11 @@ h2 {
   color: #3e6d73;
 }
 
+.tool-icon-calm {
+  background: #f1e6c4;
+  color: #7a5418;
+}
+
 .tool-card-active .status {
   border-color: rgba(255, 255, 255, .24);
   color: rgba(255, 255, 255, .84);
@@ -622,6 +627,27 @@ h2 {
 .shopping-spark-one { top: 14%; right: 14%; }
 .shopping-spark-two { bottom: 16%; left: 12%; width: 18px; height: 18px; }
 
+.product-art-calm {
+  background: linear-gradient(145deg, #f1e6c4, #d8e4cf);
+}
+
+.calm-rings {
+  position: relative;
+  width: min(62%, 300px);
+  aspect-ratio: 1;
+}
+
+.calm-ring,
+.calm-dot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.calm-ring { border: 3px solid #bfb58f; }
+.calm-ring-outer { inset: 0; }
+.calm-ring-inner { inset: 17%; border-color: #94661a; }
+.calm-dot { inset: 40%; background: #94661a; }
+
 .product-story {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -864,6 +890,16 @@ footer span:first-child {
   .product-art-expenses { background: linear-gradient(145deg, #503a32, #3e3529); }
 
   .product-art-shopping { background: linear-gradient(145deg, #2b4548, #263d35); }
+
+  .product-art-calm { background: linear-gradient(145deg, #3a3a28, #2b3a30); }
+
+  .calm-ring { border-color: #5b6a58; }
+
+  .calm-ring-inner { border-color: #d4ad58; }
+
+  .calm-dot { background: #d4ad58; }
+
+  .tool-icon-calm { background: #3b3623; color: #d4ad58; }
 
   .wall {
     background: #e9dfc8;

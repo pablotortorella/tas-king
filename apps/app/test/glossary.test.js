@@ -27,6 +27,8 @@ const ALLOWED_PHRASES = [
   ["espacios y puntuación", "caracteres en blanco, no el concepto"], ["compuesto sólo de espacios", "caracteres en blanco, no el concepto"],
   ["vacío/espacios", "caracteres en blanco, no el concepto"],
   ["pasa a un espacio, espacios colapsados", "caracteres en blanco, no el concepto"], ["celdas con espacios", "caracteres en blanco, no el concepto"],
+  ["Enter/Espacio", "nombre de la tecla del teclado, no el concepto"], ["Enter o Espacio", "nombre de la tecla del teclado, no el concepto"],
+  ["Enter/Espacio/Escape", "nombre de la tecla del teclado, no el concepto"],
   ["espacios en blanco", "caracteres en blanco, no el concepto"], ["espacio en blanco", "caracteres en blanco, no el concepto"],
 ];
 

@@ -9,9 +9,14 @@
 
 ## Cuentas Claras: grupos con identidad, lenguaje único y último grupo — 2026-10-26
 
-**Estado:** implementado en la rama `feature/grupos-con-identidad` (apilada sobre
-`feature/personas-menu-perfil`), sin publicar y **sin tocar staging todavía**. Cambio
-OpenSpec: `grupos-con-identidad`.
+**Estado:** integrado en `main` con el PR #105 (merge `c6cc955`, que lleva toda la pila de
+Cuentas Claras; los PR apilados #88–#90, #94–#98, #100 y #103 se cerraron como incluidos).
+Se publicó en staging desde el SHA `7b010d2` (Version ID `99964c9a`, base recreada con el
+script de reinicio y backup previo) y Pablo lo probó; los ajustes posteriores (ruedita
+junto al nombre, botones del encabezado y sumar personas en Personas) están en `main` y se
+verán en el próximo despliegue de staging. **HomeSuite App no tiene entorno de
+producción**, así que nada de esto está en producción. Cambio OpenSpec:
+`grupos-con-identidad`.
 
 - **Lenguaje único:** el término anterior de «grupo» desapareció de interfaz, URLs, API, código, base,
   pruebas y documentos vigentes (excepción: `openspec/changes/archive/`, el lema figurado
@@ -59,6 +64,74 @@ compartido), sin publicar. Cambio OpenSpec: `personas-del-grupo`.
   cargar la hoja de estilos. Los límites de D1 remoto de la unión se verifican en staging antes de cerrar el cambio.
 - **Pendiente:** probar en staging la unión de las dos personas duplicadas del caso real; deshacer una
   unión queda fuera de este cambio.
+
+## Remanso — primer corte (2026-10-26)
+
+**Estado:** implementado en la rama `feature/remanso` e **integrado con `main`
+(2026-10-27)** sobre el shell nuevo de la app: Remanso queda solo en la home (el menú
+general ya no lista herramientas) y sus E2E corren con `test:e2e:remanso`. Se publicó en
+staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`, pero ese
+despliegue **fue reemplazado el mismo día** por el de grupos (staging tiene un solo SHA
+activo por Worker); el próximo despliegue de `main` lo vuelve a publicar. **Sin publicar
+en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+ficha [Remanso](productos/REMANSO.md); decisión de plataforma
+[ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
+
+- `/remanso` en HomeSuite App con inicio, sesión y cierre, usando el motor de sonido
+  del paquete de Claude Design **sin modificar** (huella SHA-256 fijada por prueba).
+  Entrada provisional como una herramienta más en la home (el menú general no lista herramientas); las dos mitades
+  de la suite siguen sin explorar.
+- Acceso en dos niveles: **sin cuenta** 1, 2 y 5 min, silencio/agua/bosque y Gong
+  brillante; **con cuenta** 10, 20 y 30 min, lluvia/fuego/noche, Gong profundo y
+  Cuenco tibetano, más el nombre del perfil en el cierre. El cierre sin cuenta no
+  menciona la cuenta. El nivel libre es un incentivo de producto, no un control de
+  seguridad (el audio es estático y se sintetiza en el navegador).
+- **Gong elegible** (pedido de Pablo tras probar variantes de oído): tres sonidos
+  propios en `remanso-gongs.js`, sin editar el motor; la elección se recuerda en el
+  dispositivo y se ignora si el nivel no la permite. El gong del paquete oscilaba ~21 dB
+  de volumen («wa-wa», cancelaciones completas cada 1,25 s); los nuevos oscilan ~0,7 dB
+  (hasta ~3,1 dB el cuenco, a propósito) y un E2E lo vigila.
+- **Placa en el sitio público:** tarjeta «Remanso» en la portada y landing `/remanso`
+  («en preparación»); sólo el Worker del sitio de staging la conecta con
+  `https://staging.homesuite.info/remanso`. El sitio de producción no cambia.
+- Identidad de HomeSuite en claro y oscuro (según el sistema); la sesión es siempre
+  oscura (decisión confirmada por Pablo). Sin fuentes ni recursos externos; contraste AA
+  verificado por prueba.
+- Plataforma: binding `assets` en `apps/app/wrangler.jsonc` (sin `run_worker_first`),
+  `page()` acepta estilos/scripts propios, nuevas suites Playwright de la app y del
+  sitio (`test:homesuite-app:e2e`, `test:homesuite-site:e2e`, ambas agregadas a CI) y
+  script `dev:homesuite-app:anonimo`. Sin migraciones ni datos nuevos.
+- Verificación local sobre la rama (sin confirmar aún): 230 pruebas generales, 115
+  unitarias y 20 integraciones D1 de HomeSuite App, 12 del sitio, 30 E2E de Remanso y 17
+  E2E del sitio (Chromium), y OpenSpec strict. Los 101 E2E de TasKing pasaron en una
+  corrida anterior de la rama; el código de TasKing no cambió desde entonces. Cabeceras
+  de documentos y recursos probadas sobre `wrangler dev`.
+- Hallazgos: Firefox (headless) pasó 19/20 en la corrida inicial y su única falla es
+  intermitente: ~1 de 8 arranques deja el `AudioContext` suspendido y la sesión aparece
+  «En pausa» hasta pulsar «Reanudar» (Chromium 0/8); es el comportamiento diseñado del
+  motor. WebKit no se probó. El gong intermedio del cuenco oscila 3,1 dB (umbral de
+  3 dB no aplica al cuenco: 4 dB).
+- **Publicación en staging (2026-10-26, Pablo la autorizó: «vamos a staging»):**
+
+  | Superficie | URL | Worker y Version ID |
+  |---|---|---|
+  | App | `https://staging.homesuite.info/remanso` | `homesuite-app-staging` · `b0678fb3-23d7-49c9-bcf3-161c6d0acaed` |
+  | Sitio público | `https://site-staging.homesuite.info/` | `homesuite-site-staging` · `98be1931-4c86-4a5b-9bae-207258d8647d` |
+
+  Antes se corrieron las suites sobre ese árbol y un `--dry-run` de cada Worker. D1 de
+  staging: «No migrations to apply», sin migraciones por este cambio. Esto reemplazó la
+  versión activa anterior (`90bf4b5`, mismo código de `apps/` que `main`).
+- **Smoke remoto del mismo SHA:** `/healthz` 200; `/remanso` 200 con política de
+  contenido, `X-Frame-Options`, `nosniff` y `Cache-Control: private, no-store`;
+  `/remanso/*.js|css` 200 con su tipo y `nosniff` (confirma `_headers` fuera de
+  `wrangler dev`); `/remanso/index.html` 404; el motor servido tiene la huella del
+  paquete; `/perfil` sin sesión 302. En el sitio: portada con la tarjeta, `/remanso` con
+  «Entrar a Remanso →» hacia `https://staging.homesuite.info/remanso`, `noindex`, y
+  `/tareas`, `/cuentas-claras` y `/compras` siguen en 200 con el enlace cruzado.
+  Producción no cambió: `homesuite.info/remanso` da 404 y la portada no tiene la tarjeta.
+- **No verificado:** audio real en teléfono (iPhone en silencio, pantalla bloqueada,
+  volumen entre fondos), el recorrido autenticado con Google en staging, la ejecución en
+  CI y WebKit/Safari. Pendientes de producto en el [backlog](PRODUCT_BACKLOG.md).
 
 ## HomeSuite en staging: sitio, navegación y perfil — 2026-10-25
 

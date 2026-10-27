@@ -61,6 +61,7 @@ Pablo valida cambios de política; no se afirma aprobación sólo por escribirlo
 - [Plataforma y sitio público](../productos/PLATAFORMA.md): superficies y controles compartidos.
 - [Cuentas Claras](../productos/CUENTAS-CLARAS.md): invariantes financieras y fuentes funcionales.
 - [Compras](../productos/COMPRAS.md): alcance todavía por explorar.
+- [Remanso](../productos/REMANSO.md): meditaciones con gong y sonidos; niveles de acceso y límites.
 
 No copiar estas políticas en cada producto, instrucción de agente o repositorio.
 Si un producto se extrae, debe mantener un enlace estable a una revisión identificada

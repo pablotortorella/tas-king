@@ -6,6 +6,14 @@
   // split.js y text.js se sirven al navegador con el texto de sus funciones (Function.prototype.toString): minificar renombraría
   // los exports y rompería los import del navegador. Una prueba (served-modules-config.test.js) exige que siga apagado.
   "minify": false,
+  // Archivos estáticos propios (hoy sólo Remanso). Sin `run_worker_first`: todo el
+  // HTML lo genera el Worker, así que la política y las cabeceras llegan al
+  // documento (ADR-017). NUNCA poner un .html en ./public: capturaría su ruta
+  // sin pasar por el Worker. Lo vigila apps/app/test/remanso-assets.test.js.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
   "d1_databases": [{
     "binding": "DB",
     "database_name": "homesuite-app-local",

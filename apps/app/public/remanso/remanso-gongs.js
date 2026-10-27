@@ -1,0 +1,100 @@
+// Remanso · sonidos de gong elegibles.
+//
+// Se sintetizan en el dispositivo, con el mismo grafo de audio que el gong del paquete
+// (osciladores sinusoidales con caída exponencial + un golpe de ruido filtrado), pero
+// con los parámetros de cada sonido. `SuiteEngine` reemplaza únicamente `gong()`:
+// el motor (remanso-engine.js) sigue siendo el del paquete, sin editar.
+//
+// Los tres sonidos se afinaron de oído con Pablo (2026-10-26). Ninguno oscila de
+// volumen («wa-wa»): el desafinado entre los dos osciladores de cada parcial es mínimo
+// (o desbalanceado), y un E2E lo mide.
+import { RemansoEngine } from "./remanso-engine.js";
+
+// Parciales del gong: [razón sobre la base, amplitud, segundos hasta apagarse].
+const PARCIALES = [[0.5, 0.25, 8], [1, 1, 12], [2.76, 0.45, 7], [5.4, 0.2, 4], [8.93, 0.08, 2.5]];
+const SIN_BATIMIENTO = [[-0.02, 0.5], [0.02, 0.5]]; // [desafinado en Hz, parte de la amplitud]
+
+export const GONGS = Object.freeze({
+  brillante: Object.freeze({
+    nombre: "Gong brillante",
+    base: { inicioFin: 174.6, medio: 130.8 }, // Fa3 · Do3
+    duracion: { inicioFin: 1.7, medio: 1 },
+    parciales: [...PARCIALES, [11.3, 0.06, 1.6], [14.1, 0.03, 1.0]],
+    pares: SIN_BATIMIENTO,
+    golpe: { amp: 0.3, dur: 0.22, freq: 10, q: 1.2 },
+    ataque: 0.004,
+  }),
+  profundo: Object.freeze({
+    nombre: "Gong profundo",
+    base: { inicioFin: 87.3, medio: 65.4 }, // Fa2 · Do2
+    duracion: { inicioFin: 2.0, medio: 1.4 },
+    parciales: PARCIALES,
+    pares: SIN_BATIMIENTO,
+    golpe: { amp: 0.12, dur: 0.09, freq: 6, q: 2 },
+    ataque: 0.01,
+  }),
+  cuenco: Object.freeze({
+    nombre: "Cuenco tibetano",
+    base: { inicioFin: 261.6, medio: 220 },
+    duracion: { inicioFin: 1.4, medio: 1 },
+    parciales: [[1, 1, 14], [2.71, 0.5, 10], [5.05, 0.18, 6], [8.0, 0.06, 3]],
+    pares: [[0, 0.9], [0.2, 0.1]], // temblor lento y suave (~2 dB), no una cancelación
+    golpe: { amp: 0.03, dur: 0.05, freq: 4, q: 2 },
+    ataque: 0.05,
+  }),
+});
+
+export const GONG_IDS = Object.freeze(Object.keys(GONGS));
+export const GONG_NAMES = Object.freeze(Object.fromEntries(GONG_IDS.map((id) => [id, GONGS[id].nombre])));
+export const DEFAULT_GONG = "brillante";
+
+/** Sintetiza un gong en `t`. `amp` es el volumen relativo del motor (1,5 inicio/fin, 1 medio). */
+export function synthGong(ctx, noise, dest, t, amp, main, sound) {
+  const base = main ? sound.base.inicioFin : sound.base.medio;
+  const dm = main ? sound.duracion.inicioFin : sound.duracion.medio;
+  const bus = ctx.createGain();
+  bus.gain.value = 0.26 * amp;
+  bus.connect(dest);
+  for (const [ratio, level, seconds] of sound.parciales) {
+    for (const [offset, share] of sound.pares) {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = base * ratio + offset;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(level * share, t + sound.ataque);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds * dm);
+      osc.connect(gain); gain.connect(bus);
+      osc.start(t); osc.stop(t + seconds * dm + 0.1);
+    }
+  }
+  const strike = ctx.createBufferSource();
+  strike.buffer = noise;
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = base * sound.golpe.freq;
+  band.Q.value = sound.golpe.q;
+  const strikeGain = ctx.createGain();
+  strikeGain.gain.setValueAtTime(0, t);
+  strikeGain.gain.linearRampToValueAtTime(sound.golpe.amp, t + 0.004);
+  strikeGain.gain.exponentialRampToValueAtTime(0.0001, t + sound.golpe.dur);
+  strike.connect(band); band.connect(strikeGain); strikeGain.connect(bus);
+  strike.start(t, Math.random() * 7); strike.stop(t + sound.golpe.dur + 0.03);
+}
+
+/** El motor del paquete con gong elegible: sólo se reemplaza `gong()`. */
+export class SuiteEngine extends RemansoEngine {
+  constructor() {
+    super();
+    this.gongId = DEFAULT_GONG;
+  }
+
+  setGong(id) {
+    if (!Object.hasOwn(GONGS, id)) throw new Error(`Gong no soportado: ${id}`);
+    this.gongId = id;
+  }
+
+  gong(t, amp, dest, main) {
+    synthGong(this.ctx, this.buf.white, dest, t, amp, main, GONGS[this.gongId]);
+  }
+}

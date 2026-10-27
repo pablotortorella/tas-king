@@ -13,6 +13,7 @@ Formato: [ADR0001](https://adr.github.io/) adaptado.
 - [ADR-016: revisión persistente para sincronización](ADRs/ADR-016-board-sync-revision.md)
 - [ADR-017: frontend modular y cabeceras de seguridad](ADRs/ADR-017-frontend-modular-y-cabeceras.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
+- [ADR-019: Archivos estáticos propios en HomeSuite App](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md)
 
 ---
 
