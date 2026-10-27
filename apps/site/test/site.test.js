@@ -171,7 +171,8 @@ describe("homesuite-site", () => {
       expect(html).toContain('href="https://tas-king.pablotortorella.workers.dev"');
       expect(html).toContain("Abrir Fun TasKing");
     } else {
-      expect(html).toContain("Esta herramienta todavía está en preparación.");
+      expect(html).toContain("Esta herramienta está en versión beta.");
+      expect(html).not.toMatch(/en preparación|Próximamente/iu);
       expect(html).not.toMatch(/<button\b|<form\b/i);
       expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     }
@@ -199,6 +200,18 @@ describe("homesuite-site", () => {
     }
     await expect(readFile(new URL("../public/compras.html", import.meta.url))).rejects.toThrow();
     await expect(readFile(new URL("../pendientes/compras.html", import.meta.url), "utf8")).resolves.toContain("Compras");
+  });
+
+  // Estado de cada herramienta (2026-10-27, Pablo): Fun TasKing está disponible; Cuentas Claras y Remanso funcionan y se rotulan
+  // «Versión Beta». Ninguna página dice «Próximamente» ni «En preparación».
+  it("la portada rotula una herramienta Disponible y dos Versión Beta, sin «Próximamente»", async () => {
+    const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(home.match(/class="status status-available">Disponible</g)).toHaveLength(1);
+    expect(home.match(/class="status">Versión Beta</g)).toHaveLength(2);
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso"]) {
+      const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+      expect(html, name).not.toMatch(/Próximamente|en preparación/iu);
+    }
   });
 
   // Acentos por producto (verde, terracota y ámbar de la paleta de la suite): sólo en rótulos, bordes e íconos, nunca como fondo de

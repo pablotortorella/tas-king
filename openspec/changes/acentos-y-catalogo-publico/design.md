@@ -24,7 +24,17 @@ marco de identidad pide evolucionar la identidad actual, no reemplazarla, y no f
    calma»), no con encabezados ni categorías de navegación: la decisión previa fue que los verbos son
    dimensiones de la marca (identidad §2) y no «mitades».
 
+8. **Rótulo «Versión Beta»** (Pablo, 2026-10-27) para Cuentas Claras y Remanso, en lugar de «Próximamente»
+   y «En preparación»: describe que funcionan y se están probando. Se aplicó también a las landings y a los
+   enlaces «También en HomeSuite», para que ninguna página se contradiga. Fun TasKing sigue «Disponible».
+
 ## Risks
+
+- **Coordinar con el entorno de producción de HomeSuite App** (a cargo de Pablo, en paralelo; este change no lo
+  toca): el rótulo «Versión Beta» promete que se puede probar, pero en producción las landings no traen botón a la
+  app (el acceso existe sólo en staging, `staging-app-entry`). Publicar el sitio en producción antes de que la app
+  esté allí dejaría landings «beta» sin forma de entrar. Cuando la app tenga dominio de producción hay que decidir
+  el enlace del botón de las landings y del «Probá Remanso» de la portada.
 
 - La tarjeta de Compras sigue visible en el inicio de la app: es coherente con la decisión (sólo sitio público) pero
   puede sorprender; ver «Out of scope».

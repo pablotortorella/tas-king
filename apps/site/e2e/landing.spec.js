@@ -61,7 +61,7 @@ for (const [slug, heading] of [
     await page.goto(`/${slug}`);
 
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
-    await expect(page.getByText("Esta herramienta todavía está en preparación.")).toBeVisible();
+    await expect(page.getByText("Esta herramienta está en versión beta.")).toBeVisible();
     await expect(page.getByRole("link", { name: /Todas las herramientas/ })).toHaveAttribute("href", "/#herramientas");
     await expect(page.getByRole("link", { name: "Abrir Fun TasKing" })).toHaveCount(0);
     await expect(page.locator("form, button")).toHaveCount(0);

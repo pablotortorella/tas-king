@@ -16,6 +16,22 @@ enlace desde otra página, y su ruta SHALL responder 404.
 - **WHEN** se pide `/compras` o `/compras.html`
 - **THEN** la respuesta es 404 y ninguna landing enlaza a esa ruta
 
+### Requirement: El estado de cada herramienta se rotula con precisión
+
+La portada SHALL rotular Fun TasKing «Disponible» y Cuentas Claras y Remanso «Versión Beta». Ninguna
+página SHALL decir «Próximamente» ni «En preparación». Las landings de herramientas en beta SHALL decir
+«Esta herramienta está en versión beta.» y SHALL NOT ofrecer enlaces ni botones a la app fuera de staging.
+
+#### Scenario: Rótulos de la portada
+
+- **WHEN** una persona abre la portada
+- **THEN** ve una tarjeta «Disponible» y dos «Versión Beta», y ningún «Próximamente»
+
+#### Scenario: Landing de una herramienta en beta
+
+- **WHEN** se abre la landing de Cuentas Claras o de Remanso en producción
+- **THEN** dice «Esta herramienta está en versión beta.» y no contiene enlaces a la app
+
 ### Requirement: Cada herramienta tiene su acento
 
 Cada herramienta SHALL tener un color de acento propio en la portada y en su landing: verde para Fun TasKing,

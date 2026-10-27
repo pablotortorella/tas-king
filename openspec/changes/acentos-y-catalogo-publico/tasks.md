@@ -10,6 +10,8 @@
 - [x] 2.3 App: tokens en `theme.js`, clases de tarjeta en `routes/shell.js`, CSS y snapshots revisados.
 - [x] 2.4 Remanso: rótulo en ámbar, cubierto por su prueba de contraste.
 
+- [x] 2.5 Rótulo «Versión Beta» en tarjetas, landings y enlaces cruzados; prueba de que no queda «Próximamente» ni «En preparación».
+
 ## 3. Verificación y publicación
 
 - [ ] 3.1 Suites (sitio, app, integración, raíz), E2E del sitio y de Remanso, OpenSpec estricto y capturas en claro y oscuro.
