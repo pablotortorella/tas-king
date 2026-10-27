@@ -31,6 +31,8 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 
 ## Pendiente de unificar
 
+- **El término descartado en la voz de marca.** El documento de [identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md) y el lema del sitio usan la palabra que dejó de nombrar al grupo, pero en sentido figurado («tu hogar, tu ritmo, un lugar para respirar»). No es el concepto «grupo» y no se usa en la interfaz de Cuentas Claras, las URLs, el código ni la base. Si la voz de marca debe seguir llamando «compartido» a un grupo (la línea sobre privacidad de ese documento), es una decisión pendiente de Pablo.
+
 - **Categoría y subcategoría.** Hoy la pantalla de Categorías llama «grupo» al
   agrupador de categorías («Casa» en «Casa - Otro»: campo «Grupo», columnas
   `group_name` y `group_key`, `category.group`), lo que choca con «grupo» como lugar

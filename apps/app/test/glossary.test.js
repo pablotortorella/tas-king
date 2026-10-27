@@ -15,6 +15,7 @@ const EXCLUDED_PATHS = [
   ["openspec/changes/archive/", "registro histórico de decisiones pasadas, que OpenSpec no reescribe"],
   ["openspec/changes/grupos-con-identidad/", "el cambio que elimina el término lo nombra para describir el renombre"],
   ["apps/app/test/glossary.test.js", "esta prueba define los términos descartados"],
+  ["docs/HOMESUITE_IDENTIDAD_Y_VISION.md", "documento de identidad y voz de marca, que usa «espacio» en sentido figurado («tu espacio», «un espacio para respirar»); el vocabulario del dominio lo fija el glosario"],
 ];
 const ALLOWED_PHRASES = [
   ["white-space", "propiedad CSS"],
