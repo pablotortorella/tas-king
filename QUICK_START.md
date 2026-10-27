@@ -30,6 +30,7 @@ no crear propuestas que decidan por el usuario lo que aún falta explorar.
 
 | Necesidad | Fuente |
 |---|---|
+| Identidad, tono y copy de marca | [Identidad y visión](docs/HOMESUITE_IDENTIDAD_Y_VISION.md) |
 | Reglas de colaboración | [Método](docs/homesuite/METODO.md) |
 | Criterios técnicos | [Arquitectura](docs/homesuite/ARQUITECTURA.md) |
 | Escenarios y aceptación | [Verificación](docs/homesuite/VERIFICACION.md) |

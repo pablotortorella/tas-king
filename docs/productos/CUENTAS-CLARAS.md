@@ -13,6 +13,16 @@ La landing pública se abre desde la portada de HomeSuite; en staging enlaza a
 plataforma](../HOMESUITE_PROFILE_API.md), accesible desde el avatar/nombre y el
 menú general; el apodo sigue siendo contextual a cada grupo.
 
+## Dirección de producto (2026-10-26)
+
+La [visión de identidad](../HOMESUITE_IDENTIDAD_Y_VISION.md) (§9.4) amplía Cuentas
+Claras al control financiero cotidiano de un hogar unipersonal y compartido; repartos
+y saldos son capacidades opcionales, no la definición del producto. Es una decisión de
+visión: el MVP vigente sigue siendo el de las fuentes funcionales y no existe aún un
+modo individual, informes ni presupuestos. El alcance individual (registro sin grupo,
+estructura mínima, privacidad, paso a compartido) está por explorar; no decidirlo ni
+reflejarlo en landing o app antes de esa exploración.
+
 ## Invariantes y riesgos propios
 
 Los contratos funcionales gobiernan signos, precisión y redondeo de importes,

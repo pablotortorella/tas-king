@@ -10,16 +10,18 @@ en el Worker), tiene su tablero personal y puede crear tableros compartidos.
 ## Evolución hacia HomeSuite
 
 TasKing seguirá operativo mientras evoluciona gradualmente para formar parte de
-**HomeSuite**, una suite de herramientas compartidas bajo `homesuite.info`. La
-dirección acordada incorpora primero un reemplazo propio de Splitwise y después una
-mejor experiencia de listas de compras, reutilizando identidad e infraestructura sin
-mezclar sus dominios.
+**HomeSuite**, una suite de herramientas para organizar, cuidar y disfrutar el hogar
+bajo `homesuite.info`. La dirección acordada incorpora primero un reemplazo propio de
+Splitwise y después una mejor experiencia de listas de compras, reutilizando identidad
+e infraestructura sin mezclar sus dominios.
 
 La primera pieza ya está publicada: [homesuite.info](https://homesuite.info/) sirve la
 landing pública desde un Worker separado. Para el avance de la app autenticada,
 Cuentas Claras y Compras consultar [STATUS](docs/STATUS.md); las fuentes de dirección son:
 
-- [Visión de HomeSuite](docs/HOMESUITE_VISION.md)
+- [Identidad, visión y evolución de productos](docs/HOMESUITE_IDENTIDAD_Y_VISION.md)
+  (2026-10-26): propósito, tono y copy de marca; rige sobre la formulación original
+- [Visión de HomeSuite](docs/HOMESUITE_VISION.md): arquitectura y plataforma
 - [Infraestructura, dominios y repositorio](docs/HOMESUITE_INFRASTRUCTURE.md)
 - [MVP de Cuentas Claras](docs/HOMESUITE_CUENTAS_CLARAS_MVP.md)
 - [ADR-018: arquitectura modular](docs/ADRs/ADR-018-homesuite-suite-modular.md)

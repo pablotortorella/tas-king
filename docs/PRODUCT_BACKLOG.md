@@ -13,10 +13,26 @@ Los ítems restantes no quedan cerrados por el despliegue de staging.
 - Ensayar restauración aislada completa de TasKing y definir/comprobar recuperación y ciclo de vida de datos de HomeSuite antes de información irreemplazable. Incluir índices, triggers y archivos aplicables; registrar RPO/RTO y resultados.
 - Automatizar enlaces internos de documentación en CI. Aceptación: un enlace local roto falla y los enlaces válidos pasan sin consultar red.
 
-**Última actualización**: 2026-10-25
+**Última actualización**: 2026-10-26
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
+
+---
+
+## Identidad de marca: aplicación pendiente (2026-10-26)
+
+Origen: [Identidad y visión](HOMESUITE_IDENTIDAD_Y_VISION.md), §11. Son tareas de
+exploración y revisión, no un roadmap comprometido; ninguna autoriza cambios de código,
+logo ni paleta por sí sola. Priorización y aprobación: Pablo.
+
+- Revisar el copy vigente de home y landings (`apps/site/public/`) frente a la nueva identidad: hoy habla de «vida compartida», «equipo» y cuentas «compartidas». Aceptación: diff acotado por página que separa hechos actuales de aspiraciones y mantiene el voseo.
+- Decidir la portada: copy principal o prudente (§9.1), según el catálogo publicado.
+- Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
+- Definir el alcance individual de TasKing y Compras y su comunicación.
+- Revisar la identidad visual actual (emblema, favicon, acento por producto) antes de proponer cambios.
+- Decidir si y cómo comunicar productos en exploración (Pausa, Rituales, Momentos, Bitácora) y sus nombres definitivos. Hay trabajo de meditación en la rama `feature/remanso` (aún no integrada); su relación con «Pausa» está por aclarar.
+- Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 
 ---
 
@@ -41,8 +57,8 @@ autenticada funciona en staging; el núcleo cotidiano de Cuentas Claras está en
 una rama de revisión y Compras aún no está implementada. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
-HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
-compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
+HomeSuite será la marca paraguas en `homesuite.info` para herramientas de la vida
+cotidiana del hogar (ver [identidad](HOMESUITE_IDENTIDAD_Y_VISION.md)). La dirección acordada es reutilizar Cloudflare, autenticación y
 operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
 sesión; la aplicación autenticada será un monolito modular con staging aislado,
 manteniendo separados los dominios de Tareas, Cuentas Claras y Compras.

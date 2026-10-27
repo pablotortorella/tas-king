@@ -3,6 +3,13 @@
 Hereda la [base común de HomeSuite](../homesuite/README.md). Esta ficha no redefine
 método, seguridad, pruebas ni autorización de despliegue.
 
+## Identidad y copy
+
+Marco de marca en [Identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md) (§3, §5, §9.3).
+FUN TasKing! conserva su personalidad lúdica y puede servir también para trabajo; el
+tablero personal ya permite uso individual. Los textos sugeridos son borradores:
+validar cada promesa contra lo implementado antes de publicarlos.
+
 ## Implementación y contratos propios
 
 - Worker Hono en `src/`: composición en `index.js`, rutas, middleware y acceso D1.

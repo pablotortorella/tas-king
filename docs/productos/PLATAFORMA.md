@@ -5,6 +5,20 @@ Hereda la [base común](../homesuite/README.md). Diseño objetivo en
 [infraestructura](../HOMESUITE_INFRASTRUCTURE.md). Implementación por rama/entorno
 en [STATUS](../STATUS.md); no deducirla de los documentos de visión.
 
+## Identidad, home y landings
+
+Propósito, ejes, tono, voseo y borradores de copy en
+[Identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md); es intención de marca, no
+lista de tareas. Cambios de home, landings, descripciones y metadatos:
+
+- proponer un diff acotado y distinguir hechos actuales de aspiraciones;
+- presentar por separado productos disponibles, en desarrollo y exploraciones; no
+  anunciar exploraciones ni fechas sin decisión de Pablo;
+- no prometer funciones, privacidad, sincronización ni colaboración sin verificarlas;
+- no cambiar logo, favicon ni paleta antes de revisar la identidad vigente;
+- el copy publicado hoy usa «vida compartida» y fue escrito antes de esta dirección;
+  su revisión es pendiente de backlog y no se infiere de este documento.
+
 ## Plataforma
 
 `apps/app/` implementa la app autenticada; su modelo compartido es identidad,
