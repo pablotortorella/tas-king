@@ -51,7 +51,7 @@
 
 ## 9. Staging y cierre
 
-- [ ] 9.1 Escribir el script de reinicio de la base remota de staging en `apps/app/ops/` y ensayarlo contra una base local descartable; verificar que tras el script y las migraciones el esquema queda idéntico al de una base nueva
+- [x] 9.1 Escribir el script de reinicio de la base remota de staging en `apps/app/ops/` y ensayarlo contra una base local descartable; verificar que tras el script y las migraciones el esquema queda idéntico al de una base nueva
 - [ ] 9.2 Hacer el backup de staging, mostrar a Pablo el script y qué se pierde, y ejecutarlo solo con su confirmación; verificar que el backup existe y que la base queda vacía y migrada
 - [ ] 9.3 Desplegar a staging, volver a entrar con Google, crear un grupo, probar identidad, Administrar grupo, cambio y último grupo con Pablo, y registrar el resultado en `docs/STATUS.md`; verificar con un recorrido en vivo y la prueba `/healthz`
 - [ ] 9.4 Verificar que ningún cambio llega a producción ni se empuja a remoto sin pedido explícito, y archivar el cambio con `openspec archive` tras la aceptación

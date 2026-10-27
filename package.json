@@ -24,6 +24,7 @@
     "db:migrate:homesuite-app:local": "wrangler d1 migrations apply homesuite-app-local --local --config apps/app/wrangler.jsonc",
     "db:migrate:homesuite-app:staging": "wrangler d1 migrations apply homesuite-app-db-staging --remote --env staging --config apps/app/wrangler.jsonc",
     "db:backup:homesuite-app:staging": "bash scripts/homesuite-app-backup.sh staging",
+    "db:reset-staging:homesuite-app:show": "bash scripts/homesuite-app-reset-staging.sh show",
     "db:restore-drill:homesuite-app": "bash scripts/homesuite-app-restore-drill.sh",
     "deploy:homesuite-app:staging": "npm run db:backup:homesuite-app:staging && npm run db:migrate:homesuite-app:staging && wrangler deploy --env staging --config apps/app/wrangler.jsonc",
     "test:watch": "vitest",
