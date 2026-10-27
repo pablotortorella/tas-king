@@ -28,7 +28,7 @@ describe("GET /remanso con sesión (D1)", () => {
     const html = await response.text();
     expect(html).toContain('data-acceso="cuenta"');
     expect(html).toContain('data-nombre="Pablo"');
-    expect(html).toContain('data-inicial-minutos="10" data-inicial-fondo="lluvia" data-inicial-gong="brillante"');
+    expect(html).toContain('data-inicial-minutos="10" data-inicial-fondo="lluvia" data-inicial-gong="brillante" data-inicial-volumen="72"');
     expect(html).toContain('class="account-link" href="/perfil"');
     expectCleanDocument(html);
   });

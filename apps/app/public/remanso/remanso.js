@@ -60,7 +60,7 @@ function init() {
     minutes: Number(root.dataset.inicialMinutos),
     ambient: root.dataset.inicialFondo,
     gong: storedGong() ?? root.dataset.inicialGong,
-    volume: 55,
+    volume: Number(root.dataset.inicialVolumen),
     mood: null,
     muted: false,
   };

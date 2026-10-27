@@ -3,7 +3,8 @@
 // Se sintetizan en el dispositivo, con el mismo grafo de audio que el gong del paquete
 // (osciladores sinusoidales con caída exponencial + un golpe de ruido filtrado), pero
 // con los parámetros de cada sonido. `SuiteEngine` reemplaza únicamente `gong()`:
-// el motor (remanso-engine.js) sigue siendo el del paquete, sin editar.
+// el motor (remanso-engine.js) sigue siendo el del paquete, sin editar. Con el mismo método
+// reemplaza `windGust()` para bajar las ráfagas del bosque (ver FACTOR_VIENTO).
 //
 // Los tres sonidos se afinaron de oído con Pablo (2026-10-26). Ninguno oscila de
 // volumen («wa-wa»): el desafinado entre los dos osciladores de cada parcial es mínimo
@@ -82,7 +83,11 @@ export function synthGong(ctx, noise, dest, t, amp, main, sound) {
   strike.start(t, Math.random() * 7); strike.stop(t + sound.golpe.dur + 0.03);
 }
 
-/** El motor del paquete con gong elegible: sólo se reemplaza `gong()`. */
+// Las ráfagas de viento del bosque del paquete llegan a un nivel de 0,30–0,65 y a Pablo le sonaron muy fuertes (2026-10-27).
+// Aquí se multiplican por este factor (0,195 como máximo); afinar el sonido es cambiar este número.
+export const FACTOR_VIENTO = 0.3;
+
+/** El motor del paquete con gong elegible y ráfagas más suaves: sólo se reemplazan `gong()` y `windGust()`. */
 export class SuiteEngine extends RemansoEngine {
   constructor() {
     super();
@@ -96,5 +101,26 @@ export class SuiteEngine extends RemansoEngine {
 
   gong(t, amp, dest, main) {
     synthGong(this.ctx, this.buf.white, dest, t, amp, main, GONGS[this.gongId]);
+  }
+
+  // Igual que `windGust` del paquete, con el nivel de la ráfaga reducido por FACTOR_VIENTO. Las hojas, las frecuencias y la
+  // cadencia (próxima ráfaga en 12–37 s) no cambian.
+  windGust(s, t) {
+    const rise = 1.5 + Math.random() * 2;
+    const hold = 0.5 + Math.random() * 2;
+    const fall = 2 + Math.random() * 3;
+    const peak = (0.3 + Math.random() * 0.35) * FACTOR_VIENTO;
+    const end = t + rise + hold + fall;
+    s.wind.gain.setValueAtTime(0, t);
+    s.wind.gain.linearRampToValueAtTime(peak, t + rise);
+    s.wind.gain.linearRampToValueAtTime(peak * (0.6 + Math.random() * 0.4), t + rise + hold);
+    s.wind.gain.linearRampToValueAtTime(0, end);
+    s.windBp.frequency.setValueAtTime(400, t);
+    s.windBp.frequency.linearRampToValueAtTime(650 + Math.random() * 450, t + rise);
+    s.windBp.frequency.linearRampToValueAtTime(420, end);
+    s.leaves.gain.setValueAtTime(0, t);
+    s.leaves.gain.linearRampToValueAtTime(0.012 + Math.random() * 0.015, t + rise + 0.3);
+    s.leaves.gain.linearRampToValueAtTime(0, end);
+    return (end - t) + 12 + Math.random() * 25;
   }
 }

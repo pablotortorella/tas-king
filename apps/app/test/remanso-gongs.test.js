@@ -52,10 +52,10 @@ describe("sonidos de gong de Remanso", () => {
     }
   });
 
-  it("el motor con gong elegible sigue siendo el del paquete: sólo cambia gong()", () => {
+  it("el motor de la suite sigue siendo el del paquete: sólo reemplaza gong() y windGust()", () => {
     expect(Object.getPrototypeOf(SuiteEngine)).toBe(RemansoEngine);
     const own = Object.getOwnPropertyNames(SuiteEngine.prototype).sort();
-    expect(own).toEqual(["constructor", "gong", "setGong"]);
+    expect(own).toEqual(["constructor", "gong", "setGong", "windGust"]);
   });
 
   it("rechaza un gong que no existe y conserva el elegido", () => {
@@ -92,5 +92,37 @@ describe("sonidos de gong de Remanso", () => {
     const near = (target) => frequencies.filter((f) => Math.abs(f - target) < 0.5).length;
     expect(near(GONGS.cuenco.base.inicioFin)).toBe(2 * GONGS.cuenco.pares.length); // inicio y final
     expect(near(GONGS.cuenco.base.medio)).toBe(GONGS.cuenco.pares.length); // mitad
+  });
+});
+
+// Registra las curvas que una ráfaga programa en la ganancia del viento, para medir su nivel sin audio.
+function gustLevels(EngineClass, times) {
+  const peaks = [];
+  const edges = [];
+  for (let i = 0; i < times; i += 1) {
+    const levels = [];
+    let start = null;
+    const noop = { setValueAtTime() {}, linearRampToValueAtTime() {} };
+    const wind = { setValueAtTime(value) { start ??= value; }, linearRampToValueAtTime(value) { levels.push(value); } };
+    EngineClass.prototype.windGust.call({}, { wind: { gain: wind }, windBp: { frequency: noop }, leaves: { gain: noop } }, 0);
+    peaks.push(Math.max(...levels));
+    edges.push([start, levels.at(-1)]);
+  }
+  return { peak: Math.max(...peaks), edges };
+}
+
+describe("viento del bosque", () => {
+  it("SuiteEngine limita las ráfagas a 0,20, mientras el motor del paquete llegaba a 0,65", () => {
+    const base = gustLevels(RemansoEngine, 400).peak;
+    const suite = gustLevels(SuiteEngine, 400);
+    expect(base).toBeGreaterThan(0.6);
+    expect(suite.peak).toBeLessThanOrEqual(0.2);
+    expect(suite.peak).toBeGreaterThan(0.05);
+    for (const [inicio, fin] of suite.edges) { expect(inicio).toBe(0); expect(fin).toBe(0); }
+  });
+
+  it("solo reemplaza windGust: el resto del fondo sigue siendo el del paquete", () => {
+    for (const name of ["gust", "phrase", "start", "stop"]) expect(SuiteEngine.prototype[name]).toBe(RemansoEngine.prototype[name]);
+    expect(SuiteEngine.prototype.windGust).not.toBe(RemansoEngine.prototype.windGust);
   });
 });

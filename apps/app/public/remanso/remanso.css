@@ -86,60 +86,65 @@ body.remanso .button { background: var(--rem-accent); color: var(--rem-on-accent
 body.remanso :focus-visible { outline: 3px solid var(--rem-focus); outline-offset: 2px; }
 body.remanso .notice { background: var(--rem-soft); color: var(--rem-ink); }
 body.remanso[data-pantalla="sesion"] .shell-header { display: none; }
-body.remanso .shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; padding-bottom: 32px; }
+body.remanso { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+body.remanso .shell { display: flex; flex-direction: column; flex: 1; min-height: 0; padding-bottom: 10px; }
 
 /* ---------- estructura ---------- */
 .remanso-app { flex: 1; width: 100%; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; }
-.rem-pantalla { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+.rem-pantalla { flex: 1; display: flex; flex-direction: column; gap: 10px; }
 /* El gap de la pantalla separaría de más al título; se compensa con el margen negativo. */
-.remanso-app .rem-pantalla > .eyebrow { margin: 24px 0 -16px; }
-.remanso-app h1 { font-size: clamp(1.8rem, 7vw, 2.4rem); font-weight: 400; line-height: 1.15; margin: 8px 0 0; color: var(--rem-ink); }
-.rem-label { font-family: inherit; font-size: .8125rem; font-weight: 700; margin: 0 0 12px; color: var(--rem-muted); }
+.remanso-app .rem-pantalla > .eyebrow { margin: 4px 0 -8px; }
+.remanso-app h1 { font-size: clamp(1.35rem, 6vw, 2rem); font-weight: 400; line-height: 1.15; margin: 4px 0 0; color: var(--rem-ink); }
+.rem-label { font-family: inherit; font-size: .8125rem; font-weight: 700; margin: 0 0 6px; color: var(--rem-muted); }
 .rem-bloque { margin: 0; }
 .rem-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* ---------- chips (duración, fondo, ánimo) ---------- */
-.rem-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.rem-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .rem-chip {
   font: inherit; cursor: pointer; color: var(--rem-ink); background: var(--rem-surface);
-  border: 1px solid var(--rem-line); border-radius: 16px; padding: 8px 6px;
+  border: 1px solid var(--rem-line); border-radius: 14px; padding: 4px 6px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: 56px; text-align: center;
+  min-height: 44px; text-align: center;
 }
-.rem-chip[aria-pressed="true"] { background: var(--rem-accent); color: var(--rem-on-accent); border-color: var(--rem-link); border-width: 2px; padding: 7px 5px; }
+.rem-chip[aria-pressed="true"] { background: var(--rem-accent); color: var(--rem-on-accent); border-color: var(--rem-link); border-width: 2px; padding: 3px 5px; }
 .rem-chip[aria-disabled="true"] { border-style: dashed; color: var(--rem-muted); }
-.rem-dur { min-height: 88px; border-radius: 18px; }
-.rem-dur b { font-size: 1.625rem; font-weight: 700; line-height: 1.1; }
-.rem-dur span { font-size: .75rem; }
-.rem-fondo { min-height: 76px; font-size: .8125rem; font-weight: 600; }
-.rem-fondo svg { width: 22px; height: 22px; flex: none; }
-.rem-tag { display: inline-flex; align-items: center; gap: 3px; font-size: .6875rem; font-weight: 600; color: var(--rem-muted); }
+.rem-dur { min-height: 44px; flex-flow: row wrap; column-gap: 4px; row-gap: 0; align-content: center; }
+.rem-dur b { font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
+.rem-dur span { font-size: .8125rem; }
+.rem-dur .rem-tag { flex-basis: 100%; justify-content: center; }
+.rem-fondo { min-height: 48px; font-size: .8125rem; font-weight: 600; gap: 0; }
+.rem-fondo svg { width: 20px; height: 20px; flex: none; }
+.rem-tag { display: inline-flex; align-items: center; gap: 3px; font-size: .6875rem; font-weight: 600; line-height: 1.2; color: var(--rem-muted); }
 .rem-tag svg { width: 11px; height: 11px; }
-.rem-animo { min-height: 48px; border-radius: 24px; font-size: .875rem; background: var(--rem-page); flex-direction: row; }
+.rem-animo { min-height: 44px; border-radius: 22px; font-size: .875rem; background: var(--rem-page); flex-direction: row; }
 
 /* ---------- línea de gongs ---------- */
-.rem-gongs { margin-top: 12px; padding: 14px 16px 4px; border-radius: 14px; background: var(--rem-soft); }
+.rem-gongs { margin-top: 8px; padding: 10px 14px 2px; border-radius: 14px; background: var(--rem-soft); }
 .rem-pista { position: relative; height: 12px; }
 .rem-pista::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--rem-track); }
 .rem-punto { position: absolute; top: 0; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--rem-gold); }
-.rem-marcas { position: relative; height: 18px; margin-top: 8px; font-size: .6875rem; color: var(--rem-muted); }
+.rem-marcas { position: relative; height: 14px; margin-top: 6px; font-size: .6875rem; color: var(--rem-muted); }
 .rem-marcas span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-.rem-regla { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .75rem; color: var(--rem-muted); padding-bottom: 10px; }
-.rem-sonido { min-height: 64px; font-size: .8125rem; font-weight: 600; }
-.rem-probar { display: flex; justify-content: flex-end; margin-top: 4px; }
+.rem-regla { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .75rem; color: var(--rem-muted); padding-bottom: 8px; }
+.rem-sonido { min-height: 44px; font-size: .75rem; font-weight: 600; padding: 4px 3px; }
+/* «Probar gong» comparte la fila con el rótulo del bloque: ahorra una fila entera. */
+.rem-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.rem-fila .rem-label { margin: 0; }
 .rem-enlace { font: inherit; font-size: .8125rem; font-weight: 700; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--rem-link); text-decoration: underline; cursor: pointer; white-space: nowrap; }
 a.rem-enlace { display: inline-flex; align-items: center; }
 
 /* ---------- volumen, aviso y botones ---------- */
-.rem-volumen { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: .8125rem; color: var(--rem-muted); }
-.rem-volumen input { width: 100%; min-height: 44px; padding: 0; accent-color: var(--rem-gold); background: none; border: 0; }
+.rem-volumen { display: flex; align-items: center; gap: 12px; margin-top: 6px; font-size: .8125rem; color: var(--rem-muted); }
+.rem-volumen label { flex: none; }
+.rem-volumen input { flex: 1; min-width: 0; min-height: 44px; padding: 0; accent-color: var(--rem-gold); background: none; border: 0; }
 .rem-aviso { border: 1px solid var(--rem-line); border-radius: 14px; padding: 14px 16px; background: var(--rem-surface); }
 .rem-aviso p { margin: 0; font-size: .9375rem; line-height: 1.5; color: var(--rem-ink); }
 .rem-aviso .button { margin-top: 10px; }
 .rem-primario, .rem-secundario { font: inherit; cursor: pointer; border-radius: 999px; font-weight: 700; letter-spacing: .02em; }
-.rem-primario { min-height: 60px; border: 0; background: var(--rem-accent); color: var(--rem-on-accent); font-size: 1.0625rem; margin-top: auto; }
-.rem-secundario { min-height: 52px; border: 1px solid var(--rem-line); background: transparent; color: var(--rem-ink); font-size: .9375rem; font-weight: 600; }
-.rem-pila { display: flex; flex-direction: column; gap: 10px; }
+.rem-primario { min-height: 50px; border: 0; background: var(--rem-accent); color: var(--rem-on-accent); font-size: 1.0625rem; margin-top: auto; }
+.rem-secundario { min-height: 46px; border: 1px solid var(--rem-line); background: transparent; color: var(--rem-ink); font-size: .9375rem; font-weight: 600; }
+.rem-pila { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------- sesión (siempre noche) ---------- */
 .rem-noche { align-items: center; gap: 20px; color: var(--rem-ink); justify-content: space-between; padding-top: 12px; }
@@ -163,17 +168,24 @@ a.rem-enlace { display: inline-flex; align-items: center; }
 .rem-redondo.rem-oculto { visibility: hidden; }
 
 /* ---------- cierre ---------- */
-.rem-cierre-centro { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.rem-cierre-centro { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.rem-cierre-centro svg { width: 72px; height: 72px; }
 .rem-cierre-centro h1 { max-width: 20ch; }
 .rem-cierre-centro p { margin: 0; font-size: 1rem; line-height: 1.5; }
 #rem-c-saludo { color: var(--rem-ink); font-weight: 600; }
 .rem-calma-1 { stroke: var(--rem-track); }
 .rem-calma-2 { stroke: var(--rem-gold); }
 .rem-calma-3 { fill: var(--rem-gold); }
-.rem-animos { margin: 0; padding: 18px 16px; border: 0; border-radius: 18px; background: var(--rem-surface); }
-.rem-animos legend { float: left; width: 100%; padding: 0; margin-bottom: 12px; font-size: .8125rem; font-weight: 700; color: var(--rem-muted); }
+.rem-animos { margin: 0; padding: 12px 14px; border: 0; border-radius: 18px; background: var(--rem-surface); }
+.rem-animos legend { float: left; width: 100%; padding: 0; margin-bottom: 8px; font-size: .8125rem; font-weight: 700; color: var(--rem-muted); }
 .rem-animos legend span { font-weight: 400; }
 .rem-animos .rem-grid { clear: both; gap: 8px; }
+
+/* Escritorio: la columna se ensancha y la duración y los fondos van en una sola fila de seis. */
+@media (min-width: 600px) {
+  .remanso-app { max-width: 620px; }
+  .rem-grid-duracion, #rem-fondos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   body.remanso *, body.remanso *::before, body.remanso *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
