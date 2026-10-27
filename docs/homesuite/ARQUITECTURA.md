@@ -7,7 +7,7 @@ Parte de la [base común](README.md). Arquitectura objetivo y alternativas en
 ## Fronteras y dependencias
 
 Monorepo con sitio público aislado y aplicación autenticada como monolito modular
-evolutivo. Plataforma comparte identidad, sesiones, espacios, membresías,
+evolutivo. Plataforma comparte identidad, sesiones, grupos, membresías,
 invitaciones y capacidades operativas; cada producto conserva entidades, reglas,
 rutas y pruebas propias. No convertir tarjetas, movimientos y compras en una
 entidad genérica ni anticipar servicios independientes sin señales observables.

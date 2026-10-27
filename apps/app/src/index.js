@@ -2,11 +2,30 @@ import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
-import { AVATAR_COLORS, readOwnProfile } from "./profiles.js";
-import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "./profile-ui.js";
+import { readOwnProfile } from "./profiles.js";
+import { registerAssetRoutes } from "./routes/assets.js";
+import { registerCategoryRoutes } from "./routes/categories.js";
+import { registerEntryRoutes, recentFor } from "./routes/entries.js";
+import { registerImportRoutes } from "./routes/import.js";
+import { recategorizationNoticeFor, registerRecategorizeRoutes } from "./routes/recategorize.js";
+import { registerGroupSettingsRoutes } from "./routes/group-settings.js";
+import { registerPeopleRoutes } from "./routes/people.js";
+import { registerShellRoutes } from "./routes/shell.js";
+import { fillAccount } from "./account-ui.js";
+import { groupMenuItems, groupSwitch, renderGroupList } from "./group-ui.js";
+import { entryTarget, lastGroupCookie, readLastGroup } from "./last-group.js";
+import { csrfInput, formError, ledgerFailure, page, requestId, sessionSecret, signedInUser, signInRequired } from "./route-kit.js";
+import { CURRENCY_MINOR_UNITS, currencyLabel } from "./finance.js";
+import { addParticipant, exportLedger, readLedger } from "./ledger.js";
+import { ledgerCsv } from "./ledger-ui.js";
+import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
+import { PAGE_SIZE, renderBookHead, renderLedgerOverview } from "./overview-ui.js";
+import { slowBookEvent } from "./perf.js";
+import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, noticeFor } from "./ui-parts.js";
+import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
-import { cancelInvitation, createSpaceForUser, ensureLocalUser, inviteToSpace, resolveInvitation } from "./spaces.js";
+import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation, resolveGroup } from "./groups.js";
 import { GoogleIdentityConflictError, upsertGoogleUser } from "./users.js";
 
 const SECURITY_HEADERS = Object.freeze({
@@ -46,16 +65,30 @@ export const app = new Hono();
 
 const OAUTH_COOKIE = "homesuite_oauth";
 const MAX_MUTATION_BODY_BYTES = 16 * 1024;
+const MAX_IMPORT_BODY_BYTES = 2 * 1024 * 1024 + 16 * 1024;
+
 
 function authConfig(env = {}) {
-  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret, SESSION_SECRET: sessionSecret } = env;
-  return typeof clientId === "string" && typeof clientSecret === "string" && typeof sessionSecret === "string" && sessionSecret.length >= 32
-    ? { clientId, clientSecret, sessionSecret }
+  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret } = env;
+  const secret = sessionSecret(env);
+  return typeof clientId === "string" && typeof clientSecret === "string" && secret
+    ? { clientId, clientSecret, sessionSecret: secret }
     : null;
 }
 
-function sessionSecret(env = {}) {
-  return typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32 ? env.SESSION_SECRET : null;
+
+
+
+
+
+function logFailure(c, event, error) {
+  console.error("[homesuite-app]", JSON.stringify({
+    event,
+    requestId: requestId(c),
+    method: c.req.method,
+    path: new URL(c.req.url).pathname,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+  }));
 }
 
 function setCookie(c, value) {
@@ -70,37 +103,33 @@ function oauthCookie(value, secure, maxAge = 10 * 60) {
   return cookie(OAUTH_COOKIE, value, { maxAge, secure });
 }
 
-function html(value) {
-  return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+
+const html = escapeHtml;
+
+
+function isProtectedMutation(c) {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) return false;
+  const path = new URL(c.req.url).pathname;
+  return path === "/auth/logout" || path === "/groups" || path.startsWith("/groups/") || path.startsWith("/invitations/");
 }
 
-function avatar(profile) {
-  const value = profile.avatar;
-  const image = value.type === "photo" && value.photoUrl
-    ? `<span class="avatar-fallback">${html(value.initial)}</span><img src="${html(value.photoUrl)}" alt="" referrerpolicy="no-referrer">`
-    : value.type === "emoji" ? html(value.emoji) : html(value.initial);
-  return `<span class="avatar avatar-${html(value.color)}" aria-hidden="true">${image}</span>`;
+function isMutation(c) {
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method);
 }
 
-function page(title, content, profile = null) {
-  const account = profile ? `<a class="account-link" href="/perfil" aria-label="Mi perfil: ${html(profile.displayName)}">${avatar(profile)}<span>${html(profile.displayName)}</span></a>` : "";
-  const accountMenu = profile ? `<a href="/perfil">Mi perfil</a><form action="/auth/logout" method="post"><button type="submit">Cerrar sesión</button></form>` : "";
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${html(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css"><script src="/shell.js" defer></script><body><main class="shell"><header class="shell-header"><a class="brand" href="/">⌂ HomeSuite</a><nav class="desktop-nav" aria-label="Herramientas de HomeSuite"><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a></nav><div class="header-actions">${account}<details class="menu"><summary aria-label="Abrir menú de HomeSuite">☰</summary><nav aria-label="Menú de HomeSuite"><a href="/">Inicio</a><a href="/tareas">Tareas</a><a href="/cuentas-claras">Cuentas Claras</a><a href="/compras">Compras</a>${accountMenu}</nav></details></div></header>${content}</main></body></html>`;
+function clientAddress(c) {
+  return c.req.header("CF-Connecting-IP") || "unknown";
 }
 
-const AVATAR_CSS = Object.entries(AVATAR_COLORS).map(([token, color]) =>
-  `.avatar-${token}{background:${color};color:${["ocean", "forest", "clay", "violet", "rose"].includes(token) ? "#fff" : "#20342a"}}`).join("");
-
-function requestId(c) { return c.get("requestId") || "unknown"; }
-
-async function enforceRateLimit(c, binding, key) {
-  const limit = await checkRateLimit(binding, key);
-  if (!limit.configured && c.env?.REQUIRE_RATE_LIMITS === "true") {
-    console.error("[homesuite-app]", JSON.stringify({ event: "rate_limit_binding_missing", requestId: requestId(c) }));
+async function enforceRateLimit(c, limiter, key) {
+  const result = await checkRateLimit(limiter, key);
+  if (!result.configured && c.env?.REQUIRE_RATE_LIMITS === "true") {
+    logFailure(c, "rate_limit_binding_missing", new Error("RateLimitBindingMissing"));
     return c.json({ error: "Protección temporalmente no disponible.", requestId: requestId(c) }, 503);
   }
-  if (limit.allowed) return null;
+  if (result.allowed) return null;
   c.header("Retry-After", String(RATE_LIMIT_RETRY_SECONDS));
+  console.warn("[homesuite-app]", JSON.stringify({ event: "rate_limited", requestId: requestId(c), method: c.req.method, path: new URL(c.req.url).pathname }));
   return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde.", requestId: requestId(c) }, 429);
 }
 
@@ -109,33 +138,81 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
-  if (new URL(c.req.url).pathname.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(new URL(c.req.url).pathname)) c.header("Cache-Control", "private, no-store");
+  const path = new URL(c.req.url).pathname;
+  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil"].includes(path)) c.header("Cache-Control", "private, no-store");
+});
+
+// Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).
+app.use("*", async (c, next) => {
+  await next();
+  if (!c.res.headers.get("Content-Type")?.includes("text/html")) return;
+  const body = await c.res.clone().text();
+  if (!body.includes(ACCOUNT_MARKER)) return;
+  const session = await signedInUser(c);
+  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
+  c.res = new Response(fillAccount(body, profile), c.res);
+});
+
+// En las pantallas de un grupo: completa el encabezado con el grupo (nombre con avatar que lleva a la lista) y el menú con sus secciones
+// (y «Administrar grupo» para la persona titular), y recuerda el grupo en una cookie del navegador para volver a él al entrar a
+// Cuentas Claras. Fuera de un grupo quita las marcas.
+const GROUP_PAGE = /^\/groups\/([^/]+)(?:\/|$)/u;
+app.use("*", async (c, next) => {
+  await next();
+  if (c.req.method !== "GET" || !c.res.headers.get("Content-Type")?.includes("text/html")) return;
+  const body = await c.res.clone().text();
+  if (!body.includes(GROUP_MARKER)) return;
+  const key = GROUP_PAGE.exec(new URL(c.req.url).pathname)?.[1];
+  const user = key && key !== "new" ? await signedInUser(c) : null;
+  const row = user ? await c.env.DB.prepare("SELECT g.id, g.name, g.slug, g.description, g.avatar_emoji, g.avatar_color, m.role FROM groups g JOIN memberships m ON m.group_id = g.id WHERE (g.id = ? OR g.slug = ?) AND m.user_id = ?").bind(key, key, user.user_id).first() : null;
+  c.res = new Response(body.replace(GROUP_MARKER, row ? groupSwitch(row) : "").replace(GROUP_MENU_MARKER, row ? groupMenuItems(row, row.role) : ""), c.res);
+  if (row && c.res.status === 200) c.res.headers.append("Set-Cookie", lastGroupCookie(row.id, isSecureRequest(c)));
 });
 
 app.use("*", async (c, next) => {
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) {
+  if (isMutation(c)) {
     const contentLength = Number.parseInt(c.req.header("Content-Length") ?? "0", 10);
-    if (Number.isFinite(contentLength) && contentLength > MAX_MUTATION_BODY_BYTES) {
+    const limit = new URL(c.req.url).pathname.endsWith("/ledger/import/preview") ? MAX_IMPORT_BODY_BYTES : MAX_MUTATION_BODY_BYTES;
+    if (Number.isFinite(contentLength) && contentLength > limit) {
       return c.json({ error: "La solicitud es demasiado grande.", requestId: requestId(c) }, 413);
     }
   }
-  return next();
+  await next();
 });
 
 app.use("/auth/*", async (c, next) => {
-  const limited = await enforceRateLimit(c, c.env?.AUTH_RATE_LIMITER, c.req.header("CF-Connecting-IP") || "unknown");
+  const limited = await enforceRateLimit(c, c.env?.AUTH_RATE_LIMITER, clientAddress(c));
   if (limited) return limited;
-  return next();
+  await next();
 });
 
-async function signedInUser(c) {
+app.use("*", async (c, next) => {
+  if (!isProtectedMutation(c)) return next();
   const secret = sessionSecret(c.env);
-  return secret ? currentSession(c.env.DB, c.req.raw, secret) : null;
-}
+  const user = secret ? await currentSession(c.env.DB, c.req.raw, secret) : null;
+  if (!user) return signInRequired(c);
+  const limited = await enforceRateLimit(c, c.env?.MUTATION_RATE_LIMITER, user.id);
+  if (limited) return limited;
+  const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: user.id, secret });
+  if (!csrf.valid) {
+    console.warn("[homesuite-app]", JSON.stringify({
+      event: "csrf_rejected",
+      requestId: requestId(c),
+      reason: csrf.reason,
+      hasOrigin: Boolean(c.req.header("Origin")),
+      hasReferer: Boolean(c.req.header("Referer")),
+      secFetchSite: c.req.header("Sec-Fetch-Site") ?? "missing",
+    }));
+    return c.html(formError("Solicitud no verificada", `Recargá la página e intentá de nuevo. Código: ${requestId(c)}.`), 403);
+  }
+  c.set("protectedUser", user);
+  await next();
+});
 
+// Los PATCH del perfil (propio y por grupo) llevan JSON y se protegen aquí: sesión, límite de escrituras y CSRF.
 app.use("*", async (c, next) => {
   const path = new URL(c.req.url).pathname;
-  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/spaces\/[^/]+\/me\/presentation$/u.test(path))) return next();
+  if (c.req.method !== "PATCH" || (path !== "/api/me/profile" && !/^\/api\/groups\/[^/]+\/me\/presentation$/u.test(path))) return next();
   const host = new URL(c.req.url).hostname;
   const localEmail = (host === "localhost" || host === "127.0.0.1") ? localUser(c) : null;
   if (localEmail) {
@@ -157,7 +234,7 @@ app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 
 function localUser(c) {
   if (c.env?.DEV_LOCAL_MODE !== "true") return null;
-  return c.req.query("as") || c.env.DEV_LOCAL_EMAIL || c.req.header("X-HomeSuite-Dev-Email") || null;
+  return c.req.query("as") || c.req.header("X-HomeSuite-Dev-Email") || c.env.DEV_LOCAL_EMAIL || null;
 }
 
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
@@ -175,6 +252,18 @@ app.get("/api/me", async (c) => {
   const profile = await readOwnProfile(c.env.DB, session.user_id);
   const csrfToken = await createCsrfToken({ sessionId: session.id, secret });
   return c.json({ id: session.user_id, email: session.email, displayName: profile.displayName, profile, csrfToken });
+});
+
+app.get("/api/local/session", async (c) => {
+  const email = localUser(c);
+  const secret = sessionSecret(c.env);
+  if (!email || !secret) return c.json({ error: "Ruta local no disponible." }, 404);
+  const user = await ensureLocalUser(c.env.DB, email);
+  const session = await createSession(c.env.DB, { userId: user.id, secret });
+  setCookie(c, sessionCookie(session.token, true));
+  const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
+  const membership = invitation ? null : await c.env.DB.prepare("SELECT 1 AS found FROM memberships WHERE user_id = ? LIMIT 1").bind(user.id).first();
+  return c.redirect(invitation ? "/invitations" : membership ? "/cuentas-claras" : "/groups/new", 303);
 });
 
 app.use("/demo/*", async (c, next) => {
@@ -213,6 +302,7 @@ app.get("/auth/callback", async (c) => {
     setCookie(c, sessionCookie(session.token, secure));
     return c.redirect(state.returnTo, 303);
   } catch (error) {
+    logFailure(c, "oauth_callback_failed", error);
     setCookie(c, oauthCookie("", secure, 0));
     const message = error instanceof GoogleIdentityConflictError ? "Este email ya está vinculado a otra identidad de HomeSuite." : "No pudimos completar el acceso con Google. Intentá de nuevo.";
     return c.html(page("No pudimos iniciar sesión", `<h1>No pudimos iniciar sesión.</h1><p>${message}</p>`), 400);
@@ -220,57 +310,57 @@ app.get("/auth/callback", async (c) => {
 });
 
 app.post("/auth/logout", async (c) => {
-  const config = authConfig(c.env);
-  if (config) await revokeSession(c.env.DB, c.req.raw, config.sessionSecret);
+  const secret = sessionSecret(c.env);
+  if (secret) await revokeSession(c.env.DB, c.req.raw, secret);
   setCookie(c, expiredSessionCookie(isSecureRequest(c)));
   return c.redirect("/", 303);
 });
 
-app.post("/api/local/spaces", async (c) => {
+app.post("/api/local/groups", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.json();
-  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
-  return c.json(space, 201);
+  const group = await createGroupForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.json(group, 201);
 });
 
-app.post("/local/spaces", async (c) => {
+app.post("/local/groups", async (c) => {
   const email = localUser(c);
   if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
-  const space = await createSpaceForUser(c.env.DB, { userId: user.id, name: body.name });
-  return c.redirect(`/local/spaces/${space.id}`, 303);
+  const group = await createGroupForUser(c.env.DB, { userId: user.id, name: body.name });
+  return c.redirect(`/local/groups/${group.id}`, 303);
 });
 
-app.get("/local/spaces/:spaceId", async (c) => {
+app.get("/local/groups/:groupId", async (c) => {
   const email = localUser(c);
   if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const space = await c.env.DB.prepare("SELECT s.name, m.role FROM spaces s JOIN memberships m ON m.space_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("spaceId"), user.id).first();
-  if (!space) return c.text("Espacio no encontrado.", 404);
-  const invitations = space.role === "owner" ? await c.env.DB.prepare("SELECT invitee_email FROM invitations WHERE space_id = ? AND status = 'pending'").bind(c.req.param("spaceId")).all() : { results: [] };
-  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.space_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("spaceId")).all();
+  const group = await c.env.DB.prepare("SELECT s.name, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE s.id = ? AND m.user_id = ?").bind(c.req.param("groupId"), user.id).first();
+  if (!group) return c.text("Grupo no encontrado.", 404);
+  const invitations = group.role === "owner" ? await c.env.DB.prepare("SELECT invitee_email FROM invitations WHERE group_id = ? AND status = 'pending'").bind(c.req.param("groupId")).all() : { results: [] };
+  const members = await c.env.DB.prepare("SELECT u.display_name, m.role FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.group_id = ? ORDER BY m.role DESC, u.display_name").bind(c.req.param("groupId")).all();
   const participants = members.results.map(member => `<div class="person"><strong>${html(member.display_name)}</strong><br><span class="muted">${member.role === "owner" ? "Titular" : "Integrante"}</span></div>`).join("");
   const pending = invitations.results.map(row => `<div class="person"><strong>${html(row.invitee_email)}</strong><br><span class="muted">Invitación pendiente</span><br><a class="button secondary" href="/local/invitations?as=${encodeURIComponent(row.invitee_email)}">Ver como invitada</a></div>`).join("");
-  const management = space.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/spaces/${c.req.param("spaceId")}/invitations" method="post"><label class="label">Email</label><input name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(space.name)} · ${space.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este espacio ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
+  const management = group.role === "owner" ? `<section class="card"><h2>Participantes</h2>${participants}<h2>Invitar</h2><form action="/local/groups/${c.req.param("groupId")}/invitations" method="post"><label class="label" for="local-invite-email">Email</label><input id="local-invite-email" name="email" type="email" required placeholder="link@example.test"><button class="button">Invitar</button></form>${pending}</section>` : `<section class="card"><h2>Participantes</h2>${participants}<p>Como integrante podés acceder a Cuentas Claras. La administración de participantes queda en manos del titular.</p></section>`;
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(group.name)} · ${group.role === "owner" ? "Titular" : "Integrante"}</p><h1>Cuentas Claras está lista.</h1><p>Este grupo ya existe en D1 local. Todavía no inventamos saldos ni movimientos.</p>${management}`));
 });
 
-app.post("/local/spaces/:spaceId/invitations", async (c) => {
+app.post("/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
-  await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
-  return c.redirect(`/local/spaces/${c.req.param("spaceId")}`, 303);
+  await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.id, email: body.email });
+  return c.redirect(`/local/groups/${c.req.param("groupId")}`, 303);
 });
 
 app.get("/local/invitations", async (c) => {
   const email = localUser(c); if (!email) return c.text("Ruta local no disponible.", 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
-  const cards = rows.results.map(row => `<section class="card"><h2>${html(row.space_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/local/invitations/${row.id}?as=${encodeURIComponent(user.email)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  const cards = rows.results.map(row => `<section class="card"><h2>${html(row.group_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/local/invitations/${row.id}?as=${encodeURIComponent(user.email)}" method="post"><button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
   return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}`));
 });
 
@@ -279,38 +369,38 @@ app.post("/local/invitations/:invitationId", async (c) => {
   const user = await ensureLocalUser(c.env.DB, email);
   const body = await c.req.parseBody();
   const accepted = body.decision === "accept";
-  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
-  return c.redirect(accepted ? `/local/spaces/${spaceId}?as=${encodeURIComponent(user.email)}` : `/local/invitations?as=${encodeURIComponent(user.email)}`, 303);
+  const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.redirect(accepted ? `/local/groups/${groupId}?as=${encodeURIComponent(user.email)}` : `/local/invitations?as=${encodeURIComponent(user.email)}`, 303);
 });
 
-app.post("/api/local/spaces/:spaceId/invitations", async (c) => {
+app.post("/api/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede invitar." }, 403);
   const body = await c.req.json();
-  const invitation = await inviteToSpace(c.env.DB, { spaceId: c.req.param("spaceId"), inviterUserId: user.id, email: body.email });
+  const invitation = await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.id, email: body.email });
   return c.json(invitation, 201);
 });
 
-app.get("/api/local/spaces/:spaceId/invitations", async (c) => {
+app.get("/api/local/groups/:groupId/invitations", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede ver invitaciones." }, 403);
-  const rows = await c.env.DB.prepare("SELECT id, invitee_email AS email, status FROM invitations WHERE space_id = ? ORDER BY created_at").bind(c.req.param("spaceId")).all();
+  const rows = await c.env.DB.prepare("SELECT id, invitee_email AS email, status FROM invitations WHERE group_id = ? ORDER BY created_at").bind(c.req.param("groupId")).all();
   return c.json(rows.results);
 });
 
-app.delete("/api/local/spaces/:spaceId/invitations/:invitationId", async (c) => {
+app.delete("/api/local/groups/:groupId/invitations/:invitationId", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE space_id = ? AND user_id = ?").bind(c.req.param("spaceId"), user.id).first();
+  const membership = await c.env.DB.prepare("SELECT role FROM memberships WHERE group_id = ? AND user_id = ?").bind(c.req.param("groupId"), user.id).first();
   if (membership?.role !== "owner") return c.json({ error: "Sólo el titular puede cancelar invitaciones." }, 403);
-  await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), spaceId: c.req.param("spaceId"), actorUserId: user.id });
+  await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), groupId: c.req.param("groupId"), actorUserId: user.id });
   return c.body(null, 204);
 });
 
@@ -318,7 +408,7 @@ app.get("/api/local/invitations/pending", async (c) => {
   const email = localUser(c);
   if (!email) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
-  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS space_name, inviter.display_name AS inviter_name FROM invitations i JOIN spaces s ON s.id = i.space_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending'").bind(user.email).all();
   return c.json(rows.results);
 });
 
@@ -328,122 +418,198 @@ app.post("/api/local/invitations/:invitationId/:decision", async (c) => {
   const accepted = c.req.param("decision") === "accept";
   if (!accepted && c.req.param("decision") !== "reject") return c.json({ error: "Decisión inválida." }, 400);
   const user = await ensureLocalUser(c.env.DB, email);
-  const spaceId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
-  return c.json({ status: accepted ? "accepted" : "rejected", spaceId });
+  const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.id, email: user.email, accepted });
+  return c.json({ status: accepted ? "accepted" : "rejected", groupId });
 });
 
-app.get("/app.css", (c) => c.body(`
-  :root{font-family:system-ui,sans-serif;color:#20342a;background:#f7f2e8}
-  *{box-sizing:border-box}body{margin:0}
-  .shell{max-width:900px;margin:auto;padding:24px 24px 72px}
-  .shell-header{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  .shell-header .desktop-nav{display:flex;gap:8px 20px;flex-wrap:wrap}
-  .shell-header nav a{color:#28533c;text-decoration:none;font-weight:700}
-  .shell-header nav a:hover,.shell-header nav a:focus-visible{text-decoration:underline}
-  .header-actions{display:flex;align-items:center;gap:12px}
-  .account-link{display:flex;align-items:center;gap:9px;color:#20342a;text-decoration:none;font-weight:700;max-width:220px}
-  .account-link span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .avatar{width:38px;height:38px;display:inline-grid;place-items:center;flex:none;border-radius:50%;font-size:1.2rem;overflow:hidden;position:relative}
-  .avatar-fallback{position:absolute;inset:0;display:grid;place-items:center}
-  .avatar img{width:100%;height:100%;object-fit:cover;position:relative}
-  ${AVATAR_CSS}
-  .menu{position:relative}.menu summary{list-style:none;cursor:pointer;border:1px solid #b8b1a5;border-radius:12px;padding:7px 11px;font-size:1.25rem;line-height:1.2}
-  .menu summary::-webkit-details-marker{display:none}
-  .menu nav{display:flex;flex-direction:column;gap:14px;position:absolute;right:0;top:calc(100% + 8px);min-width:190px;padding:18px;background:#fffaf0;border:1px solid #d9d0c0;border-radius:14px;box-shadow:0 12px 32px #20342a22;z-index:5}
-  .menu form{margin:0}.menu button{font:inherit;color:#28533c;background:none;border:0;padding:0;cursor:pointer;font-weight:700}
-  .brand{color:#206447;text-decoration:none;font-weight:800}
-  .eyebrow{color:#d95f46;font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-top:72px}
-  h1{font-family:Georgia,serif;font-size:clamp(2.7rem,9vw,4.8rem);line-height:1;margin:14px 0 22px}
-  h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 12px}
-  p{font-size:1.1rem;line-height:1.6;color:#52665b}
-  .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:32px}
-  .tool-card{display:flex;flex-direction:column;gap:12px;background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;color:#20342a;text-decoration:none}
-  .tool-card:hover,.tool-card:focus-visible{border-color:#206447;box-shadow:0 8px 24px #20342a18}
-  .tool-card strong{font-family:Georgia,serif;font-size:1.55rem}
-  .tool-card span{color:#52665b;line-height:1.5}
-  .card{background:#fffaf0;border:1px solid #d9d0c0;border-radius:18px;padding:24px;margin-top:28px}
-  .button{display:inline-block;background:#206447;color:white;border:0;border-radius:999px;padding:14px 20px;text-decoration:none;font-weight:800;margin-top:14px;cursor:pointer}
-  .button.secondary{background:transparent;color:#206447;border:1px solid #206447}
-  .label{font-weight:800;display:block;margin:20px 0 7px}
-  input,select{width:100%;padding:13px;border:1px solid #b8b1a5;border-radius:9px;font:inherit;background:white;color:#20342a}
-  .profile-form h2:not(:first-child){margin-top:32px}
-  .profile-form input:disabled{background:#eee9df;color:#68766d}
-  .profile-form button:disabled{opacity:.65;cursor:wait}
-  .notice{background:#e6f0e9;border-radius:10px;padding:14px;color:#28533c;font-size:.95rem}
-  .person{border-top:1px solid #ddd3c3;padding:15px 0}
-  .muted{font-size:.9rem;color:#68766d}
-  @media(max-width:760px){.shell-header .desktop-nav{display:none}.account-link{max-width:145px}}
-` , 200, { "Content-Type": "text/css; charset=utf-8" }));
 
-app.get("/shell.js", (c) => c.body(`document.querySelectorAll('.avatar img').forEach((image) => { image.addEventListener('error', () => image.remove()); if (image.complete && !image.naturalWidth) image.remove(); });`, 200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "public, max-age=3600" }));
 
-app.get("/", async (c) => {
-  if (c.env?.DEV_LOCAL_MODE === "true") {
-    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`));
-  }
-  const config = authConfig(c.env);
-  const session = await signedInUser(c);
-  if (session) {
-    const profile = await readOwnProfile(c.env.DB, session.user_id);
-    return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(profile.displayName)}.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Entrá a ver el estado de esta herramienta.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section>`, profile));
-  }
-  const action = config ? `<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
-  return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Un lugar para organizarnos juntos.</h1><p>Elegí una herramienta para empezar.</p><section class="tools" aria-label="Herramientas"><a class="tool-card" href="/tareas"><strong>Fun TasKing</strong><span>Tableros para avanzar juntos.</span></a><a class="tool-card" href="/cuentas-claras"><strong>Cuentas Claras</strong><span>Gastos, ingresos y transferencias compartidas.</span></a><a class="tool-card" href="/compras"><strong>Compras</strong><span>Listas compartidas en preparación.</span></a></section><section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
+async function canonicalGroupPath(c, next) {
+  const key = c.req.param("groupId");
+  if (c.req.method !== "GET" || !key?.startsWith("group_")) return next();
+  const user = await signedInUser(c);
+  if (!user) return next();
+  const membership = await c.env.DB.prepare("SELECT 1 FROM memberships WHERE group_id = ? AND user_id = ?").bind(key, user.user_id).first();
+  if (!membership) return next();
+  const group = await resolveGroup(c.env.DB, key);
+  if (!group) return next();
+  const url = new URL(c.req.url);
+  const prefix = `/groups/${encodeURIComponent(key)}`;
+  return c.redirect(`/groups/${encodeURIComponent(group.slug)}${url.pathname.slice(prefix.length)}${url.search}`, 308);
+}
+
+app.use("/groups/:groupId", canonicalGroupPath);
+app.use("/groups/:groupId/*", canonicalGroupPath);
+
+app.get("/groups/new", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  return c.html(page("Crear grupo", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el grupo en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/groups">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear grupo</button></form>`));
 });
 
+app.post("/groups", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    const body = await c.req.parseBody();
+    const group = await createGroupForUser(c.env.DB, { userId: user.user_id, name: body.name, defaultCurrency: body.currency || "COP" });
+    const target = body.start === "splitwise" ? "/ledger/import" : "";
+    return c.redirect(`/groups/${encodeURIComponent(group.slug)}${target}`, 303);
+  } catch {
+    return c.html(formError("No pudimos crear el grupo", "Elegí un nombre de hasta 120 caracteres."), 400);
+  }
+});
+
+
+app.get("/groups/:groupId", async (c) => {
+  const started = Date.now();
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const group = await c.env.DB.prepare("SELECT s.id, s.name, s.slug, s.description, s.avatar_emoji, s.avatar_color, m.role FROM groups s JOIN memberships m ON m.group_id = s.id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
+  if (!group) return c.html(formError("Grupo no encontrado", "No tenés acceso a este grupo.", 404), 404);
+  const [csrf, ledger] = await Promise.all([
+    csrfInput(c, user),
+    readLedger(c.env.DB, { groupId: group.id, userId: user.user_id }),
+  ]);
+  const batchNotice = await recategorizationNoticeFor(c, user, group, csrf);
+  const content = `${batchNotice || noticeFor(c.req.query("aviso"))}${renderBookHead(group, ledger, user.user_id)}${renderLedgerOverview(ledger, { groupId: group.slug, userId: user.user_id, csrf, query: c.req.query("q") ?? "", category: c.req.query("categoria") ?? "", person: c.req.query("quien") ?? "", recent: recentFor(ledger, c.req.query("nuevo"), c.req.query("aviso")), limit: Math.min(5000, Math.max(PAGE_SIZE, Number.parseInt(c.req.query("mostrar") ?? "", 10) || PAGE_SIZE)) })}`;
+  const slow = slowBookEvent({ elapsedMs: Date.now() - started, entries: ledger.entries.length, participants: ledger.participants.length, categories: ledger.categories.length, requestId: requestId(c) }, c.env.SLOW_BOOK_MS);
+  if (slow) console.warn(JSON.stringify(slow));
+  return c.html(page("Cuentas Claras", content, { wide: true, groupHref: `/groups/${encodeURIComponent(group.slug)}` }));
+});
+
+app.post("/groups/:groupId/participants", async (c) => {
+  const user = c.get("protectedUser");
+  try {
+    await addParticipant(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, name: (await c.req.parseBody()).name });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=participante`, 303);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+registerPeopleRoutes(app);
+registerGroupSettingsRoutes(app);
+
+registerImportRoutes(app);
+
+registerEntryRoutes(app);
+
+registerCategoryRoutes(app);
+
+registerRecategorizeRoutes(app);
+
+app.get("/groups/:groupId/ledger/export.json", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await exportLedger(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id });
+    c.header("Content-Disposition", "attachment; filename=cuentas-claras.json");
+    c.header("Cache-Control", "private, no-store");
+    return c.json(data);
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+app.get("/groups/:groupId/ledger/export.csv", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  try {
+    const data = await readLedger(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id });
+    c.header("Content-Disposition", "attachment; filename=cuentas-claras.csv");
+    c.header("Cache-Control", "private, no-store");
+    return c.body(ledgerCsv(data), 200, { "Content-Type": "text/csv; charset=utf-8" });
+  } catch (error) { return ledgerFailure(c, error); }
+});
+
+for (const [action, archived, notice] of [["archive", true, "archivado"], ["restore", false, "restaurado"]]) {
+  app.post(`/groups/:groupId/ledger/${action}`, async (c) => {
+    const user = c.get("protectedUser");
+    try {
+      await setLedgerArchived(c.env.DB, { groupId: c.req.param("groupId"), userId: user.user_id, archived });
+      return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/settings?aviso=${notice}`, 303);
+    } catch (error) { return ledgerFailure(c, error); }
+  });
+}
+
+app.post("/groups/:groupId/invitations", async (c) => {
+  const user = c.get("protectedUser");
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN groups s ON s.id = m.group_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
+  if (membership?.role !== "owner") return c.html(formError("No podés invitar", "Sólo el titular puede invitar integrantes.", 403), 403);
+  try { await assertLedgerWritable(c.env.DB, c.req.param("groupId"), user.user_id); } catch (error) { return ledgerFailure(c, error); }
+  try {
+    const body = await c.req.parseBody();
+    await inviteToGroup(c.env.DB, { groupId: c.req.param("groupId"), inviterUserId: user.user_id, email: body.email, targetParticipantId: body.targetParticipantId || null });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=invitacion`, 303);
+  } catch {
+    return c.html(formError("No pudimos crear la invitación", "Usá un email válido que no tenga una invitación pendiente."), 400);
+  }
+});
+
+app.post("/groups/:groupId/invitations/:invitationId/cancel", async (c) => {
+  const user = c.get("protectedUser");
+  const membership = await c.env.DB.prepare("SELECT m.role FROM memberships m JOIN groups s ON s.id = m.group_id WHERE (s.id = ? OR s.slug = ?) AND m.user_id = ?").bind(c.req.param("groupId"), c.req.param("groupId"), user.user_id).first();
+  if (membership?.role !== "owner") return c.html(formError("No podés cancelar", "Sólo el titular puede cancelar invitaciones.", 403), 403);
+  try {
+    await cancelInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), groupId: c.req.param("groupId"), actorUserId: user.user_id });
+    return c.redirect(`/groups/${encodeURIComponent(c.req.param("groupId"))}/people?aviso=cancelada`, 303);
+  } catch {
+    return c.html(formError("Invitación no encontrada", "La invitación ya no está pendiente.", 404), 404);
+  }
+});
+
+app.get("/invitations", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  const rows = await c.env.DB.prepare("SELECT i.id, s.name AS group_name, inviter.display_name AS inviter_name FROM invitations i JOIN groups s ON s.id = i.group_id JOIN users inviter ON inviter.id = i.inviter_user_id WHERE i.invitee_email = ? AND i.status = 'pending' ORDER BY i.created_at").bind(user.email).all();
+  const csrf = await csrfInput(c, user);
+  const cards = rows.results.map((row) => `<section class="card"><h2>${html(row.group_name)}</h2><p>Te invitó <strong>${html(row.inviter_name)}</strong>. Antes de aceptar no ves integrantes, movimientos ni saldos.</p><form action="/invitations/${encodeURIComponent(row.id)}" method="post">${csrf}<button class="button" name="decision" value="accept">Aceptar invitación</button><button class="button secondary" name="decision" value="reject">Rechazar</button></form></section>`).join("") || "<p>No tenés invitaciones pendientes.</p>";
+  return c.html(page("Invitaciones", `<p class="eyebrow">Cuentas Claras</p><h1>Invitaciones</h1>${cards}<a class="button secondary" href="/">Volver</a>`));
+});
+
+app.post("/invitations/:invitationId", async (c) => {
+  const user = c.get("protectedUser");
+  const body = await c.req.parseBody();
+  if (body.decision !== "accept" && body.decision !== "reject") return c.html(formError("Decisión inválida", "Elegí aceptar o rechazar la invitación."), 400);
+  try {
+    const accepted = body.decision === "accept";
+    const groupId = await resolveInvitation(c.env.DB, { invitationId: c.req.param("invitationId"), userId: user.user_id, email: user.email, accepted });
+    const group = accepted ? await resolveGroup(c.env.DB, groupId) : null;
+    return c.redirect(group ? `/groups/${encodeURIComponent(group.slug)}` : "/invitations", 303);
+  } catch {
+    return c.html(formError("Invitación no encontrada", "La invitación no existe, ya fue resuelta o no te corresponde.", 404), 404);
+  }
+});
+
+async function myGroups(c, user) {
+  const rows = await c.env.DB.prepare("SELECT g.id, m.role FROM groups g JOIN memberships m ON m.group_id = g.id WHERE m.user_id = ? ORDER BY g.name").bind(user.user_id).all();
+  return Promise.all(rows.results.map(async row => ({ ...(await resolveGroup(c.env.DB, row.id)), role: row.role })));
+}
+
+// La lista de grupos de la persona: siempre se muestra, también con un solo grupo.
+app.get("/groups", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  return c.html(page("Tus grupos", renderGroupList(await myGroups(c, user))));
+});
+
+// Entrar a Cuentas Claras: abre el último grupo visitado en este navegador (si la persona sigue siendo integrante), el único grupo
+// que tenga, o la lista. Un valor recordado que no es de la persona se ignora sin decir si existe.
 app.get("/cuentas-claras", async (c) => {
-  if (c.env?.DEV_LOCAL_MODE === "true") {
-    const { index } = startDemoPair();
-    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Lo compartido, más claro.</h1><p>Un lugar privado para organizar las cuentas de tu casa, viaje o proyecto.</p><section class="card"><h2>Recorrido local</h2><p>Esta demostración guarda datos solamente en D1 local.</p><a class="button" href="/demo/crear-espacio?${demoQuery(index)}">Empezar recorrido</a></section>`));
-  }
-  const session = await signedInUser(c);
-  if (session) {
-    const profile = await readOwnProfile(c.env.DB, session.user_id);
-    return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Muy pronto.</h1><p>Hola, ${html(profile.displayName)}. Ya ingresaste con tu cuenta de Google. Estamos terminando la primera versión de Cuentas Claras; todavía no hay movimientos ni saldos para usar aquí.</p>`, profile));
-  }
-  const action = authConfig(c.env) ? `<a class="button" href="/auth/google?returnTo=%2Fcuentas-claras">Continuar con Google</a>` : "<p class=\"notice\">El acceso de este ambiente todavía no está configurado.</p>";
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">Cuentas Claras</p><h1>Las cuentas compartidas, más claras.</h1><p>Un lugar privado para organizar gastos, ingresos y transferencias de tu casa, viaje o proyecto.</p><section class="card"><h2>Empezá con tu cuenta</h2><p>Entrá con Google para acceder a Cuentas Claras.</p>${action}</section>`));
+  const user = await signedInUser(c);
+  if (!user) return signInRequired(c);
+  return c.redirect(entryTarget({ groups: await myGroups(c, user), lastGroupId: readLastGroup(c.req.header("Cookie")) }), 303);
 });
 
-app.get("/tareas", async (c) => {
-  const session = await signedInUser(c);
-  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
-  return c.html(page("Fun TasKing", `<p class="eyebrow">Fun TasKing</p><h1>Lo que hay que hacer, a la vista.</h1><p>Fun TasKing ya está disponible mientras preparamos su lugar dentro de HomeSuite.</p><a class="button" href="https://tas-king-staging.pablotortorella.workers.dev">Abrir TasKing en staging</a>`, profile));
-});
+registerAssetRoutes(app);
 
-app.get("/compras", async (c) => {
-  const session = await signedInUser(c);
-  const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
-  return c.html(page("Compras", `<p class="eyebrow">Compras</p><h1>Una lista para comprar mejor, juntos.</h1><p>Esta herramienta todavía está en preparación.</p>`, profile));
-});
+registerShellRoutes(app, { authConfig, localUser });
 
-app.get("/perfil", async (c) => {
-  const host = new URL(c.req.url).hostname;
-  const localEmail = host === "localhost" || host === "127.0.0.1" ? localUser(c) : null;
-  if (localEmail) {
-    const user = await ensureLocalUser(c.env.DB, localEmail);
-    const profile = await readOwnProfile(c.env.DB, user.id);
-    return c.html(page("Mi perfil", renderProfileForm(profile, "", c.req.query("guardado") === "1"), profile));
-  }
-  const secret = sessionSecret(c.env);
-  const session = await signedInUser(c);
-  if (!session || !secret) return c.redirect("/auth/google?returnTo=%2Fperfil", 302);
-  const profile = await readOwnProfile(c.env.DB, session.user_id);
-  const csrfToken = await createCsrfToken({ sessionId: session.id, secret });
-  return c.html(page("Mi perfil", renderProfileForm(profile, csrfToken, c.req.query("guardado") === "1"), profile));
-});
-
-app.get("/profile.js", (c) => c.body(PROFILE_CLIENT_SCRIPT, 200, { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "public, max-age=3600" }));
-
-app.get("/demo/crear-espacio", (c) => {
+app.get("/demo/crear-grupo", (c) => {
   const { owner, member, index } = demoPair(c);
-  return c.html(page("Crear espacio", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este espacio?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/local/spaces"><label class="label" for="nombre">Nombre del espacio</label><input id="nombre" name="name" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear espacio</button></form>`));
+  return c.html(page("Crear grupo", `<p class="eyebrow">Primer paso</p><h1>¿Cómo se llama este grupo?</h1><p>Puede ser tu casa, familia, viaje o cualquier contexto que compartan.</p><form class="card" method="post" action="/local/groups"><label class="label" for="nombre">Nombre del grupo</label><input id="nombre" name="name" required maxlength="120" placeholder="Ej. Casa de ${owner} y ${member}"><button class="button" type="submit">Crear grupo</button></form>`));
 });
 
-app.get("/demo/espacio", (c) => {
+app.get("/demo/grupo", (c) => {
   const name = c.req.query("nombre")?.trim() || "Casa compartida";
   const { owner, member, index } = demoPair(c);
-  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(name)}</p><h1>Cuentas Claras está lista.</h1><p>Cuando conectemos la cuenta real, aquí aparecerán los movimientos y balances del espacio. No inventamos números antes de tiempo.</p><section class="card"><h2>Participantes</h2><div class="person"><strong>${html(owner)}</strong><br><span class="muted">Titular del espacio</span></div><div class="person"><strong>${html(member)}</strong><br><span class="muted">Invitación pendiente · ${html(member.toLowerCase())}@example.com</span></div><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&${demoQuery(index)}">Ver lo que verá ${html(member)}</a></section>`));
+  return c.html(page("Cuentas Claras", `<p class="eyebrow">${html(name)}</p><h1>Cuentas Claras está lista.</h1><p>Cuando conectemos la cuenta real, aquí aparecerán los movimientos y balances del grupo. No inventamos números antes de tiempo.</p><section class="card"><h2>Participantes</h2><div class="person"><strong>${html(owner)}</strong><br><span class="muted">Titular del grupo</span></div><div class="person"><strong>${html(member)}</strong><br><span class="muted">Invitación pendiente · ${html(member.toLowerCase())}@example.com</span></div><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&${demoQuery(index)}">Ver lo que verá ${html(member)}</a></section>`));
 });
 
 app.get("/demo/invitacion", (c) => {
@@ -451,14 +617,21 @@ app.get("/demo/invitacion", (c) => {
   const { owner, index } = demoPair(c);
   const answer = c.req.query("respuesta");
   const result = answer ? `<p class="notice">Invitación ${answer === "aceptar" ? "aceptada" : "rechazada"} en esta demostración. En la aplicación real la acción quedará auditada.</p>` : `<p class="notice">Antes de aceptar no ves integrantes, movimientos ni saldos.</p><a class="button" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&respuesta=aceptar&${demoQuery(index)}">Aceptar invitación</a><a class="button secondary" href="/demo/invitacion?nombre=${encodeURIComponent(name)}&respuesta=rechazar&${demoQuery(index)}">Rechazar</a>`;
-  return c.html(page("Invitación", `<p class="eyebrow">Invitación a Cuentas Claras</p><h1>${html(name)}</h1><p>Te invitó <strong>${html(owner)}</strong>. Si aceptás, vas a poder acceder a Cuentas Claras de este espacio.</p><section class="card">${result}</section>`));
+  return c.html(page("Invitación", `<p class="eyebrow">Invitación a Cuentas Claras</p><h1>${html(name)}</h1><p>Te invitó <strong>${html(owner)}</strong>. Si aceptás, vas a poder acceder a Cuentas Claras de este grupo.</p><section class="card">${result}</section>`));
 });
 
 app.notFound((c) => c.json({ error: "No encontrado." }, 404));
 
 app.onError((error, c) => {
-  console.error("[homesuite-app]", error);
-  return c.json({ error: "Error interno." }, 500);
+  logFailure(c, "unhandled_error", error);
+  return c.json({ error: "Error interno.", requestId: requestId(c) }, 500);
 });
 
-export default { fetch: app.fetch };
+export default {
+  fetch: app.fetch,
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runMaintenance(env.DB).then((result) => {
+      console.log("[homesuite-app]", JSON.stringify({ event: "maintenance_completed", ...result }));
+    }));
+  },
+};

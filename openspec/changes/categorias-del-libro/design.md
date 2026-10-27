@@ -1,8 +1,8 @@
 ## Context
 
 - El único dato de categoría que existe es `splitwise_import_entries.category`, un texto de hasta 120 caracteres que `readLedger` expone en los movimientos importados. `searchLedger` lo busca; `renderEntryDetail` lo muestra solo en el detalle de un importado.
-- `ledger_entries` no tiene columna de categoría. La creación del libro es un único `db.batch` (`createSpaceForUser`), y la ruta de movimientos usa campos de formulario fijados por pruebas E2E.
-- Las migraciones llegan a `0006_space_slugs.sql` en la rama de integración; otras ramas pueden agregar la siguiente.
+- `ledger_entries` no tiene columna de categoría. La creación del libro es un único `db.batch` (`createGroupForUser`), y la ruta de movimientos usa campos de formulario fijados por pruebas E2E.
+- Las migraciones llegan a `0006_group_slugs.sql` en la rama de integración; otras ramas pueden agregar la siguiente.
 - La CSP prohíbe estilos y scripts en línea, así que los íconos se dibujan con SVG insertado en el HTML.
 
 Ver `proposal.md` para el motivo y `specs/categorias-de-movimientos/spec.md` para el comportamiento exigido. Las decisiones vienen de `docs/diseno/cuentas-claras/DECISIONES-EXPLORE.md` (D11).
@@ -24,7 +24,7 @@ Ver `proposal.md` para el motivo y `specs/categorias-de-movimientos/spec.md` par
 
 ### D1. Tabla `ledger_categories` y columna `category_id`
 
-`ledger_categories(ledger_id, id, name, name_key, group_key, icon, status, merged_into, created_at, updated_at)` con clave primaria `(ledger_id, id)` y restricción única `(ledger_id, name_key)`. `ledger_entries` suma `category_id` nulo, con clave foránea compuesta `(ledger_id, category_id)`. `status` admite `active` y `archived`.
+`ledger_categories(ledger_id, id, name, name_key, group_key, icon, status, merged_into, created_at, updated_at)` con clave primaria `(ledger_id, id)` y restricción única `(ledger_id, name_key)`. `ledger_entries` suma `category_id` nulo, con clave foránea compuesta `(ledger_id, category_id)`. `status` admite `active` y `archived`. Se agregan `group_name` (el nombre del grupo tal como se muestra, con `group_key` normalizado para filtrar) y `position` (orden estable de la lista). La clave foránea compuesta de `ledger_entries.category_id` no se puede agregar con `ALTER TABLE` en SQLite, así que la pertenencia al libro se valida en el servidor; los ciclos de fusión los impide un disparador de la base además de la validación del servidor.
 
 - **Por qué.** Cambiar un nombre, un grupo o un ícono es modificar una fila; los movimientos solo guardan un identificador. Es lo que permite la limpieza del histórico sin tocar miles de filas.
 - **Alternativa.** Texto en cada movimiento con una lista de sugerencias: descartada, porque renombrar o fusionar exige reescribir cada movimiento y el grupo y el ícono solo existirían para los nombres que la aplicación reconociera.

@@ -37,12 +37,13 @@ La vista previa recibe el criterio (ids explícitos, o la búsqueda y los filtro
 
 - **Por qué.** Deshacer necesita la categoría anterior de cada movimiento. Guardarla en una tabla acotada por lote evita recorrer el JSON de todas las revisiones para encontrarla. La instantánea de la revisión conserva también el lote para que el historial lo muestre.
 
-### D3. Escritura: una revisión por movimiento y una actualización por conjunto
+### D3. Escritura: tandas de 100 con tres sentencias sobre JSON
 
-Para el conjunto resuelto, el servidor escribe, en `db.batch` de hasta 60 sentencias: el lote, una revisión por movimiento (instantánea completa con la categoría nueva y el identificador de lote), un `UPDATE` por conjunto con `json_each` sobre los identificadores y sube `current_revision`, y los elementos del lote con `INSERT ... SELECT`. Se suma un evento del libro y se sube la revisión del libro. El límite de 1.000 movimientos por operación mantiene el total en unas 1.050 sentencias (unas 18 llamadas a D1).
+Para el conjunto resuelto, el servidor escribe por tandas de 100 movimientos, cada una en un `db.batch` con tres sentencias que leen un JSON con `json_each`: las revisiones (instantánea completa con la categoría nueva y el identificador de lote), un `UPDATE` por categoría de destino y los elementos del lote. Antes se inserta el lote, y al final se cierra con el evento del libro y la subida de su revisión. El límite de 1.000 movimientos mantiene el total en unas 35 sentencias (diez tandas).
 
-- **Idempotencia.** La clave de la confirmación se reutiliza como identificador del lote; repetirla devuelve el lote ya aplicado.
-- **Límites que no se verificaron:** tamaño de la sentencia con 1.000 identificadores en un JSON y cantidad de sentencias por lote. Una tarea los mide y deja las constantes ajustables.
+- **Guardas.** La revisión solo se inserta si el movimiento sigue en la revisión que se vio, y el `UPDATE` solo toca los movimientos que ya tienen nuestra revisión como la siguiente, así que una corrección concurrente simplemente deja afuera a ese movimiento. El `UPDATE` busca por clave primaria (no recorre el JSON por cada fila del libro: así bajó de ~4 s a ~50 ms para 1.000).
+- **Idempotencia.** La clave de la confirmación es el identificador del lote y el lote guarda una huella del criterio y la categoría: repetir la misma solicitud devuelve el lote (o lo completa si se cortó); la misma clave con otros datos se rechaza con 409.
+- **Límites que no se verificaron:** tamaño de la sentencia con 100 movimientos (unos 68 KB) y cantidad de sentencias por lote. Las constantes son ajustables.
 
 ### D4. Deshacer solo lo que no se modificó después
 

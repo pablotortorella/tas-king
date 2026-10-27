@@ -1,3 +1,5 @@
+import { COLOR_LABELS } from "./profiles.js";
+
 function escape(value) {
   return String(value).replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
@@ -6,17 +8,12 @@ function option(value, label, selected) {
   return `<option value="${escape(value)}"${selected ? " selected" : ""}>${escape(label)}</option>`;
 }
 
-const COLOR_LABELS = Object.freeze({
-  ocean: "Océano", forest: "Bosque", clay: "Arcilla", violet: "Violeta",
-  rose: "Rosa", mint: "Menta", cyan: "Cian", slate: "Pizarra", amber: "Ámbar",
-});
-
 export function renderProfileForm(profile, csrfToken, saved = false) {
   const source = profile.nameSource;
   const mode = profile.avatar.mode;
   const colors = Object.keys(profile.colors).map((token) =>
     option(token, COLOR_LABELS[token] || token, token === profile.avatar.color)).join("");
-  return `<p class="eyebrow">Cuenta de HomeSuite</p><h1>Mi perfil</h1><p>Tu nombre y avatar se comparten entre las herramientas de la suite. El apodo de cada espacio se configura dentro de ese espacio.</p>
+  return `<p class="eyebrow">Cuenta de HomeSuite</p><h1>Mi perfil</h1><p>Tu nombre y avatar se comparten entre las herramientas de la suite. El apodo de cada grupo se configura dentro de ese grupo.</p>
     ${saved ? '<p class="notice" role="status">Perfil guardado.</p>' : ""}
     <form id="profile-form" class="card profile-form" data-revision="${profile.revision}" data-csrf="${escape(csrfToken)}">
       <h2>Nombre para mostrar</h2>

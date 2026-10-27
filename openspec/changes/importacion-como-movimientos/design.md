@@ -112,6 +112,18 @@ La exportación JSON sube de versión de esquema: los movimientos importados son
 4. Verificar y convertir o descartar los lotes antiguos; migración final que retira las tablas anteriores y la rama especial de lectura.
 5. Reversión previa al paso 4: el código anterior ignora las columnas nuevas. Tras el paso 4 se revierte desde el respaldo.
 
+## Notas de implementación
+
+Ajustes que salieron al aplicar el cambio, sin cambiar los requisitos:
+
+- La vista previa conserva `parsed_json`, pero ahora guarda solo metadatos (nombres, distribución de columnas, conteos); las filas viven en `splitwise_import_rows`, cuyo `owner_id` pasa de la vista previa al lote al confirmar con una sola sentencia.
+- La carga escribe cinco sentencias por tanda (movimientos, revisiones, pagadores, reparto y filas de origen), cada una sobre un JSON con `json_each`, y publica con seis sentencias en un único lote. La publicación usa una marca (`publish_token`) para que, si dos peticiones llegan a la vez, solo la que cambió el estado escriba el evento y suba la revisión del libro.
+- Las revisiones siguen siendo inmutables, salvo las de movimientos de un lote pendiente: el disparador que impedía borrarlas se recreó con esa excepción para poder descartar una carga cancelada o abandonada.
+- Una fila sin efecto en nadie se guarda como gasto de la primera persona del archivo (determinista) y queda marcada como inferida.
+- Si el archivo trae columnas de notas (`Notas`, `Comentarios`, `Notes`, `Comments`) después de las personas, su texto se importa como nota del movimiento; no cuentan como personas.
+- El mantenimiento descarta una carga pendiente a partir del último movimiento cargado (o de la creación del lote si no cargó ninguno), no de la fecha de creación.
+- `splitwise-legacy.js` convierte los lotes del modelo anterior y borra sus filas; la corre el mantenimiento diario mientras las tablas existan. El retiro de las tablas viejas **no** va como migración de este despliegue (la regla de expansión, transición y retiro lo prohíbe): queda en `apps/app/ops/retire-legacy-import-tables.sql`, con su guarda que se detiene si queda algún lote, para aplicarlo en un release posterior, ya verificado el Worker nuevo. Ese módulo, su prueba y el SQL se eliminan después.
+
 ## Open Questions
 
 - El tamaño exacto de la tanda y el tamaño de cada lote de sentencias: se fijan midiendo con D1 local en la tarea de escala, sin cambiar el enfoque.

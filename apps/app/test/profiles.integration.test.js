@@ -4,7 +4,7 @@ import { app } from "../src/index.js";
 import { createCsrfToken } from "../src/csrf.js";
 import { readOwnPresentation, readOwnProfile, saveOwnNickname, saveOwnProfile, updateGoogleProfile } from "../src/profiles.js";
 import { createSession } from "../src/sessions.js";
-import { createSpaceForUser } from "../src/spaces.js";
+import { createGroupForUser } from "../src/groups.js";
 import { upsertGoogleUser } from "../src/users.js";
 
 const SECRET = "p".repeat(32);
@@ -46,11 +46,17 @@ describe("perfil compartido en D1 y HTTP", () => {
     expect(html).toContain("Hola, Ana Google.");
     expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('class="account-link" href="/perfil"');
-    expect(html).toContain('<a href="/perfil">Mi perfil</a>');
+    expect(html).toContain('<a href="/perfil">Ver mi perfil</a>');
     expect(html).not.toContain("Muy pronto.");
-    const cuentas = await request(user, "/cuentas-claras");
+    const entry = await request(user, "/cuentas-claras");
+    expect(entry.status).toBe(303);
+    expect(entry.headers.get("Location")).toBe("/groups");
+    const cuentas = await request(user, "/groups");
     expect(cuentas.status).toBe(200);
-    expect(await cuentas.text()).toContain("Muy pronto.");
+    const cuentasHtml = await cuentas.text();
+    expect(cuentasHtml).toContain("Crear grupo");
+    expect(cuentasHtml).toContain("Invitaciones");
+    expect(cuentasHtml).not.toContain("Muy pronto.");
     const profilePage = await request(user, "/perfil");
     expect(profilePage.status).toBe(200);
     expect(profilePage.headers.get("Cache-Control")).toBe("private, no-store");
@@ -58,7 +64,8 @@ describe("perfil compartido en D1 y HTTP", () => {
     const publicPage = await app.request(`${ORIGIN}/`, undefined, user.context);
     expect(await publicPage.text()).toContain("Continuar con Google");
     const publicCuentas = await app.request(`${ORIGIN}/cuentas-claras`, undefined, user.context);
-    expect(await publicCuentas.text()).toContain("/auth/google?returnTo=%2Fcuentas-claras");
+    expect(publicCuentas.status).toBe(303);
+    expect(publicCuentas.headers.get("Location")).toContain("/auth/google?returnTo=%2Fcuentas-claras");
     const guestProfile = await app.request(`${ORIGIN}/perfil`, undefined, user.context);
     expect(guestProfile.status).toBe(302);
     expect(guestProfile.headers.get("Location")).toBe("/auth/google?returnTo=%2Fperfil");
@@ -106,9 +113,9 @@ describe("perfil compartido en D1 y HTTP", () => {
     const owner = await identity("Pablo");
     const member = await identity("Celeste");
     const outsider = await identity("Ajenos");
-    const first = await createSpaceForUser(env.DB, { userId: owner.id, name: `Cole ${crypto.randomUUID()}` });
-    const second = await createSpaceForUser(env.DB, { userId: owner.id, name: `Fútbol ${crypto.randomUUID()}` });
-    await env.DB.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)")
+    const first = await createGroupForUser(env.DB, { userId: owner.id, name: `Cole ${crypto.randomUUID()}` });
+    const second = await createGroupForUser(env.DB, { userId: owner.id, name: `Fútbol ${crypto.randomUUID()}` });
+    await env.DB.prepare("INSERT INTO memberships (group_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)")
       .bind(first.id, member.id, crypto.randomUUID()).run();
 
     const before = await readOwnPresentation(env.DB, first.id, owner.id);
@@ -118,14 +125,14 @@ describe("perfil compartido en D1 y HTTP", () => {
     });
     expect(after).toMatchObject({ displayName: "Pablo", nickname: "Papá de Celes" });
     expect((await readOwnPresentation(env.DB, second.id, owner.id)).nickname).toBeNull();
-    expect((await (await request(member, `/api/spaces/${first.id}/members`)).json()).members)
+    expect((await (await request(member, `/api/groups/${first.id}/members`)).json()).members)
       .toEqual(expect.arrayContaining([expect.objectContaining({ userId: owner.id, nickname: "Papá de Celes" })]));
-    expect((await request(outsider, `/api/spaces/${first.id}/members`)).status).toBe(404);
-    expect((await request(outsider, `/api/spaces/${first.id}/me/presentation`)).status).toBe(404);
-    expect((await request(member, `/api/spaces/${second.id}/members`)).status).toBe(404);
+    expect((await request(outsider, `/api/groups/${first.id}/members`)).status).toBe(404);
+    expect((await request(outsider, `/api/groups/${first.id}/me/presentation`)).status).toBe(404);
+    expect((await request(member, `/api/groups/${second.id}/members`)).status).toBe(404);
 
-    await env.DB.prepare("DELETE FROM memberships WHERE space_id = ? AND user_id = ?").bind(first.id, member.id).run();
-    await env.DB.prepare("INSERT INTO memberships (space_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)")
+    await env.DB.prepare("DELETE FROM memberships WHERE group_id = ? AND user_id = ?").bind(first.id, member.id).run();
+    await env.DB.prepare("INSERT INTO memberships (group_id, user_id, role, membership_generation) VALUES (?, ?, 'member', ?)")
       .bind(first.id, member.id, crypto.randomUUID()).run();
     const newMembership = await readOwnPresentation(env.DB, first.id, member.id);
     expect(newMembership.nickname).toBeNull();
@@ -139,12 +146,12 @@ describe("perfil compartido en D1 y HTTP", () => {
   it("aplica sesión, CSRF, validación y mantiene privados los datos Google de otros integrantes", async () => {
     const owner = await identity("Privada");
     const outsider = await identity("Otra");
-    const space = await createSpaceForUser(env.DB, { userId: owner.id, name: `Privado ${crypto.randomUUID()}` });
+    const group = await createGroupForUser(env.DB, { userId: owner.id, name: `Privado ${crypto.randomUUID()}` });
     const own = await request(owner, "/api/me/profile");
     expect(own.status).toBe(200);
     expect(own.headers.get("Cache-Control")).toBe("private, no-store");
     const profile = await own.json();
-    const members = await (await request(owner, `/api/spaces/${space.id}/members`)).json();
+    const members = await (await request(owner, `/api/groups/${group.id}/members`)).json();
     expect(JSON.stringify(members)).not.toContain(owner.email);
     expect(JSON.stringify(members)).not.toContain("profile-");
     expect(JSON.stringify(members)).not.toContain("googleDisplayName");
@@ -157,7 +164,7 @@ describe("perfil compartido en D1 y HTTP", () => {
     const me = await (await request(owner, "/api/me")).json();
     expect(me.displayName).toBe("Nombre propio");
     expect(me.profile.displayName).toBe("Nombre propio");
-    expect((await request(outsider, `/api/spaces/${space.id}/members`)).status).toBe(404);
+    expect((await request(outsider, `/api/groups/${group.id}/members`)).status).toBe(404);
   });
 
 });

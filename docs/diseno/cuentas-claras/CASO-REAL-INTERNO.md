@@ -87,6 +87,90 @@ Mediciones con las 2.485 filas ya parseadas, en Node y sin red:
 - La vista previa guarda el CSV parseado completo en una sola fila de D1: 650 KB para estas 2.485 filas, unos 262 bytes por fila. Si D1 limita las filas a 2 MB (**no verificado**), el techo práctico es de unas 7.600 filas, mucho antes del tope de 2 MiB del archivo (unas 28.500 filas con este formato). Un archivo mayor fallaría sin un mensaje claro.
 - No hay incidentes en el archivo (salvo el resumen), así que el flujo de decisiones por fila no se ejercita con este caso.
 
+### Medición de la carga por etapas (2026-10-25)
+
+Con un archivo sintético de la misma forma (2.485 filas, dos personas, resumen con fecha en la primera celda), ejecutado en el entorno de pruebas de integración con **D1 local** (SQLite en el mismo proceso, sin red). Se corre con `npm run test:homesuite-app:integration -- import-scale`.
+
+| Dato | Valor |
+|---|---|
+| Tanda | 100 filas (25 tandas) |
+| Sentencias por tanda | 5 (movimientos, revisiones, pagadores, reparto y filas de origen, cada una sobre un JSON) |
+| Sentencias de la publicación | 6, en un único lote |
+| Vista previa (2.485 filas) | 27 ms |
+| Mediana por tanda / máxima | 6 ms / 9 ms |
+| Carga completa | 165 ms |
+| Lectura del libro con 2.485 movimientos publicados | 33 ms |
+
+Lo que **no** dicen estos números: son de un SQLite local, así que no incluyen la latencia de red de D1 remoto ni sus límites (sentencias por lote, tamaño de sentencia, subconsultas por petición, CPU por petición), que siguen **sin verificar**. Lo que sí fija la medición es el orden de magnitud de las llamadas: unas 5 por tanda y unas 125 en total para el archivo completo, contra las 7.456 sentencias en unos 125 lotes del diseño anterior. Antes de importar datos reales hay que repetir esta medición contra D1 en staging.
+
+### Medición de una recategorización de 1.000 movimientos (2026-10-25)
+
+Mismo entorno que la medición anterior (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- recategorize`.
+
+| Dato | Valor |
+|---|---|
+| Movimientos por operación (tope) | 1.000 |
+| Escritura | 10 tandas de 100; 3 sentencias por tanda (revisiones, un UPDATE por categoría de destino y elementos del lote) y 3 de cierre |
+| Tamaño del JSON de una tanda | unos 68 KB (100 movimientos con su instantánea completa) |
+| Vista previa | 13 ms |
+| Aplicar | 52 ms |
+| Deshacer | 53 ms |
+
+Una versión anterior del UPDATE recorría el JSON por cada fila del libro (el plan elegía `ledger_entries` como tabla externa) y tardaba unos 4 s para las mismas 1.000 filas; se corrigió agrupando por categoría de destino y guardando el cambio con «existe nuestra revisión como la siguiente del movimiento» (búsqueda por clave primaria), más `CROSS JOIN` para fijar el orden de las uniones. Es un recordatorio para cualquier escritura nueva con `json_each`: mirar el plan.
+
+**Sin verificar:** el tamaño máximo de una sentencia en D1 remoto (68 KB por tanda queda cerca de los 100 KB que se recuerdan), las sentencias por lote y la CPU por petición.
+
+### Búsqueda con índice por petición y disparadores para pasar a SQL (2026-10-25)
+
+Libros sintéticos de la forma del caso real, en Node y sin red (`npm run test:homesuite-app -- search`):
+
+| Consulta | Antes (referencia) | Con el índice por petición |
+|---|---|---|
+| Dos palabras, 2.500 movimientos | unos 337 ms | unos 6 ms |
+| Una palabra, 5.000 movimientos | — | unos 6 ms (presupuesto: menos de 100 ms) |
+| Dos palabras, 5.000 movimientos | — | unos 12 ms (el costo se duplica al duplicar los movimientos) |
+
+Medido en el navegador contra el Worker local con un libro importado de 2.485 movimientos, una búsqueda de extremo a extremo (envío del formulario, servidor, página renderizada) tarda unos 280 ms.
+
+La prueba de equivalencia compara la búsqueda nueva con la anterior sobre miles de consultas y libros generados: encuentra los mismos movimientos con los mismos motivos, salvo el texto de las coincidencias por persona.
+
+**Disparadores para pasar a SQL (búsqueda con filtros en la base y paginación por cursor).** Alcanza con que se cumpla uno:
+
+1. Un libro llega a **5.000 movimientos**. Con el ritmo del caso real (unos 770 por año) ocurre hacia fines de 2029.
+2. El aviso estructurado `slow_book_open` (abrir el libro tarda más de **300 ms** de tiempo transcurrido) aparece de forma repetida en el uso real. El evento solo lleva cantidades y tiempos, sin nombres ni importes, e indica `overSqlTrigger` cuando el libro ya superó los 5.000 movimientos.
+
+Hasta entonces la lectura completa del libro (unas 7.500 filas por vista con 2.485 movimientos) y la búsqueda en JavaScript siguen dentro del presupuesto.
+
+### Medición de unir dos personas con 2.500 movimientos (2026-10-26)
+
+Mismo entorno (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- people`. Una persona participa de los 2.500 movimientos del libro y se une a otra.
+
+| Dato | Valor |
+|---|---|
+| Escritura | 25 tandas de 100 movimientos; 7 sentencias por tanda (revisiones, suma y borrado de partes de efectivo y de asignaciones, subida de revisión, elementos de la unión) y 8 de cierre |
+| Sentencias en total | 190, en 27 `batch` |
+| Vista previa | 35 ms |
+| Aplicar | 189 ms |
+| Leer el libro después | 35 ms |
+
+Es una medición en local: los límites de D1 remoto (tamaño de la sentencia, tiempo por petición) se verifican en staging antes de cerrar el cambio `personas-del-grupo` (tarea 7.3).
+
+### Mediciones en D1 de staging (2026-10-26)
+
+Con la pila desplegada en staging (Worker `homesuite-app-staging`, migraciones `0004`–`0010` aplicadas con respaldo previo) se probó contra **D1 remoto** con `wrangler d1 execute --remote` y una tabla temporal (ya eliminada). No se pudo recorrer la app autenticada: staging usa Google y no hay sesión local.
+
+| Prueba | Resultado |
+|---|---|
+| `INSERT … SELECT … FROM json_each(<JSON>)` de 100 filas, sentencia de ~49 KB / ~69 KB | 6 ms de SQL |
+| Mismo, sentencia de ~99 KB | 26 ms de SQL |
+| Mismo, sentencia de ~110 KB | **error `SQLITE_TOOBIG` («statement too long»)**: el tope está entre 98,8 y 110 KB |
+| 25 sentencias de 100 filas en una sola ejecución (el tamaño de una importación de 2.485 filas) | 56 ms de SQL, 5.000 filas escritas |
+| `UPDATE … WHERE id IN (SELECT … FROM json_each(<1.000 ids>))` | 5 ms de SQL, 1.000 filas escritas |
+
+**Qué cambió por esto:** las escrituras por tandas ahora se parten también por tamaño (`chunking.js`, tope ~60 KB por sentencia): con notas de 1.000 caracteres, 100 movimientos pasarían el límite. Hay pruebas con notas largas en la importación y en la recategorización.
+
+**Sigue sin medirse:** la latencia y el costo de una importación completa pasando por el Worker (red, CPU por petición, subconsultas por petición), porque requiere sesión autenticada. Las pruebas de la sentencia usaron el texto SQL literal; la app envía el JSON como parámetro enlazado, que debería quedar por debajo (el límite se aplica al texto de la sentencia), pero no está comprobado en remoto.
+
 ## 8. Qué informa esto
 
 | Decisión | Qué dice el caso real | Estado |

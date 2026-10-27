@@ -1,9 +1,9 @@
 ## Why
 
-`plataforma-homesuite-minima` entrega identidad, espacios privados e invitaciones,
+`plataforma-homesuite-minima` entrega identidad, grupos privados e invitaciones,
 pero Cuentas Claras sigue siendo un estado vacío. Para que dos personas registren
 dinero y entiendan quién le debe qué a quién hace falta el primer modelo
-financiero: un libro por espacio, movimientos con invariantes verificables y
+financiero: un libro por grupo, movimientos con invariantes verificables y
 saldos derivados de ellos.
 
 Este change es el núcleo del corte B de `docs/HOMESUITE_CUENTAS_CLARAS_STORY_MAP.md`
@@ -18,7 +18,7 @@ Claude Design (10 pantallas guardadas en `docs/diseno/cuentas-claras/`); este ch
 
 ## What Changes
 
-- Al crear un espacio se crea, en la misma transacción, su libro de Cuentas Claras
+- Al crear un grupo se crea, en la misma transacción, su libro de Cuentas Claras
   con una moneda predeterminada y un participante vinculado a la persona titular.
 - Un libro admite participantes identificados por nombre. Un participante con
   historia no se elimina: se desactiva.
@@ -55,7 +55,7 @@ Claude Design (10 pantallas guardadas en `docs/diseno/cuentas-claras/`); este ch
 
 ### Added Capabilities
 
-- `libro-cuentas-claras`: libro por espacio, participantes y moneda predeterminada.
+- `libro-cuentas-claras`: libro por grupo, participantes y moneda predeterminada.
 - `movimientos-cuentas-claras`: gasto, ingreso, transferencia, repartos, monedas,
   revisiones, anulación, idempotencia y concurrencia.
 - `saldos-cuentas-claras`: saldo neto por participante y moneda, explicación y
@@ -68,7 +68,7 @@ Claude Design (10 pantallas guardadas en `docs/diseno/cuentas-claras/`); este ch
 - `apps/app/`: nuevas migraciones D1, módulos de libro, movimientos, repartos y
   saldos, rutas `/api/expenses/*` y la interfaz de Cuentas Claras.
 - Depende de que `plataforma-homesuite-minima` termine el grupo 3 de su
-  `tasks.md` (creación de espacios y membresías). Hasta entonces este change no
+  `tasks.md` (creación de grupos y membresías). Hasta entonces este change no
   puede aplicarse.
 - Pruebas unitarias y de propiedades para repartos y saldos; integración D1 para
   atomicidad e idempotencia; E2E con identidades sintéticas.
