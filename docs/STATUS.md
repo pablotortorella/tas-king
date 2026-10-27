@@ -58,6 +58,13 @@ de exportación; el destino R2 no se alcanzó. Se desactivó
 `HOMESUITE_PROD_BACKUPS_ENABLED` hasta resolver el alcance necesario del token.
 El respaldo manual desde Wrangler OAuth ya comprobado sigue disponible.
 
+Pablo actualizó el token. El ensayo manual #40576626163 de `main` completó
+exportación D1, restauración local, carga en R2 y recuperación/verificación del
+respaldo `production/20261027T201717Z` con SHA-256 e integridad correctos.
+`HOMESUITE_PROD_BACKUPS_ENABLED` volvió a `true`; el primer cron diario aún no
+ha corrido. Falta confirmar si el permiso D1 del token quedó limitado a la base
+de HomeSuite o abarca todas las D1 de la cuenta.
+
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.

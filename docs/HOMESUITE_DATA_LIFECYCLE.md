@@ -25,7 +25,7 @@
 | Historial | revisiones y eventos | Inmutable y retenido junto al libro para explicar cada cambio. |
 | Idempotencia | claves, hash y respuesta confirmada | Se conserva mientras pueda repetirse la operación correspondiente; no se purga hasta fijar la ventana de reintentos de la API. |
 | Operación | request ID y logs estructurados | Según la retención configurada en Workers Observability. Nunca incluye cookies, tokens, email ni cuerpos. |
-| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción: copia en R2 privado con expiración a los 90 días y restore drill acreditado de la base vacía (2026-10-27); tarea diaria preparada, pendiente de credencial, activación y primer ensayo. |
+| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción: copia en R2 privado con expiración a los 90 días, restore drill de la base vacía y primera ejecución automatizada acreditados (2026-10-27). Falta observar la primera ejecución programada y alertas. |
 
 ## Exportación y eliminación
 
