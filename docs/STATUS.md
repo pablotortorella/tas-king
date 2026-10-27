@@ -10,12 +10,13 @@
 ## Remanso, identidad de la suite y acentos por producto — staging 2026-10-27
 
 **Estado:** en el PR #108 (rama `cambio/identidad-textos`), **sin integrar** hasta que Pablo revise
-staging. Publicado en staging desde el SHA `6c99f5f`, con el árbol limpio y la rama ya subida:
+staging. Publicado en staging con el árbol limpio y la rama ya subida (la app desde el SHA `6c99f5f`; el
+sitio se republicó después desde `2220652`, que sólo cambia la landing de Remanso; el código de la app es el mismo):
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
 | HomeSuite App (`staging.homesuite.info`) | `3764a231` | «PR #108 · SHA 6c99f5f · Remanso ajustes, identidad y acentos» |
-| Sitio (`site-staging.homesuite.info`) | `eedd49c5` | «PR #108 · SHA 6c99f5f · textos, acentos y tres herramientas» |
+| Sitio (`site-staging.homesuite.info`) | `72a5d3ae` (SHA `2220652`; antes `eedd49c5`) | «PR #108 · SHA 2220652 · Remanso sin mención a cuentas» |
 
 Antes de publicar se comprobó con `wrangler deployments list` que nadie más había desplegado
 (las versiones activas eran las propias). Backup de la base de la app antes de migrar (sin
