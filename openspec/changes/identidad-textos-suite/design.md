@@ -30,6 +30,10 @@ resolvió Pablo el 2026-10-27; la quinta sigue abierta.
    mostrar el botón también en producción hacia la landing «en preparación» (un «Probá» que lleva
    a «todavía no» desilusiona) y cambiar el estado de la tarjeta a «Disponible» (no lo está).
 
+7. **La landing de Remanso no menciona cuentas** (Pablo, 2026-10-27). Los niveles de acceso viven en la app
+   (`REMANSO_ACCESO`) y pueden cambiar; la landing no los fija. Se quitó la frase del hero y la nota del botón de
+   staging.
+
 ## Risks
 
 - En producción el hero habla de momentos de calma mientras Remanso figura «Próximamente»: el texto

@@ -75,7 +75,7 @@ export default {
         : url.pathname.startsWith("/cuentas-claras")
         ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/cuentas-claras">Entrar a Cuentas Claras <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging con Google.</p></div>`)
         : url.pathname.startsWith("/remanso")
-          ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/remanso">Entrar a Remanso <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging. Las sesiones cortas no piden cuenta.</p></div>`)
+          ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/remanso">Entrar a Remanso <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging.</p></div>`)
           : original.replace("https://tas-king.pablotortorella.workers.dev", STAGING_TASKS);
       const headers = new Headers(asset.headers);
       headers.delete("Content-Length");

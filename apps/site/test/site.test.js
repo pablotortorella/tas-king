@@ -78,7 +78,7 @@ describe("homesuite-site", () => {
       expect(staging.headers.get("Cache-Control")).toBe("no-store");
       const html = await staging.text();
       expect(html).toContain('href="https://staging.homesuite.info/remanso"');
-      expect(html).toContain("Las sesiones cortas no piden cuenta.");
+      expect(html).not.toMatch(/sin crear una cuenta|no piden cuenta/u); // la landing no habla de cuentas (2026-10-27)
       expect(html).not.toContain("staging-app-entry");
     }
     const production = await worker.fetch(new Request("https://homesuite.info/remanso"), assetEnvironment(body));
@@ -182,7 +182,7 @@ describe("homesuite-site", () => {
   it.each(["index", "tareas", "cuentas-claras", "remanso"])("el texto de %s no presupone convivencia ni divide la suite", async (name) => {
     const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
     const visible = html.replace(/<[^>]+>/g, " ");
-    for (const frase of ["vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
+    for (const frase of ["sin crear una cuenta", "no piden cuenta", "vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
       expect(visible.toLowerCase(), `«${frase}» en ${name}`).not.toContain(frase.toLowerCase());
     }
     expect(visible).toContain("Tu hogar, a tu ritmo.");

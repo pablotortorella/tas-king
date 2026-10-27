@@ -51,6 +51,11 @@ suite ni agruparlas por categorías. El pie SHALL usar «Tu hogar, a tu ritmo.»
 - **WHEN** se revisa el texto visible de la portada y de las cuatro landings
 - **THEN** no aparecen «vida compartida», «en equipo», «del equipo», «organizarnos» ni «la otra mitad»
 
+#### Scenario: La landing de Remanso no habla de cuentas
+
+- **WHEN** se lee la landing de Remanso, con o sin el botón de staging
+- **THEN** no dice si se necesita una cuenta («sin crear una cuenta», «no piden cuenta»): qué opciones requieren cuenta lo decide y lo muestra la app
+
 #### Scenario: Compartir como posibilidad
 
 - **WHEN** una persona lee la landing de Fun TasKing o de Cuentas Claras
