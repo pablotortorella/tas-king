@@ -47,6 +47,25 @@ autenticada modular.
   generado; falta cargar `GOOGLE_CLIENT_SECRET` desde el terminal de Pablo.
   No se cargaron datos personales ni financieros.
 
+El cliente OAuth web de Google debe tener como URI de redirección autorizada
+`https://app.homesuite.info/auth/callback`. En la pantalla de consentimiento,
+usar `https://homesuite.info/` como inicio y las páginas públicas
+`https://homesuite.info/privacidad` y `https://homesuite.info/terminos` una vez
+publicadas; comprobar el estado de publicación y el dominio autorizado en
+Google Cloud. Los únicos ámbitos solicitados por la app son `openid`, `email`
+y `profile`.
+
+Para cargar el secreto de Google sin escribirlo en el chat ni en Git, ejecutar
+desde la raíz del repositorio:
+
+```bash
+npx wrangler versions secret put GOOGLE_CLIENT_SECRET --env production --config apps/app/wrangler.jsonc
+```
+
+Wrangler pide el valor de forma interactiva y crea una versión que no abre
+tráfico automáticamente. Comprobar sólo los nombres con
+`npx wrangler secret list --env production --config apps/app/wrangler.jsonc`.
+
 Ver [recuperación](HOMESUITE_RECOVERY.md) y [STATUS](STATUS.md) para el registro.
 
 Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
