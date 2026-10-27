@@ -35,7 +35,9 @@ export async function openBulk(page) {
   if (!(await panel.evaluate(node => node.open))) await panel.locator("summary").click();
 }
 
-export const uniqueId = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+// Sin dígitos: este identificador forma parte de nombres de grupos y de personas, y un número en el nombre coincide con las
+// búsquedas por número de los tests («Movimiento 12») y activa los filtros por persona según la hora de la corrida.
+export const uniqueId = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`.replace(/\d/gu, digit => "abcdefghij"[digit]);
 
 // Agrega una persona sin cuenta desde la pantalla de Personas y vuelve al grupo.
 export async function addPerson(page, book, name) {
