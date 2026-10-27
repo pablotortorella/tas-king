@@ -44,7 +44,8 @@ autenticada modular.
   `workers.dev` ni cron, para permitir cargar secretos antes de abrir tráfico.
 - El sitio público de producción sigue funcionando; `app.homesuite.info` aún no
   recibe tráfico. El ID OAuth productivo está configurado y `SESSION_SECRET`
-  generado; falta cargar `GOOGLE_CLIENT_SECRET` desde el terminal de Pablo.
+  generado; Pablo cargó `GOOGLE_CLIENT_SECRET` desde su terminal. Ambos nombres
+  figuran en Wrangler, sin publicar aún el dominio.
   No se cargaron datos personales ni financieros.
 
 El cliente OAuth web de Google debe tener como URI de redirección autorizada

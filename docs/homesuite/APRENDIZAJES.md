@@ -21,6 +21,7 @@ a un incidente confirmado ni a una corrección ya implementada.
 | Import/export quedó atrás de etiquetas, checklists y asignación; también hubo estilos de títulos inconsistentes. | Incluir consumidores y patrones de UI en el cierre de cada cambio de modelo. | Historial de WORKFLOW anterior a esta base, 2026-07-01; controles comunes y ficha TasKing. |
 | `uid()` tuvo una colisión posible y aparecieron otros fallos intermitentes. | Investigar causa, conservar diagnóstico y seguimiento; reintento verde no elimina riesgo. | STATUS, v2.3.0/v2.3.1; pendientes, no declarados resueltos aquí. |
 | Guías duplicaban versiones, instrucciones de sesión y resets de `.wrangler`; llegaron a contradecirse. | Una fuente por responsabilidad; fichas por producto y eliminación de resets indiscriminados. | Reorganización documental de esta rama; controles de enlaces locales, aún sin CI dedicada. |
+| Al configurar producción (2026-10-27), se confundió el secreto OAuth de Google con el token de Cloudflare para respaldos y se guardó temporalmente bajo el nombre del token en GitHub Actions. | Al pedir una credencial, nombrar proveedor, finalidad, destino y comando en un solo paso; comprobar sólo nombres y retirar de inmediato copias en el destino equivocado. | [STATUS](../STATUS.md): copia retirada; el workflow de backup seguía sin integrar ni activar, sin ejecución con ese valor. |
 
 ## Cómo incorporar el siguiente aprendizaje
 

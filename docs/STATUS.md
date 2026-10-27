@@ -25,10 +25,15 @@ controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
   El dry-run de Wrangler empaquetó la app y mostró los bindings productivos.
 - Se creó `homesuite-app` con una versión inicial sin rutas, `workers.dev` ni
   cron (`f292f8da-1f91-4939-85b0-dcc5ab5a6fd0`). Se generó e instaló
-  `SESSION_SECRET` como secreto de una versión aún no desplegada. El dominio
+  `SESSION_SECRET` y Pablo cargó `GOOGLE_CLIENT_SECRET` como secretos de versiones
+  aún no desplegadas. El dominio
   `app.homesuite.info` permanece sin tráfico hasta publicar la configuración
-  completa. El ID de cliente OAuth productivo ya figura en la configuración;
-  el secreto de Google debe cargarse en Wrangler desde el terminal del titular.
+  completa. El ID de cliente OAuth productivo ya figura en la configuración.
+- Por una instrucción ambigua, el secreto de Google también se guardó
+  temporalmente en GitHub bajo el nombre `HOMESUITE_PROD_BACKUP_API_TOKEN`.
+  Se eliminó y se comprobó que el nombre ya no figura entre los secretos del
+  repositorio. El workflow de backup no está integrado ni activado; no se
+  ejecutó con ese valor. Falta crear un token de Cloudflare independiente.
 - El control automático de aprobación rechazó inicialmente trasladar el
   respaldo interno a R2. Pablo autorizó explícitamente esta exportación,
   carga y ensayo de restauración; la operación se completó. La primera
@@ -36,9 +41,10 @@ controles de [ciclo de vida](HOMESUITE_DATA_LIFECYCLE.md).
   del terminal; se suprimió esa salida en el script para respaldos futuros.
 
 Las páginas públicas de privacidad y términos de HomeSuite, Cuentas Claras y
-Remanso están en preparación en la misma rama. Pablo confirmó nombre, país y
-correo público; faltan domicilio/dirección y teléfono de contacto públicos
-para publicar la política conforme a los datos exigidos en Colombia.
+Remanso están en preparación en la misma rama. Pablo confirmó nombre, país,
+correo y dirección comercial de contacto en Rionegro; falta un teléfono de
+contacto público para publicar la política conforme a los datos exigidos en
+Colombia.
 
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
