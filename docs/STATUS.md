@@ -71,21 +71,22 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 ## Remanso, identidad de la suite y acentos por producto — staging 2026-10-27
 
-**Estado:** en el PR #108 (rama `cambio/identidad-textos`), **sin integrar** hasta que Pablo revise
-staging. Publicado en staging con el árbol limpio y la rama ya subida (la app desde el SHA `6c99f5f`; el
-sitio se republicó después desde `d633eb2`, que sólo cambia textos del sitio; el código de la app es el mismo):
+**Estado:** integrado en `main` con el PR #108 (merge `6eba8ec`, merge commit sin squash; el CI del
+PR pasó). Publicado en staging **desde `main` en `6eba8ec`**, con el árbol limpio:
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
-| HomeSuite App (`staging.homesuite.info`) | `3764a231` | «PR #108 · SHA 6c99f5f · Remanso ajustes, identidad y acentos» |
-| Sitio (`site-staging.homesuite.info`) | `3329dc03` (SHA `d633eb2`; antes `72a5d3ae` y `eedd49c5`) | «PR #108 · SHA d633eb2 · rótulo Versión Beta» |
+| HomeSuite App (`staging.homesuite.info`) | `d5fa92f8` | «main 6eba8ec · merge PR #108» |
+| Sitio (`site-staging.homesuite.info`) | `f2b339cb` | «main 6eba8ec · merge PR #108 (incluye privacidad y términos)» |
 
-Antes de publicar se comprobó con `wrangler deployments list` que nadie más había desplegado
-(las versiones activas eran las propias). Backup de la base de la app antes de migrar (sin
-migraciones nuevas): `backups/homesuite-app/staging/` (ignorado por git). Referencias anteriores:
-app `a233a6bc` (SHA `0d68411`, sólo ajustes de sonido de Remanso) y `165d1833` (SHA `2b43586`,
-`main`). **Producción:** HomeSuite App no tiene entorno de producción y el sitio público de
-producción no se publicó; nada de esto está allí.
+Antes de publicar se comprobó con `wrangler deployments list`: la app seguía en la versión propia
+(`3764a231`); el sitio estaba en `1c7f0699`, publicada por Pablo a las 20:04 (era `main` sin este PR,
+con privacidad y términos), que `6eba8ec` reemplaza sin quitarle nada. Backup de la base de la app antes
+de migrar (sin migraciones nuevas): `backups/homesuite-app/staging/20261027T202900Z/` (ignorado por git).
+Versiones anteriores del PR: app `3764a231` (SHA `6c99f5f`) y sitio `3329dc03` (SHA `d633eb2`).
+**Producción:** nada de esto se publicó en producción; el entorno de producción de la app lo prepara
+Pablo en el #109 y siguientes, y el primer deploy con Cuentas Claras y Remanso queda pendiente de su
+orden. El PR #107 (registro del despliegue de `2b43586`) quedó desactualizado.
 
 - **Remanso:** inicio y cierre sin scroll; fondo a 58; gongs al 75 %; lluvia con el 24,5 % de las
   gotas; viento más suave y espaciado; chispazos esporádicos del fuego. Motor sin editar
@@ -107,6 +108,10 @@ producción no se publicó; nada de esto está allí.
   (Chromium), del sitio 15 y de Remanso 76 (Chromium y Firefox); `openspec validate` estricto
   de los tres changes. Servido comprobado en ambos dominios (títulos, tarjetas, volumen 58,
   `/compras` 404, botón «Probá Remanso» sólo en staging, `X-Robots-Tag: noindex`).
+- **Para el primer deploy a producción:** los términos (`apps/site/public/terminos.html`) dicen que las
+  funciones anunciadas como «en preparación» no forman parte de una prestación; el sitio ya no usa ese
+  rótulo (Cuentas Claras y Remanso son «Versión Beta»), así que conviene que el texto legal diga algo
+  sobre las versiones beta. No se tocó: es texto legal de Pablo.
 - **Límites:** el audio sólo se probó de oído en local (iPhone en silencio, pantalla bloqueada y
   volumen entre fondos siguen sin verificar). `openspec validate --all --strict` falla por
   `landings-productos-homesuite`, que no es de este PR; ese change y `identidad-textos-suite`
