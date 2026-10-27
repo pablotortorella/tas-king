@@ -4,14 +4,24 @@
 
 **Estado:** dirección acordada; dominio base activo y landing implementada localmente
 
-**Fecha:** 2026-09-17
+**Fecha:** 2026-09-17 (nota de identidad añadida el 2026-10-26)
 
 **Dominio adquirido:** `homesuite.info`
 
+> **Identidad y propósito de marca:** desde el 2026-10-26 los rige
+> [Identidad, visión y evolución de productos](HOMESUITE_IDENTIDAD_Y_VISION.md):
+> el hogar puede ser de una o varias personas, y la suite abarca organizar, cuidar y
+> disfrutar. Donde este documento habla de «vida compartida» o limita Cuentas Claras
+> a reemplazar Splitwise, esas frases son anteriores y prevalece la nueva dirección.
+> Este documento sigue siendo la referencia de arquitectura y plataforma, y la
+> ampliación no implica que lo nuevo esté implementado.
+
 ## Propósito
 
-HomeSuite será una suite de herramientas pequeñas para coordinar la vida compartida.
-Nace a partir de tres necesidades concretas:
+HomeSuite será una suite de herramientas pequeñas para organizar, cuidar y disfrutar
+el hogar, sea de una persona o de varias (propósito vigente: *ayudar a que el hogar sea
+un lugar donde nos guste vivir*). Originalmente se formuló como «coordinar la vida
+compartida». Nace a partir de tres necesidades concretas:
 
 1. **Tareas:** evolucionar FUN TasKing! como herramienta de organización compartida.
 2. **Cuentas Claras:** reemplazar Splitwise con una alternativa propia, robusta y auditable.
@@ -29,7 +39,10 @@ uso real en más de un producto.
 - Cada herramienta conserva su propio modelo, navegación y experiencia. Una suite
   no significa una única interfaz con conceptos mezclados.
 - La primera herramienta nueva será **Cuentas Claras**. Su objetivo inicial es
-  reemplazar Splitwise, no administrar el presupuesto completo del hogar.
+  reemplazar Splitwise, no administrar el presupuesto completo del hogar. La visión
+  vigente (2026-10-26) la amplía al control financiero de un hogar unipersonal o
+  compartido; esa ampliación no cambia el alcance del MVP ni está implementada, y su
+  alcance técnico sigue por definir.
 - Cuentas Claras incluye desde el MVP ingresos compartidos que afectan el saldo neto. La
   arquitectura no debe impedir incorporar después categorías, recurrencias,
   presupuestos, análisis de ingresos y flujo de caja, pero esas capacidades
