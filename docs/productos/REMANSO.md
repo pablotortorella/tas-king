@@ -131,6 +131,9 @@ explícita de Pablo.
 - `npm run test:e2e:remanso` · Playwright sobre `wrangler dev` real (cabeceras,
   política, recorridos, teclado, 360 px, claro/oscuro). Firefox es opcional:
   `REMANSO_E2E_FIREFOX=1 npx playwright test --config apps/app/playwright.config.mjs --project firefox`.
+  **Las pruebas de layout dependen de la fuente del sistema:** el CI usa DejaVu Sans, más ancha que la de muchos
+  equipos (Noto Sans). «Caben en la ventana» exige además 20 px de holgura. Para reproducir el CI localmente:
+  `FONTCONFIG_FILE=<conf que asigna DejaVu Sans a system-ui y sans-serif> npm run test:e2e:remanso`.
 
 ## Riesgos y límites no verificados
 

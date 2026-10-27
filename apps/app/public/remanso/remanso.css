@@ -183,6 +183,20 @@ a.rem-enlace { display: inline-flex; align-items: center; }
 .rem-animos legend span { font-weight: 400; }
 .rem-animos .rem-grid { clear: both; gap: 8px; }
 
+/* Ventanas de hasta 760 px de alto (donde --rem-x vale 0): compactación extra para que el inicio entre con holgura aunque la fuente del
+   sistema sea más ancha (con DejaVu Sans, la del CI, «Cuenco tibetano» se partía y el inicio crecía 16 px). Las ventanas altas no cambian. */
+@media (max-height: 760px) {
+  .rem-pantalla { gap: 8px; }
+  .remanso-app .rem-pantalla > .eyebrow { margin-bottom: -6px; }
+  .rem-sonido { font-size: .6875rem; }
+  .rem-fondo { min-height: 44px; }
+  .rem-fondo svg { width: 16px; height: 16px; }
+  .rem-gongs { padding-top: 8px; }
+  .rem-marcas { margin-top: 4px; }
+  .rem-regla { padding-bottom: 4px; }
+  .rem-label { margin-bottom: 4px; }
+}
+
 /* Escritorio: la columna se ensancha y la duración y los fondos van en una sola fila de seis. */
 @media (min-width: 600px) {
   .remanso-app { max-width: 620px; }

@@ -411,9 +411,22 @@ for (const [label, size] of [["teléfono", { width: 390, height: 720 }], ["escri
       const sinDesplazamiento = async (page) => page.evaluate(() => ({ alto: document.documentElement.scrollHeight, ventana: window.innerHeight, ancho: document.documentElement.scrollWidth, anchoVentana: window.innerWidth }));
       const visible = async (locator, ventana) => { const box = await locator.boundingBox(); return box.y >= 0 && box.y + box.height <= ventana; };
 
+      // Holgura que queda con el contenido a su altura natural (sin el estirado de «Comenzar»). Una fuente más ancha parte renglones:
+      // el CI usa DejaVu Sans, donde «Cuenco tibetano» ocupa dos líneas y el inicio crecía 16 px. Se exige margen para que cambiar de fuente no lo desborde.
+      const HOLGURA_MINIMA = 20; // cubre un renglón extra (16 px) más un poco de margen
+      const holgura = async (page) => page.evaluate(() => {
+        const boton = document.querySelector("#rem-comenzar");
+        boton.style.setProperty("margin-top", "0", "important");
+        const caja = boton.getBoundingClientRect();
+        const resto = parseFloat(getComputedStyle(document.querySelector(".shell")).paddingBottom);
+        boton.style.removeProperty("margin-top");
+        return window.innerHeight - (caja.bottom + resto);
+      });
+
       test("el inicio con todos sus controles no necesita desplazarse y «Comenzar» se ve completo", async ({ page }) => {
         await page.goto("/remanso");
         await expect(page.locator(".shell-header, header.topbar").first()).toBeVisible();
+        expect(await holgura(page)).toBeGreaterThanOrEqual(HOLGURA_MINIMA);
         const medida = await sinDesplazamiento(page);
         expect(medida.alto).toBeLessThanOrEqual(medida.ventana);
         expect(medida.ancho).toBeLessThanOrEqual(medida.anchoVentana);
