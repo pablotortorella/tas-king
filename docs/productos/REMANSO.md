@@ -52,7 +52,7 @@ fundido de 4 s y sale con uno de 6 s. El estado de ánimo del cierre es opcional
 |---|---|
 | `apps/app/src/remanso.js` | Ruta `GET /remanso`, niveles de acceso y armazón HTML de las tres pantallas |
 | `apps/app/public/remanso/remanso-engine.js` | Motor de sonido del paquete, **sin modificar** |
-| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()` y `windGust()` (ráfagas del bosque a 0,3 del nivel del paquete, constante `FACTOR_VIENTO`) |
+| `apps/app/public/remanso/remanso-gongs.js` | Los tres sonidos de gong y `SuiteEngine`, que sólo reemplaza `gong()`, `windGust()`, `drop()` y `buildAmbient()` (viento del bosque a 0,15 del nivel del paquete y al doble de espaciado, `FACTOR_VIENTO`; lluvia con el 35 % de las gotas y el lecho al 60 %, `DENSIDAD_GOTAS` y `NIVEL_LECHO_LLUVIA`) |
 | `apps/app/public/remanso/remanso.js` | Interfaz (módulo ES): arma opciones, sesión y cierre con DOM |
 | `apps/app/public/remanso/remanso.css` | Tokens y estilos: claro, oscuro y noche |
 | `apps/app/public/_headers` | `nosniff` para los recursos de `/remanso/*` |

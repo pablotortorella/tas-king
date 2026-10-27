@@ -153,24 +153,45 @@ terminar. El volumen elegido SHALL aplicarse sólo al fondo, no a los gongs.
 - **WHEN** la persona elige cada uno de los seis fondos
 - **THEN** la sesión comienza sin error y sin descargar archivos de audio
 
-### Requirement: El viento del bosque no tiene ráfagas fuertes
+### Requirement: El viento del bosque es suave y poco frecuente
 
-En el fondo `bosque`, las ráfagas de viento SHALL tener un nivel máximo de 0,20 sobre el
-fondo (el motor del paquete llegaba a 0,65), sin editar el motor: la suite reemplaza
-únicamente `windGust()` en `SuiteEngine`, igual que hace con el gong. El resto del
-fondo (pájaros, hojas) y la cadencia de las ráfagas no cambian. El nivel SHALL poder
-afinarse con una sola constante (ajuste del 2026-10-27, pedido de Pablo: ráfagas muy
-fuertes).
+En el fondo `bosque`, las ráfagas de viento SHALL tener un nivel máximo de 0,10 sobre el
+fondo (el motor del paquete llegaba a 0,65) y SHALL espaciarse el doble que en el motor
+(entre 24 y 62 s después de terminar cada una, no entre 12 y 37 s), de modo que el
+viento no se confunda con el fondo de lluvia. Las hojas SHALL bajar en la misma
+proporción. Todo ello sin editar el motor: la suite reemplaza únicamente `windGust()` en
+`SuiteEngine`, igual que hace con el gong. Los pájaros no cambian. El nivel SHALL poder
+afinarse con una sola constante (ajustes del 2026-10-27, pedidos de Pablo: ráfagas muy
+fuertes y parecidas a la lluvia).
 
-#### Scenario: Nivel máximo de las ráfagas
+#### Scenario: Nivel máximo y cadencia de las ráfagas
 
 - **WHEN** se generan muchas ráfagas con `SuiteEngine`
-- **THEN** ninguna supera 0,20 de nivel y todas suben desde silencio y vuelven a silencio
+- **THEN** ninguna supera 0,10 de nivel, todas suben desde silencio y vuelven a silencio, y la espera hasta la siguiente es siempre mayor que la mínima del motor del paquete
 
 #### Scenario: El motor sigue sin editar
 
 - **WHEN** se compara `remanso-engine.js` con el del paquete
 - **THEN** su huella SHA-256 es la original
+
+### Requirement: La lluvia es menos densa
+
+En el fondo `lluvia`, la suite SHALL reproducir sólo una parte de las gotas que programa
+el motor del paquete (35 %) y SHALL bajar el lecho continuo de ruido al 60 % de su
+nivel, sin editar el motor: `SuiteEngine` reemplaza `drop()` (filtrando) y envuelve
+`buildAmbient()` (sumando una ganancia al lecho). La intensidad que sube y baja en tramos
+no cambia. Ambos valores SHALL poder afinarse con una constante cada uno (2026-10-27,
+pedido de Pablo: sonido muy denso).
+
+#### Scenario: Menos gotas
+
+- **WHEN** el motor programa miles de gotas con `SuiteEngine`
+- **THEN** llega a sonar entre el 25 % y el 45 % de ellas
+
+#### Scenario: Lecho más bajo
+
+- **WHEN** se construye el fondo `lluvia` con `SuiteEngine`
+- **THEN** el lecho de ruido llega al fondo a través de una ganancia de 0,6, y los demás fondos se construyen igual que con el motor del paquete
 
 ### Requirement: Pausa, silencio del fondo y fin anticipado
 
