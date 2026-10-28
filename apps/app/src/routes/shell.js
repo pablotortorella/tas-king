@@ -34,8 +34,6 @@ export function registerShellRoutes(app, { authConfig, localUser }) {
 
   app.get("/tareas", (c) => c.html(page("Fun TasKing", `<p class="eyebrow">Fun TasKing</p><h1>Lo que hay que hacer, a la vista.</h1><p>Fun TasKing ya está disponible mientras preparamos su lugar dentro de HomeSuite.</p><a class="button" href="${taskingUrl(new URL(c.req.url).hostname)}">Abrir Fun TasKing</a>`)));
 
-  app.get("/compras", (c) => c.html(page("Compras", '<p class="eyebrow">Compras</p><h1>Prepará tus listas con calma y evitá olvidos.</h1><p>Esta herramienta todavía está en preparación.</p>')));
-
   app.get("/perfil", async (c) => {
     const host = new URL(c.req.url).hostname;
     const localEmail = host === "localhost" || host === "127.0.0.1" ? localUser(c) : null;

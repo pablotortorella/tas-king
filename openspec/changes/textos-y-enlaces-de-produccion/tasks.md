@@ -12,6 +12,9 @@
 - [x] 2.4 `scripts/homesuite-coherencia.mjs` y comandos `verify:coherence:staging|production`.
 - [x] 2.5 Documentación: operación, plataforma y backlog (exportación y eliminación de grupos con prioridad alta, hallazgos para iPhone).
 
+- [x] 2.6 Compras retirado del sitio (tarjeta, landing, CSS) y de la app (tarjeta, ruta, lista de rutas, snapshots), con pruebas de que no reaparece.
+- [x] 2.7 Remanso pide la categoría de audio «playback» en iOS, con pruebas de la detección y del fallo silencioso.
+
 ## 3. Verificación y publicación
 
 - [ ] 3.1 Suites, E2E, OpenSpec estricto y coherencia contra staging tras publicar.

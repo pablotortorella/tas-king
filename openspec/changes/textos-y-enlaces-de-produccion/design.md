@@ -10,14 +10,19 @@ apps existían sólo en staging, inyectados por el worker del sitio en un marcad
    que inventar otra inyección y el repositorio no mostraría lo que se publica).
 2. **Orden de publicación en producción: primero la app, después el sitio**, y recién entonces correr
    `verify:coherence:production`. Si el sitio saliera antes, la portada enlazaría a una app que aún no responde.
-3. **Lista única de herramientas en la app** (`tools.js`): el inicio la dibuja con el mismo HTML de antes (snapshots intactos) y
-   la coherencia la compara con el sitio. Compras sigue en la lista con `publica: false` (la app la muestra «en preparación»).
+3. **Lista única de herramientas en la app** (`tools.js`): el inicio la dibuja y la coherencia la compara con el sitio. Compras no
+   figura: se retiró de todo el 2026-10-28 (Pablo, tras verla en staging) y la coherencia vigila que no reaparezca en ninguno de los dos.
+   Alternativa descartada: dejarla oculta en el sitio y visible «en preparación» en la app (contradice «nadie conoce su existencia»).
 4. **TasKing por host, sin tocar la configuración.** `taskingUrl(host)` elige producción sólo desde `app.homesuite.info`; cualquier
    otro host (staging, local) lleva al TasKing de staging. No se agregó una variable a `wrangler.jsonc` para no tocar
    `env.production`, que prepara Pablo en paralelo.
 5. **Coherencia en dos capas.** Lógica pura probada en CI (incluye los cinco desvíos que debe detectar) y un comando que la
    corre contra lo publicado, que además sondea que cada enlace responda. Se usa también en staging desde ahora.
 6. **Términos:** la frase sobre versiones beta es una propuesta de redacción; es texto legal de Pablo y queda marcada para su revisión.
+
+7. **Audio de iOS:** `ensureCtx()` de `SuiteEngine` pide `navigator.audioSession.type = "playback"` antes de crear el audio (sólo en un
+   gesto), con detección de la función y sin fallar si no existe. Alternativa descartada por ahora: un `<audio>` silencioso (muestra controles
+   en la pantalla de bloqueo). Sin verificar en un iPhone real.
 
 ## Risks
 

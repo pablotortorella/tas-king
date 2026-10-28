@@ -20,7 +20,7 @@ lista de tareas. Cambios de home, landings, descripciones y metadatos:
   suite ya tenía y se aprobó el 2026-10-27 (change `acentos-y-catalogo-publico`);
 - el copy de home y landings se alineó con esta dirección el 2026-10-27 (change
   `identidad-textos-suite`); el sitio público muestra sólo herramientas funcionales: Compras
-  espera oculto en `apps/site/pendientes/compras.html`; Cuentas Claras y Remanso se rotulan «Versión
+  no se nombra en ningún lugar del sitio ni de la app (se retiró el 2026-10-28); Cuentas Claras y Remanso se rotulan «Versión
   Beta» y Fun TasKing «Disponible».
 
 ## Plataforma

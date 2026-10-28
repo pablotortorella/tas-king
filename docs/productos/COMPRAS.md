@@ -7,9 +7,11 @@ Marco de marca y copy sugerido en [Identidad y visión](../HOMESUITE_IDENTIDAD_Y
 (§3, §9.5): valor propio sin exigir colaboración y sin anunciar sincronización ni
 disponibilidad hasta verificar el estado real. Alcance individual versus compartido por definir.
 
-**Sitio público:** la landing está oculta desde el 2026-10-27 (vive en
-`apps/site/pendientes/compras.html`, fuera de lo que se publica, y ninguna página enlaza a ella)
-hasta que la herramienta exista; el inicio de la app conserva su tarjeta «en preparación».
+**Retirado de todos los ambientes (2026-10-28, Pablo):** Compras no existe todavía, así que no se nombra en
+ninguna parte: ni tarjeta, ruta ni landing en el sitio público, ni tarjeta ni ruta en la app. Una prueba y la
+verificación de coherencia (`npm run verify:coherence:<ambiente>`) impiden que reaparezca. Su landing anterior sigue
+en el historial de git (commit `da8626c` y anteriores, `apps/site/public/compras.html`). Cuando la herramienta exista
+se reponen la landing, la tarjeta del sitio y de la app, la ruta y su entrada en `apps/app/src/tools.js`.
 
 Todavía no se fijan aquí arquitectura de tiempo real ni reglas detalladas de listas.
 Explorar colaboración durante la compra, conectividad intermitente, duplicados,

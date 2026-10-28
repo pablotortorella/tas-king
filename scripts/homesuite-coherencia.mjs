@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Comprueba que el sitio público y la app cuenten lo mismo: las mismas herramientas con el mismo estado, enlaces a rutas que la app
-// tiene, hacia el ambiente correcto, y que respondan. Uso: `npm run verify:coherence:staging` o `...:production`, después de publicar
+// tiene, hacia el ambiente correcto, y que respondan; y que ninguna herramienta retirada reaparezca en el sitio ni en la app. Uso: `npm run verify:coherence:staging` o `...:production`, después de publicar
 // la app y el sitio. La lógica pura (evaluarCoherencia) la prueba el CI contra el HTML del repositorio.
 import { pathToFileURL } from "node:url";
 import { HERRAMIENTAS, TASKING_URL } from "../apps/app/src/tools.js";
@@ -11,6 +11,8 @@ const ENTORNOS = {
   staging: { sitio: "https://site-staging.homesuite.info", app: "https://staging.homesuite.info", tasking: TASKING_URL.staging },
 };
 const RESPUESTAS_VALIDAS = [200, 301, 302, 303, 307, 308];
+// Productos que no existen y no se nombran en ninguna parte (ni sitio ni app) hasta que existan. Compras: decisión del 2026-10-28.
+const RETIRADAS = [{ nombre: "Compras", patron: /\bCompras\b|\/compras\b/u }];
 
 export function urlsDelEntorno(entorno) {
   const urls = ENTORNOS[entorno];
@@ -37,12 +39,11 @@ export async function evaluarCoherencia({ entorno, sitio, appHome, sonda }) {
   const verificar = (ok, detalle) => resultados.push({ ok: Boolean(ok), detalle });
 
   const tarjetas = tarjetasDelSitio(sitio.home);
-  const publicas = HERRAMIENTAS.filter((tool) => tool.publica);
   const delSitio = tarjetas.map((tarjeta) => tarjeta.nombre);
-  const delaApp = publicas.map((tool) => tool.nombre);
-  verificar(delSitio.join("|") === delaApp.join("|"), `herramientas del sitio [${delSitio.join(", ")}] frente a las públicas de la app [${delaApp.join(", ")}]`);
+  const delaApp = HERRAMIENTAS.map((tool) => tool.nombre);
+  verificar(delSitio.join("|") === delaApp.join("|"), `herramientas del sitio [${delSitio.join(", ")}] frente a las de la app [${delaApp.join(", ")}]`);
 
-  for (const tool of publicas) {
+  for (const tool of HERRAMIENTAS) {
     const tarjeta = tarjetas.find((candidata) => candidata.nombre === tool.nombre);
     const esperado = ETIQUETA[tool.estado];
     verificar(tarjeta?.estado === esperado, `${tool.nombre}: estado en el sitio «${tarjeta?.estado}», en la app «${esperado}»`);
@@ -54,20 +55,20 @@ export async function evaluarCoherencia({ entorno, sitio, appHome, sonda }) {
     verificar(appHome.includes(`href="${tool.ruta}"`), `${tool.nombre}: aparece en el inicio de la app (${tool.ruta})`);
   }
 
-  for (const oculta of HERRAMIENTAS.filter((tool) => !tool.publica)) {
-    const visible = sitio.home.includes(`Conocé ${oculta.nombre}`) || Object.values(sitio.landings).some((html) => html.includes(`href="${oculta.ruta}"`) || html.includes(`${urls.app}${oculta.ruta}`));
-    verificar(!visible, `${oculta.nombre} no se muestra en el sitio público`);
-  }
-
   const paginas = [sitio.home, ...Object.values(sitio.landings)].join("\n");
   const haciaLaApp = enlaces(paginas, /href="(https:\/\/(?:app|staging)\.homesuite\.info[^"]*)"/g);
   for (const url of haciaLaApp) {
     if (!url.startsWith(urls.app)) { verificar(false, `enlace a la app de otro ambiente: ${url}`); continue; }
     const ruta = url.slice(urls.app.length);
     const tool = HERRAMIENTAS.find((candidata) => candidata.ruta === ruta);
-    verificar(tool?.publica && tool.estado !== "preparacion", `enlace del sitio a ${url}: ${tool ? "la app la tiene" : `la app no tiene la ruta ${ruta}`}`);
+    verificar(tool, `enlace del sitio a ${url}: ${tool ? "la app la tiene" : `la app no tiene la ruta ${ruta}`}`);
     const estado = await sonda(url);
     verificar(RESPUESTAS_VALIDAS.includes(estado), `${url} responde ${estado}`);
+  }
+
+  for (const retirada of RETIRADAS) {
+    verificar(!retirada.patron.test(paginas), `${retirada.nombre} no se nombra en el sitio público`);
+    verificar(!retirada.patron.test(appHome), `${retirada.nombre} no se nombra en el inicio de la app`);
   }
 
   const haciaTasKing = enlaces(paginas, /href="(https:\/\/tas-king[a-z-]*\.pablotortorella\.workers\.dev[^"]*)"/g);

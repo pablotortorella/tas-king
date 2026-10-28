@@ -28,14 +28,24 @@ presente («Ya podés usarla; la seguimos mejorando»), sin frases que las trate
 - **WHEN** una persona lee la portada
 - **THEN** no hay promesas de herramientas futuras y las tarjetas dicen «Disponible» y «Versión Beta»
 
+### Requirement: Compras no se nombra en ningún ambiente
+
+Mientras la herramienta no exista, ni el sitio público ni la app SHALL mostrarla ni nombrarla: sin tarjeta, ruta, landing ni
+enlace, y `/compras` SHALL responder 404 en ambos.
+
+#### Scenario: Sitio y app sin Compras
+
+- **WHEN** se revisan la portada, las landings, los términos y el inicio de la app, y se piden `/compras` y `/compras.html`
+- **THEN** ninguna página nombra Compras y las rutas responden 404
+
 ### Requirement: El sitio y la app son coherentes
 
 Las herramientas, sus estados y sus rutas anunciados por el sitio SHALL coincidir con la lista de herramientas de la app:
-mismas herramientas públicas en el mismo orden, mismo estado, cada enlace a una ruta que la app tiene y que responde, y
-ninguna herramienta oculta mostrada. Esa comprobación SHALL correr en CI contra el HTML del repositorio y SHALL poder correr
+mismas herramientas en el mismo orden, mismo estado, cada enlace a una ruta que la app tiene y que responde, y
+ninguna herramienta retirada nombrada. Esa comprobación SHALL correr en CI contra el HTML del repositorio y SHALL poder correr
 contra lo publicado en staging y en producción.
 
 #### Scenario: Desvíos
 
-- **WHEN** el sitio anuncia una herramienta que la app no tiene, un estado distinto, una ruta inexistente, una herramienta oculta o el TasKing de otro ambiente
+- **WHEN** el sitio anuncia una herramienta que la app no tiene, un estado distinto, una ruta inexistente, una herramienta retirada o el TasKing de otro ambiente
 - **THEN** la comprobación falla y nombra el desvío

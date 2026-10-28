@@ -140,7 +140,7 @@ app.use("*", async (c, next) => {
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
   const path = new URL(c.req.url).pathname;
-  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/compras", "/perfil", "/remanso"].includes(path)) c.header("Cache-Control", "private, no-store");
+  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso"].includes(path)) c.header("Cache-Control", "private, no-store");
 });
 
 // Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).

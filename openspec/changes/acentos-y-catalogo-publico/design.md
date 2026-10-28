@@ -16,7 +16,7 @@ marco de identidad pide evolucionar la identidad actual, no reemplazarla, y no f
    producto se declara con una clase (`tool-card-<producto>`, `product-page-<producto>`).
 5. **Remanso:** su rótulo pasa del coral de la suite al ámbar (claro `#7a5418`, oscuro `#d4ad58`); su prueba de
    contraste existente lo cubre. Sus botones siguen en el verde de la suite.
-6. **Compras oculto, no borrado.** Su landing se mueve a `apps/site/pendientes/compras.html` (fuera de `public/`,
+6. **Compras oculto, no borrado** *(superado el 2026-10-28: se retiró del todo, sitio y app; ver `textos-y-enlaces-de-produccion`)*. Su landing se mueve a `apps/site/pendientes/compras.html` (fuera de `public/`,
    por lo que no se publica) y se conserva su CSS. Volver a publicarla es moverla de nuevo y reponer la tarjeta y
    los enlaces. Una prueba exige que el archivo siga existiendo allí.
 7. **Sin agrupar en «organizar» y «cuidar».** Pablo describió los tres productos como dos de organizar y uno de

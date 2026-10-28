@@ -47,11 +47,11 @@ describe("coherencia entre el sitio público y la app", () => {
     expect((await evaluar({ sitio: { ...sitio, landings } })).fallas.join("\n")).toMatch(/meditacion/);
   });
 
-  it("detecta una herramienta oculta que el sitio vuelve a mostrar", async () => {
+  it("detecta que Compras reaparece, en el sitio o en el inicio de la app", async () => {
     const sitio = await sitioDelRepositorio();
-    const tarjeta = sitio.home.match(/<article class="tool-card tool-card-calm">[\s\S]*?<\/article>/)[0];
-    const home = sitio.home.replace(tarjeta, tarjeta + tarjeta.replaceAll("Remanso", "Compras").replaceAll("/remanso", "/compras").replace("tool-card-calm", "tool-card-shopping"));
-    expect((await evaluar({ sitio: { ...sitio, home } })).fallas.join("\n")).toMatch(/Compras/);
+    const conCompras = { ...sitio, landings: { ...sitio.landings, tareas: sitio.landings.tareas.replace("También en HomeSuite", "Compras · También en HomeSuite") } };
+    expect((await evaluar({ sitio: conCompras })).fallas.join("\n")).toMatch(/Compras/);
+    expect((await evaluar({ appHome: `${renderTools()}<a href="/compras">Compras</a>` })).fallas.join("\n")).toMatch(/Compras/);
   });
 
   it("detecta el TasKing de otro ambiente", async () => {

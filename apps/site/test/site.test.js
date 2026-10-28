@@ -195,17 +195,19 @@ describe("homesuite-site", () => {
     expect(visible).toContain("Tu hogar, a tu ritmo.");
   });
 
-  // Catálogo público: sólo las tres herramientas funcionales. Compras queda oculto hasta que exista (su landing espera en
-  // apps/site/pendientes/ y no se publica).
-  it("la portada y las landings muestran sólo las tres herramientas funcionales: Compras está oculto", async () => {
+  // Catálogo público: sólo las tres herramientas funcionales. Compras no existe todavía y no se nombra en ningún lugar: ni tarjeta, ni
+  // landing, ni enlace, ni archivo (2026-10-28, Pablo).
+  it("la portada y las landings muestran sólo las tres herramientas funcionales y no nombran Compras", async () => {
     const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
     expect(home.match(/class="tool-card[ "]/g)).toHaveLength(3);
-    for (const name of ["index", "tareas", "cuentas-claras", "remanso"]) {
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso", "privacidad", "terminos"]) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html, name).not.toMatch(/href="\/compras"|Compras/u);
     }
-    await expect(readFile(new URL("../public/compras.html", import.meta.url))).rejects.toThrow();
-    await expect(readFile(new URL("../pendientes/compras.html", import.meta.url), "utf8")).resolves.toContain("Compras");
+    for (const ruta of ["../public/compras.html", "../pendientes/compras.html"]) {
+      await expect(readFile(new URL(ruta, import.meta.url))).rejects.toThrow();
+    }
+    expect(await readFile(new URL("../public/styles.css", import.meta.url), "utf8")).not.toMatch(/shopping/iu);
   });
 
   // Estado de cada herramienta (2026-10-27, Pablo): Fun TasKing está disponible; Cuentas Claras y Remanso funcionan y se rotulan

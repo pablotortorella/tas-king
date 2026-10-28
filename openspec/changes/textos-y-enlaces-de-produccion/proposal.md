@@ -16,6 +16,10 @@ están creando». Además no hay forma de comprobar que sitio y app cuenten lo m
   «llegarán». Los términos suman una frase sobre las versiones beta (propuesta para revisión de Pablo).
 - La app tiene una lista única de herramientas (`apps/app/src/tools.js`) con nombre, ruta y estado, y la página `/tareas`
   abre el TasKing del ambiente de quien la pide (producción sólo desde `app.homesuite.info`).
+- **Compras se retira de todo** (Pablo, 2026-10-28, tras ver la tarjeta en staging): sin tarjeta, ruta ni landing en el sitio, ni tarjeta ni
+  ruta en la app (`/compras` responde 404 en ambos), y sin archivo de landing ni CSS en el repositorio.
+- Remanso pide la categoría de audio «playback» en iOS 17+ (`navigator.audioSession`), para que el interruptor de silencio no lo calle;
+  solución documentada por WebKit, **sin verificar en un iPhone**.
 - Verificación de coherencia sitio ↔ app: una prueba en CI contra el HTML del repositorio y un comando
   (`npm run verify:coherence:staging|production`) que la corre contra lo publicado.
 
@@ -23,8 +27,7 @@ están creando». Además no hay forma de comprobar que sitio y app cuenten lo m
 
 - Publicar nada en producción: el deploy lo ordena Pablo. Este change no toca `env.production` ni recursos de producción.
 - Exportación y eliminación de un grupo (queda en el backlog con prioridad alta).
-- Compras, que sigue oculto en el sitio público.
-- Cambios en el audio de Remanso para iPhone.
+- Reponer Compras: no existe todavía (queda en el backlog).
 
 ## Capabilities
 

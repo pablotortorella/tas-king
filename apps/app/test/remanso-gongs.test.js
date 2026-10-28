@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { RemansoEngine } from "../public/remanso/remanso-engine.js";
-import { DEFAULT_GONG, GONGS, GONG_IDS, GONG_NAMES, NIVEL_GONG, SuiteEngine, synthGong } from "../public/remanso/remanso-gongs.js";
+import { DEFAULT_GONG, GONGS, GONG_IDS, GONG_NAMES, NIVEL_GONG, SuiteEngine, activarSesionDeAudio, synthGong } from "../public/remanso/remanso-gongs.js";
 
 // Contexto de audio simulado: registra los osciladores que se crean.
 function fakeContext() {
@@ -52,10 +52,10 @@ describe("sonidos de gong de Remanso", () => {
     }
   });
 
-  it("el motor de la suite sigue siendo el del paquete: sólo reemplaza gong(), crackle(), windGust(), drop() y buildAmbient()", () => {
+  it("el motor de la suite sigue siendo el del paquete: sólo reemplaza gong(), crackle(), windGust(), drop(), buildAmbient() y ensureCtx()", () => {
     expect(Object.getPrototypeOf(SuiteEngine)).toBe(RemansoEngine);
     const own = Object.getOwnPropertyNames(SuiteEngine.prototype).sort();
-    expect(own).toEqual(["buildAmbient", "constructor", "crackle", "drop", "gong", "setGong", "windGust"]);
+    expect(own).toEqual(["buildAmbient", "constructor", "crackle", "drop", "ensureCtx", "gong", "setGong", "windGust"]);
   });
 
   it.each([[true, 1.5], [false, 1]])("el gong baja un 25 %% respecto del paquete (inicio/fin: %s)", (main, amp) => {
@@ -229,5 +229,36 @@ describe("chispazos del fuego", () => {
   it("los chasquidos comunes siguen siendo los del paquete", () => {
     const suite = chasquidos(SuiteEngine, 0.5, 6000);
     expect(suite.porLlamada.filter((n) => n === 1).length / 6000).toBeGreaterThan(0.95);
+  });
+});
+
+// En iOS 17+ el audio Web cuenta como «ambiente» y obedece el interruptor de silencio; `navigator.audioSession.type = "playback"` lo evita.
+// Es una solución documentada por WebKit pero sin verificar en un iPhone real (ver el backlog), así que sólo se pide si existe.
+describe("sesión de audio de iOS", () => {
+  it("pide la categoría «playback» cuando el navegador ofrece audioSession", () => {
+    const nav = { audioSession: { type: "auto" } };
+    activarSesionDeAudio(nav);
+    expect(nav.audioSession.type).toBe("playback");
+  });
+
+  it("no hace nada, ni falla, si no hay audioSession o si asignarla falla", () => {
+    expect(() => activarSesionDeAudio({})).not.toThrow();
+    expect(() => activarSesionDeAudio(undefined)).not.toThrow();
+    const rota = { audioSession: { get type() { return "auto"; }, set type(_value) { throw new Error("no permitido"); } } };
+    expect(() => activarSesionDeAudio(rota)).not.toThrow();
+  });
+
+  it("SuiteEngine la pide al crear el audio (que sólo ocurre en un gesto) y devuelve el contexto del motor", () => {
+    const nav = { audioSession: { type: "auto" } };
+    vi.stubGlobal("navigator", nav);
+    const original = RemansoEngine.prototype.ensureCtx;
+    RemansoEngine.prototype.ensureCtx = () => "contexto";
+    try {
+      expect(new SuiteEngine().ensureCtx()).toBe("contexto");
+    } finally {
+      RemansoEngine.prototype.ensureCtx = original;
+      vi.unstubAllGlobals();
+    }
+    expect(nav.audioSession.type).toBe("playback");
   });
 });

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES_HTML = ["/", "/tareas", "/cuentas-claras", "/compras", "/remanso"];
+const ROUTES_HTML = ["/", "/tareas", "/cuentas-claras", "/remanso"];
 const ACCOUNT = { "X-HomeSuite-Dev-Email": "pablo@example.test" };
 
 // Registra violaciones de la política de contenido, errores de consola y los
@@ -182,7 +182,7 @@ test.describe("sin cuenta", () => {
     await page.goto("/remanso");
     await page.getByRole("button", { name: "Comenzar · 5 min" }).click();
     await expect(page.locator("#rem-sesion")).toBeVisible();
-    await page.goto("/compras");
+    await page.goto("/tareas");
     expect(await page.evaluate(() => Number(sessionStorage.getItem("closed") || 0))).toBeGreaterThanOrEqual(1);
   });
 });
