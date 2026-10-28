@@ -72,16 +72,16 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 ## Sitio y app listos para producción — staging 2026-10-28
 
 **Estado:** en el PR #114 (rama `cambio/textos-enlaces-produccion`), **sin integrar** hasta que Pablo pruebe
-staging. Publicado desde el SHA `da8626c`, con el árbol limpio y la rama subida, en el mismo orden que tendrá
+staging. Publicado desde el SHA `b46c847`, con el árbol limpio y la rama subida, en el mismo orden que tendrá
 producción (primero la app, después el sitio):
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
-| HomeSuite App (`staging.homesuite.info`) | `b15dae8b` | «PR #114 · SHA da8626c · tools.js y TasKing por ambiente» |
-| Sitio (`site-staging.homesuite.info`) | `904ec469` | «PR #114 · SHA da8626c · enlaces por ambiente y textos activos» |
+| HomeSuite App (`staging.homesuite.info`) | `5ae5fa84` (antes `b15dae8b`, SHA `da8626c`) | «PR #114 · SHA b46c847 · sin Compras, audio iOS» |
+| Sitio (`site-staging.homesuite.info`) | `4888f083` (antes `904ec469`, SHA `da8626c`) | «PR #114 · SHA b46c847 · sin Compras» |
 
-Antes de publicar, las versiones activas eran las propias (`d5fa92f8` y `f2b339cb`). Backup previo (sin migraciones
-nuevas): `backups/homesuite-app/staging/20261028T131529Z/`. **Producción:** no se publicó nada.
+Antes de cada publicación, las versiones activas eran las propias. Backups previos (sin migraciones nuevas):
+`backups/homesuite-app/staging/20261028T131529Z/` y `20261028T134533Z/`. **Producción:** no se publicó nada.
 
 - **Qué cambia:** el HTML del sitio lleva los enlaces de producción y el worker de staging los reescribe; las landings
   de Cuentas Claras y Remanso ofrecen «Entrar a …» (versión beta) y la portada «Probá Remanso»; textos sin promesas
@@ -89,14 +89,18 @@ nuevas): `backups/homesuite-app/staging/20261028T131529Z/`. **Producción:** no 
   abría el de staging también en producción); los términos suman una frase sobre las versiones beta (**texto legal,
   pendiente de revisión de Pablo**). Changes: `textos-y-enlaces-de-produccion` (y ajustes a `identidad-textos-suite`
   y `acentos-y-catalogo-publico`).
-- **Coherencia sitio ↔ app:** `npm run verify:coherence:staging` pasó (21 comprobaciones: herramientas, estados,
-  rutas que existen y responden, ambiente, herramienta oculta). Para producción existe
+- **Compras retirado de todo** (Pablo, 2026-10-28, tras verla en staging): sin tarjeta, ruta ni landing en el sitio, ni
+  tarjeta ni ruta en la app; `/compras` responde 404 en ambos. **Audio en iOS:** Remanso pide
+  `navigator.audioSession.type = "playback"` al crear el audio (con detección de la función); **sin verificar en un iPhone**.
+- **Coherencia sitio ↔ app:** `npm run verify:coherence:staging` pasó (22 comprobaciones: herramientas, estados,
+  rutas que existen y responden, ambiente, Compras no nombrada). Para producción existe
   `npm run verify:coherence:production`; **falla mientras `app.homesuite.info` no responda**, lo esperado antes del deploy.
-- **Evidencia:** app 474, integración 307, raíz 230, sitio 39; E2E de la app 165, del sitio 17 y de Remanso 76
-  (Chromium y Firefox); OpenSpec estricto de los tres changes.
+- **Evidencia:** app 477, integración 307, raíz 230, sitio 39; E2E del sitio 17 y de Remanso 74 (Chromium y Firefox);
+  E2E de la app 165 (una prueba de `personas` falló una vez y pasó 2 de 2 al repetirla: flake); OpenSpec estricto de los cuatro changes.
 - **Pendiente para el primer deploy a producción (Pablo, 2026-10-28):** prueba en staging de todo el recorrido; el audio
-  de Remanso en iPhone, sin dispositivo propio (ver backlog); alcance del token de backup D1; comprobar el primer cron
-  del respaldo y las alertas; Google Cloud (URI de redirección y pantalla de consentimiento); rotación de credenciales
+  de Remanso en iPhone, sin dispositivo propio (ver backlog); alcance del token de backup D1 (en el panel el token figura
+  entre los de *Mi perfil*, es decir de usuario, no de cuenta); alertas del respaldo (**el primer cron programado corrió
+  el 2026-10-28 11:19 UTC y terminó con éxito**, run #40679091382); Google Cloud (URI de redirección y pantalla de consentimiento); rotación de credenciales
   expuestas; recorrido con dos cuentas reales. Exportación y eliminación de grupos: prioridad alta en el backlog, no
   bloquea el primer deploy pero sí aceptar datos reales. Orden: app, sitio y `verify:coherence:production`.
 
