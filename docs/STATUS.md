@@ -69,6 +69,37 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Sitio y app listos para producción — staging 2026-10-28
+
+**Estado:** en el PR #114 (rama `cambio/textos-enlaces-produccion`), **sin integrar** hasta que Pablo pruebe
+staging. Publicado desde el SHA `da8626c`, con el árbol limpio y la rama subida, en el mismo orden que tendrá
+producción (primero la app, después el sitio):
+
+| Unidad | Versión activa | Mensaje de versión |
+|---|---|---|
+| HomeSuite App (`staging.homesuite.info`) | `b15dae8b` | «PR #114 · SHA da8626c · tools.js y TasKing por ambiente» |
+| Sitio (`site-staging.homesuite.info`) | `904ec469` | «PR #114 · SHA da8626c · enlaces por ambiente y textos activos» |
+
+Antes de publicar, las versiones activas eran las propias (`d5fa92f8` y `f2b339cb`). Backup previo (sin migraciones
+nuevas): `backups/homesuite-app/staging/20261028T131529Z/`. **Producción:** no se publicó nada.
+
+- **Qué cambia:** el HTML del sitio lleva los enlaces de producción y el worker de staging los reescribe; las landings
+  de Cuentas Claras y Remanso ofrecen «Entrar a …» (versión beta) y la portada «Probá Remanso»; textos sin promesas
+  de herramientas futuras; la app tiene una lista única de herramientas y `/tareas` abre el TasKing del ambiente (antes
+  abría el de staging también en producción); los términos suman una frase sobre las versiones beta (**texto legal,
+  pendiente de revisión de Pablo**). Changes: `textos-y-enlaces-de-produccion` (y ajustes a `identidad-textos-suite`
+  y `acentos-y-catalogo-publico`).
+- **Coherencia sitio ↔ app:** `npm run verify:coherence:staging` pasó (21 comprobaciones: herramientas, estados,
+  rutas que existen y responden, ambiente, herramienta oculta). Para producción existe
+  `npm run verify:coherence:production`; **falla mientras `app.homesuite.info` no responda**, lo esperado antes del deploy.
+- **Evidencia:** app 474, integración 307, raíz 230, sitio 39; E2E de la app 165, del sitio 17 y de Remanso 76
+  (Chromium y Firefox); OpenSpec estricto de los tres changes.
+- **Pendiente para el primer deploy a producción (Pablo, 2026-10-28):** prueba en staging de todo el recorrido; el audio
+  de Remanso en iPhone, sin dispositivo propio (ver backlog); alcance del token de backup D1; comprobar el primer cron
+  del respaldo y las alertas; Google Cloud (URI de redirección y pantalla de consentimiento); rotación de credenciales
+  expuestas; recorrido con dos cuentas reales. Exportación y eliminación de grupos: prioridad alta en el backlog, no
+  bloquea el primer deploy pero sí aceptar datos reales. Orden: app, sitio y `verify:coherence:production`.
+
 ## Remanso, identidad de la suite y acentos por producto — staging 2026-10-27
 
 **Estado:** integrado en `main` con el PR #108 (merge `6eba8ec`, merge commit sin squash; el CI del
