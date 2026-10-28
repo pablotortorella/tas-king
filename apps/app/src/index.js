@@ -151,7 +151,9 @@ app.use("*", async (c, next) => {
   if (!body.includes(ACCOUNT_MARKER)) return;
   const session = await signedInUser(c);
   const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
-  c.res = new Response(fillAccount(body, profile), c.res);
+  const secret = sessionSecret(c.env);
+  const csrfField = session && secret ? `<input type="hidden" name="_csrf" value="${html(await createCsrfToken({ sessionId: session.id, secret }))}">` : "";
+  c.res = new Response(fillAccount(body, profile, csrfField), c.res);
 });
 
 // En las pantallas de un grupo: completa el encabezado con el grupo (nombre con avatar que lleva a la lista) y el menú con sus secciones

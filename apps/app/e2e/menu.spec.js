@@ -25,6 +25,20 @@ for (const [label, size] of [["teléfono", { width: 390, height: 780 }], ["escri
       }
     });
 
+    // Estuvo roto: el formulario del menú no llevaba el token CSRF y toda persona veía «Solicitud no verificada».
+    test("«Cerrar sesión» cierra la sesión y vuelve al inicio sin cuenta", async ({ page }) => {
+      const { book } = await openBook(page, "menu-salir");
+      await page.goto(book);
+      await openMenu(page);
+      await page.getByRole("button", { name: "Cerrar sesión" }).click();
+      await expect(page).toHaveURL(/\/$/u);
+      await expect(page.getByText("Solicitud no verificada")).toHaveCount(0);
+      await expect(page.locator(".account-link")).toHaveCount(0);
+      // Sin sesión, el grupo pide entrar de nuevo (redirige al acceso) en vez de abrirse.
+      const respuesta = await page.request.get(book, { maxRedirects: 0 });
+      expect(respuesta.status()).toBe(303);
+    });
+
     test("«Ver mi perfil» abre el perfil propio y el menú se puede cerrar con Escape", async ({ page }) => {
       const { book } = await openBook(page, "menu-perfil");
       await page.goto(book);
