@@ -72,13 +72,14 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 ## Sitio y app listos para producción — staging 2026-10-28
 
 **Estado:** en el PR #114 (rama `cambio/textos-enlaces-produccion`), **sin integrar** hasta que Pablo pruebe
-staging. Publicado desde el SHA `b46c847`, con el árbol limpio y la rama subida, en el mismo orden que tendrá
-producción (primero la app, después el sitio):
+staging. Publicado con el árbol limpio y la rama subida, en el mismo orden que tendrá producción (la app desde `b46c847`;
+el sitio se republicó después desde `c5d5882`, que sólo cambia textos: la portada cierra con «Tu hogar, a tu ritmo.», el pie
+usa «Herramientas pequeñas para cosas importantes.» y TasKing dice «por tu cuenta o con tu equipo»):
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
 | HomeSuite App (`staging.homesuite.info`) | `5ae5fa84` (antes `b15dae8b`, SHA `da8626c`) | «PR #114 · SHA b46c847 · sin Compras, audio iOS» |
-| Sitio (`site-staging.homesuite.info`) | `4888f083` (antes `904ec469`, SHA `da8626c`) | «PR #114 · SHA b46c847 · sin Compras» |
+| Sitio (`site-staging.homesuite.info`) | `3974a827` (SHA `c5d5882`; antes `4888f083` y `904ec469`) | «PR #114 · SHA c5d5882 · frases de cierre y TasKing sin género» |
 
 Antes de cada publicación, las versiones activas eran las propias. Backups previos (sin migraciones nuevas):
 `backups/homesuite-app/staging/20261028T131529Z/` y `20261028T134533Z/`. **Producción:** no se publicó nada.
