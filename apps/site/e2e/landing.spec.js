@@ -12,8 +12,8 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
   await expect(page.getByText("Compras")).toHaveCount(0); // oculto hasta que exista
   await expect(page.getByText("Remanso", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explorá las herramientas" })).toBeVisible();
-  // El acceso a la app de Remanso desde el hero existe solo en staging; sin ese ambiente no se ofrece.
-  await expect(page.getByRole("link", { name: /Probá Remanso/ })).toHaveCount(0);
+  // El hero lleva a Remanso en la app. Este servidor es el de producción (sin SITE_ENV=staging): el enlace es el de producción.
+  await expect(page.getByRole("link", { name: /Probá Remanso/ })).toHaveAttribute("href", "https://app.homesuite.info/remanso");
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
@@ -68,17 +68,18 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
   await expect(page.getByText("Por ahora, se abre en su dirección actual.")).toBeVisible();
 });
 
-for (const [slug, heading] of [
-  ["cuentas-claras", "Las cuentas claras, sin vueltas."],
-  ["remanso", "Un rato de calma para la casa."],
+for (const [slug, heading, nombre] of [
+  ["cuentas-claras", "Las cuentas claras, sin vueltas.", "Cuentas Claras"],
+  ["remanso", "Un rato de calma para la casa.", "Remanso"],
 ]) {
-  test(`/${slug} explica el producto sin fingir una app disponible`, async ({ page }) => {
+  test(`/${slug} explica el producto, dice que está en versión beta y lleva a la app`, async ({ page }) => {
     await page.goto(`/${slug}`);
 
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     await expect(page.getByText("Esta herramienta está en versión beta.")).toBeVisible();
     await expect(page.getByRole("link", { name: /Todas las herramientas/ })).toHaveAttribute("href", "/#herramientas");
     await expect(page.getByRole("link", { name: "Abrir Fun TasKing" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: `Entrar a ${nombre}` })).toHaveAttribute("href", `https://app.homesuite.info/${slug}`);
     await expect(page.locator("form, button")).toHaveCount(0);
   });
 }

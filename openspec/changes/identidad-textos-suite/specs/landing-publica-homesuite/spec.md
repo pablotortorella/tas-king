@@ -23,10 +23,11 @@ contenido SHALL poder leerse y navegarse sin JavaScript, autenticación ni cooki
 ### Requirement: La portada se conecta con Remanso
 
 El texto del hero SHALL mencionar los momentos de calma sin frases temporales sobre
-herramientas que «se están sumando». En staging, el hero SHALL ofrecer «Probá Remanso»,
-un enlace a Remanso en la app del mismo staging (`https://staging.homesuite.info/remanso`).
-En producción SHALL NOT ofrecer ese enlace ni apuntar a staging, porque la app no tiene
-producción todavía; allí Remanso se encuentra en su tarjeta de la portada y en su landing.
+herramientas que «se están sumando». El hero SHALL ofrecer «Probá Remanso», un enlace a
+Remanso en la app del propio ambiente: `https://app.homesuite.info/remanso` en producción y
+`https://staging.homesuite.info/remanso` en staging (revisado el 2026-10-28 por
+`textos-y-enlaces-de-produccion`; antes sólo existía en staging porque la app no tenía producción).
+El sitio de producción SHALL NOT contener enlaces a staging.
 
 #### Scenario: Hero en staging
 
@@ -36,7 +37,7 @@ producción todavía; allí Remanso se encuentra en su tarjeta de la portada y e
 #### Scenario: Hero en producción
 
 - **WHEN** se pide la portada a `homesuite.info`
-- **THEN** el hero no contiene ningún enlace a staging ni «Probá Remanso»
+- **THEN** el hero muestra «Probá Remanso» hacia `app.homesuite.info` y ningún enlace a staging
 
 ### Requirement: Los textos no presuponen convivencia ni dividen la suite
 

@@ -1,4 +1,6 @@
 const CANONICAL_HOST = "homesuite.info";
+const PRODUCTION_APP = "https://app.homesuite.info";
+const PRODUCTION_TASKS = "https://tas-king.pablotortorella.workers.dev";
 const STAGING_APP = "https://staging.homesuite.info";
 const STAGING_TASKS = "https://tas-king-staging.pablotortorella.workers.dev";
 
@@ -67,16 +69,10 @@ export default {
     }
 
     const asset = await env.ASSETS.fetch(request);
-    if (staging && request.method === "GET" && asset.status === 200 &&
-        ["/", "/index.html", "/cuentas-claras", "/cuentas-claras.html", "/remanso", "/remanso.html", "/tareas", "/tareas.html"].includes(url.pathname)) {
-      const original = await asset.text();
-      const content = url.pathname === "/" || url.pathname === "/index.html"
-        ? original.replace("<!-- staging-app-entry -->", `<a class="secondary-action" href="${STAGING_APP}/remanso">Probá Remanso <span aria-hidden="true">→</span></a>`)
-        : url.pathname.startsWith("/cuentas-claras")
-        ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/cuentas-claras">Entrar a Cuentas Claras <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging con Google.</p></div>`)
-        : url.pathname.startsWith("/remanso")
-          ? original.replace("<!-- staging-app-entry -->", `<div class="product-actions"><a class="primary-action" href="${STAGING_APP}/remanso">Entrar a Remanso <span aria-hidden="true">→</span></a><p class="product-action-note">Acceso de prueba en HomeSuite staging.</p></div>`)
-          : original.replace("https://tas-king.pablotortorella.workers.dev", STAGING_TASKS);
+    // El HTML publicado lleva los enlaces de producción. En staging se reescriben al staging de cada app, de modo que cada
+    // ambiente del sitio lleva a la app (y a TasKing) de su propio ambiente. En producción no se toca nada.
+    if (staging && request.method === "GET" && asset.status === 200 && (asset.headers.get("Content-Type") ?? "").startsWith("text/html")) {
+      const content = (await asset.text()).replaceAll(PRODUCTION_APP, STAGING_APP).replaceAll(PRODUCTION_TASKS, STAGING_TASKS);
       const headers = new Headers(asset.headers);
       headers.delete("Content-Length");
       headers.delete("Content-Encoding");

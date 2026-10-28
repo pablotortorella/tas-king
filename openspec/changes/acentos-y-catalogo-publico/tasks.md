@@ -14,5 +14,5 @@
 
 ## 3. Verificación y publicación
 
-- [ ] 3.1 Suites (sitio, app, integración, raíz), E2E del sitio y de Remanso, OpenSpec estricto y capturas en claro y oscuro.
-- [ ] 3.2 PR, staging de app y sitio y revisión de Pablo antes de integrar.
+- [x] 3.1 Suites (sitio, app, integración, raíz), E2E del sitio y de Remanso, OpenSpec estricto y capturas en claro y oscuro.
+- [x] 3.2 PR #108, staging de app y sitio y revisión de Pablo; integrado.

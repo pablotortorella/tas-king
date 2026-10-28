@@ -30,10 +30,14 @@ retirarlo del código. No asumir que borrarlo del último commit elimina la expo
 3. Integrar por revisión y validar el SHA final de `main`. Si cambia el código,
    configuración o migraciones validadas, repetir comprobaciones afectadas.
 4. Desplegar la integración final a staging y registrar SHA/versión, pruebas y
-   límites. No reutilizar una aprobación de otro artefacto.
+   límites. No reutilizar una aprobación de otro artefacto. Si se publicaron la app
+   y el sitio, correr `npm run verify:coherence:staging`: comprueba que cuenten lo
+   mismo (herramientas, estados y enlaces que responden).
 5. Publicar en producción sólo con aprobación explícita de Pablo aplicable a esa
    publicación; no inferirla de “probar staging”. Preparar primero un resultado
-   revisable. Una autorización previa explícita conserva su alcance.
+   revisable. Una autorización previa explícita conserva su alcance. La app y el sitio
+   se publican por separado: **primero la app y después el sitio** (la portada enlaza a la
+   app), y luego se corre `npm run verify:coherence:production`.
 6. Registrar versión y unidad publicadas, entorno, migraciones y resultado del
    smoke posterior. Comprobar el recorrido afectado, errores y configuración servida.
 

@@ -20,7 +20,7 @@ enlace desde otra página, y su ruta SHALL responder 404.
 
 La portada SHALL rotular Fun TasKing «Disponible» y Cuentas Claras y Remanso «Versión Beta». Ninguna
 página SHALL decir «Próximamente» ni «En preparación». Las landings de herramientas en beta SHALL decir
-«Esta herramienta está en versión beta.» y SHALL NOT ofrecer enlaces ni botones a la app fuera de staging.
+«Esta herramienta está en versión beta.» y SHALL ofrecer la entrada a la app de su ambiente (ver `textos-y-enlaces-de-produccion`).
 
 #### Scenario: Rótulos de la portada
 
@@ -29,8 +29,8 @@ página SHALL decir «Próximamente» ni «En preparación». Las landings de he
 
 #### Scenario: Landing de una herramienta en beta
 
-- **WHEN** se abre la landing de Cuentas Claras o de Remanso en producción
-- **THEN** dice «Esta herramienta está en versión beta.» y no contiene enlaces a la app
+- **WHEN** se abre la landing de Cuentas Claras o de Remanso
+- **THEN** dice «Esta herramienta está en versión beta.» y ofrece «Entrar a …» hacia la app de ese ambiente
 
 ### Requirement: Cada herramienta tiene su acento
 

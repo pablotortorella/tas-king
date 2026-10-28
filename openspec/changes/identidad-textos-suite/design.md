@@ -23,7 +23,8 @@ resolvió Pablo el 2026-10-27; la quinta sigue abierta.
 5. **Colores de acento por producto: pendiente.** El marco pide revisar la identidad visual actual
    antes de proponer; no se cambia paleta ni emblema en este change.
 
-6. **Conexión de la portada con Remanso, sólo en staging.** El hero suma «Probá Remanso» con el
+6. **Conexión de la portada con Remanso, sólo en staging** *(superada el 2026-10-28: ahora el HTML lleva el enlace de
+   producción y staging lo reescribe; ver `textos-y-enlaces-de-produccion`)*. El hero suma «Probá Remanso» con el
    mismo mecanismo que las landings (`<!-- staging-app-entry -->` que el worker reemplaza si
    `SITE_ENV=staging`). En producción no hay enlace: la app aún no tiene producción, y apuntar a
    staging desde el dominio público sería un enlace roto o no deseado. Alternativas descartadas:
