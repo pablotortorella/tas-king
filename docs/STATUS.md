@@ -112,6 +112,9 @@ orden. El PR #107 (registro del despliegue de `2b43586`) quedó desactualizado.
   funciones anunciadas como «en preparación» no forman parte de una prestación; el sitio ya no usa ese
   rótulo (Cuentas Claras y Remanso son «Versión Beta»), así que conviene que el texto legal diga algo
   sobre las versiones beta. No se tocó: es texto legal de Pablo.
+- **Sin verificar (heredado del registro del PR #107, ya cerrado):** WebKit/Safari, el recorrido con Google sobre el
+  SHA final de `main` (Pablo lo probó a mano sobre versiones anteriores) y Remanso en teléfono real (audio, iPhone en
+  silencio, pantalla bloqueada), que sigue **sin aceptar**.
 - **Límites:** el audio sólo se probó de oído en local (iPhone en silencio, pantalla bloqueada y
   volumen entre fondos siguen sin verificar). `openspec validate --all --strict` falla por
   `landings-productos-homesuite`, que no es de este PR; ese change y `identidad-textos-suite`
