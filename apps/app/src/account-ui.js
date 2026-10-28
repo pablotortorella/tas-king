@@ -16,11 +16,14 @@ export function accountLink(profile) {
   return `<a class="account-link" href="/perfil" aria-label="Mi perfil: ${escapeHtml(profile.displayName)}">${avatarHtml(profile)}<span>${escapeHtml(profile.displayName)}</span></a>`;
 }
 
-export function accountMenuItems() {
-  return '<a href="/perfil">Ver mi perfil</a><form action="/auth/logout" method="post"><button type="submit">Cerrar sesión</button></form>';
+// `csrfField` es el campo oculto con el token de la sesión: la ruta de salida lo exige, y un formulario sin él termina en «Solicitud no
+// verificada». Sin campo no se ofrece «Cerrar sesión» (mejor ausente que roto).
+export function accountMenuItems(csrfField) {
+  const logout = csrfField ? `<form action="/auth/logout" method="post">${csrfField}<button type="submit">Cerrar sesión</button></form>` : "";
+  return `<a href="/perfil">Ver mi perfil</a>${logout}`;
 }
 
 // Reemplaza las marcas del encabezado. Sin sesión desaparecen.
-export function fillAccount(html, profile) {
-  return html.replace(ACCOUNT_MARKER, profile ? accountLink(profile) : "").replace(ACCOUNT_MENU_MARKER, profile ? accountMenuItems() : "");
+export function fillAccount(html, profile, csrfField) {
+  return html.replace(ACCOUNT_MARKER, profile ? accountLink(profile) : "").replace(ACCOUNT_MENU_MARKER, profile ? accountMenuItems(csrfField) : "");
 }

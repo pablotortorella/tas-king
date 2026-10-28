@@ -70,6 +70,16 @@ describe("coherencia entre el sitio público y la app", () => {
     expect((await evaluar({ appHome })).fallas.join("\n")).toMatch(/inicio de la app/);
   });
 
+  it("en producción, ni el sitio ni la app pueden mencionar hosts de staging (los comentarios HTML no cuentan)", async () => {
+    const sitio = await sitioDelRepositorio();
+    expect((await evaluar()).fallas).toEqual([]);
+    const conEnlace = { ...sitio, home: sitio.home.replace("https://app.homesuite.info/remanso", "https://staging.homesuite.info/remanso") };
+    expect((await evaluar({ sitio: conEnlace })).fallas.join("\n")).toMatch(/staging/);
+    expect((await evaluar({ appHome: `${renderTools()}<a href="https://tas-king-staging.pablotortorella.workers.dev">TasKing</a>` })).fallas.join("\n")).toMatch(/staging/);
+    const soloComentario = { ...sitio, home: `${sitio.home}<!-- staging-app-entry -->` };
+    expect((await evaluar({ sitio: soloComentario })).fallas).toEqual([]);
+  });
+
   it("las URL de cada ambiente", () => {
     expect(urlsDelEntorno("production")).toMatchObject({ sitio: "https://homesuite.info", app: "https://app.homesuite.info", tasking: "https://tas-king.pablotortorella.workers.dev" });
     expect(urlsDelEntorno("staging")).toMatchObject({ sitio: "https://site-staging.homesuite.info", app: "https://staging.homesuite.info", tasking: "https://tas-king-staging.pablotortorella.workers.dev" });

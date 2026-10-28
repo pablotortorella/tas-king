@@ -40,6 +40,10 @@ retirarlo del código. No asumir que borrarlo del último commit elimina la expo
    app), y luego se corre `npm run verify:coherence:production`.
 6. Registrar versión y unidad publicadas, entorno, migraciones y resultado del
    smoke posterior. Comprobar el recorrido afectado, errores y configuración servida.
+   El smoke de una app con cuentas incluye **entrar y salir con una cuenta real** del
+   ambiente publicado (un formulario sin su token sólo falla al enviarlo) y, tras
+   publicar app y sitio, `npm run verify:coherence:<ambiente>`, que en producción
+   además falla si algún enlace visible apunta a staging.
 
 Sitio público y app se publican independientemente. Un cambio sólo documental no
 requiere despliegue. Los scripts deben hacer cumplir lo automatizable; los controles

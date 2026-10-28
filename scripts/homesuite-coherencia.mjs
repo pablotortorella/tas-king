@@ -66,6 +66,12 @@ export async function evaluarCoherencia({ entorno, sitio, appHome, sonda }) {
     verificar(RESPUESTAS_VALIDAS.includes(estado), `${url} responde ${estado}`);
   }
 
+  // Producción nunca apunta a staging: ni un enlace del sitio ni de la app (los comentarios HTML no se ven y no cuentan).
+  if (entorno === "production") {
+    const visible = `${paginas}\n${appHome}`.replace(/<!--[\s\S]*?-->/g, "");
+    verificar(!/staging/iu.test(visible), `producción no menciona hosts de staging${/staging/iu.test(visible) ? `: ${[...new Set(visible.match(/https?:\/\/[^\s"'<>]*staging[^\s"'<>]*/giu) ?? [])].join(", ")}` : ""}`);
+  }
+
   for (const retirada of RETIRADAS) {
     verificar(!retirada.patron.test(paginas), `${retirada.nombre} no se nombra en el sitio público`);
     verificar(!retirada.patron.test(appHome), `${retirada.nombre} no se nombra en el inicio de la app`);
