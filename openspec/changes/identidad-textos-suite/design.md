@@ -17,9 +17,14 @@ resolvió Pablo el 2026-10-27; la quinta sigue abierta.
    catálogo de la portada. Fun TasKing: tablero personal y tableros compartidos, que
    existen (README). Cuentas Claras: «cuando se comparten» repartos y saldos; no se promete un modo
    individual, informes ni presupuestos. Compras: sin promesa de colaboración (§9.5).
-4. **Pie «Tu hogar, a tu ritmo.»** reemplaza el lema anterior del pie;
+4. **Pie «Tu hogar, a tu ritmo.»** reemplaza el lema anterior del pie *(ajustado el 2026-10-28, ver 8)*;
    la frase se toma de las pautas de redacción (§5). Se quita también la excepción del glosario
    que permitía el lema anterior, que era una decisión pendiente de Pablo.
+8. **Frases de cierre (Pablo, 2026-10-28).** La nota que cerraba la portada («Sin ruido. Sin datos de más. Herramientas pequeñas para
+   cosas importantes.») pasa a ser «Tu hogar, a tu ritmo.». Para no repetirla pegada al pie, el pie de todas las páginas pasa a la frase de
+   marca que el marco decidió conservar, «Herramientas pequeñas para cosas importantes.». Alternativa descartada: dejar el pie igual y
+   repetir la frase en la portada. Además, «solo o con otras personas» pasa a «por tu cuenta o con tu equipo» (neutral en género; «equipo»
+   porque TasKing también se usa para trabajo, §8 del marco).
 5. **Colores de acento por producto: pendiente.** El marco pide revisar la identidad visual actual
    antes de proponer; no se cambia paleta ni emblema en este change.
 

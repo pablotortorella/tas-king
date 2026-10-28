@@ -45,7 +45,7 @@ Los textos de la portada y de las landings SHALL hablar del hogar sin presuponer
 («vida compartida», «en equipo», «organizarnos») y SHALL presentar compartir como una
 posibilidad cuando la función lo es (repartos de gastos, tableros compartidos), nunca como
 requisito. SHALL describir cada herramienta por lo que hace, sin llamarla «una mitad» de la
-suite ni agruparlas por categorías. El pie SHALL usar «Tu hogar, a tu ritmo.».
+suite ni agruparlas por categorías. La portada SHALL cerrar con «Tu hogar, a tu ritmo.» (una sola vez) y el pie de las páginas SHALL usar «Herramientas pequeñas para cosas importantes.» (ajuste del 2026-10-28). Los textos SHALL usar lenguaje no excluyente, sin formas con género como «solo/sola»: «por tu cuenta o con tu equipo».
 
 #### Scenario: Ninguna página presupone convivencia
 

@@ -192,7 +192,24 @@ describe("homesuite-site", () => {
     for (const frase of ["sin crear una cuenta", "no piden cuenta", "vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
       expect(visible.toLowerCase(), `«${frase}» en ${name}`).not.toContain(frase.toLowerCase());
     }
-    expect(visible).toContain("Tu hogar, a tu ritmo.");
+    // Pie de todas las páginas: la frase de marca. «Tu hogar, a tu ritmo.» cierra la portada (2026-10-28, Pablo).
+    expect(visible).toContain("Herramientas pequeñas para cosas importantes.");
+    expect(visible).not.toContain("Sin ruido");
+  });
+
+  it("la portada cierra con «Tu hogar, a tu ritmo.» una sola vez, sin repetirla en el pie", async () => {
+    const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(html).toMatch(/<section class="closing-note"[^>]*>\s*<p>Tu hogar, a tu ritmo\.<\/p>/u);
+    expect(html.match(/Tu hogar, a tu ritmo\./g)).toHaveLength(1);
+  });
+
+  // Lenguaje no excluyente: nada de «solo/sola»; se dice «por tu cuenta o con tu equipo» (2026-10-28, Pablo).
+  it("TasKing se describe sin género: «por tu cuenta o con tu equipo»", async () => {
+    for (const name of ["index", "tareas"]) {
+      const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+      expect(html, name).toContain("por tu cuenta o con tu equipo");
+      expect(html, name).not.toMatch(/\bsolo\b|\bsola\b|con otras personas/u);
+    }
   });
 
   // Catálogo público: sólo las tres herramientas funcionales. Compras no existe todavía y no se nombra en ningún lugar: ni tarjeta, ni
