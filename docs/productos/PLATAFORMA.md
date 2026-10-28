@@ -20,7 +20,7 @@ lista de tareas. Cambios de home, landings, descripciones y metadatos:
   suite ya tenía y se aprobó el 2026-10-27 (change `acentos-y-catalogo-publico`);
 - el copy de home y landings se alineó con esta dirección el 2026-10-27 (change
   `identidad-textos-suite`); el sitio público muestra sólo herramientas funcionales: Compras
-  espera oculto en `apps/site/pendientes/compras.html`; Cuentas Claras y Remanso se rotulan «Versión
+  no se nombra en ningún lugar del sitio ni de la app (se retiró el 2026-10-28); Cuentas Claras y Remanso se rotulan «Versión
   Beta» y Fun TasKing «Disponible».
 
 ## Plataforma
@@ -32,8 +32,11 @@ Descubrir una invitación no concede acceso al contenido privado.
 
 La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
 ruta; Cuentas Claras muestra su estado en `/cuentas-claras` después de elegirla.
-El sitio público de staging replica home y landings en otro Worker, y su landing
-de Cuentas Claras conduce a la app de ese mismo entorno. Consultar STATUS para
+El sitio público de staging replica home y landings en otro Worker. El HTML lleva los
+enlaces de producción (`app.homesuite.info`, TasKing de producción) y el worker de
+staging los reescribe a los del staging, así que cada sitio conduce a la app de su propio
+ambiente. `npm run verify:coherence:<ambiente>` comprueba que sitio y app cuenten lo
+mismo; la lista de herramientas de la app vive en `apps/app/src/tools.js`. Consultar STATUS para
 dominios y versión activa.
 
 Desde la raíz, comandos actualmente disponibles:

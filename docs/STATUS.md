@@ -69,6 +69,42 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Sitio y app listos para producción — staging 2026-10-28
+
+**Estado:** en el PR #114 (rama `cambio/textos-enlaces-produccion`), **sin integrar** hasta que Pablo pruebe
+staging. Publicado con el árbol limpio y la rama subida, en el mismo orden que tendrá producción (la app desde `b46c847`;
+el sitio se republicó después desde `c5d5882`, que sólo cambia textos: la portada cierra con «Tu hogar, a tu ritmo.», el pie
+usa «Herramientas pequeñas para cosas importantes.» y TasKing dice «por tu cuenta o con tu equipo»):
+
+| Unidad | Versión activa | Mensaje de versión |
+|---|---|---|
+| HomeSuite App (`staging.homesuite.info`) | `5ae5fa84` (antes `b15dae8b`, SHA `da8626c`) | «PR #114 · SHA b46c847 · sin Compras, audio iOS» |
+| Sitio (`site-staging.homesuite.info`) | `3974a827` (SHA `c5d5882`; antes `4888f083` y `904ec469`) | «PR #114 · SHA c5d5882 · frases de cierre y TasKing sin género» |
+
+Antes de cada publicación, las versiones activas eran las propias. Backups previos (sin migraciones nuevas):
+`backups/homesuite-app/staging/20261028T131529Z/` y `20261028T134533Z/`. **Producción:** no se publicó nada.
+
+- **Qué cambia:** el HTML del sitio lleva los enlaces de producción y el worker de staging los reescribe; las landings
+  de Cuentas Claras y Remanso ofrecen «Entrar a …» (versión beta) y la portada «Probá Remanso»; textos sin promesas
+  de herramientas futuras; la app tiene una lista única de herramientas y `/tareas` abre el TasKing del ambiente (antes
+  abría el de staging también en producción); los términos suman una frase sobre las versiones beta (**texto legal,
+  pendiente de revisión de Pablo**). Changes: `textos-y-enlaces-de-produccion` (y ajustes a `identidad-textos-suite`
+  y `acentos-y-catalogo-publico`).
+- **Compras retirado de todo** (Pablo, 2026-10-28, tras verla en staging): sin tarjeta, ruta ni landing en el sitio, ni
+  tarjeta ni ruta en la app; `/compras` responde 404 en ambos. **Audio en iOS:** Remanso pide
+  `navigator.audioSession.type = "playback"` al crear el audio (con detección de la función); **sin verificar en un iPhone**.
+- **Coherencia sitio ↔ app:** `npm run verify:coherence:staging` pasó (22 comprobaciones: herramientas, estados,
+  rutas que existen y responden, ambiente, Compras no nombrada). Para producción existe
+  `npm run verify:coherence:production`; **falla mientras `app.homesuite.info` no responda**, lo esperado antes del deploy.
+- **Evidencia:** app 477, integración 307, raíz 230, sitio 39; E2E del sitio 17 y de Remanso 74 (Chromium y Firefox);
+  E2E de la app 165 (una prueba de `personas` falló una vez y pasó 2 de 2 al repetirla: flake); OpenSpec estricto de los cuatro changes.
+- **Pendiente para el primer deploy a producción (Pablo, 2026-10-28):** prueba en staging de todo el recorrido; el audio
+  de Remanso en iPhone, sin dispositivo propio (ver backlog); alcance del token de backup D1 (en el panel el token figura
+  entre los de *Mi perfil*, es decir de usuario, no de cuenta); alertas del respaldo (**el primer cron programado corrió
+  el 2026-10-28 11:19 UTC y terminó con éxito**, run #40679091382); Google Cloud (URI de redirección y pantalla de consentimiento); rotación de credenciales
+  expuestas; recorrido con dos cuentas reales. Exportación y eliminación de grupos: prioridad alta en el backlog, no
+  bloquea el primer deploy pero sí aceptar datos reales. Orden: app, sitio y `verify:coherence:production`.
+
 ## Remanso, identidad de la suite y acentos por producto — staging 2026-10-27
 
 **Estado:** integrado en `main` con el PR #108 (merge `6eba8ec`, merge commit sin squash; el CI del

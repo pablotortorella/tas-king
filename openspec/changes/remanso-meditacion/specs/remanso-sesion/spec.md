@@ -259,6 +259,23 @@ sonido.
 - **WHEN** la persona abre `/remanso`
 - **THEN** no suena nada hasta que presiona «Comenzar» o «Probar gong»
 
+### Requirement: En iOS el audio no obedece el interruptor de silencio
+
+Al crear el audio (sólo dentro del gesto de Comenzar o Probar gong), Remanso SHALL pedir la categoría de audio «playback»
+(`navigator.audioSession.type`) cuando el navegador la ofrece, para que el interruptor de silencio de iOS no calle la sesión. Si el
+navegador no la ofrece o rechaza el cambio, SHALL continuar con normalidad. (Solución documentada por WebKit para iOS 17+; sin
+verificar en un iPhone real.)
+
+#### Scenario: Navegador con audioSession
+
+- **WHEN** la persona presiona «Comenzar» o «Probar gong» en un navegador que ofrece `navigator.audioSession`
+- **THEN** la categoría queda en «playback» antes de crear el audio
+
+#### Scenario: Navegador sin audioSession
+
+- **WHEN** el navegador no ofrece `navigator.audioSession` o rechaza el cambio
+- **THEN** la sesión transcurre con normalidad
+
 ### Requirement: La sesión no sobrevive a la pantalla
 
 Al salir de Remanso o cerrar la página, el audio SHALL liberarse y no seguir

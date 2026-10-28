@@ -292,11 +292,6 @@ h2 {
   color: #fff;
 }
 
-.tool-icon-shopping {
-  background: #dce9ed;
-  color: #3e6d73;
-}
-
 .tool-card-active .status {
   border-color: rgba(255, 255, 255, .24);
   color: rgba(255, 255, 255, .84);
@@ -616,54 +611,6 @@ h2 {
   transform: rotate(-5deg);
 }
 
-.product-art-shopping {
-  background: linear-gradient(145deg, #e2eff0, #c2dad1);
-}
-
-.shopping-note {
-  display: grid;
-  width: 62%;
-  min-height: 280px;
-  align-content: center;
-  grid-template-columns: 24px 1fr;
-  align-items: center;
-  gap: 20px 15px;
-  padding: 32px;
-  border-radius: 15px;
-  background: #fffaf0;
-  box-shadow: 0 24px 45px rgba(43, 85, 84, .17);
-  transform: rotate(5deg);
-}
-
-.note-dot {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #467d76;
-  border-radius: 6px;
-}
-
-.note-line {
-  width: 64%;
-  height: 10px;
-  border-radius: 999px;
-  background: #bed6cf;
-}
-
-.note-line-long { width: 94%; }
-.note-line-mid { width: 78%; }
-
-.shopping-spark {
-  position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: #f2c86b;
-  transform: rotate(22deg);
-}
-
-.shopping-spark-one { top: 14%; right: 14%; }
-.shopping-spark-two { bottom: 16%; left: 12%; width: 18px; height: 18px; }
-
 .product-art-calm {
   background: linear-gradient(145deg, #f1e6c4, #d8e4cf);
 }
@@ -965,8 +912,6 @@ footer a {
 
   .balance-token { padding: 7px 10px; font-size: .72rem; }
 
-  .shopping-note { min-height: 215px; padding: 25px; }
-
   .product-story { grid-template-columns: 1fr; gap: 24px; padding: 66px 0; }
 
   .product-story > p { margin: 0; }
@@ -1040,8 +985,6 @@ footer a {
   .product-art-tasks { background: linear-gradient(145deg, #2b4634, #243b2c); }
 
   .product-art-expenses { background: linear-gradient(145deg, #503a32, #3e3529); }
-
-  .product-art-shopping { background: linear-gradient(145deg, #2b4548, #263d35); }
 
   .product-art-calm { background: linear-gradient(145deg, #3a3a28, #2b3a30); }
 

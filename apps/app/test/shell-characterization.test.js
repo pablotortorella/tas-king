@@ -14,7 +14,6 @@ const PAGES = [
   ["raíz en modo local", "/", LOCAL_ENV],
   ["tareas", "/tareas", undefined],
   ["cuentas claras sin sesión", "/cuentas-claras", undefined],
-  ["compras", "/compras", undefined],
   ["acceso sin configurar", "/auth/google", undefined],
 ];
 
@@ -27,7 +26,7 @@ describe("shell compartido de HomeSuite", () => {
 
   it("las rutas HTML conservan política, no-store y cabeceras de seguridad", async () => {
     // Sin sesión, /cuentas-claras no muestra una página: redirige al acceso (303).
-    for (const [path, status] of [["/", 200], ["/tareas", 200], ["/cuentas-claras", 303], ["/compras", 200]]) {
+    for (const [path, status] of [["/", 200], ["/tareas", 200], ["/cuentas-claras", 303]]) {
       const response = await app.request(`${ORIGIN}${path}`);
       expect(response.status, path).toBe(status);
       expect(response.headers.get("Cache-Control"), path).toBe("private, no-store");
@@ -41,5 +40,10 @@ describe("shell compartido de HomeSuite", () => {
     const response = await app.request(`${ORIGIN}/perfil`);
     expect(response.status).toBe(302);
     expect(response.headers.get("Location")).toBe("/auth/google?returnTo=%2Fperfil");
+  });
+
+  it("Compras no existe en la app: ni ruta ni tarjeta", async () => {
+    expect((await app.request(`${ORIGIN}/compras`)).status).toBe(404);
+    expect(await (await app.request(`${ORIGIN}/`)).text()).not.toMatch(/Compras|\/compras/u);
   });
 });

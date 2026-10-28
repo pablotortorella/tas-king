@@ -112,11 +112,30 @@ function chasquido(engine, t, dest, nivel, largo, filtro) {
   src.start(t, Math.random() * 7); src.stop(t + largo + 0.01);
 }
 
-/** El motor del paquete con gong elegible, viento más suave, lluvia menos densa y chispazos en el fuego: sólo se reemplazan `gong()`, `crackle()`, `windGust()`, `drop()` y `buildAmbient()`. */
+/**
+ * En iOS 17+ el audio Web se trata como «ambiente» y obedece el interruptor de silencio; `navigator.audioSession.type = "playback"` lo
+ * evita (solución documentada en los reportes de WebKit; sin verificar en un iPhone real, ver el backlog). Sólo se pide si el navegador
+ * ofrece `audioSession`, y cualquier fallo se ignora: la sesión sigue con su categoría y el audio funciona como antes.
+ */
+export function activarSesionDeAudio(nav = globalThis.navigator) {
+  try {
+    if (nav?.audioSession && nav.audioSession.type !== "playback") nav.audioSession.type = "playback";
+  } catch {
+    // sin efecto: el navegador no permite cambiar la categoría
+  }
+}
+
+/** El motor del paquete con gong elegible, viento más suave, lluvia menos densa y chispazos en el fuego: sólo se reemplazan `gong()`, `crackle()`, `windGust()`, `drop()`, `buildAmbient()` y `ensureCtx()`. */
 export class SuiteEngine extends RemansoEngine {
   constructor() {
     super();
     this.gongId = DEFAULT_GONG;
+  }
+
+  // El audio se crea en el gesto de la persona (Comenzar o Probar gong): ahí se pide la categoría «playback» en iOS.
+  ensureCtx() {
+    activarSesionDeAudio();
+    return super.ensureCtx();
   }
 
   setGong(id) {

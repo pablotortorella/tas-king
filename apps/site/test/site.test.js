@@ -58,59 +58,48 @@ describe("homesuite-site", () => {
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
 
-  it("conecta la landing de Cuentas Claras con la app del mismo staging", async () => {
-    const body = '<p>En preparación.</p><!-- staging-app-entry -->';
-    const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/cuentas-claras"),
-      { ...assetEnvironment(body), SITE_ENV: "staging" });
+  // El HTML publicado es el de producción: los enlaces a las apps apuntan a sus dominios de producción. El worker de staging los
+  // reescribe a los del staging, de modo que cada ambiente del sitio lleva a la app de su propio ambiente.
+  const APP_PRODUCCION = "https://app.homesuite.info";
+  const TASKING_PRODUCCION = "https://tas-king.pablotortorella.workers.dev";
+
+  it("las landings y la portada enlazan a la app de producción de cada herramienta", async () => {
+    const pagina = (name) => readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+    const [home, cuentas, remanso, tareas] = await Promise.all(["index", "cuentas-claras", "remanso", "tareas"].map(pagina));
+    expect(cuentas).toContain(`class="primary-action" href="${APP_PRODUCCION}/cuentas-claras"`);
+    expect(cuentas).toContain("Entrar a Cuentas Claras");
+    expect(remanso).toContain(`class="primary-action" href="${APP_PRODUCCION}/remanso"`);
+    expect(remanso).toContain("Entrar a Remanso");
+    expect(home).toContain(`class="secondary-action" href="${APP_PRODUCCION}/remanso"`);
+    expect(home).toContain("Probá Remanso");
+    expect(tareas).toContain(`href="${TASKING_PRODUCCION}"`);
+    for (const html of [home, cuentas, remanso, tareas]) {
+      expect(html).not.toMatch(/staging/iu);
+      expect(html).not.toContain("<!-- staging-app-entry -->");
+    }
+  });
+
+  it.each([
+    ["index", "/", [`${APP_PRODUCCION}/remanso`]],
+    ["index", "/index.html", [`${APP_PRODUCCION}/remanso`]],
+    ["cuentas-claras", "/cuentas-claras", [`${APP_PRODUCCION}/cuentas-claras`]],
+    ["remanso", "/remanso.html", [`${APP_PRODUCCION}/remanso`]],
+    ["tareas", "/tareas", [TASKING_PRODUCCION]],
+  ])("en staging %s (%s) lleva a la app y a TasKing del propio staging; en producción no se reescribe nada", async (name, ruta, enlaces) => {
+    const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+    const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${ruta}`), { ...assetEnvironment(html), SITE_ENV: "staging" });
     expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
     expect(staging.headers.get("Cache-Control")).toBe("no-store");
-    expect(await staging.text()).toContain('href="https://staging.homesuite.info/cuentas-claras"');
-    const production = await worker.fetch(new Request("https://homesuite.info/cuentas-claras"), assetEnvironment(body));
-    expect(await production.text()).not.toContain('href="https://staging.homesuite.info/cuentas-claras"');
-  });
-
-  it("conecta la landing de Remanso con la app del mismo staging, sólo en staging", async () => {
-    const body = '<p>En preparación.</p><!-- staging-app-entry -->';
-    for (const path of ["/remanso", "/remanso.html"]) {
-      const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${path}`),
-        { ...assetEnvironment(body), SITE_ENV: "staging" });
-      expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
-      expect(staging.headers.get("Cache-Control")).toBe("no-store");
-      const html = await staging.text();
-      expect(html).toContain('href="https://staging.homesuite.info/remanso"');
-      expect(html).not.toMatch(/sin crear una cuenta|no piden cuenta/u); // la landing no habla de cuentas (2026-10-27)
-      expect(html).not.toContain("staging-app-entry");
+    const reescrito = await staging.text();
+    expect(reescrito).not.toContain("app.homesuite.info");
+    expect(reescrito).not.toContain("tas-king.pablotortorella.workers.dev");
+    for (const enlace of enlaces) {
+      const esperado = enlace.replace(APP_PRODUCCION, "https://staging.homesuite.info").replace(TASKING_PRODUCCION, "https://tas-king-staging.pablotortorella.workers.dev");
+      expect(reescrito).toContain(`href="${esperado}`);
     }
-    const production = await worker.fetch(new Request("https://homesuite.info/remanso"), assetEnvironment(body));
-    const html = await production.text();
-    expect(html).not.toContain("staging.homesuite.info");
-    expect(production.headers.get("X-Robots-Tag")).toBeNull();
-  });
-
-  it("conecta la portada con Remanso: en staging el hero abre la app, en producción no hay acceso a la app", async () => {
-    const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
-    expect(home).toContain("<!-- staging-app-entry -->");
-    for (const path of ["/", "/index.html"]) {
-      const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${path}`),
-        { ...assetEnvironment(home), SITE_ENV: "staging" });
-      expect(staging.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
-      expect(staging.headers.get("Cache-Control")).toBe("no-store");
-      const html = await staging.text();
-      expect(html).toContain('class="secondary-action" href="https://staging.homesuite.info/remanso"');
-      expect(html).toContain("Probá Remanso");
-      expect(html).not.toContain("staging-app-entry");
-    }
-    const production = await worker.fetch(new Request("https://homesuite.info/"), assetEnvironment(home));
-    const html = await production.text();
-    expect(html).not.toContain("staging.homesuite.info");
-    expect(html).not.toContain("Probá Remanso");
-    expect(production.headers.get("X-Robots-Tag")).toBeNull();
-  });
-
-  it("en la landing de Tareas apunta al TasKing de staging", async () => {
-    const staging = await worker.fetch(new Request("https://site-staging.homesuite.info/tareas"),
-      { ...assetEnvironment('<a href="https://tas-king.pablotortorella.workers.dev">Tareas</a>'), SITE_ENV: "staging" });
-    expect(await staging.text()).toContain('href="https://tas-king-staging.pablotortorella.workers.dev"');
+    const produccion = await worker.fetch(new Request(`https://homesuite.info${ruta}`), assetEnvironment(html));
+    expect(await produccion.text()).toBe(html);
+    expect(produccion.headers.get("X-Robots-Tag")).toBeNull();
   });
 
   it("mantiene la portada sin JavaScript y enlaza las cuatro landings", async () => {
@@ -203,20 +192,39 @@ describe("homesuite-site", () => {
     for (const frase of ["sin crear una cuenta", "no piden cuenta", "vida compartida", "en equipo", "del equipo", "organizarnos", "otra mitad", "mitad de la casa", "Cuidarla, la otra"]) {
       expect(visible.toLowerCase(), `«${frase}» en ${name}`).not.toContain(frase.toLowerCase());
     }
-    expect(visible).toContain("Tu hogar, a tu ritmo.");
+    // Pie de todas las páginas: la frase de marca. «Tu hogar, a tu ritmo.» cierra la portada (2026-10-28, Pablo).
+    expect(visible).toContain("Herramientas pequeñas para cosas importantes.");
+    expect(visible).not.toContain("Sin ruido");
   });
 
-  // Catálogo público: sólo las tres herramientas funcionales. Compras queda oculto hasta que exista (su landing espera en
-  // apps/site/pendientes/ y no se publica).
-  it("la portada y las landings muestran sólo las tres herramientas funcionales: Compras está oculto", async () => {
+  it("la portada cierra con «Tu hogar, a tu ritmo.» una sola vez, sin repetirla en el pie", async () => {
+    const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+    expect(html).toMatch(/<section class="closing-note"[^>]*>\s*<p>Tu hogar, a tu ritmo\.<\/p>/u);
+    expect(html.match(/Tu hogar, a tu ritmo\./g)).toHaveLength(1);
+  });
+
+  // Lenguaje no excluyente: nada de «solo/sola»; se dice «por tu cuenta o con tu equipo» (2026-10-28, Pablo).
+  it("TasKing se describe sin género: «por tu cuenta o con tu equipo»", async () => {
+    for (const name of ["index", "tareas"]) {
+      const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
+      expect(html, name).toContain("por tu cuenta o con tu equipo");
+      expect(html, name).not.toMatch(/\bsolo\b|\bsola\b|con otras personas/u);
+    }
+  });
+
+  // Catálogo público: sólo las tres herramientas funcionales. Compras no existe todavía y no se nombra en ningún lugar: ni tarjeta, ni
+  // landing, ni enlace, ni archivo (2026-10-28, Pablo).
+  it("la portada y las landings muestran sólo las tres herramientas funcionales y no nombran Compras", async () => {
     const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
     expect(home.match(/class="tool-card[ "]/g)).toHaveLength(3);
-    for (const name of ["index", "tareas", "cuentas-claras", "remanso"]) {
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso", "privacidad", "terminos"]) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html, name).not.toMatch(/href="\/compras"|Compras/u);
     }
-    await expect(readFile(new URL("../public/compras.html", import.meta.url))).rejects.toThrow();
-    await expect(readFile(new URL("../pendientes/compras.html", import.meta.url), "utf8")).resolves.toContain("Compras");
+    for (const ruta of ["../public/compras.html", "../pendientes/compras.html"]) {
+      await expect(readFile(new URL(ruta, import.meta.url))).rejects.toThrow();
+    }
+    expect(await readFile(new URL("../public/styles.css", import.meta.url), "utf8")).not.toMatch(/shopping/iu);
   });
 
   // Estado de cada herramienta (2026-10-27, Pablo): Fun TasKing está disponible; Cuentas Claras y Remanso funcionan y se rotulan
