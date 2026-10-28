@@ -69,6 +69,29 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Sitio público publicado en producción — 2026-10-28
+
+Pablo ordenó publicar el sitio (la app ya estaba en producción desde el mismo día; el orden acordado era app primero y sitio
+después).
+
+**Estado:** el sitio de `https://homesuite.info` está en la versión `f4f37db4`, desplegada desde `main` en `74d6ebd` (versión
+previa `91bc0078`, de Pablo, con los textos anteriores). Desde ahora la portada y las landings de Cuentas Claras y Remanso
+**enlazan a `app.homesuite.info`** y el TasKing de producción: la app es alcanzable para cualquier visitante.
+
+- **Antes:** árbol limpio, CI de `main` verde, ensayo `--dry-run` (12 archivos, sin landing de Compras) y versión activa previa
+  comprobada. Comando: `wrangler deploy --env "" --config apps/site/wrangler.jsonc` con mensaje de versión (sin el flag de
+  ambiente, Wrangler avisa que conviene indicarlo).
+- **Verificación posterior:** portada, `/tareas`, `/cuentas-claras`, `/remanso`, `/privacidad` y `/terminos` 200; `/compras`
+  y `/compras.html` 404; `www` redirige 308 al dominio principal; cabeceras de seguridad presentes; estados «Disponible»,
+  «Versión Beta» y «Versión Beta»; cierre «Tu hogar, a tu ritmo.»; cero menciones a staging y a Compras.
+  **`npm run verify:coherence:production` pasó (23 comprobaciones):** herramientas, estados y rutas coinciden con la app
+  de producción, los enlaces responden, producción no menciona staging y Compras no figura.
+- **Estado abierto (documentado por Pablo antes de abrir a datos reales):** el respaldo diario sigue con el secreto de GitHub
+  fallando en el runner; el secreto de Google no se rotó; no hay alertas; no existe exportación ni eliminación de grupos
+  (prioridad alta); no se hizo el recorrido con dos cuentas reales en producción. Hasta cerrarlo, no cargar datos
+  financieros reales. Si Google tiene la pantalla de consentimiento en pruebas, sólo las cuentas de prueba pueden entrar
+  (no verificado).
+
 ## Arreglo de «Cerrar sesión» publicado en producción — 2026-10-28
 
 El menú de cuenta enviaba el formulario de salida sin token CSRF y la ruta lo exige: en staging y en producción nadie podía
