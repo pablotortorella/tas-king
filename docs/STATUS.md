@@ -69,10 +69,43 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Primer deploy a producción de la app — 2026-10-28
+
+Pablo ordenó pasar a producción con el plan «mergear, republicar staging y desplegar la app; el sitio, después».
+
+**Estado:** la **app** de HomeSuite está en producción (`https://app.homesuite.info`), versión `f651a954`, desplegada desde
+`main` en `9f5a37e` (PR #114 y #115), con Fun TasKing, Cuentas Claras (beta) y Remanso (beta). La base de producción sigue
+**sin datos** y el **sitio público de producción no se publicó** (versión `91bc0078`, con los textos anteriores): ninguna
+página enlaza a la app, así que nadie llega a ella sin conocer la dirección. Staging está en el mismo SHA (app `a8525f52`,
+sitio `49894671`).
+
+- **Cómo se hizo:** árbol limpio y `main` sin cambios desde la revisión; CI de `main` verde; versión activa previa
+  `f292f8da` (sólo la inicial); secretos `GOOGLE_CLIENT_SECRET` y `SESSION_SECRET` presentes; sin migraciones pendientes;
+  ensayo `--dry-run` con los recursos de producción. Comando: `npm run deploy:homesuite-app:production` con mensaje de
+  versión. El primer intento lo bloqueó el clasificador de permisos de Claude Code (no se ejecutó nada) y se repitió tras
+  la orden explícita de Pablo.
+- **Respaldo previo:** `production/20261028T180331Z` en R2; se recuperó y se restauró en local con SHA-256 y verificaciones
+  correctos.
+- **Verificación posterior** (sólo lectura): `/healthz` 200; `/`, `/remanso`, `/tareas` 200; `/cuentas-claras` 303 al acceso
+  sin sesión; `/api/me` 401; `/compras` 404 (y ninguna mención a Compras); `/tareas` abre el TasKing de producción;
+  cabeceras `no-store`, `nosniff`, `X-Frame-Options: DENY` y política de contenido; el inicio de sesión redirige a Google con
+  el cliente de producción y `redirect_uri=https://app.homesuite.info/auth/callback`.
+- **No verificado:** que Google acepte esa URI y el estado de la pantalla de consentimiento (se ve en Google Cloud); un inicio
+  de sesión completo; el recorrido con dos cuentas reales.
+- **Pendiente antes de publicar el sitio y de cargar datos reales:**
+  1. **Respaldo diario.** El secreto `HOMESUITE_PROD_BACKUP_API_TOKEN` quedó con un valor que falla en el runner con
+     `Authentication error [10000]` (dos corridas, #40710163899 y #40711402374), aunque el token nuevo (`homesuite-token`,
+     de cuenta: D1 Write de cuenta completa y R2 Item Read/Write sólo del bucket de respaldos, **sin caducidad por decisión
+     de Pablo**) responde a la misma consulta desde la terminal. El cron de mañana fallará hasta recargar el secreto con el
+     valor verificado. El token viejo (de usuario, todas las cuentas, sin caducidad) sigue activo y no se revocó.
+  2. Rotar el secreto de Google, alertas mínimas y el recorrido con dos cuentas reales.
+  3. Exportación y eliminación de grupos (prioridad alta) antes de datos financieros reales.
+  4. Publicar el sitio (después de la app) y correr `npm run verify:coherence:production`.
+
 ## Sitio y app listos para producción — staging 2026-10-28
 
-**Estado:** en el PR #114 (rama `cambio/textos-enlaces-produccion`), **sin integrar** hasta que Pablo pruebe
-staging. Publicado con el árbol limpio y la rama subida, en el mismo orden que tendrá producción (la app desde `b46c847`;
+**Estado:** integrado en `main` con el PR #114 (merge `298e374`) tras la revisión de Pablo en staging; lo que sigue es el
+registro de ese staging previo a la integración. Publicado con el árbol limpio y la rama subida, en el mismo orden que tendrá producción (la app desde `b46c847`;
 el sitio se republicó después desde `c5d5882`, que sólo cambia textos: la portada cierra con «Tu hogar, a tu ritmo.», el pie
 usa «Herramientas pequeñas para cosas importantes.» y TasKing dice «por tu cuenta o con tu equipo»):
 
