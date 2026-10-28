@@ -69,6 +69,28 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
 
+## Arreglo de «Cerrar sesión» publicado en producción — 2026-10-28
+
+El menú de cuenta enviaba el formulario de salida sin token CSRF y la ruta lo exige: en staging y en producción nadie podía
+cerrar sesión (PR #117, merge `3d32ae5`, con pruebas de integración, unitaria y E2E; ver APRENDIZAJES). Pablo lo comprobó en
+staging antes de integrar.
+
+| Ambiente | Unidad | Versión | SHA |
+|---|---|---|---|
+| Producción | HomeSuite App (`app.homesuite.info`) | `979dc093` (antes `f651a954`) | `main` `3d32ae5` |
+| Staging | HomeSuite App | `0b36bf6e` | `main` `3d32ae5` |
+| Staging | Sitio | `21c07a27` | `main` `3d32ae5` |
+
+- **Producción:** sólo se desplegó la app; el sitio público de producción **sigue sin publicarse** (`91bc0078`). Antes: árbol
+  limpio, CI de `main` verde, versión previa propia, sin migraciones. Respaldo previo `production/20261028T183749Z`,
+  recuperado y restaurado en local con SHA-256 correcto.
+- **Verificación posterior** (sólo lectura): `/healthz`, `/`, `/remanso`, `/tareas` 200; `/cuentas-claras` 303, `/perfil` 302
+  y `/api/me` 401 sin sesión; `/compras` 404; sin menciones a staging; `POST /auth/logout` sin sesión no rompe (303).
+- **Sin verificar en producción:** entrar y salir con una cuenta real (no se puede iniciar sesión con Google desde el
+  entorno de trabajo); Pablo lo probó en staging.
+- Pendientes de la sección anterior sin cambios: respaldo diario con el secreto de GitHub, rotación del secreto de Google,
+  alertas, exportación y eliminación de grupos, y publicar el sitio.
+
 ## Primer deploy a producción de la app — 2026-10-28
 
 Pablo ordenó pasar a producción con el plan «mergear, republicar staging y desplegar la app; el sitio, después».
