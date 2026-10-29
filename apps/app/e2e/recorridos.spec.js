@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { lowContrast, openBook, openRecent } from "./helpers.js";
+import { lowContrast, openBook, openRecent, categoryCombo, chooseCategory } from "./helpers.js";
 
 // Recorridos «a mano» automatizados: lo que haría una persona curiosa o apurada con un navegador real. No miden un
 // contrato fino sino que nada se rompa de maneras que un humano notaría: teclado solo, toque, doble clic, volver
@@ -12,7 +12,7 @@ async function fillExpense(page, book, description, { type } = {}) {
   await page.goto(`${book}/ledger/new?type=expense`);
   await page.getByLabel("Descripción").fill(description);
   await page.getByLabel("Importe", { exact: true }).fill("50,00");
-  if (type !== undefined) await page.getByLabel("O escribí una nueva").fill(type);
+  if (type !== undefined) await categoryCombo(page).fill(type);
 }
 
 test("solo con el teclado: se completa el formulario, se elige la categoría y se guarda con Enter", async ({ page }) => {
@@ -22,8 +22,11 @@ test("solo con el teclado: se completa el formulario, se elige la categoría y s
   await page.keyboard.type("Viaje en taxi");
   await page.getByLabel("Importe", { exact: true }).focus();
   await page.keyboard.type("25,00");
-  await page.getByLabel("Elegí una").focus();
+  await categoryCombo(page).focus();
   await page.keyboard.type("Taxi");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(categoryCombo(page)).toHaveValue("Taxi");
   await expect(page.getByLabel("Elegí una").locator("option:checked")).toHaveText("Taxi");
   await page.getByLabel("Descripción").focus();
   await page.keyboard.press("Enter");
@@ -56,7 +59,8 @@ test.describe("con una pantalla táctil", () => {
     await page.getByLabel("Descripción").tap();
     await page.getByLabel("Descripción").fill("Compra con el dedo");
     await page.getByLabel("Importe", { exact: true }).fill("10,00");
-    await page.getByLabel("Elegí una").selectOption({ label: "Alimentos" });
+    await categoryCombo(page).tap();
+    await page.getByRole("option", { name: "Alimentos", exact: true }).tap();
     await page.getByRole("button", { name: "Guardar" }).tap();
     await expect(page.locator(".recent-strip")).toContainText("Compra con el dedo");
     await page.goto(`${book}/ledger/categories`);
@@ -146,8 +150,8 @@ test("nombres raros de categoría: emoji, etiquetas HTML, acentos y largo máxim
 test("el campo de categoría nueva no deja escribir más de 60 caracteres", async ({ page }) => {
   const { book } = await openBook(page, "largo");
   await page.goto(`${book}/ledger/new?type=expense`);
-  await page.getByLabel("O escribí una nueva").fill("x".repeat(100));
-  expect((await page.getByLabel("O escribí una nueva").inputValue()).length).toBe(60);
+  await categoryCombo(page).fill("x".repeat(100));
+  expect((await categoryCombo(page).inputValue()).length).toBe(60);
 });
 
 test("en una pantalla muy angosta (320 px) el formulario y la gestión siguen sin desbordar y legibles", async ({ page }) => {
@@ -186,7 +190,7 @@ test("fusionar mientras otra pestaña tiene el formulario abierto no pierde el m
   await writer.goto(`${book}/ledger/new?type=expense`);
   await writer.getByLabel("Descripción").fill("Con formulario viejo");
   await writer.getByLabel("Importe", { exact: true }).fill("30,00");
-  await writer.getByLabel("Elegí una").selectOption({ label: "Licor" });
+  await chooseCategory(writer, "Licor");
   await admin.goto(`${book}/ledger/categories`);
   await categoryRow(admin, "Licor").locator("summary").click();
   await categoryRow(admin, "Licor").getByLabel("Fusionar en").selectOption({ label: "Comidas y bebidas · Restaurantes" });
