@@ -165,6 +165,12 @@ const FORMS = `
 .entry-row a{grid-template-columns:44px 1fr}.entry-side{grid-column:2;text-align:left;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.entry-side .money,.entry-side small{display:inline}
 }
 .category-field select,.category-field input{width:100%}.category-field .category-hint{min-height:1.2em;margin:4px 0 0}.category-field.is-enhanced>label{display:none}
+.cat-combo{display:grid;gap:7px}.cat-input{position:relative}.cat-input input{padding-right:54px}
+.cat-help-btn{position:absolute;top:2px;right:2px;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--accent-text);font:inherit;font-size:1.15rem;font-weight:800;cursor:pointer}.cat-help-btn:hover,.cat-help-btn[aria-expanded=true]{background:var(--accent-soft)}
+.cat-help{padding:4px 12px 12px;max-height:min(50vh,360px);overflow-y:auto;border:1.5px solid var(--field);border-radius:12px;background:var(--surface)}
+.cat-help-group{margin:12px 0 6px;font-size:.8rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}.cat-help-items{display:flex;flex-wrap:wrap;gap:6px}
+.cat-help-item{min-height:44px;padding:6px 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:transparent;color:var(--accent-text);font:inherit;font-weight:600;cursor:pointer}.cat-help-item:hover{background:var(--accent-soft)}
+.cat-help-note{margin:14px 0 0;font-size:.9rem;color:var(--ink-3);font-weight:400}
 .cat-list{list-style:none;margin:6px 0 0;padding:4px;max-height:min(46vh,320px);overflow-y:auto;border:1.5px solid var(--field);border-radius:12px;background:var(--surface)}
 .cat-list-group{padding:10px 10px 4px;font-size:.8rem;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}.cat-list-empty{padding:12px 10px;color:var(--ink-3)}
 .cat-list-option{display:flex;align-items:center;min-height:44px;padding:8px 10px;border-radius:8px;cursor:pointer}.cat-list-option:hover,.cat-list-option.is-active{background:var(--accent-soft)}.cat-list-option.is-create{font-weight:700;color:var(--accent-text)}

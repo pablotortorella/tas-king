@@ -157,18 +157,51 @@ import { searchable } from "/text.js";
     wrap.className = "cat-combo";
     var label = document.createElement("label");
     label.textContent = "Buscá una o escribí una nueva";
+    var inputId = "category-input-" + comboCount;
+    label.htmlFor = inputId;
+    var box = document.createElement("div");
+    box.className = "cat-input";
     var input = document.createElement("input");
+    input.id = inputId;
     input.type = "text"; input.maxLength = 60; input.autocomplete = "off"; input.placeholder = "Ej.: Supermercado";
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-autocomplete", "list");
     input.setAttribute("aria-expanded", "false");
     input.setAttribute("aria-controls", listId);
-    label.appendChild(input);
+    var helpId = "category-help-" + comboCount;
+    var helpButton = document.createElement("button");
+    helpButton.type = "button"; helpButton.className = "cat-help-btn"; helpButton.textContent = "?";
+    helpButton.title = "Ver las categorías disponibles";
+    helpButton.setAttribute("aria-label", "Ver las categorías disponibles");
+    helpButton.setAttribute("aria-expanded", "false");
+    helpButton.setAttribute("aria-controls", helpId);
+    box.appendChild(input); box.appendChild(helpButton);
     var list = document.createElement("ul");
     list.id = listId; list.className = "cat-list"; list.hidden = true;
     list.setAttribute("role", "listbox");
     list.setAttribute("aria-label", "Categorías");
-    wrap.appendChild(label); wrap.appendChild(list);
+    var help = document.createElement("div");
+    help.id = helpId; help.className = "cat-help"; help.hidden = true;
+    var helpGroup = null;
+    items.forEach(function (item) {
+      if (!item.group) return;
+      if (!helpGroup || helpGroup.name !== item.group) {
+        var title = document.createElement("p");
+        title.className = "cat-help-group"; title.textContent = item.group;
+        var row = document.createElement("div");
+        row.className = "cat-help-items";
+        help.appendChild(title); help.appendChild(row);
+        helpGroup = { name: item.group, row: row };
+      }
+      var chip = document.createElement("button");
+      chip.type = "button"; chip.className = "cat-help-item"; chip.textContent = item.label;
+      chip.addEventListener("click", function () { pick({ value: item.value, label: item.label }); });
+      helpGroup.row.appendChild(chip);
+    });
+    var note = document.createElement("p");
+    note.className = "cat-help-note"; note.textContent = "Si la que buscás no está, escribila y se crea.";
+    help.appendChild(note);
+    wrap.appendChild(label); wrap.appendChild(box); wrap.appendChild(list); wrap.appendChild(help);
     field.insertBefore(wrap, hint);
     field.classList.add("is-enhanced");
     var chosen = select.options[select.selectedIndex];
@@ -182,6 +215,14 @@ import { searchable } from "/text.js";
       if (index >= 0) { input.setAttribute("aria-activedescendant", rows[index].node.id); rows[index].node.scrollIntoView({ block: "nearest" }); }
       else input.removeAttribute("aria-activedescendant");
     }
+    var helpPinned = false;
+    function showHelp(pinned) {
+      helpPinned = pinned;
+      close();
+      help.hidden = false;
+      helpButton.setAttribute("aria-expanded", "true");
+    }
+    function hideHelp() { helpPinned = false; help.hidden = true; helpButton.setAttribute("aria-expanded", "false"); }
     function close() { list.hidden = true; input.setAttribute("aria-expanded", "false"); setActive(-1); }
     function render() {
       var text = input.value;
@@ -224,14 +265,35 @@ import { searchable } from "/text.js";
       else { select.value = ""; typed.value = text.trim(); hint.textContent = "Se va a crear «" + text.trim() + "» en Mis categorías."; }
     }
     function pick(choice) {
+      hideHelp();
       input.value = choice.label;
       if (choice.create) settle(choice.label);
       else { select.value = choice.value; typed.value = ""; hint.textContent = ""; }
       close();
     }
-    input.addEventListener("input", function () { settle(input.value); render(); });
-    input.addEventListener("focus", function () { if (list.hidden) render(); });
-    input.addEventListener("click", function () { if (list.hidden) render(); });
+    // El (?): con toque o clic se abre y se queda; en una pantalla con mouse también se asoma al pasar y se va al salir.
+    var hoverable = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+    helpButton.addEventListener("click", function () {
+      if (!help.hidden && helpPinned) hideHelp();
+      else showHelp(true);
+    });
+    if (hoverable) {
+      var peek = [helpButton, help];
+      peek.forEach(function (node) {
+        node.addEventListener("mouseenter", function () { if (help.hidden) showHelp(false); });
+        node.addEventListener("mouseleave", function () { if (!helpPinned) hideHelp(); });
+      });
+    }
+    wrap.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || help.hidden || event.target === input) return;
+      event.preventDefault();
+      hideHelp();
+      helpButton.focus();
+    });
+    document.addEventListener("pointerdown", function (event) { if (!help.hidden && !wrap.contains(event.target)) hideHelp(); });
+    input.addEventListener("input", function () { hideHelp(); settle(input.value); render(); });
+    input.addEventListener("focus", function () { if (list.hidden) { hideHelp(); render(); } });
+    input.addEventListener("click", function () { if (list.hidden) { hideHelp(); render(); } });
     input.addEventListener("blur", close);
     input.addEventListener("keydown", function (event) {
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -243,9 +305,9 @@ import { searchable } from "/text.js";
       } else if (event.key === "Enter" && !list.hidden && active >= 0) {
         event.preventDefault();
         pick(rows[active].choice);
-      } else if (event.key === "Escape" && !list.hidden) {
+      } else if (event.key === "Escape" && (!list.hidden || !help.hidden)) {
         event.preventDefault();
-        close();
+        close(); hideHelp();
       }
     });
   });
