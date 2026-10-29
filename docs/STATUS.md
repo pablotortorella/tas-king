@@ -1,7 +1,26 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-27
+**Última actualización**: 2026-10-29
 **Producción registrada**: v2.3.2, desplegada y verificada.
+
+## Pedidos de Flori en staging — 2026-10-29
+
+**Estado:** implementado en dos ramas con PR abierto (#121 buscar categoría, #122 forma de pago) y publicado **solo en
+staging**, para probarlo con Pablo antes de integrar. **Producción:** no se publicó nada; falta aprobación explícita.
+
+| Unidad | Versión activa | Mensaje de versión |
+|---|---|---|
+| HomeSuite App (`staging.homesuite.info`) | `f230d24f` (antes `0b36bf6e`, `main` `3d32ae5`) | «PR #121+#122 · SHA 6595734 · buscar categoría y forma de pago» |
+
+- **SHA desplegado:** `6595734`, rama `staging/pedidos-flori` (`main` `74d6ebd` + `feature/buscar-categoria` + `feature/forma-de-pago`; un
+  conflicto trivial en `styles.js`). La rama sirve solo para staging: se integra por los dos PR.
+- **Migración:** `0012_payment_method.sql` aplicada en la base de staging antes del Worker; la columna `payment_method` existe.
+  Backup previo: `backups/homesuite-app/staging/20261029T191026Z/`.
+- **Pruebas sobre el SHA combinado:** 492 unitarias, 324 de integración y E2E de categorías, forma de pago y recorridos (30) en Chromium.
+  Una corrida unitaria posterior a `npm ci` falló en 2 pruebas que no logré reproducir en cuatro corridas siguientes (492 ok).
+- **Smoke:** `/healthz` y `/` responden 200; `/ledger-ui.js` sirve el buscador de categoría. Falta el recorrido con una cuenta real
+  de Google (entrar, cargar con categoría y forma de pago, corregir, salir), que solo puede hacer Pablo, y la prueba en un teléfono.
+- **Pendiente:** probar en teléfono real; integrar los PR; los ítems del backlog pasan a «Completado».
 
 ## HomeSuite: preparación de infraestructura productiva — 2026-10-27
 
