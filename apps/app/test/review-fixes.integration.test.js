@@ -244,11 +244,11 @@ describe("importación: nombres de categoría largos y repetir la confirmación"
 });
 
 describe("exportación CSV: la columna nueva va al final", () => {
-  it("las columnas anteriores conservan su posición y «categoria» es la última", () => {
+  it("las columnas anteriores conservan su posición y las nuevas («categoria», «forma_pago») van al final", () => {
     const csv = ledgerCsv({ entries: [{ id: "e", occurredAt: "2026-01-01", type: "expense", description: "x", note: "", currency: "COP", totalMinor: 100, status: "active", revision: 1, effects: [{ participantId: "p", amountMinor: 50 }], categoryInfo: { name: "Taxi" } }] });
     const [header] = csv.replace("﻿", "").split("\r\n");
-    expect(header.replaceAll('"', "").split(",")).toEqual(["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen", "categoria"]);
-    expect(csv).toContain('"Taxi"\r\n');
+    expect(header.replaceAll('"', "").split(",")).toEqual(["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen", "categoria", "forma_pago"]);
+    expect(csv).toContain('"Taxi",""\r\n');
   });
 });
 
