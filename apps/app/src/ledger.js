@@ -2,6 +2,7 @@ import { CURRENCY_MINOR_UNITS, FinancialValidationError, normalizeCurrency, vali
 import { splitAmount } from "./split.js";
 import { createPlatformId } from "./platform.js";
 import { categoryForEntry, categoryResolver, readCategories } from "./categories.js";
+import { parsePaymentMethod } from "./payment-methods.js";
 import { recordLedgerChange } from "./ledger-events.js";
 import { LedgerError } from "./errors.js";
 import { sha256Hex } from "./hash.js";
@@ -125,7 +126,7 @@ export async function saveEntry(db, { groupId, userId, input, idempotencyKey, en
   try { draft = validateEntryDraft(resolved.input, allowedIds); }
   catch (error) { if (error instanceof FinancialValidationError) throw new LedgerError(error.message); throw error; }
   const details = validateDetails(input);
-  const existing = entryId ? await db.prepare(`SELECT e.id, e.created_by_user_id, e.current_revision, e.status, e.category_id, e.import_batch_id, e.inferred FROM ledger_entries e WHERE e.ledger_id = ? AND e.id = ? AND ${VISIBLE_ENTRY_SQL}`).bind(ledger.id, entryId).first() : null;
+  const existing = entryId ? await db.prepare(`SELECT e.id, e.created_by_user_id, e.current_revision, e.status, e.category_id, e.payment_method, e.import_batch_id, e.inferred FROM ledger_entries e WHERE e.ledger_id = ? AND e.id = ? AND ${VISIBLE_ENTRY_SQL}`).bind(ledger.id, entryId).first() : null;
   if (entryId && !existing) throw new LedgerError("Movimiento no encontrado.", 404);
   if (existing && ledger.role !== "owner" && existing.created_by_user_id !== userId) throw new LedgerError("Sólo podés corregir tus movimientos.", 403);
   const id = entryId || createPlatformId("entry");
@@ -138,7 +139,11 @@ export async function saveEntry(db, { groupId, userId, input, idempotencyKey, en
     : await categoryForEntry(db, { ledgerId: ledger.id, userId, categoryId: input.categoryId, categoryName: input.categoryName, currentCategoryId: existing?.category_id ?? null });
   const categoryId = category?.id ?? null;
   const categoryName = categoryId ? (await readCategories(db, ledger.id)).find(row => row.id === categoryId)?.name ?? null : null;
-  const snapshot = { ...details, ...draft, split: resolved.split, categoryId, categoryName, status: "active" };
+  // Igual que la categoría: sin el campo en la solicitud se conserva la forma de pago que ya tenía; las transferencias no llevan.
+  const payment = parsePaymentMethod(input.paymentMethod);
+  if (!payment.valid) throw new LedgerError("Elegí una forma de pago de la lista.");
+  const paymentMethod = draft.type === "transfer" ? null : input.paymentMethod === undefined ? existing?.payment_method ?? null : payment.id;
+  const snapshot = { ...details, ...draft, split: resolved.split, categoryId, categoryName, paymentMethod, status: "active" };
   // La marca «inferido» de un importado desaparece cuando una corrección cambia quién pagó o el reparto.
   const inferred = existing?.inferred === 1 && (await sameComponents(db, ledger.id, id, draft)) ? 1 : 0;
   const hash = await requestHash({ entryId, expectedRevision, snapshot });
@@ -155,11 +160,11 @@ export async function saveEntry(db, { groupId, userId, input, idempotencyKey, en
   ];
   if (existing) {
     statements.push(db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, ?, ?, 'revised', ?)").bind(ledger.id, id, revision, userId, JSON.stringify(snapshot)));
-    statements.push(db.prepare("UPDATE ledger_entries SET entry_type = ?, currency_code = ?, total_minor = ?, description = ?, note = ?, occurred_at = ?, category_id = ?, inferred = ?, current_revision = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND current_revision = ?").bind(draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, categoryId, inferred, revision, ledger.id, id, expectedRevision));
+    statements.push(db.prepare("UPDATE ledger_entries SET entry_type = ?, currency_code = ?, total_minor = ?, description = ?, note = ?, occurred_at = ?, category_id = ?, payment_method = ?, inferred = ?, current_revision = ?, updated_at = CURRENT_TIMESTAMP WHERE ledger_id = ? AND id = ? AND current_revision = ?").bind(draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, categoryId, paymentMethod, inferred, revision, ledger.id, id, expectedRevision));
     statements.push(db.prepare("DELETE FROM entry_cash_parties WHERE ledger_id = ? AND entry_id = ?").bind(ledger.id, id));
     statements.push(db.prepare("DELETE FROM entry_allocations WHERE ledger_id = ? AND entry_id = ?").bind(ledger.id, id));
   } else {
-    statements.push(db.prepare("INSERT INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, note, occurred_at, created_by_user_id, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(ledger.id, id, draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, userId, categoryId));
+    statements.push(db.prepare("INSERT INTO ledger_entries (ledger_id, id, entry_type, currency_code, total_minor, description, note, occurred_at, created_by_user_id, category_id, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(ledger.id, id, draft.type, draft.currency, draft.totalMinor, details.description, details.note, details.occurredAt, userId, categoryId, paymentMethod));
     statements.push(db.prepare("INSERT INTO entry_revisions (ledger_id, entry_id, revision, actor_user_id, action, snapshot_json) VALUES (?, ?, 1, ?, 'created', ?)").bind(ledger.id, id, userId, JSON.stringify(snapshot)));
   }
   appendComponents(db, statements, ledger.id, id, draft);
@@ -250,7 +255,7 @@ export async function readLedger(db, { groupId, userId }) {
       validated = { effects: [] };
     }
     if (row.status === "active") for (const effect of validated.effects) addBalance(row.currency_code, effect.participantId, effect.amountMinor);
-    return { categoryId: row.category_id, categoryInfo: categoryInfoFor(resolveCategory, row.category_id), importBatchId: row.import_batch_id, sourceRowNumber: row.source_row_number, inferred: row.inferred === 1, id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
+    return { paymentMethod: row.payment_method ?? null, categoryId: row.category_id, categoryInfo: categoryInfoFor(resolveCategory, row.category_id), importBatchId: row.import_batch_id, sourceRowNumber: row.source_row_number, inferred: row.inferred === 1, id: row.id, type: row.entry_type, currency: row.currency_code, totalMinor: row.total_minor, description: row.description, note: row.note, occurredAt: row.occurred_at, status: row.status, revision: row.current_revision, createdByUserId: row.created_by_user_id, creatorName: row.creator_name, cashParties, allocations, effects: validated.effects };
   });
   return { ledger, participants, mergedParticipants, categories, entries, balances: [...balances].map(([key, amountMinor]) => { const [currency, participantId] = key.split(":"); return { currency, participantId, amountMinor }; }) };
 }

@@ -91,7 +91,7 @@ export async function previewMerge(db, args) {
 
 // Movimiento sin instantánea previa legible: se reconstruye con lo que se ve en la lectura del libro.
 function fallbackSnapshot(entry) {
-  return { description: entry.description, note: entry.note ?? "", occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations, categoryId: entry.categoryId ?? null };
+  return { description: entry.description, note: entry.note ?? "", occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations, categoryId: entry.categoryId ?? null, paymentMethod: entry.paymentMethod ?? null };
 }
 
 // «El movimiento está listo para pasar a la revisión siguiente»: existe nuestra revisión como la que sigue a la vigente.
