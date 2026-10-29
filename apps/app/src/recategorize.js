@@ -79,7 +79,7 @@ async function writeChanges(db, { ledger, userId, batchId, changes, categoryName
   const snapshots = await latestSnapshots(db, ledger.id, changes.map(change => change.entry.id));
   const prepared = changes.map(change => {
       const entry = change.entry;
-      const previous = snapshots.get(entry.id) ?? { description: entry.description, note: entry.note, occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations };
+      const previous = snapshots.get(entry.id) ?? { description: entry.description, note: entry.note, occurredAt: entry.occurredAt, type: entry.type, currency: entry.currency, totalMinor: entry.totalMinor, cashParties: entry.cashParties, allocations: entry.allocations, paymentMethod: entry.paymentMethod ?? null };
       const name = categoryName(change.categoryId);
       return {
         id: entry.id, rev: entry.revision, next: entry.revision + 1, categoryId: change.categoryId, previous: entry.categoryId ?? null,

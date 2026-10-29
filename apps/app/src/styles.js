@@ -164,7 +164,7 @@ const FORMS = `
 .section-top{align-items:flex-start}.book-head .actions{width:100%;flex-direction:column}.book-head .actions .button{width:100%}
 .entry-row a{grid-template-columns:44px 1fr}.entry-side{grid-column:2;text-align:left;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.entry-side .money,.entry-side small{display:inline}
 }
-.category-field select,.category-field input{width:100%}.category-field .category-hint{min-height:1.2em;margin:4px 0 0}.category-field.is-enhanced>label{display:none}
+.category-field select,.category-field input{width:100%}.payment-field select{width:100%}.category-field .category-hint{min-height:1.2em;margin:4px 0 0}.category-field.is-enhanced>label{display:none}
 .cat-combo{display:grid;gap:7px}.cat-input{position:relative}.cat-input input{padding-right:54px}
 .cat-help-btn{position:absolute;top:2px;right:2px;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--accent-text);font:inherit;font-size:1.15rem;font-weight:800;cursor:pointer}.cat-help-btn:hover,.cat-help-btn[aria-expanded=true]{background:var(--accent-soft)}
 .cat-help{padding:4px 12px 12px;max-height:min(50vh,360px);overflow-y:auto;border:1.5px solid var(--field);border-radius:12px;background:var(--surface)}
