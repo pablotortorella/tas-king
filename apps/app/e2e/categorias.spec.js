@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { useScheme, lowContrast, openRecent, addPerson } from "./helpers.js";
+import { useScheme, lowContrast, openRecent, addPerson, categoryCombo, chooseCategory } from "./helpers.js";
 
 const unique = () => `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 
@@ -18,8 +18,8 @@ async function addExpense(page, book, description, { choose, type } = {}) {
   await page.goto(`${book}/ledger/new?type=expense`);
   await page.getByLabel("Descripción").fill(description);
   await page.getByLabel("Importe", { exact: true }).fill("100,00");
-  if (choose) await page.getByLabel("Elegí una").selectOption({ label: choose });
-  if (type) await page.getByLabel("O escribí una nueva").fill(type);
+  if (choose) await chooseCategory(page, choose);
+  if (type) await categoryCombo(page).fill(type);
   await page.getByRole("button", { name: "Guardar" }).click();
   await openRecent(page, description);
 }
@@ -33,6 +33,8 @@ test("el formulario ofrece las categorías agrupadas y el movimiento guardado la
   await expect(select.locator("optgroup")).toHaveCount(9);
   await expect(select.locator("optgroup[label='Comidas y bebidas'] option", { hasText: "Restaurantes" })).toHaveCount(1);
   await expect(select.locator("option").first()).toHaveText("Sin categoría");
+  await categoryCombo(page).click();
+  await expect(page.getByRole("listbox", { name: "Categorías" }).locator(".cat-list-group")).toHaveCount(9);
   await addExpense(page, book, "Cena de prueba", { choose: "Restaurantes" });
   await expect(page.locator(".entry-category")).toContainText("Restaurantes");
   await expect(page.locator(".entry-category")).toContainText("Comidas y bebidas");
@@ -51,7 +53,7 @@ test("un movimiento sin categoría se muestra como «Sin categoría»", async ({
 test("escribir una variante ofrece la existente y escribir un nombre nuevo avisa que se creará", async ({ page }) => {
   const { book } = await openBook(page);
   await page.goto(`${book}/ledger/new?type=expense`);
-  const typed = page.getByLabel("O escribí una nueva");
+  const typed = categoryCombo(page);
   const hint = page.locator(".category-hint");
   await typed.fill("ALÍMENTOS ");
   await expect(hint).toContainText("Ya existe «Alimentos»");
@@ -60,6 +62,78 @@ test("escribir una variante ofrece la existente y escribir un nombre nuevo avisa
   await expect(hint).toContainText("Se va a crear «Peluquería canina»");
   await typed.fill("");
   await expect(hint).toHaveText("");
+});
+
+test("escribir parte del nombre filtra la lista sin scrollear y ofrece crear solo lo que no existe", async ({ page }) => {
+  const { book } = await openBook(page);
+  await page.goto(`${book}/ledger/new?type=expense`);
+  const combo = categoryCombo(page);
+  const options = page.getByRole("listbox", { name: "Categorías" }).getByRole("option");
+  await combo.fill("restau");
+  await expect(options.filter({ hasText: /^Restaurantes$/u })).toHaveCount(1);
+  await expect(options.filter({ hasText: /^Alimentos$/u })).toHaveCount(0);
+  await expect(options.filter({ hasText: /^Crear «restau»$/u })).toHaveCount(1);
+  await combo.fill("Casa");
+  await expect(options.filter({ hasText: /^Alquiler$/u })).toHaveCount(1);
+  await expect(options.filter({ hasText: /^Restaurantes$/u })).toHaveCount(0);
+  await combo.fill("restaurantes");
+  await expect(options.filter({ hasText: /^Crear/u })).toHaveCount(0);
+  await combo.fill("zzzz");
+  await expect(options).toHaveText(["Crear «zzzz»"]);
+  await combo.fill("");
+  await expect(page.locator(".category-hint")).toHaveText("");
+});
+
+const helpButton = page => page.getByRole("button", { name: "Ver las categorías disponibles" });
+const helpPanel = page => page.locator(".cat-help");
+
+test("el (?) muestra las categorías por grupo y tocar una la elige", async ({ page }) => {
+  const { book } = await openBook(page);
+  await page.goto(`${book}/ledger/new?type=expense`);
+  await expect(helpPanel(page)).toBeHidden();
+  await helpButton(page).click();
+  await expect(helpPanel(page)).toBeVisible();
+  await expect(helpButton(page)).toHaveAttribute("aria-expanded", "true");
+  await expect(helpPanel(page).locator(".cat-help-group")).toHaveCount(9);
+  await expect(helpPanel(page)).toContainText("Si la que buscás no está, escribila y se crea.");
+  await helpPanel(page).getByRole("button", { name: "Restaurantes", exact: true }).click();
+  await expect(helpPanel(page)).toBeHidden();
+  await expect(categoryCombo(page)).toHaveValue("Restaurantes");
+  await expect(page.getByLabel("Elegí una")).toHaveValue(await page.getByLabel("Elegí una").locator("option", { hasText: /^Restaurantes$/u }).getAttribute("value"));
+  await expect(page.getByRole("listbox", { name: "Categorías" })).toBeHidden();
+});
+
+test("el (?) se cierra al tocarlo de nuevo, con Escape, al tocar afuera y al escribir", async ({ page }) => {
+  const { book } = await openBook(page);
+  await page.goto(`${book}/ledger/new?type=expense`);
+  await helpButton(page).click();
+  await helpButton(page).click();
+  await expect(helpPanel(page)).toBeHidden();
+  await helpButton(page).click();
+  await page.keyboard.press("Escape");
+  await expect(helpPanel(page)).toBeHidden();
+  await helpButton(page).click();
+  await page.getByLabel("Descripción").click();
+  await expect(helpPanel(page)).toBeHidden();
+  await helpButton(page).click();
+  await categoryCombo(page).fill("tax");
+  await expect(helpPanel(page)).toBeHidden();
+  await expect(page.getByRole("listbox", { name: "Categorías" })).toBeVisible();
+});
+
+test("en una pantalla con mouse, pasar sobre el (?) muestra las categorías y salir las oculta", async ({ page }) => {
+  const { book } = await openBook(page);
+  await page.goto(`${book}/ledger/new?type=expense`);
+  await helpButton(page).hover();
+  await expect(helpPanel(page)).toBeVisible();
+  await helpPanel(page).hover();
+  await expect(helpPanel(page)).toBeVisible();
+  await page.getByLabel("Descripción").hover();
+  await expect(helpPanel(page)).toBeHidden();
+  await helpButton(page).hover();
+  await helpButton(page).click();
+  await page.getByLabel("Descripción").hover();
+  await expect(helpPanel(page)).toBeVisible();
 });
 
 test("crear una categoría desde el selector la deja disponible y asignada", async ({ page }) => {
@@ -127,6 +201,8 @@ test("el titular renombra, fusiona y archiva desde la pantalla y los movimientos
   await expect(page.locator(".notice")).toContainText("archivada");
   await page.goto(`${book}/ledger/new?type=expense`);
   await expect(page.getByLabel("Elegí una").locator("option", { hasText: /^Taxi$/u })).toHaveCount(0);
+  await categoryCombo(page).fill("Taxi");
+  await expect(page.getByRole("option", { name: "Taxi", exact: true })).toHaveCount(0);
 });
 
 test("renombrar a un nombre que ya existe muestra el motivo y no cambia nada", async ({ page }) => {
@@ -145,8 +221,8 @@ test("corregir un movimiento reabre la categoría elegida y cambiarla queda en e
   const { book } = await openBook(page);
   await addExpense(page, book, "Para corregir", { choose: "Taxi" });
   await page.getByRole("link", { name: "Corregir", exact: true }).click();
-  await expect(page.getByLabel("Elegí una")).toHaveValue(await page.getByLabel("Elegí una").locator("option", { hasText: /^Taxi$/u }).getAttribute("value"));
-  await page.getByLabel("Elegí una").selectOption({ label: "Hotel" });
+  await expect(categoryCombo(page)).toHaveValue("Taxi");
+  await chooseCategory(page, "Hotel");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await openRecent(page, "Para corregir");
   await expect(page.locator(".entry-category")).toContainText("Hotel");
@@ -163,6 +239,7 @@ for (const scheme of ["light", "dark"]) {
       for (const path of [`${book}/ledger/new?type=expense`, `${book}/ledger/categories`, book]) {
         await page.goto(path);
         if (path.endsWith("/categories")) await page.locator(".cat-row summary").first().click();
+        if (path.includes("/ledger/new")) await helpButton(page).click();
         const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
         expect(sizes.content, `desborde en ${path}`).toBeLessThanOrEqual(sizes.viewport);
         const small = await page.$$eval("a.button, button, input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, summary", nodes => nodes
@@ -182,7 +259,7 @@ test("el selector y la gestión no producen errores de consola ni violaciones de
   page.on("pageerror", error => problems.push(error.message));
   const { book } = await openBook(page);
   await page.goto(`${book}/ledger/new?type=expense`);
-  await page.getByLabel("O escribí una nueva").fill("algo");
+  await categoryCombo(page).fill("algo");
   await page.goto(`${book}/ledger/categories`);
   await page.locator(".cat-row summary").first().click();
   await page.goto(`${book}?categoria=none`);
