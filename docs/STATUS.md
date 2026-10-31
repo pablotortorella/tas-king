@@ -2,7 +2,7 @@
 
 **Última actualización**: 2026-10-31
 
-## Jardín Zen beta v0.2 y tarjetas 2×2 — en `main` y en staging; producción pendiente (2026-10-31)
+## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
 Producto de la dimensión **Disfrutar**: ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
 tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/jardin-zen-beta/`). Motor
@@ -28,19 +28,30 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
   `pagehide` o cambio de pestaña. El E2E corre sin WebGL, así que sólo ejerce la alternativa 2.5D y no cubre la cámara.
 - **Staging sin pisar nada:** antes de publicar, la app servía `main 215390f` y el sitio `main 3d32ae5`; `main` ya contenía
   buscar categoría (#121) y forma de pago (#122) con su migración `0012`, así que nada de Flori se perdió.
-- **Producción:** no se publicó nada de esto. Producción sigue en la app `979dc093` (`main 3d32ae5`) y el sitio `f4f37db4`.
-  Publicar `main` llevaría además buscar categoría, forma de pago (con la migración `0012_payment_method.sql`, que cambia
-  el esquema de la base de producción) y Jardín Zen: requiere aprobación explícita y respaldo previo.
+- **Producción (publicado el 2026-10-31 por orden de Pablo, desde `main` `5185d5d`, árbol limpio).** App `app.homesuite.info`:
+  `2f225b89` (antes `979dc093`, `main 3d32ae5`). Sitio `homesuite.info`: `a1f89eb3` (antes `f4f37db4`, `main 74d6ebd`). Orden: app y después sitio.
+  - **Respaldo y migración.** `npm run deploy:homesuite-app:production` se detuvo en el respaldo previo, antes de migrar y de
+    desplegar (producción no cambió): el restore drill falla con `no such table: main.splitwise_import_batches`, el fallo que arregla
+    #123 (**sin mergear**). Se corrió entonces el respaldo con el script de la rama de #123: completo, restauración local verificada y
+    copia en R2 (`homesuite-app-backups/production/20261031T193343Z`). Después, por separado, `0012_payment_method.sql` (columna
+    opcional y compatible con el código anterior) y `wrangler deploy`. Base de producción antes de migrar: 2 usuarios, 2 grupos, 1 movimiento.
+  - **Verificación:** app `/healthz`, `/`, `/jardin-zen` y sus assets, `/remanso` y `/tareas` 200, `/cuentas-claras` 303; CSS 2×2 y motor con
+    `fitCamera` servidos, CSP intacta, cero menciones a staging. Sitio `/`, `/tareas`, `/cuentas-claras`, `/remanso`, `/jardin-zen`,
+    `/privacidad` y `/terminos` 200, `/compras` 404, `www` 308; la landing enlaza a `app.homesuite.info/jardin-zen`.
+    `npm run verify:coherence:production` **29/29**.
+  - **No hecho:** el recorrido de entrar y salir con una cuenta real de Google en producción (sólo lo puede hacer Pablo); WebGL 2 y tacto
+    en un celular real. Mientras #123 siga sin mergearse, el script de deploy de producción vuelve a fallar en el respaldo. El respaldo diario de
+    GitHub falló en sus dos últimas corridas (30 y 31/10; el secreto del token sigue sin resolverse).
 - **Propuesto, sin implementar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo), para
   incorporar después de ordenar las ramas viejas.
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
-## Pedidos de Flori: en `main` y en staging; producción pendiente — 2026-10-29
+## Pedidos de Flori: en producción desde 2026-10-31 — 2026-10-29
 
 **Estado (actualizado 2026-10-31):** los dos PR (#121 buscar categoría, #122 forma de pago) están **mergeados en `main`** (`215390f`)
-y staging los sirve, hoy dentro de `main` `5b0559c` (ver el bloque de Jardín Zen). **Producción:** no se publicó nada; falta aprobación
-explícita, y publicar lleva la migración `0012_payment_method.sql`. La tabla de abajo es el registro del primer deploy de prueba (2026-10-29).
+y staging los sirve, hoy dentro de `main` `5b0559c` (ver el bloque de Jardín Zen). **Producción:** publicado el 2026-10-31 junto con Jardín Zen
+(app `2f225b89`), con la migración `0012_payment_method.sql` aplicada (ver el bloque de Jardín Zen). La tabla de abajo es el registro del primer deploy de prueba (2026-10-29).
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|

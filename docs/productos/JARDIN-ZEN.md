@@ -26,9 +26,8 @@ Archivos propios:
 - `apps/site/public/jardin-zen.html`: landing pública.
 - `docs/diseno/jardin-zen/artefactos/HomeSuite-Jardin-Zen-Beta-v0.2.html`: copia del prototipo autónomo original; no es un asset servido por la app.
 
-**Estado (2026-10-31):** en `main` (PR #124) y en staging (`staging.homesuite.info/jardin-zen`, `site-staging.homesuite.info/jardin-zen`); versiones y
-pruebas en [STATUS](../STATUS.md). Se probó a mano en Chrome de escritorio; falta WebGL 2 y tacto en un celular real. **No está en producción**
-y no hay autorización para publicarlo.
+**Estado (2026-10-31):** en `main` (PR #124), en staging y **en producción** (`app.homesuite.info/jardin-zen` y la landing `homesuite.info/jardin-zen`);
+versiones y pruebas en [STATUS](../STATUS.md). Se probó a mano en Chrome de escritorio; falta WebGL 2 y tacto en un celular real.
 
 **Propuesto, sin implementar:** v0.4 (mango invertido, giro suave y rastrillo visible u oculto), cambio OpenSpec
 `jardin-zen-rastrillo-v04` y documento en `docs/diseno/jardin-zen/propuestas/`.

@@ -15,20 +15,24 @@ STATE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/homesuite-restore-drill.XXXXXX")"
 RESULT_FILE="$STATE_DIR/checks.json"
 trap 'rm -rf "$STATE_DIR"' EXIT
 
-echo "Importando backup en D1 local aislada..."
-npx wrangler d1 execute homesuite-app-local \
-  --local \
-  --persist-to "$STATE_DIR" \
-  --config apps/app/wrangler.jsonc \
-  --file "$SQL_FILE" \
-  --yes
-
-npx wrangler d1 execute homesuite-app-local \
-  --local \
-  --persist-to "$STATE_DIR" \
-  --config apps/app/wrangler.jsonc \
-  --command "PRAGMA quick_check; PRAGMA foreign_key_check; SELECT COUNT(*) AS essential_tables FROM sqlite_master WHERE type = 'table' AND name IN ('users', 'groups', 'memberships', 'invitations', 'sessions');" \
-  --json > "$RESULT_FILE"
+echo "Importando backup en una base SQLite local aislada..."
+# El export de D1 crea las tablas en el orden de las migraciones: una clave foránea agregada después (por ejemplo
+# `pending_import_batch_id`) puede apuntar a una tabla que se crea más abajo, y con claves foráneas activas la carga falla
+# en cuanto hay filas. La carga las desactiva y la comprobación posterior (`PRAGMA foreign_key_check`) las verifica.
+node --no-warnings -e '
+  const fs = require("node:fs");
+  const { DatabaseSync } = require("node:sqlite");
+  const db = new DatabaseSync(process.argv[3]);
+  db.exec("PRAGMA foreign_keys = OFF");
+  db.exec(fs.readFileSync(process.argv[1], "utf8"));
+  const run = sql => db.prepare(sql).all().map(row => ({ ...row }));
+  const checks = [
+    { results: run("PRAGMA quick_check") },
+    { results: run("PRAGMA foreign_key_check") },
+    { results: run("SELECT COUNT(*) AS essential_tables FROM sqlite_master WHERE type = \u0027table\u0027 AND name IN (\u0027users\u0027, \u0027groups\u0027, \u0027memberships\u0027, \u0027invitations\u0027, \u0027sessions\u0027)") },
+  ];
+  fs.writeFileSync(process.argv[2], JSON.stringify(checks));
+' "$SQL_FILE" "$RESULT_FILE" "$STATE_DIR/restore.db"
 
 node -e '
   const fs = require("node:fs");

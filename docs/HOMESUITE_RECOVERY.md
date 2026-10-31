@@ -23,8 +23,9 @@ npm run db:restore-drill:homesuite-app -- ~/dev/tas-king-backups/homesuite-app/s
 ```
 
 El backup falla cerrado si no obtiene bookmark, SQL o un archivo no vacío. El
-manifiesto registra ambiente, base, hora UTC y SHA-256. El restore drill usa un
-directorio temporal nuevo, nunca `--remote`, y verifica:
+manifiesto registra ambiente, base, hora UTC y SHA-256. El restore drill carga el SQL
+en una base SQLite local de un directorio temporal nuevo (`node:sqlite`, nunca
+`--remote`) y verifica:
 
 - `PRAGMA quick_check` con resultado `ok`;
 - ninguna fila en `PRAGMA foreign_key_check`;
@@ -32,6 +33,14 @@ directorio temporal nuevo, nunca `--remote`, y verifica:
 
 D1 no autoriza `PRAGMA integrity_check`; `quick_check` es la comprobación de
 integridad compatible usada deliberadamente.
+
+La carga desactiva las claves foráneas y las comprueba después con
+`foreign_key_check`: el export de D1 crea las tablas en el orden de las migraciones,
+así que una clave agregada más tarde puede apuntar a una tabla que se crea más abajo
+(`ledger_participants.pending_import_batch_id` → `splitwise_import_batches`), y con
+filas reales la carga con claves activas falla. Con la base vacía no se notaba; hay
+una prueba de regresión con un export en ese orden y otra que exige que una fila
+huérfana siga fallando.
 
 El 2026-10-20 el deploy exportó staging antes de la migración `0003`. El backup
 UTC `20261020T053821Z` produjo un SQL de 3210 bytes con SHA-256
