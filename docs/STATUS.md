@@ -32,7 +32,7 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
   `2f225b89` (antes `979dc093`, `main 3d32ae5`). Sitio `homesuite.info`: `a1f89eb3` (antes `f4f37db4`, `main 74d6ebd`). Orden: app y después sitio.
   - **Respaldo y migración.** `npm run deploy:homesuite-app:production` se detuvo en el respaldo previo, antes de migrar y de
     desplegar (producción no cambió): el restore drill falla con `no such table: main.splitwise_import_batches`, el fallo que arregla
-    #123 (**sin mergear**). Se corrió entonces el respaldo con el script de la rama de #123: completo, restauración local verificada y
+    #123 (mergeado después). Se corrió entonces el respaldo con el script de la rama de #123: completo, restauración local verificada y
     copia en R2 (`homesuite-app-backups/production/20261031T193343Z`). Después, por separado, `0012_payment_method.sql` (columna
     opcional y compatible con el código anterior) y `wrangler deploy`. Base de producción antes de migrar: 2 usuarios, 2 grupos, 1 movimiento.
   - **Verificación:** app `/healthz`, `/`, `/jardin-zen` y sus assets, `/remanso` y `/tareas` 200, `/cuentas-claras` 303; CSS 2×2 y motor con
@@ -40,8 +40,9 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
     `/privacidad` y `/terminos` 200, `/compras` 404, `www` 308; la landing enlaza a `app.homesuite.info/jardin-zen`.
     `npm run verify:coherence:production` **29/29**.
   - **No hecho:** el recorrido de entrar y salir con una cuenta real de Google en producción (sólo lo puede hacer Pablo); WebGL 2 y tacto
-    en un celular real. Mientras #123 siga sin mergearse, el script de deploy de producción vuelve a fallar en el respaldo. El respaldo diario de
-    GitHub falló en sus dos últimas corridas (30 y 31/10; el secreto del token sigue sin resolverse).
+    en un celular real. #123 se mergeó después (2026-10-31), así que el script de deploy ya no debería
+    fallar en ese paso; el respaldo diario de GitHub falló en sus dos últimas corridas (30 y 31/10) por el secreto del token, que sigue
+    sin resolverse, y habrá que mirar la próxima corrida.
 - **Propuesto, sin implementar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo), para
   incorporar después de ordenar las ramas viejas.
 

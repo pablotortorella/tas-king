@@ -238,22 +238,22 @@ montos ignorando separadores de miles.
 | — | 🎯 Progreso de objetivos con varias columnas de cierre + validación de columna al guardar tarjetas | 2026-10-23 — v2.3.2 (PRs #77 y #78). El progreso cuenta todas las columnas `is_done` (servidor y cliente); crear/editar/reordenar rechazan columnas inexistentes con 400 y el import manda las tarjetas desconocidas a la primera columna. Ver `docs/STATUS.md` |
 | — | 🔎 Cuentas Claras: buscar la categoría escribiendo | 2026-10-29 — pedido de Flori (PR #121, con un (?) que muestra las categorías disponibles). Un solo campo que filtra mientras se escribe y ofrece crear si nada coincide; el `<select>` sigue como alternativa sin JavaScript. En producción desde 2026-10-31 |
 | — | 💳 Cuentas Claras: forma de pago del movimiento | 2026-10-29 — pedido de Flori (PR #122, migración `0012_payment_method.sql`). Lista fija y opcional (Efectivo, Débito, Crédito, Transferencia, Billetera virtual); no aplica a transferencias entre personas. En producción desde 2026-10-31 |
+| — | 💾 Restore drill con exports reales de D1 | 2026-10-31 — PR #123. El respaldo diario y el previo al deploy fallaban desde la migración `0008` (`no such table: main.splitwise_import_batches`): el export deja filas antes de la tabla a la que apuntan. Ahora el drill carga con las claves foráneas apagadas y las verifica después con `PRAGMA foreign_key_check`. Comprobado con el respaldo real de producción (`production/20261031T193343Z` en R2) |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
 
-_Sin ítems pendientes de publicar: todo lo que hay en `main` está en producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [STATUS](STATUS.md))._ Entró en esa publicación, todavía sin probar con una cuenta real de Google ni en un celular:
+En producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [STATUS](STATUS.md)), todavía sin probar con una cuenta real de Google ni en un celular:
 
 - **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): falta WebGL 2 y tacto en un celular real.
 - **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
 - **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122, migración `0012_payment_method.sql` ya aplicada en la base de producción).
 
-Además, en ramas que todavía no están en `main`:
+En `main` pero **sin publicar en producción**:
 
 | # | Ítem | Estado |
 |---|---|---|
-| — | 💾 Restore drill con el orden de tablas del dump | PR #123 (`fix/restore-drill-orden-fk`), sin mergear. El backup diario de producción fallaba desde la `0008` porque el export deja `ledger_entries` antes de `splitwise_import_batches` (FK hacia adelante); #123 carga el dump con las claves foráneas apagadas y las verifica después con `PRAGMA foreign_key_check`. Hasta mergear, el cron programado (que corre `main`) seguirá fallando en el drill. |
-| — | 🔒 Cookies malformadas, HSTS por hostname, Hono parchado y backups fuera de Dropbox | Rama `fix/revision-seguridad` (2026-10-30), sin mergear ni desplegar. `decodeURIComponent` ya no puede tumbar sesión/OAuth con un `%` roto (`decodeCookieValue`); en rutas legacy se quitó la doble decodificación (Hono ya decodifica `:email`; un `%` literal daba 500); HSTS compara el hostname, no `url.includes("localhost")`; se retiró `X-XSS-Protection` (obsoleto); Hono 4.13.14 (GHSA-5r4p-p66f-jhc7). Los dumps pasaron de `~/Dropbox/dev/tas-king/backups/` a `~/dev/tas-king-backups/` (scripts y docs actualizados; los de Dropbox se borraron tras verificar checksums). Con tests de regresión. |
+| — | 🔒 Cookies malformadas, HSTS por hostname, Hono parchado y backups fuera de Dropbox | PR #128 (2026-10-30), en `main` y **sin desplegar**: hay que publicar la app y la TasKing de producción para que rijan. `decodeURIComponent` ya no puede tumbar sesión/OAuth con un `%` roto (`decodeCookieValue`); en rutas legacy se quitó la doble decodificación (Hono ya decodifica `:email`; un `%` literal daba 500); HSTS compara el hostname, no `url.includes("localhost")`; se retiró `X-XSS-Protection` (obsoleto); Hono 4.13.14 (GHSA-5r4p-p66f-jhc7). Los dumps pasaron de `~/Dropbox/dev/tas-king/backups/` a `~/dev/tas-king-backups/` (scripts y docs actualizados; los de Dropbox se borraron tras verificar checksums). Con tests de regresión. |
 
 ---
 
