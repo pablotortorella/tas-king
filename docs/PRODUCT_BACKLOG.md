@@ -240,7 +240,11 @@ montos ignorando separadores de miles.
 
 ## 🛠️ Implementado, pendiente de publicar
 
-_Sin ítems pendientes — todo lo implementado está en producción desde el deploy v2.3.0 del 2026-09-18._
+En `main` y en staging desde 2026-10-31 (app `fdafbca7`, sitio `1b67cd8e`; detalle en [STATUS](STATUS.md)), **no publicado en producción**, que sigue en `main` `3d32ae5`. Publicar `main` lleva todo junto y requiere aprobación explícita y respaldo previo:
+
+- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124), pendiente de probar en un celular real.
+- **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
+- **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122), esta última con la migración `0012_payment_method.sql`, que cambia el esquema de la base de producción.
 
 ---
 
@@ -273,6 +277,7 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟡 Media prioridad
 
+- **Jardín Zen v0.4: orientación, giro y visibilidad del rastrillo** (ajustes acordados con Pablo, 2026-10-31; **propuesto, sin implementar**). Mango invertido, giro suave del rastrillo y control «Rastrillo visible / oculto» que se recuerda en el navegador. Se incorpora cuando termine el orden de ramas y worktrees viejos. Cambio OpenSpec `jardin-zen-rastrillo-v04`; documento original en `docs/diseno/jardin-zen/propuestas/`. Falta verificar WebGL 2 y el giro en un celular real.
 - **Performance: localizar latencia residual del backend** — 🟡 esfuerzo medio. Después de aplicar y comprobar el set de mejoras estructurales, instrumentar etapas si la latencia sigue alta: rate limiting, autenticación/revocación, preparación de usuario y handler. Distinguir ejecución SQL de espera Worker-D1. Preservar revocación inmediata. Evaluar junto con “Rate limiting más granular” y el hallazgo técnico de overhead D1.
 - **Performance frontend en tableros grandes** — 🟡 esfuerzo por determinar. La primera mejora todavía llama a `render()` completo después de una mutación. Capturar tiempo de clic a actualización, tareas largas, tamaño de respuesta y costo de render con un tablero representativo antes de diseñar un render incremental.
 - **Guardados con recursos relacionados** — 🟡 esfuerzo medio, condicionado por medición. Adjuntos, checklists y objetivos conservan varias escrituras y una relectura de la tarjeta afectada. Medir esos flujos por separado; agrupar operaciones o respuestas solo si aparecen como parte relevante de la latencia.
