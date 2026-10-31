@@ -25,11 +25,16 @@ sitio↔app, docs y `openspec/changes/jardin-zen-beta/`.
 - Gestos táctiles reales, batería/rendimiento en celular de gama media.
 - Audio tras `pagehide`/cambio de pestaña (comportamiento a validar/corregir).
 
-**Desplegado:** **nada**. Staging **no** fue desplegado desde este entorno (sin credenciales
-Cloudflare: `wrangler` no autenticado, `CLOUDFLARE_API_TOKEN` ausente). Además, staging está
-compartido: sirve `6595734` (`staging/pedidos-flori`, buscar categoría + forma de pago). El
-despliegue debe **preservar** ese trabajo (Jardín Zen no comparte archivos con él). Producción
-fuera de alcance.
+**Desplegado:** **nada**. Staging **no** fue desplegado desde este entorno: sin credenciales
+Cloudflare (`wrangler` no autenticado, `CLOUDFLARE_API_TOKEN` ausente) y `wrangler login` es
+interactivo. Único bloqueo para publicar.
+
+**Sobre el trabajo de Flori (sin riesgo de pisarlo):** se verificó que `main` (`215390f`) **ya
+contiene** buscar categoría (#121) y forma de pago (#122): `payment-methods.js` y la migración
+`0012_payment_method.sql` están en `main`, y `staging/pedidos-flori` quedó subsumida. Por eso
+`feature/jardin-zen-beta-v02` (= `main` + Jardín Zen) es un **superset** de lo que corre hoy en
+staging (`6595734`): desplegarla no pierde nada de Flori. (El merge de `pedidos-flori` probado en
+un worktree fue un no-op salvo un bloque CSS `.cat-*` que `main` ya trae.) Producción fuera de alcance.
 
 **Pendiente de aceptación:** probar en celular real (WebGL + tacto + audio) y desplegar/verificar staging con SHA.
 
