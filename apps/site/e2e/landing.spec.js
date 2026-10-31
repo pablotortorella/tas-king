@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
+test("presenta HomeSuite y lleva a las cuatro landings", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", {
@@ -18,6 +18,7 @@ test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
   await expect(page.getByRole("link", { name: "Conocé Remanso" })).toHaveAttribute("href", "/remanso");
+  await expect(page.getByRole("link", { name: "Conocé Jardín Zen" })).toHaveAttribute("href", "/jardin-zen");
 });
 
 test("entrega la portada con cabeceras de seguridad", async ({ request }) => {
@@ -71,6 +72,7 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
 for (const [slug, heading, nombre] of [
   ["cuentas-claras", "Las cuentas claras, sin vueltas.", "Cuentas Claras"],
   ["remanso", "Un rato de calma para la casa.", "Remanso"],
+  ["jardin-zen", "Un pequeño paisaje para crear y soltar.", "Jardín Zen"],
 ]) {
   test(`/${slug} explica el producto, dice que está en versión beta y lleva a la app`, async ({ page }) => {
     await page.goto(`/${slug}`);
@@ -84,7 +86,7 @@ for (const [slug, heading, nombre] of [
   });
 }
 
-for (const slug of ["tareas", "cuentas-claras", "remanso"]) {
+for (const slug of ["tareas", "cuentas-claras", "remanso", "jardin-zen"]) {
   test(`/${slug} sirve HTML con cabeceras de seguridad`, async ({ request }) => {
     const response = await request.get(`/${slug}`);
 

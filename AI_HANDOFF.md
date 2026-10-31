@@ -2,7 +2,49 @@
 
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-## Última sesión - HomeSuite listo para integrar diseño (2026-10-23)
+## Última sesión — HomeSuite en producción (2026-10-28)
+
+Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
+
+### Dónde estamos
+- **Producción:** app `app.homesuite.info` en la versión `979dc093` (`main` `3d32ae5`) y sitio `homesuite.info` en `f4f37db4`
+  (`main` `74d6ebd`). La base de producción está vacía. `npm run verify:coherence:production` pasó (23 comprobaciones).
+- **Staging:** app `0b36bf6e` y sitio `21c07a27`, ambos de `main` `3d32ae5`.
+- **Hoy se hizo (PRs #108 a #119):** ajustes de pantalla y sonido de Remanso (el inicio ya entra en 390 × 720 también con la
+  fuente del CI), identidad de la suite (textos, acentos por producto, Compras retirado de todo), enlaces del sitio por
+  ambiente, verificación de coherencia sitio ↔ app, arreglo de «Cerrar sesión» (faltaba el token CSRF), y el primer deploy
+  de la app y del sitio a producción, cada uno con respaldo previo y verificación.
+
+### Para mañana (orden sugerido)
+1. **Respaldo diario.** El secreto de GitHub `HOMESUITE_PROD_BACKUP_API_TOKEN` falla en el runner (`Authentication error
+   [10000]`) aunque el token nuevo (`homesuite-token`, de cuenta) responde desde la terminal. Recargarlo con el valor ya
+   verificado, **desde `/home/pablo/Dropbox/dev/tas-king`**, una línea por vez: `read -rsp "Pegá el token y Enter: " CF_TOKEN; echo`,
+   comprobar el D1 con `curl` (debe decir `"success":true`), `printf %s "$CF_TOKEN" | gh secret set HOMESUITE_PROD_BACKUP_API_TOKEN`,
+   `unset CF_TOKEN` y `gh workflow run homesuite-production-backup.yml --ref main`. Recién con un run en `success`, revocar el token
+   viejo (de usuario, todas las cuentas) y el `Cloudflare Agent Token`; después corregir `HOMESUITE_RECOVERY.md`.
+2. **Google Cloud:** que la URI `https://app.homesuite.info/auth/callback` esté autorizada, estado de la pantalla de consentimiento, y rotar
+   el secreto de Google (estuvo un rato en GitHub bajo otro nombre).
+3. **Alertas mínimas** y el **recorrido con dos cuentas reales en producción** (incluye probar «Cerrar sesión» ahí).
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta en el backlog).
+5. **Remanso:** sonidos reales (prioridad alta), prueba en iPhone con alguien que tenga uno (`audioSession` implementado, sin verificar) y
+   revisión de Pablo de la frase sobre versiones beta en los términos.
+6. **Consola de administración** de la persona dueña (nuevo en el backlog, prioridad por confirmar).
+7. **Orden:** carpetas de trabajo viejas (`git worktree list` muestra unas 18, varias de ramas ya integradas) y PRs abiertos viejos (#64, #69, #71, #75, #76, #81, #83, #85).
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio, `main` al día, CI verde,
+  `wrangler deployments list` y migraciones; mensaje de versión con SHA; después `verify:coherence:<ambiente>`. El primer intento de
+  deploy productivo lo bloqueó el clasificador de permisos de Claude Code y se repitió tras la orden explícita.
+- **Comandos para Pablo: indicar siempre el directorio** (tiene muchas carpetas del proyecto) y dárselos de a uno.
+- Un cambio lógico por rama; PR con merge commit; el registro en STATUS va en un PR de documentación aparte.
+- Cuatro credenciales distintas: token de Cloudflare de respaldo (GitHub), `GOOGLE_CLIENT_SECRET` y `SESSION_SECRET` (secretos del Worker de
+  producción) y el login de `wrangler` (su computadora).
+
+### Carpetas
+- Trabajo de esta sesión: `/home/pablo/Dropbox/dev/tas-king/.worktrees/remanso` (en `main` o en la rama del PR de turno). Checkout
+  principal: `/home/pablo/Dropbox/dev/tas-king`.
+
+## Sesión anterior - HomeSuite listo para integrar diseño (2026-10-23)
 
 ### Empezar por aquí
 
