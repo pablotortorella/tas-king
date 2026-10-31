@@ -95,7 +95,7 @@ async function main(entorno) {
     return respuesta.text();
   };
   const sitio = { home: await leer(`${urls.sitio}/`), landings: {} };
-  for (const slug of ["tareas", "cuentas-claras", "remanso"]) sitio.landings[slug] = await leer(`${urls.sitio}/${slug}`);
+  for (const slug of ["tareas", "cuentas-claras", "remanso", "jardin-zen"]) sitio.landings[slug] = await leer(`${urls.sitio}/${slug}`);
   const appHome = await leer(`${urls.app}/`);
   const sonda = async (url) => (await fetch(url, { redirect: "manual" })).status;
   const { resultados, fallas } = await evaluarCoherencia({ entorno, sitio, appHome, sonda });

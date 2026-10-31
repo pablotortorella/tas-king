@@ -8,7 +8,7 @@ import { evaluarCoherencia, urlsDelEntorno } from "../../../scripts/homesuite-co
 const leer = (name) => readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
 const sitioDelRepositorio = async () => ({
   home: await leer("index"),
-  landings: { tareas: await leer("tareas"), "cuentas-claras": await leer("cuentas-claras"), remanso: await leer("remanso") },
+  landings: { tareas: await leer("tareas"), "cuentas-claras": await leer("cuentas-claras"), remanso: await leer("remanso"), "jardin-zen": await leer("jardin-zen") },
 });
 const responden = () => 200;
 const evaluar = async (cambios = {}, entorno = "production") => evaluarCoherencia({ entorno, sitio: await sitioDelRepositorio(), appHome: renderTools(), sonda: responden, ...cambios });
