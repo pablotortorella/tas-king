@@ -236,17 +236,17 @@ montos ignorando separadores de miles.
 
 | — | 📱 Tip diario completo en móvil, etiquetas en tarjeta nueva y teclado en checklists | 2026-10-23 — v2.3.1 (PRs #65, #66 y #67). `100dvh` en el `body`; `draftLabels` con el patrón de `draftGoals`; Tab/Enter/Backspace en ítems de checklist (ADR-014). Falta auditar el resto de los campos del modal con el mismo criterio de teclado. Ver `docs/STATUS.md` |
 | — | 🎯 Progreso de objetivos con varias columnas de cierre + validación de columna al guardar tarjetas | 2026-10-23 — v2.3.2 (PRs #77 y #78). El progreso cuenta todas las columnas `is_done` (servidor y cliente); crear/editar/reordenar rechazan columnas inexistentes con 400 y el import manda las tarjetas desconocidas a la primera columna. Ver `docs/STATUS.md` |
-| — | 🔎 Cuentas Claras: buscar la categoría escribiendo | 2026-10-29 — pedido de Flori (PR #121, con un (?) que muestra las categorías disponibles). Un solo campo que filtra mientras se escribe y ofrece crear si nada coincide; el `<select>` sigue como alternativa sin JavaScript. En `main` y staging; producción pendiente |
-| — | 💳 Cuentas Claras: forma de pago del movimiento | 2026-10-29 — pedido de Flori (PR #122, migración `0012_payment_method.sql`). Lista fija y opcional (Efectivo, Débito, Crédito, Transferencia, Billetera virtual); no aplica a transferencias entre personas. En `main` y staging; producción pendiente |
+| — | 🔎 Cuentas Claras: buscar la categoría escribiendo | 2026-10-29 — pedido de Flori (PR #121, con un (?) que muestra las categorías disponibles). Un solo campo que filtra mientras se escribe y ofrece crear si nada coincide; el `<select>` sigue como alternativa sin JavaScript. En producción desde 2026-10-31 |
+| — | 💳 Cuentas Claras: forma de pago del movimiento | 2026-10-29 — pedido de Flori (PR #122, migración `0012_payment_method.sql`). Lista fija y opcional (Efectivo, Débito, Crédito, Transferencia, Billetera virtual); no aplica a transferencias entre personas. En producción desde 2026-10-31 |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
 
-En `main` y en staging desde 2026-10-31 (app `fdafbca7`, sitio `1b67cd8e`; detalle en [STATUS](STATUS.md)), **no publicado en producción**, que sigue en `main` `3d32ae5`. Publicar `main` lleva todo junto y requiere aprobación explícita y respaldo previo:
+_Sin ítems pendientes de publicar: todo lo que hay en `main` está en producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [STATUS](STATUS.md))._ Entró en esa publicación, todavía sin probar con una cuenta real de Google ni en un celular:
 
-- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124), pendiente de probar en un celular real.
+- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): falta WebGL 2 y tacto en un celular real.
 - **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
-- **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122), esta última con la migración `0012_payment_method.sql`, que cambia el esquema de la base de producción.
+- **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122, migración `0012_payment_method.sql` ya aplicada en la base de producción).
 
 ---
 
