@@ -274,6 +274,7 @@ Ideas de evolución, en orden de qué falta:
 ## 🟠 Alta prioridad
 
 - **Onboarding para usuarios nuevos**: primer login → tablero vacío sin guía. Opciones: estado vacío con instrucciones ("Creá tu primera tarjeta con N"), tarjetas de ejemplo precargadas, o mini-tour de tooltips.
+- **Staging expone su SHA y `deploy:staging` verifica y prueba lo desplegado** — 🟡 esfuerzo medio. El 2026-10-23, al probar #65 y #66 en staging, el ambiente servía `main` y no las ramas (se descubrió comparando los archivos publicados contra cada rama). Nada confirma hoy qué código está desplegado. Idea: `deploy:staging` pasa el SHA corto como variable (`--var GIT_SHA`) y un endpoint o cabecera lo devuelve **solo en staging**, nunca en producción. Después del deploy, la suite `escenarios/` compara ese SHA con el `HEAD` local y se niega a seguir si difieren; recién ahí corre contra staging. Decisiones abiertas: dónde se expone, qué pasa si el SHA no coincide (cortar o avisar) y si `deploy:staging` corre la suite solo o con un comando aparte. Depende del estándar de pruebas por escenarios (suite `escenarios/`, usuario QA con cookie fabricada) y se explora cuando ese piloto esté en marcha.
 
 ## 🟡 Media prioridad
 
