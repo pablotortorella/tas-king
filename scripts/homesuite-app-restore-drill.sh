@@ -15,15 +15,12 @@ STATE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/homesuite-restore-drill.XXXXXX")"
 RESULT_FILE="$STATE_DIR/checks.json"
 trap 'rm -rf "$STATE_DIR"' EXIT
 
-ORDERED_SQL="$STATE_DIR/ordered.sql"
-node scripts/homesuite-dump-order.mjs "$SQL_FILE" "$ORDERED_SQL"
-
 echo "Importando backup en D1 local aislada..."
 npx wrangler d1 execute homesuite-app-local \
   --local \
   --persist-to "$STATE_DIR" \
   --config apps/app/wrangler.jsonc \
-  --file "$ORDERED_SQL" \
+  --file "$SQL_FILE" \
   --yes
 
 npx wrangler d1 execute homesuite-app-local \

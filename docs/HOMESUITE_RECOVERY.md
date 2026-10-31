@@ -15,20 +15,6 @@ Los artefactos de staging viven bajo `~/dev/tas-king-backups/homesuite-app/` (fu
 repo y de Dropbox; se cambia con `HOMESUITE_BACKUP_DIR`) y no se consideran una copia
 externa. El backup de producción no se guarda en disco: va a un temporal y de ahí a R2.
 
-## Orden del dump al restaurar
-
-`wrangler d1 export` escribe cada tabla con sus datos en orden de creación. Desde la migración
-`0008`, `ledger_entries` referencia a `splitwise_import_batches`, que se creó antes en el
-historial pero queda después en el dump: importarlo tal cual falla con
-`no such table: main.splitwise_import_batches`. El restore drill ya reordena el dump solo. Para
-restaurar a mano (staging, local o producción) hacer lo mismo antes de importar:
-
-```bash
-node scripts/homesuite-dump-order.mjs <database.sql> <ordenado.sql>
-```
-
-Solo se verificó la importación en D1 local; la importación remota no se ha probado.
-
 ## Crear y comprobar un backup
 
 ```bash

@@ -241,7 +241,7 @@ montos ignorando separadores de miles.
 
 | # | Ítem | Estado |
 |---|---|---|
-| — | 💾 Restore drill con el orden de tablas del dump | Rama `fix/revision-seguridad` (2026-10-30), sin mergear. El backup diario de producción fallaba desde la `0008` porque el export deja `ledger_entries` antes de `splitwise_import_batches` (FK hacia adelante); `scripts/homesuite-dump-order.mjs` reordena el dump antes de importarlo. Hasta mergear, el cron programado (que corre `main`) seguirá fallando en el drill. Con test. |
+| — | 💾 Restore drill con el orden de tablas del dump | PR #123 (`fix/restore-drill-orden-fk`), sin mergear. El backup diario de producción fallaba desde la `0008` porque el export deja `ledger_entries` antes de `splitwise_import_batches` (FK hacia adelante); #123 carga el dump con las claves foráneas apagadas y las verifica después con `PRAGMA foreign_key_check`. Hasta mergear, el cron programado (que corre `main`) seguirá fallando en el drill. |
 | — | 🔒 Cookies malformadas, HSTS por hostname, Hono parchado y backups fuera de Dropbox | Rama `fix/revision-seguridad` (2026-10-30), sin mergear ni desplegar. `decodeURIComponent` ya no puede tumbar sesión/OAuth con un `%` roto (`decodeCookieValue`); en rutas legacy se quitó la doble decodificación (Hono ya decodifica `:email`; un `%` literal daba 500); HSTS compara el hostname, no `url.includes("localhost")`; se retiró `X-XSS-Protection` (obsoleto); Hono 4.13.14 (GHSA-5r4p-p66f-jhc7). Los dumps pasaron de `~/Dropbox/dev/tas-king/backups/` a `~/dev/tas-king-backups/` (scripts y docs actualizados; los de Dropbox se borraron tras verificar checksums). Con tests de regresión. |
 
 
