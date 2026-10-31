@@ -21,13 +21,17 @@ sin duración impuesta, frente a una meditación con sesiones temporizadas.
 Archivos propios:
 
 - `apps/app/src/jardin-zen.js`: markup desde Worker y registro de ruta.
-- `apps/app/public/jardin-zen/jardin-zen.js`: motor beta, extraído del HTML autónomo sin modificar su lógica.
+- `apps/app/public/jardin-zen/jardin-zen.js`: motor beta, extraído del HTML autónomo. Una sola diferencia con el prototipo: el encuadre inicial de la cámara se ajusta a la relación de aspecto del recuadro (`fitDist`; sólo acerca, nunca aleja de 10,2, así que el celular vertical queda igual, y la rueda desactiva el reajuste).
 - `apps/app/public/jardin-zen/jardin-zen.css`: CSS adaptado al shell.
 - `apps/site/public/jardin-zen.html`: landing pública.
 - `docs/diseno/jardin-zen/artefactos/HomeSuite-Jardin-Zen-Beta-v0.2.html`: copia del prototipo autónomo original; no es un asset servido por la app.
 
-La integración se publica en staging únicamente tras revisión, pruebas locales y
-coordinación del SHA: staging es compartido. No hay autorización de producción.
+**Estado (2026-10-31):** en `main` (PR #124) y en staging (`staging.homesuite.info/jardin-zen`, `site-staging.homesuite.info/jardin-zen`); versiones y
+pruebas en [STATUS](../STATUS.md). Se probó a mano en Chrome de escritorio; falta WebGL 2 y tacto en un celular real. **No está en producción**
+y no hay autorización para publicarlo.
+
+**Propuesto, sin implementar:** v0.4 (mango invertido, giro suave y rastrillo visible u oculto), cambio OpenSpec
+`jardin-zen-rastrillo-v04` y documento en `docs/diseno/jardin-zen/propuestas/`.
 
 ## Riesgos abiertos
 
