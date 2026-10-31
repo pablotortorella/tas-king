@@ -71,7 +71,7 @@ Puede haber un modo **Contemplar** que oculte los controles. Si existe un tempor
 
 ### Etapa D — Integración HomeSuite
 
-Tratarlo como una experiencia de **Disfrutar**. Empezar por acceso directo para una persona sin necesidad de un espacio compartido. Conservar el estado de forma local primero; evaluar luego sincronización opcional asociada a cuenta/espacio si existe una necesidad real.
+Tratarlo como una experiencia de **Disfrutar**. Empezar por acceso directo para una persona sin necesidad de un grupo compartido. Conservar el estado de forma local primero; evaluar luego sincronización opcional asociada a la cuenta o a un grupo si existe una necesidad real.
 
 Ruta `/jardin-zen` en HomeSuite App, landing `/jardin-zen` en el sitio público y tarjeta en el catálogo. Sin necesidad de cuenta y sin consultas a D1. Evitar incorporar mecánicas colaborativas solo para justificar que pertenece a una suite de hogar.
 
@@ -95,7 +95,7 @@ Tienda de elementos decorativos, varias estaciones completas, logros, desafíos,
 
 ## 7. Siguiente decisión recomendada (actualizada)
 
-**Probar el prototipo en el navegador de un celular.** Evaluar tres preguntas: ¿se entiende cómo rastrillar?, ¿los surcos dan una sensación visual satisfactoria?, ¿el espacio invita a permanecer? Si la respuesta a alguna falla, priorizar la calidad del gesto y de la arena antes de sumar funcionalidades.
+**Probar el prototipo en el navegador de un celular.** Evaluar tres preguntas: ¿se entiende cómo rastrillar?, ¿los surcos dan una sensación visual satisfactoria?, ¿el jardín invita a permanecer? Si la respuesta a alguna falla, priorizar la calidad del gesto y de la arena antes de sumar funcionalidades.
 
 ## Referencias
 
@@ -175,7 +175,7 @@ La aplicación ya ofrece Remanso. Jardín Zen es complementario: Remanso propone
 
 - Temporizador discreto de contemplación o respiración guiada, **sin rachas**.
 - Jardines de ejemplo y composiciones de otras personas para inspirarse, si existe demanda concreta.
-- Sincronización optativa con cuenta o espacio del hogar, si guardar en varios dispositivos aporta suficiente valor para compensar datos y complejidad.
+- Sincronización optativa con cuenta o grupo del hogar, si guardar en varios dispositivos aporta suficiente valor para compensar datos y complejidad.
 
 ## 11. Retos, riesgos y cómo comprobarlos
 
@@ -187,7 +187,7 @@ La aplicación ya ofrece Remanso. Jardín Zen es complementario: Remanso propone
 | CSP, caché y aislamiento de assets | Página bloqueada o incompleta | JS/CSS del mismo origen, HTML desde Worker, `no-store` de documento y tests HTTP |
 | Contraste con tema claro/oscuro de la suite | Encabezado ilegible | estilos del jardín delimitados y prueba con ambos temas, zoom 200 % |
 | Audio en móvil / cambios de pestaña | Sonido suspendido, persistencia inesperada | iniciar desde gesto, pausar/liberar en `pagehide` y `visibilitychange` (pendiente de implementar/validar); pruebas reales Android/iOS |
-| Saturación visual por trazos | Pérdida del espacio para jugar | Fino por defecto y alisado; observar sesión prolongada y comparar 5 vs 3 dientes antes de agrandar bandeja |
+| Saturación visual por trazos | Pérdida de lugar para jugar | Fino por defecto y alisado; observar sesión prolongada y comparar 5 vs 3 dientes antes de agrandar bandeja |
 | Estado no guardado | Pérdida accidental de una composición | comunicar claramente que la beta no guarda; considerar P2 solo tras validación |
 | Derechos de música e identidad cultural | Reclamos por contenido no autorizado o confusión | metadatos y licencia por pista; describir la beta como interpretación y sonido sintetizado original |
 | Competencia con Remanso / producto recargado | Duplicación y menú saturado | propuesta diferenciada y acceso sencillo, sin introducir objetivos o gamificación |

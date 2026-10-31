@@ -4,7 +4,7 @@ Hereda [la base común](../homesuite/README.md) y la [plataforma](PLATAFORMA.md)
 Su concepto, decisiones de beta v0.2, roadmap, retos, criterios de aceptación y límites están en
 [CONCEPTO-Y-ROADMAP.md](../diseno/jardin-zen/CONCEPTO-Y-ROADMAP.md).
 
-Jardín Zen propone un espacio personal de creación libre, con arena, piedras y un
+Jardín Zen propone un lugar personal de creación libre, con arena, piedras y un
 rastrillo. Forma parte de la dimensión «Disfrutar» de HomeSuite; no exige compartir
 un hogar ni una cuenta para ser útil. Se distingue de Remanso: es actividad táctil
 sin duración impuesta, frente a una meditación con sesiones temporizadas.
