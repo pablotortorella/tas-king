@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "../src/auth.js";
+import { createGoogleAuthorization, decodeCookieValue, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "../src/auth.js";
 
 const encoder = new TextEncoder();
 
@@ -70,5 +70,13 @@ describe("seguridad de OAuth", () => {
       const invalid = await signedGoogleToken(overrides);
       await expect(validateGoogleIdToken({ idToken: invalid.token, audience: "client-id", nonce: "nonce", fetcher: invalid.fetcher, now: 1_800_000_000_000 })).rejects.toThrow("claims");
     }
+  });
+});
+
+describe("lectura de cookies", () => {
+  it("decodifica el valor y trata un «%» roto como cookie ausente en vez de lanzar", async () => {
+    expect(decodeCookieValue("a%20b")).toBe("a b");
+    expect(decodeCookieValue("%E0%A4%A")).toBe("");
+    expect(await unseal(decodeCookieValue("%E0%A4%A"), "secret")).toBeNull();
   });
 });

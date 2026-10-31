@@ -1,4 +1,4 @@
-import { cookie, getCookie, seal, unseal } from "./auth.js";
+import { cookie, decodeCookieValue, getCookie, seal, unseal } from "./auth.js";
 import { createPlatformId } from "./platform.js";
 
 export const SESSION_COOKIE = "__Host-homesuite_session";
@@ -17,7 +17,7 @@ export async function createSession(db, { userId, secret, now = new Date() }) {
 
 export async function currentSession(db, request, secret, now = new Date()) {
   const raw = getCookie(request.headers.get("Cookie"), SESSION_COOKIE);
-  const token = raw ? await unseal(decodeURIComponent(raw), secret) : null;
+  const token = raw ? await unseal(decodeCookieValue(raw), secret) : null;
   if (!token?.id || !token.expiresAt || token.expiresAt <= now.toISOString()) return null;
   return db.prepare("SELECT s.id, u.id AS user_id, u.email, u.display_name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.expires_at > ? AND s.revoked_at IS NULL").bind(token.id, now.toISOString()).first();
 }
@@ -32,6 +32,6 @@ export function expiredSessionCookie(secure) {
 
 export async function revokeSession(db, request, secret) {
   const raw = getCookie(request.headers.get("Cookie"), SESSION_COOKIE);
-  const token = raw ? await unseal(decodeURIComponent(raw), secret) : null;
+  const token = raw ? await unseal(decodeCookieValue(raw), secret) : null;
   if (token?.id) await db.prepare("UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND revoked_at IS NULL").bind(token.id).run();
 }

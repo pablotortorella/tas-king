@@ -33,7 +33,6 @@ export function createCorsMiddleware() {
     // Security Headers (siempre)
     c.header("X-Content-Type-Options", "nosniff");
     c.header("X-Frame-Options", "DENY");
-    c.header("X-XSS-Protection", "1; mode=block");
     c.header("Referrer-Policy", "no-referrer");
     c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     c.header(
@@ -55,7 +54,9 @@ export function createCorsMiddleware() {
     );
 
     // HSTS (solo en prod)
-    if (!c.req.url.includes("localhost") && !c.req.url.includes("127.0.0.1")) {
+    // Se compara el hostname, no la URL completa: «?x=localhost» no debe apagar HSTS.
+    const { hostname } = new URL(c.req.url);
+    if (hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "[::1]") {
       c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
     }
   };

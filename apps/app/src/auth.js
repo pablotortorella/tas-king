@@ -44,6 +44,11 @@ export function getCookie(header, name) {
   return header.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
 }
 
+// Una cookie con un «%» mal formado hace que decodeURIComponent lance URIError: se lee como cookie ausente.
+export function decodeCookieValue(raw) {
+  try { return decodeURIComponent(raw); } catch { return ""; }
+}
+
 export function cookie(name, value, { maxAge, secure = true } = {}) {
   const attributes = [`${name}=${encodeURIComponent(value)}`, "Path=/", "HttpOnly", "SameSite=Lax"];
   if (secure) attributes.push("Secure");
