@@ -15,7 +15,9 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
 
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-BACKUP_DIR="${BACKUP_DIR:-$ROOT/backups}"
+# Fuera del repo y de Dropbox: el dump contiene datos reales de usuarios.
+BACKUP_DIR="${BACKUP_DIR:-$HOME/dev/tas-king-backups}"
+umask 077
 OUTPUT="$BACKUP_DIR/prod-$TIMESTAMP.sql"
 
 echo -e "${CYAN}"

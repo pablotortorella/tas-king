@@ -16,14 +16,13 @@ Logs visibles en Cloudflare Dashboard → Workers → tas-king → Logs.
 ### Manuales (antes de deploys o cambios riesgosos)
 ```bash
 npm run db:backup:prod
-# Guarda en backups/prod-YYYYMMDD-HHMMSS.sql (carpeta ignorada por git)
-# Si configurás DROPBOX_BACKUP_PATH, también copia allí automáticamente
+# Guarda en ~/dev/tas-king-backups/prod-YYYYMMDD-HHMMSS.sql (fuera del repo
+# y de Dropbox; carpeta con permisos 700). Otro destino: BACKUP_DIR=<ruta> npm run db:backup:prod
 ```
 
-Para que el backup manual también vaya a Dropbox:
-```bash
-DROPBOX_BACKUP_PATH=~/Dropbox/dev/tas-king-backups npm run db:backup:prod
-```
+No guardar estos dumps en carpetas sincronizadas (Dropbox, Drive, etc.): contienen datos
+reales de usuarios y la sincronización los replica en la nube y en cada equipo enlazado.
+La copia fuera del equipo hoy es R2 (cada 8 h); el repo privado de GitHub es opcional y todavía no está configurado (ver backlog).
 
 ---
 

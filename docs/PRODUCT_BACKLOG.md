@@ -239,7 +239,11 @@ montos ignorando separadores de miles.
 
 ## 🛠️ Implementado, pendiente de publicar
 
-_Sin ítems pendientes — todo lo implementado está en producción desde el deploy v2.3.0 del 2026-09-18._
+| # | Ítem | Estado |
+|---|---|---|
+| — | 💾 Restore drill con el orden de tablas del dump | Rama `fix/revision-seguridad` (2026-10-30), sin mergear. El backup diario de producción fallaba desde la `0008` porque el export deja `ledger_entries` antes de `splitwise_import_batches` (FK hacia adelante); `scripts/homesuite-dump-order.mjs` reordena el dump antes de importarlo. Hasta mergear, el cron programado (que corre `main`) seguirá fallando en el drill. Con test. |
+| — | 🔒 Cookies malformadas, HSTS por hostname, Hono parchado y backups fuera de Dropbox | Rama `fix/revision-seguridad` (2026-10-30), sin mergear ni desplegar. `decodeURIComponent` ya no puede tumbar sesión/OAuth con un `%` roto (`decodeCookieValue`); en rutas legacy se quitó la doble decodificación (Hono ya decodifica `:email`; un `%` literal daba 500); HSTS compara el hostname, no `url.includes("localhost")`; se retiró `X-XSS-Protection` (obsoleto); Hono 4.13.14 (GHSA-5r4p-p66f-jhc7). Los dumps pasaron de `~/Dropbox/dev/tas-king/backups/` a `~/dev/tas-king-backups/` (scripts y docs actualizados; los de Dropbox se borraron tras verificar checksums). Con tests de regresión. |
+
 
 ---
 
@@ -328,6 +332,9 @@ _Sin ítems pendientes — ver ✅ Completado._
 - **Cualquier miembro puede borrar comentarios y adjuntos ajenos** — 🟢 chico. No hay check de autoría. Puede ser decisión válida para equipos chicos — decidirlo a propósito y registrarlo en `docs/ADRs.md` (o restringir a autor + owner).
 - **Overhead D1 por request** — 🟡 medio. Cada request API paga ~4-5 queries antes del handler (COUNT + INSERT del rate limit, SELECT+INSERT de `ensureUser`, `seedAdminIfNeeded`), multiplicado por el polling de 5s de cada usuario = el grueso del consumo D1. `ensureUser` podría correr solo en login/`/api/me`. (Relacionado con "Rate limiting más granular", ya listado en Media.)
 - **Export CSV sin protección contra formula injection** de Excel — 🟢 chico. Celdas que empiezan con `=`, `+`, `-`, `@` se ejecutan como fórmula al abrir el CSV.
+- **`readLedger` lee el libro completo en cada petición** — 🟡 medio. `apps/app/src/ledger.js` trae todos los movimientos sin `LIMIT`, los revalida y recalcula saldos en JS. Aceptable hoy; con un import grande de Splitwise será lo primero que se note. Evaluar saldos acumulados o lectura paginada.
+- **Rate limit legacy fail-open y con 2 queries D1 por request** — 🟡 medio. `src/middleware/rateLimit.js` hace `INSERT` + `COUNT` y, si falla, deja pasar todo. La app nueva ya usa el binding nativo (`apps/app/src/rate-limit.js`); migrar la legacy lo resuelve junto con «Overhead D1 por request».
+- **El backup arma el dump completo en un string** — 🟡 medio. `src/backup.js` hace `SELECT *` por tabla y concatena en memoria del Worker; el límite llegará con el crecimiento de la base. Escribir a R2 por partes.
 
 ### 🟢 Bajo — limpieza
 
@@ -339,6 +346,8 @@ _Sin ítems pendientes — ver ✅ Completado._
 - Timestamps mixtos: epoch ms en casi todo, `datetime('now')` (string) en `allowed_emails`.
 - `ALLOWED_ORIGINS` no incluye la URL de staging (irrelevante mientras todo sea same-origin; anotado por si algún día hay frontend separado).
 - ~10 ramas locales ya mergeadas sin borrar (`feature/deep-link`, `feature/proteger-adjuntos`, …).
+- Dos migraciones `0007` en `apps/app/migrations/` (`0007_ledger_categories.sql` y `0007_shared_profiles.sql`). **No renombrar**: ya están aplicadas y D1 registra las migraciones por nombre. Solo cuidar que la próxima sea `0013`.
+- SQL de 300–500 caracteres en una línea en `ledger.js`, `recategorize.js` y `people.js`: difícil de revisar. Partir en constantes con nombre al tocar cada archivo.
 
 ---
 

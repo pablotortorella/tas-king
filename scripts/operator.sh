@@ -208,7 +208,7 @@ do_deploy_prod() {
 do_backup_prod() {
   briefing \
     "Backup manual de producción" \
-    "Ejecuta 'wrangler d1 export --remote' para descargar un dump SQL completo de la DB de producción. Lo guarda en backups/ (ignorado por git)." \
+    "Ejecuta 'wrangler d1 export --remote' para descargar un dump SQL completo de la DB de producción. Lo guarda en ~/dev/tas-king-backups/ (fuera del repo y de Dropbox)." \
     "Solo lectura — no modifica nada. Requiere wrangler autenticado y conexión a internet." \
     "Copia de seguridad local antes de un deploy riesgoso o cambio estructural. Complementa los backups automáticos del Cron Trigger."
   confirm "¿Hacer backup de producción ahora? [s/N]" && run "bash scripts/db-backup-prod.sh" || echo -e "\n  ${DIM}Cancelado.${NC}"
@@ -223,7 +223,7 @@ do_restore() {
     "Recuperar la DB a un estado conocido y funcional después de corrupción de datos o migración fallida."
   echo ""
   echo -e "  ${DIM}Backups disponibles:${NC}"
-  ls backups/*.sql 2>/dev/null | sort -r | head -10 | sed 's/^/    /' || echo "    (ninguno — corré 'npm run db:backup:prod' primero)"
+  ls "${BACKUP_DIR:-$HOME/dev/tas-king-backups}"/*.sql 2>/dev/null | sort -r | head -10 | sed 's/^/    /' || echo "    (ninguno — corré 'npm run db:backup:prod' primero)"
   echo ""
   read -r -p "  Archivo SQL (path): " file
   echo ""
@@ -343,7 +343,7 @@ main_menu() {
     item 12 "Deploy a PRODUCCIÓN"                 "⚠️⚠️  afecta usuarios reales"
 
     section "DISASTER RECOVERY"
-    item 13 "Backup manual de producción"         "→ backups/ local"
+    item 13 "Backup manual de producción"         "→ ~/dev/tas-king-backups/"
     item 14 "Restaurar backup"                    "local / staging / prod"
     item 15 "Rollback de deploy"                  "versión anterior del Worker"
 

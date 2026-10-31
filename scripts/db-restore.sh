@@ -23,6 +23,7 @@ echo "╚═══════════════════════�
 echo -e "${NC}"
 
 # Uso: db-restore.sh <archivo.sql> [local|staging|prod]
+BACKUP_DIR="${BACKUP_DIR:-$HOME/dev/tas-king-backups}"
 FILE="${1:-}"
 TARGET="${2:-local}"
 
@@ -30,12 +31,12 @@ if [ -z "$FILE" ]; then
   echo "  Uso: npm run db:restore -- <archivo.sql> [local|staging|prod]"
   echo ""
   echo "  Ejemplos:"
-  echo "    npm run db:restore -- backups/prod-20260626-030000.sql local"
-  echo "    npm run db:restore -- backups/prod-20260626-030000.sql staging"
-  echo "    npm run db:restore -- backups/prod-20260626-030000.sql prod"
+  echo "    npm run db:restore -- $BACKUP_DIR/prod-20260626-030000.sql local"
+  echo "    npm run db:restore -- $BACKUP_DIR/prod-20260626-030000.sql staging"
+  echo "    npm run db:restore -- $BACKUP_DIR/prod-20260626-030000.sql prod"
   echo ""
-  echo "  Backups disponibles en backups/:"
-  ls backups/*.sql 2>/dev/null | sort -r | head -10 || echo "    (ninguno)"
+  echo "  Backups disponibles en $BACKUP_DIR:"
+  ls "$BACKUP_DIR"/*.sql 2>/dev/null | sort -r | head -10 || echo "    (ninguno)"
   exit 1
 fi
 
