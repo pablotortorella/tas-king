@@ -23,7 +23,7 @@ export function setupAdminRoutes(app) {
 
   // Eliminar email permitido
   app.delete("/api/admin/allowed/:email", async c => {
-    const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+    const target = c.req.param("email").trim().toLowerCase();
     // No permitir que el admin se elimine a sí mismo
     if (target === c.get("email")) return c.json({ error: "No podés eliminarte a vos mismo." }, 400);
     await c.env.DB.prepare("DELETE FROM allowed_emails WHERE email = ?").bind(target).run();
@@ -50,7 +50,7 @@ export function setupAdminRoutes(app) {
 
   // Aprobar solicitud: agregar a allowed_emails y eliminar de pending
   app.post("/api/admin/pending/:email/approve", async c => {
-    const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+    const target = c.req.param("email").trim().toLowerCase();
     await c.env.DB.batch([
       c.env.DB.prepare("INSERT OR IGNORE INTO allowed_emails (email, added_by, added_at) VALUES (?, ?, datetime('now'))")
         .bind(target, c.get("email")),
@@ -61,7 +61,7 @@ export function setupAdminRoutes(app) {
 
   // Rechazar/descartar solicitud
   app.delete("/api/admin/pending/:email", async c => {
-    const target = decodeURIComponent(c.req.param("email")).trim().toLowerCase();
+    const target = c.req.param("email").trim().toLowerCase();
     await c.env.DB.prepare("DELETE FROM pending_access WHERE email = ?").bind(target).run();
     return c.json({ ok: true });
   });

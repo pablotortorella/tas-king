@@ -126,7 +126,7 @@ export function setupBoardRoutes(app) {
   app.delete("/api/boards/:boardId/members/:email", async c => {
     const email = c.get("email");
     const boardId = c.req.param("boardId");
-    const target = decodeURIComponent(c.req.param("email")).toLowerCase();
+    const target = c.req.param("email").toLowerCase();
     const board = await c.env.DB.prepare("SELECT owner_email FROM boards WHERE id = ?").bind(boardId).first();
     if (!board) return c.json({ error: "No existe el tablero." }, 404);
     if (board.owner_email !== email) return c.json({ error: "Solo el dueño puede quitar miembros." }, 403);

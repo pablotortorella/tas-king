@@ -106,6 +106,18 @@ describe("CORS + Security Headers", () => {
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 
+  it("no manda el header obsoleto X-XSS-Protection", async () => {
+    const res = await app.request("http://localhost/api/me", { headers: { "X-Dev-User": "test@test.com" } }, env);
+    expect(res.headers.get("X-XSS-Protection")).toBeNull();
+  });
+
+  it("HSTS depende del hostname, no de que la URL contenga «localhost»", async () => {
+    const local = await app.request("http://localhost/api/me", { headers: { "X-Dev-User": "test@test.com" } }, env);
+    expect(local.headers.get("Strict-Transport-Security")).toBeNull();
+    const trap = await app.request("https://tas-king.example.test/api/me?x=localhost", {}, env);
+    expect(trap.headers.get("Strict-Transport-Security")).toContain("max-age=31536000");
+  });
+
   it("responde 204 a OPTIONS (preflight)", async () => {
     const res = await app.request("http://localhost/api/me", {
       method: "OPTIONS",
@@ -354,6 +366,11 @@ describe("API del Worker con D1 y R2 emulados", () => {
     })).status).toBe(200);
 
     expect((await request("/api/admin/allowed/new%40example.com", {
+      email: owner, method: "DELETE",
+    })).status).toBe(200);
+
+    // Un «%» literal en el email no puede tumbar la ruta con un 500 por doble decodificación.
+    expect((await request("/api/admin/allowed/100%25off%40example.com", {
       email: owner, method: "DELETE",
     })).status).toBe(200);
 

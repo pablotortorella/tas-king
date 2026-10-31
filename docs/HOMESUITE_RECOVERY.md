@@ -11,14 +11,15 @@
 3. Cada export se importa en una D1 local aislada antes de considerarlo válido.
 4. Producción guarda una copia en R2 privado, con retención de 90 días.
 
-Los artefactos viven bajo `backups/homesuite-app/`, están ignorados por Git y no
-se consideran una copia externa.
+Los artefactos de staging viven bajo `~/dev/tas-king-backups/homesuite-app/` (fuera del
+repo y de Dropbox; se cambia con `HOMESUITE_BACKUP_DIR`) y no se consideran una copia
+externa. El backup de producción no se guarda en disco: va a un temporal y de ahí a R2.
 
 ## Crear y comprobar un backup
 
 ```bash
 npm run db:backup:homesuite-app:staging
-npm run db:restore-drill:homesuite-app -- backups/homesuite-app/staging/<timestamp>/database.sql
+npm run db:restore-drill:homesuite-app -- ~/dev/tas-king-backups/homesuite-app/staging/<timestamp>/database.sql
 ```
 
 El backup falla cerrado si no obtiene bookmark, SQL o un archivo no vacío. El

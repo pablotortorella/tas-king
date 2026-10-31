@@ -27,7 +27,8 @@ if [ "$ENVIRONMENT" = production ]; then
   DESTINATION="$(mktemp -d "${TMPDIR:-/tmp}/homesuite-prod-backup.XXXXXX")"
   trap 'rm -rf -- "$DESTINATION"' EXIT
 else
-  BACKUP_ROOT="${HOMESUITE_BACKUP_DIR:-$ROOT/backups/homesuite-app}"
+  # Fuera del repo y de Dropbox: el dump contiene datos reales.
+  BACKUP_ROOT="${HOMESUITE_BACKUP_DIR:-$HOME/dev/tas-king-backups/homesuite-app}"
   DESTINATION="$BACKUP_ROOT/$ENVIRONMENT/$TIMESTAMP"
   mkdir -p "$DESTINATION"
 fi

@@ -1,7 +1,7 @@
 {
   "name": "tas-king",
   "version": "2.3.2",
-  "description": "Tablero de tareas minimalista — Iteración 2.5 (Cloudflare Workers + D1 + R2)",
+  "description": "Tablero de tareas minimalista (Cloudflare Workers + D1 + R2)",
   "private": true,
   "scripts": {
     "setup:local": "bash scripts/setup-local.sh",
@@ -54,7 +54,7 @@
     "verify-ready": "npm run test:all && echo '✅ Tests passed' && (git status --porcelain | grep -E '^\\.dev\\.vars' && echo '❌ .dev.vars debe estar en .gitignore' && exit 1 || true) && (git diff --cached --name-only | grep -E '(dev\\.vars|secret)' && echo '❌ No commitear secrets' && exit 1 || true) && echo '✅ Listo para push'"
   },
   "dependencies": {
-    "hono": "^4.6.14",
+    "hono": "^4.13.14",
     "papaparse": "^5.7.0"
   },
   "devDependencies": {

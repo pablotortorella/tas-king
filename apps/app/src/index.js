@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { cookie, createGoogleAuthorization, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
+import { cookie, createGoogleAuthorization, decodeCookieValue, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
 import { registerRemansoRoutes } from "./remanso.js";
@@ -292,7 +292,7 @@ app.get("/auth/callback", async (c) => {
   const secure = isSecureRequest(c);
   if (!config) return c.html(page("Acceso no configurado", "<h1>El acceso todavía no está configurado.</h1><p>Volvé a intentarlo cuando este ambiente tenga su cliente de Google.</p>"), 503);
   const raw = getCookie(c.req.header("Cookie"), OAUTH_COOKIE);
-  const state = raw ? await unseal(decodeURIComponent(raw), config.sessionSecret) : null;
+  const state = raw ? await unseal(decodeCookieValue(raw), config.sessionSecret) : null;
   const code = c.req.query("code");
   if (!state || state.expiresAt < Date.now() || !code || c.req.query("state") !== state.state) {
     setCookie(c, oauthCookie("", secure, 0));
