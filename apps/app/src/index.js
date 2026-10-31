@@ -3,6 +3,7 @@ import { cookie, createGoogleAuthorization, decodeCookieValue, exchangeGoogleCod
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
 import { registerRemansoRoutes } from "./remanso.js";
+import { registerJardinZenRoutes } from "./jardin-zen.js";
 import { readOwnProfile } from "./profiles.js";
 import { registerAssetRoutes } from "./routes/assets.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
@@ -140,7 +141,7 @@ app.use("*", async (c, next) => {
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
   const path = new URL(c.req.url).pathname;
-  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso"].includes(path)) c.header("Cache-Control", "private, no-store");
+  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso", "/jardin-zen"].includes(path)) c.header("Cache-Control", "private, no-store");
 });
 
 // Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).
@@ -242,6 +243,7 @@ function localUser(c) {
 
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
 registerRemansoRoutes(app, { page, html, signedInUser, localUser, ensureLocalUser, googleConfigured: (env) => Boolean(authConfig(env)) });
+registerJardinZenRoutes(app, { page });
 
 app.get("/api/me", async (c) => {
   const email = localUser(c);

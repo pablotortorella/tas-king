@@ -1,2 +1,4 @@
 /remanso/*
   X-Content-Type-Options: nosniff
+/jardin-zen/*
+  X-Content-Type-Options: nosniff

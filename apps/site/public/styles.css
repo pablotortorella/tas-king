@@ -234,7 +234,7 @@ h2 {
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -825,10 +825,6 @@ footer a {
 
   .hero-emblem { width: min(100%, 390px); }
 
-  .tool-grid {
-    grid-template-columns: 1fr;
-  }
-
   .tool-card {
     min-height: 310px;
   }
@@ -841,6 +837,12 @@ footer a {
 
   .product-art {
     min-height: 350px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
   }
 }
 

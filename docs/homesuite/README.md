@@ -62,6 +62,7 @@ Pablo valida cambios de política; no se afirma aprobación sólo por escribirlo
 - [Cuentas Claras](../productos/CUENTAS-CLARAS.md): invariantes financieras y fuentes funcionales.
 - [Compras](../productos/COMPRAS.md): alcance todavía por explorar.
 - [Remanso](../productos/REMANSO.md): meditaciones con gong y sonidos; niveles de acceso y límites.
+- [Jardín Zen](../productos/JARDIN-ZEN.md): escena interactiva con arena, piedras y rastrillo; beta sin cuenta.
 
 No copiar estas políticas en cada producto, instrucción de agente o repositorio.
 Si un producto se extrae, debe mantener un enlace estable a una revisión identificada
