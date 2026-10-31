@@ -74,6 +74,11 @@ unidades de contenedor) para que una cifra enorme nunca se salga del recuadro; e
 categoría de varios movimientos es un panel plegado que nace cerrado, porque es una
 herramienta ocasional y no el protagonista de la lista.
 
+Pedidos de Flori (2026-10-29, en `main` y staging): la categoría se elige en un solo campo que filtra mientras se escribe, con un (?) que
+muestra las categorías disponibles y el `<select>` como alternativa sin JavaScript; y cada gasto o ingreso puede llevar una **forma de pago**
+opcional de una lista fija (`apps/app/src/payment-methods.js`: Efectivo, Débito, Crédito, Transferencia, Billetera virtual). Las transferencias
+entre personas no la llevan. Cambiar la lista exige una migración y actualizar el glosario.
+
 Verificar conservación de saldos por moneda, reparto exacto, signos, límites,
 redondeo, reversión/corrección, duplicados, concurrencia y aislamiento entre grupos.
 La importación necesita previsualización, decisiones explícitas, conciliación y

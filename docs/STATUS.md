@@ -36,10 +36,11 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
-## Pedidos de Flori en staging — 2026-10-29
+## Pedidos de Flori: en `main` y en staging; producción pendiente — 2026-10-29
 
-**Estado:** implementado en dos ramas con PR abierto (#121 buscar categoría, #122 forma de pago) y publicado **solo en
-staging**, para probarlo con Pablo antes de integrar. **Producción:** no se publicó nada; falta aprobación explícita.
+**Estado (actualizado 2026-10-31):** los dos PR (#121 buscar categoría, #122 forma de pago) están **mergeados en `main`** (`215390f`)
+y staging los sirve, hoy dentro de `main` `5b0559c` (ver el bloque de Jardín Zen). **Producción:** no se publicó nada; falta aprobación
+explícita, y publicar lleva la migración `0012_payment_method.sql`. La tabla de abajo es el registro del primer deploy de prueba (2026-10-29).
 
 | Unidad | Versión activa | Mensaje de versión |
 |---|---|---|
@@ -53,7 +54,8 @@ staging**, para probarlo con Pablo antes de integrar. **Producción:** no se pub
   Una corrida unitaria posterior a `npm ci` falló en 2 pruebas que no logré reproducir en cuatro corridas siguientes (492 ok).
 - **Smoke:** `/healthz` y `/` responden 200; `/ledger-ui.js` sirve el buscador de categoría. Falta el recorrido con una cuenta real
   de Google (entrar, cargar con categoría y forma de pago, corregir, salir), que solo puede hacer Pablo, y la prueba en un teléfono.
-- **Pendiente:** probar en teléfono real; integrar los PR; los ítems del backlog pasan a «Completado».
+- **Pendiente:** probar en teléfono real y el recorrido con una cuenta real de Google; publicar en producción con aprobación explícita.
+  (Los PR ya se integraron y los ítems del backlog pasaron a «Completado».)
 
 ## HomeSuite: preparación de infraestructura productiva — 2026-10-27
 

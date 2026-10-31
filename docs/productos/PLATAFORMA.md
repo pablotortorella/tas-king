@@ -21,7 +21,7 @@ lista de tareas. Cambios de home, landings, descripciones y metadatos:
 - el copy de home y landings se alineó con esta dirección el 2026-10-27 (change
   `identidad-textos-suite`); el sitio público muestra sólo herramientas funcionales: Compras
   no se nombra en ningún lugar del sitio ni de la app (se retiró el 2026-10-28); Cuentas Claras y Remanso se rotulan «Versión
-  Beta» y Fun TasKing «Disponible». Jardín Zen se añade como beta para pruebas en staging desde el cambio `jardin-zen-beta`, sin publicar producción.
+  Beta» y Fun TasKing «Disponible». Jardín Zen se añadió como beta (cambio `jardin-zen-beta`, PR #124): está en `main` y en staging, no en producción. Con cuatro herramientas, las tarjetas del inicio de la app y de la home del sitio se disponen en 2×2 (una columna en pantallas angostas).
 
 ## Plataforma
 
