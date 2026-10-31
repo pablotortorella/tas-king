@@ -6,10 +6,10 @@
 
 ## Resultado del primer corte
 
-Una persona puede entrar con Google, crear un espacio privado de HomeSuite con
+Una persona puede entrar con Google, crear un grupo privado de HomeSuite con
 un libro vacío de Cuentas Claras e invitar a otra persona. Cuando la invitada entra con
-la cuenta de Google cuyo email coincide, puede acceder al mismo espacio. Ninguna
-de las dos puede acceder a espacios ajenos.
+la cuenta de Google cuyo email coincide, puede acceder al mismo grupo. Ninguna
+de las dos puede acceder a grupos ajenos.
 
 Este corte corresponde a HG-01 y HG-02 del
 [backlog de producto](PRODUCT_BACKLOG.md#próximo-corte-validar-la-migración-de-gastos-a).
@@ -20,7 +20,7 @@ No incluye todavía importación, transacciones, balances ni correo transacciona
 ### D1. Invitación dirigida a un email, sin enlace en el primer corte
 
 El titular escribe el email de Google de la persona a invitar. La invitación se
-guarda para ese espacio y sólo se hace efectiva cuando esa dirección inicia
+guarda para ese grupo y sólo se hace efectiva cuando esa dirección inicia
 sesión con Google. No habrá enlaces reutilizables, enlaces públicos ni correo
 automático inicialmente.
 
@@ -33,26 +33,26 @@ canal que ya use con la persona invitada.
 con la cuenta de Google que usará la invitada. El envío de correo y los enlaces
 con token quedan como evolución posterior, no como requisito oculto.
 
-### D2. El primer espacio se crea explícitamente y tiene un nombre libre
+### D2. El primer grupo se crea explícitamente y tiene un nombre libre
 
-Después de iniciar sesión, la persona crea su primer espacio con un nombre que
+Después de iniciar sesión, la persona crea su primer grupo con un nombre que
 ella elige —por ejemplo, «Casa», «Familia Pérez» o «Viaje a Cartagena»—. No se
-crea un espacio automático, no hay tipos predefinidos y el nombre se podrá editar
+crea un grupo automático, no hay tipos predefinidos y el nombre se podrá editar
 después.
 
 **Por qué:** el nombre expresa de inmediato el contexto compartido y sirve tanto
 para familia como para amistades, viajes o proyectos, sin encasillar la suite ni
-dejar una cuenta con un ambiguo «Mi espacio». En el primer recorrido, ese espacio
+dejar una cuenta con un ambiguo «Mi grupo». En el primer recorrido, ese grupo
 inicializa un libro vacío de Cuentas Claras.
 
 ### D3. La invitación requiere aceptación explícita e identifica al invitante
 
 Cuando la persona entra con la cuenta de Google cuyo email coincide con una
-invitación pendiente, HomeSuite muestra el nombre del espacio y **quién la
+invitación pendiente, HomeSuite muestra el nombre del grupo y **quién la
 invitó**. Puede aceptar o rechazar; sólo al aceptar se crea/activa su membresía
-y puede consultar Cuentas Claras del espacio.
+y puede consultar Cuentas Claras del grupo.
 
-**Por qué:** evita añadir a alguien a un espacio sin que lo advierta, deja claro
+**Por qué:** evita añadir a alguien a un grupo sin que lo advierta, deja claro
 el contexto social de la invitación y ofrece un punto explícito de consentimiento
 antes de revelar información compartida.
 
@@ -81,7 +81,7 @@ enlaces de revocación.
 
 ### D6. Antes de aceptar se muestra sólo el contexto indispensable
 
-La invitación pendiente revela únicamente el nombre del espacio, el nombre de
+La invitación pendiente revela únicamente el nombre del grupo, el nombre de
 quien invitó y que dará acceso a Cuentas Claras. No muestra integrantes,
 movimientos, saldos, cantidades ni actividad antes de que la persona acepte.
 
@@ -97,7 +97,7 @@ descriptivo dentro de la interfaz donde corresponda.
 
 ### D8. Titular e integrante son los únicos roles iniciales
 
-El titular crea el espacio, puede renombrarlo, invitar personas y cancelar
+El titular crea el grupo, puede renombrarlo, invitar personas y cancelar
 invitaciones pendientes. El integrante puede aceptar su invitación y acceder a
 Cuentas Claras, pero no administra participantes en este corte. El modelo debe
 permitir transferir la titularidad entre integrantes en el futuro, aunque esa
@@ -129,7 +129,7 @@ No quedan decisiones de producto bloqueantes para el primer corte.
   será su claim `sub`, no el email.
 - La sesión será exclusiva de `app.homesuite.info`; el sitio público no recibirá
   cookie, acceso a datos ni secretos de la aplicación.
-- Un espacio puede admitir más productos con el tiempo, pero este primer
+- Un grupo puede admitir más productos con el tiempo, pero este primer
   recorrido sólo inicializa Cuentas Claras.
 - Los entornos staging y producción tendrán recursos y cliente OAuth separados;
   no se desplegará una sesión o un dato de HomeSuite en el Worker actual de

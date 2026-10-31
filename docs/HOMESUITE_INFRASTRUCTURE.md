@@ -1,6 +1,11 @@
 # HomeSuite — infraestructura, dominios y repositorio
 
-**Estado:** sitio público en producción; app autenticada y migración de TasKing pendientes
+**Política operativa:** [Operación común](homesuite/OPERACION.md). Los estados y recursos descritos abajo son snapshots fechados; consultar STATUS y configuración antes de ejecutar cambios remotos.
+
+**Estado:** sitio público en producción y staging; app autenticada en staging;
+D1, bucket de backups y Worker productivo sin rutas creados el 2026-10-27; el
+dominio de aplicación aún no recibe tráfico. Migración de TasKing pendiente. Consultar STATUS para
+versiones y hechos actuales.
 
 **Fecha:** 2026-09-21
 
@@ -20,6 +25,49 @@ HomeSuite tendrá un monorepo, una superficie pública aislada y una aplicación
 autenticada modular.
 
 ## Estado comprobado del dominio
+
+### Preparación productiva de HomeSuite App (2026-10-27)
+
+- Se creó la D1 vacía `homesuite-app-db` (`51f6a3b1-3c48-409a-b750-b87e4593c8ca`,
+  región ENAM). Se aplicaron las 12 migraciones del esquema inicial; no quedan
+  pendientes. `PRAGMA quick_check` devolvió `ok` y los conteos de usuarios,
+  grupos y movimientos dieron cero.
+- Se creó el bucket R2 privado `homesuite-app-backups`, independiente de la D1
+  y de la máquina operadora. La regla `expire-production-90d` elimina los
+  objetos bajo `production/` a los 90 días. La regla general aborta cargas
+  multipart incompletas a los siete días. Se probó el respaldo y recuperación
+  de la D1 vacía; ver [recuperación](HOMESUITE_RECOVERY.md).
+- `apps/app/wrangler.jsonc` incorpora un entorno `production` con nombre
+  explícito `homesuite-app`, D1 propia, Custom Domain previsto
+  `app.homesuite.info`, límites de solicitudes propios, cron diario y
+  observabilidad. El Worker se creó con una configuración temporal sin rutas,
+  `workers.dev` ni cron, para permitir cargar secretos antes de abrir tráfico.
+- El sitio público de producción sigue funcionando; `app.homesuite.info` aún no
+  recibe tráfico. El ID OAuth productivo está configurado y `SESSION_SECRET`
+  generado; Pablo cargó `GOOGLE_CLIENT_SECRET` desde su terminal. Ambos nombres
+  figuran en Wrangler, sin publicar aún el dominio.
+  No se cargaron datos personales ni financieros.
+
+El cliente OAuth web de Google debe tener como URI de redirección autorizada
+`https://app.homesuite.info/auth/callback`. En la pantalla de consentimiento,
+usar `https://homesuite.info/` como inicio y las páginas públicas
+`https://homesuite.info/privacidad` y `https://homesuite.info/terminos` una vez
+publicadas; comprobar el estado de publicación y el dominio autorizado en
+Google Cloud. Los únicos ámbitos solicitados por la app son `openid`, `email`
+y `profile`.
+
+Para cargar el secreto de Google sin escribirlo en el chat ni en Git, ejecutar
+desde la raíz del repositorio:
+
+```bash
+npx wrangler versions secret put GOOGLE_CLIENT_SECRET --env production --config apps/app/wrangler.jsonc
+```
+
+Wrangler pide el valor de forma interactiva y crea una versión que no abre
+tráfico automáticamente. Comprobar sólo los nombres con
+`npx wrangler secret list --env production --config apps/app/wrangler.jsonc`.
+
+Ver [recuperación](HOMESUITE_RECOVERY.md) y [STATUS](STATUS.md) para el registro.
 
 Snapshot histórico del 2026-09-17, previo a la publicación de la landing:
 
@@ -80,6 +128,7 @@ se debe volver a comprobar DNS, certificados y Worker.
 | `www.homesuite.info` | Redirección 308 al apex | `homesuite-site` |
 | `app.homesuite.info` | Suite autenticada de producción | `homesuite-app` |
 | `staging.homesuite.info` | Suite autenticada de prueba | `homesuite-app-staging` |
+| `site-staging.homesuite.info` | Home y landings públicas de prueba | `homesuite-site-staging` |
 
 Todos son apex o subdominios de primer nivel, cubiertos por Universal SSL de
 Cloudflare una vez que la zona esté activa.
@@ -185,7 +234,7 @@ Worker full-stack de producción para `app.homesuite.info`. Contendrá:
 
 - assets y shell autenticado;
 - OAuth y sesión;
-- plataforma: usuarios, espacios, membresías e invitaciones;
+- plataforma: usuarios, grupos, membresías e invitaciones;
 - dominios Tasks, Expenses y Shopping;
 - API Hono;
 - bindings de D1, R2 y backups.
@@ -225,6 +274,18 @@ solo por escala, seguridad, retención o cadencia comprobadas.
 ## Ambientes
 
 ### Decisión para el sitio público y la futura app (2026-09-21)
+
+**Actualización 2026-10-25:** Pablo pidió un staging equivalente a las dos
+superficies previstas para producción, con home, landings y funcionalidades. Se
+añade `site-staging.homesuite.info` como sitio público de staging y se conserva
+`staging.homesuite.info` para la app y su callback OAuth. Ambos Workers se
+publican por separado desde el mismo repo; el sitio no recibe D1, sesión ni
+secretos de la app. La landing de Cuentas Claras de staging enlaza a la ruta
+autenticada del mismo entorno. Se descartó usar un solo host para ambos Workers
+porque rompería la frontera pública/privada y el callback ya configurado; una
+preview por versión no ofrece una URL estable para recorrer la suite completa.
+Esta actualización sustituye la antigua opción de evaluar un segundo entorno
+público sólo si hiciera falta QA frecuente, descrita abajo como antecedente.
 
 - **Hoy:** `homesuite.info` y `www.homesuite.info` sirven `homesuite-site` en
   producción. Desde 2026-09-23, `staging.homesuite.info` está asociado al

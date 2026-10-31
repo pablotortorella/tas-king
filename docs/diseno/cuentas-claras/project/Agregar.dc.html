@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuentas Claras · Agregar movimiento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
+:root{color-scheme:light dark;--bg:#f7f2e8;--surface:#fffdf8;--ink:#1f2c24;--ink-1:#3d4a41;--ink-2:#4d5950;--ink-3:#5b665e;--accent-bg:#245c43;--accent-text:#245c43;--accent-line:#245c43;--accent-deep:#174b34;--accent-soft:#d9eadc;--ok-bg:#eef6ef;--neg:#a8412c;--coral-soft:#f6d9d1;--coral-text:#7a2e1d;--yel-soft:#f8e7b9;--yel-text:#4a3300;--warn-bg:#fbf4de;--warn-line:#ecd48f;--warn-line-2:#b79b45;--sunken:#fbf7ee;--teal-soft:#e3eeeb;--teal-text:#24504b;--teal-line:#5b8a7f;--line-soft:#efe8db;--line:#e4dccd;--line-strong:#c9c1b2;--line-mid:#d9d2c5;--field:#7d887f;--chip:#ece4d5;--shadow:rgba(31,44,36,.2);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}
+:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg)}
+button,input{font-family:inherit}
+a{color:var(--accent-text)}a:hover{color:var(--accent-deep)}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:4px;padding:10px 16px 0 6px">
+    <a href="Main.dc.html" aria-label="Cerrar sin guardar" style="width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--ink)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </a>
+    <h1 style="flex:1;margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Agregar movimiento</h1>
+    <span style="font-size:13px;color:var(--ink-3)">Casa compartida</span>
+  </header>
+
+  <sc-if value="{{ isGasto }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div role="group" aria-label="Tipo de movimiento" style="margin:8px 16px 0;padding:4px;border-radius:16px;background:var(--chip);display:flex;gap:4px">
+      <button aria-pressed="true" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-size:14px;font-weight:700;color:var(--ink)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="stroke:var(--coral-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>Gasto</button>
+      <button aria-pressed="false" onClick="{{ pickIngreso }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17M15 17H7V9"/></svg>Ingreso</button>
+      <button aria-pressed="false" onClick="{{ pickTransferencia }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 2px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg>Transferencia</button>
+    </div>
+    <p style="margin:8px 20px 0;font-size:13px;line-height:1.4;color:var(--ink-2)">Alguien pagó algo que le correspondía a una o más personas.</p>
+
+    <main style="flex:1;min-height:0;overflow-y:auto;padding:12px 16px 14px">
+      <label for="g-desc" style="display:block;margin-bottom:6px;font-size:14px;font-weight:600">Descripción</label>
+      <input id="g-desc" type="text" value="Supermercado Éxito" style="width:100%;box-sizing:border-box;height:52px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;color:var(--ink)">
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <div style="flex:1;min-width:0">
+          <label for="g-imp" style="display:block;margin-bottom:6px;font-size:14px;font-weight:600">Importe</label>
+          <div style="display:flex;align-items:center;height:56px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface)">
+            <span aria-hidden="true" style="font-size:22px;font-weight:700;color:var(--ink-3)">$</span>
+            <input id="g-imp" type="text" inputmode="decimal" value="286.400" style="flex:1;min-width:0;height:52px;margin-left:6px;border:0;outline:0;background:transparent;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)">
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:6px;font-size:14px;font-weight:600">Moneda</div>
+          <button aria-label="Moneda: COP, cambiar" style="display:flex;align-items:center;gap:4px;height:56px;padding:0 12px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;font-weight:700;color:var(--ink)">COP
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;font-size:14px;font-weight:600" id="g-pago">¿Quién pagó?</div>
+      <div role="group" aria-labelledby="g-pago" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vos</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Ana</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Laura</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Mateo</button>
+      </div>
+      <button style="min-height:44px;margin-top:2px;padding:0;border:0;background:transparent;color:var(--accent-text);font-size:14px;font-weight:600;text-decoration:underline">Pagaron varias personas</button>
+
+      <div style="margin-top:8px;font-size:14px;font-weight:600" id="g-entre">¿Entre quiénes se reparte?</div>
+      <div role="group" aria-labelledby="g-entre" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vos</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Ana</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Laura</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Mateo</button>
+      </div>
+
+      <div style="margin-top:12px;font-size:14px;font-weight:600" id="g-como">¿Cómo se reparte?</div>
+      <div role="group" aria-labelledby="g-como" style="display:flex;gap:6px;margin-top:6px">
+        <button aria-pressed="true" style="flex:1;min-height:44px;border:1.5px solid var(--accent-line);border-radius:12px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700">Igual</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Exacto</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">%</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Partes</button>
+      </div>
+
+      <div style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)">Cómo queda este movimiento</div>
+        <div style="margin-top:6px;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums">$71.600 por persona. <strong style="font-weight:700;color:var(--accent-text)">Vos +$214.800</strong> · Ana, Laura y Mateo <strong style="font-weight:700;color:var(--neg)">−$71.600</strong> cada uno.</div>
+      </div>
+    </main>
+
+    <footer style="padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--line)">
+      <a href="Movimientos.dc.html" style="display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;background:var(--accent-bg);color:#fffdf8;font-size:16px;font-weight:700;text-decoration:none">Guardar gasto</a>
+    </footer>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isIngreso }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div role="group" aria-label="Tipo de movimiento" style="margin:8px 16px 0;padding:4px;border-radius:16px;background:var(--chip);display:flex;gap:4px">
+      <button aria-pressed="false" onClick="{{ pickGasto }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>Gasto</button>
+      <button aria-pressed="true" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-size:14px;font-weight:700;color:var(--ink)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="stroke:var(--accent-deep)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17M15 17H7V9"/></svg>Ingreso</button>
+      <button aria-pressed="false" onClick="{{ pickTransferencia }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 2px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg>Transferencia</button>
+    </div>
+    <p style="margin:8px 20px 0;font-size:13px;line-height:1.4;color:var(--ink-2)">Alguien recibió dinero que le correspondía a una o más personas.</p>
+
+    <main style="flex:1;min-height:0;overflow-y:auto;padding:12px 16px 14px">
+      <label for="i-desc" style="display:block;margin-bottom:6px;font-size:14px;font-weight:600">Descripción</label>
+      <input id="i-desc" type="text" value="Alquiler apto Laureles" style="width:100%;box-sizing:border-box;height:52px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;color:var(--ink)">
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <div style="flex:1;min-width:0">
+          <label for="i-imp" style="display:block;margin-bottom:6px;font-size:14px;font-weight:600">Importe recibido</label>
+          <div style="display:flex;align-items:center;height:56px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface)">
+            <span aria-hidden="true" style="font-size:22px;font-weight:700;color:var(--ink-3)">$</span>
+            <input id="i-imp" type="text" inputmode="decimal" value="1.800.000" style="flex:1;min-width:0;height:52px;margin-left:6px;border:0;outline:0;background:transparent;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)">
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:6px;font-size:14px;font-weight:600">Moneda</div>
+          <button aria-label="Moneda: COP, cambiar" style="display:flex;align-items:center;gap:4px;height:56px;padding:0 12px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;font-weight:700;color:var(--ink)">COP
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;font-size:14px;font-weight:600" id="i-recibio">¿Quién lo recibió?</div>
+      <div role="group" aria-labelledby="i-recibio" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Vos</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Ana</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Laura</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Mateo</button>
+      </div>
+
+      <div style="margin-top:12px;font-size:14px;font-weight:600" id="i-corresponde">¿A quiénes les corresponde?</div>
+      <div role="group" aria-labelledby="i-corresponde" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vos</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Ana</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Laura</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Mateo</button>
+      </div>
+
+      <div style="margin-top:12px;font-size:14px;font-weight:600" id="i-como">¿Cómo se reparte?</div>
+      <div role="group" aria-labelledby="i-como" style="display:flex;gap:6px;margin-top:6px">
+        <button aria-pressed="true" style="flex:1;min-height:44px;border:1.5px solid var(--accent-line);border-radius:12px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700">Igual</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Exacto</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">%</button>
+        <button aria-pressed="false" style="flex:1;min-height:44px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Partes</button>
+      </div>
+
+      <label for="i-fuente" style="display:block;margin:12px 0 6px;font-size:14px;font-weight:600">¿De dónde viene? <span style="font-weight:500;color:var(--ink-3)">· opcional</span></label>
+      <input id="i-fuente" type="text" value="Inquilino" style="width:100%;box-sizing:border-box;height:48px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;color:var(--ink)">
+
+      <div style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)">Cómo queda este movimiento</div>
+        <div style="margin-top:6px;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums">Ana recibió $1.800.000 y le corresponden $900.000. <strong style="font-weight:700;color:var(--neg)">Ana −$900.000</strong> · <strong style="font-weight:700;color:var(--accent-text)">Vos +$900.000</strong>. No es un gasto en negativo.</div>
+      </div>
+    </main>
+
+    <footer style="padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--line)">
+      <a href="Movimientos.dc.html" style="display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;background:var(--accent-bg);color:#fffdf8;font-size:16px;font-weight:700;text-decoration:none">Guardar ingreso</a>
+    </footer>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isTransferencia }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div role="group" aria-label="Tipo de movimiento" style="margin:8px 16px 0;padding:4px;border-radius:16px;background:var(--chip);display:flex;gap:4px">
+      <button aria-pressed="false" onClick="{{ pickGasto }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>Gasto</button>
+      <button aria-pressed="false" onClick="{{ pickIngreso }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 4px;border:0;border-radius:12px;background:transparent;font-size:14px;font-weight:600;color:var(--ink-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17M15 17H7V9"/></svg>Ingreso</button>
+      <button aria-pressed="true" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 2px;border:0;border-radius:12px;background:var(--surface);box-shadow:0 1px 3px var(--shadow);font-size:14px;font-weight:700;color:var(--ink)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="stroke:var(--teal-text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg>Transferencia</button>
+    </div>
+    <p style="margin:8px 20px 0;font-size:13px;line-height:1.4;color:var(--ink-2)">Una persona le entregó dinero a otra.</p>
+
+    <main style="flex:1;min-height:0;overflow-y:auto;padding:12px 16px 14px">
+      <div style="font-size:14px;font-weight:600" id="t-de">¿Quién entregó el dinero?</div>
+      <div role="group" aria-labelledby="t-de" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Vos</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Ana</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Laura</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Mateo</button>
+      </div>
+
+      <div style="margin-top:14px;font-size:14px;font-weight:600" id="t-para">¿Quién lo recibió?</div>
+      <div role="group" aria-labelledby="t-para" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500" disabled>Vos</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Ana</button>
+        <button aria-pressed="true" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1.5px solid var(--accent-line);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Laura</button>
+        <button aria-pressed="false" style="min-height:44px;padding:0 14px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:500">Mateo</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <div style="flex:1;min-width:0">
+          <label for="t-imp" style="display:block;margin-bottom:6px;font-size:14px;font-weight:600">Importe</label>
+          <div style="display:flex;align-items:center;height:56px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface)">
+            <span aria-hidden="true" style="font-size:22px;font-weight:700;color:var(--ink-3)">$</span>
+            <input id="t-imp" type="text" inputmode="decimal" value="150.000" style="flex:1;min-width:0;height:52px;margin-left:6px;border:0;outline:0;background:transparent;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)">
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:6px;font-size:14px;font-weight:600">Moneda</div>
+          <button aria-label="Moneda: COP, cambiar" style="display:flex;align-items:center;gap:4px;height:56px;padding:0 12px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;font-weight:700;color:var(--ink)">COP
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+      </div>
+
+      <label for="t-desc" style="display:block;margin:14px 0 6px;font-size:14px;font-weight:600">Descripción <span style="font-weight:500;color:var(--ink-3)">· opcional</span></label>
+      <input id="t-desc" type="text" value="Adelanto para la feria" style="width:100%;box-sizing:border-box;height:52px;padding:0 16px;border:1.5px solid var(--field);border-radius:14px;background:var(--surface);font-size:16px;color:var(--ink)">
+      <p style="margin:6px 2px 0;font-size:13px;line-height:1.45;color:var(--ink-3)">Préstamo, adelanto, reintegro o pago parcial: lo contás acá. Para el saldo es lo mismo.</p>
+
+      <div style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)">Después de este movimiento</div>
+        <div style="margin-top:8px;display:grid;grid-template-columns:1fr auto auto auto;gap:6px 8px;align-items:center;font-size:14px;font-variant-numeric:tabular-nums">
+          <span style="font-weight:600">Vos</span><span style="color:var(--ink-3)">+$1.598.350</span><span aria-hidden="true" style="color:var(--ink-3)">→</span><strong style="font-weight:700;color:var(--accent-text)">+$1.748.350</strong>
+          <span style="font-weight:600">Laura</span><span style="color:var(--ink-3)">−$239.050</span><span aria-hidden="true" style="color:var(--ink-3)">→</span><strong style="font-weight:700;color:var(--neg)">−$389.050</strong>
+        </div>
+        <p style="margin:8px 0 0;font-size:13px;line-height:1.45;color:var(--ink-3)">No se vincula a ningún gasto ni deuda: solo mueve los saldos.</p>
+      </div>
+    </main>
+
+    <footer style="padding:12px 16px 20px;background:var(--bg);border-top:1px solid var(--line)">
+      <a href="Movimientos.dc.html" style="display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:16px;background:var(--accent-bg);color:#fffdf8;font-size:16px;font-weight:700;text-decoration:none">Registrar transferencia</a>
+    </footer>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tipo: 'gasto' };
+}
+renderVals() {
+return {
+isGasto: this.state.tipo === 'gasto',
+isIngreso: this.state.tipo === 'ingreso',
+isTransferencia: this.state.tipo === 'transferencia',
+pickGasto: () => this.setState({ tipo: 'gasto' }),
+pickIngreso: () => this.setState({ tipo: 'ingreso' }),
+pickTransferencia: () => this.setState({ tipo: 'transferencia' })
+};
+}
+}
+</script>
+</body>
+</html>

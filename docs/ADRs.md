@@ -1,5 +1,7 @@
 # Architecture Decision Records (ADRs)
 
+Las reglas transversales vigentes se consultan en la [base común](homesuite/README.md). Los ADR conservan contexto y evolución; su estado debe leerse junto a STATUS.
+
 Documento vivo que registra decisiones arquitectónicas importantes: **qué**, **por qué**, **consecuencias**, y **cuándo cambió**.
 
 Formato: [ADR0001](https://adr.github.io/) adaptado.
@@ -11,6 +13,7 @@ Formato: [ADR0001](https://adr.github.io/) adaptado.
 - [ADR-016: revisión persistente para sincronización](ADRs/ADR-016-board-sync-revision.md)
 - [ADR-017: frontend modular y cabeceras de seguridad](ADRs/ADR-017-frontend-modular-y-cabeceras.md)
 - [ADR-018: HomeSuite como suite modular](ADRs/ADR-018-homesuite-suite-modular.md)
+- [ADR-019: Archivos estáticos propios en HomeSuite App](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md)
 
 ---
 

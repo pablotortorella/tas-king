@@ -7,18 +7,18 @@ export function normalizeEmail(value) {
   return EMAIL_PATTERN.test(email) ? email : null;
 }
 
-export function normalizeSpaceName(value) {
+export function normalizeGroupName(value) {
   if (typeof value !== "string") return null;
 
   const name = value.trim().replace(/\s+/gu, " ");
   return name.length >= 1 && name.length <= 120 ? name : null;
 }
 
-export function canManageSpace(role) {
+export function canManageGroup(role) {
   return role === "owner";
 }
 
-export function canAccessSpace(role) {
+export function canAccessGroup(role) {
   return role === "owner" || role === "member";
 }
 

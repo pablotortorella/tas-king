@@ -1,9 +1,61 @@
 # 📋 PRODUCT BACKLOG — FUN TasKing!
 
-**Última actualización**: 2026-10-23
+## Base común: controles por completar (2026-10-24)
+
+Seguimiento de la [matriz de cumplimiento](homesuite/README.md#cumplimiento-conocido-al-adoptar-la-base).
+Responsable de priorización/revisión: Pablo; implementación a asignar al abrir cada cambio.
+Los ítems restantes no quedan cerrados por el despliegue de staging.
+
+- **Consola de administración para la persona dueña de HomeSuite** (pedido de Pablo, 2026-10-28, ya en producción; prioridad por confirmar). Quiere ver, como dueño, cuántas personas usan HomeSuite, cuántas están activas (último uso), cuántos grupos y movimientos hay y qué uso se le da a Remanso, entre otras cosas. Puntos a explorar y decidir: (1) **quién entra:** sólo cuentas de una lista de titulares definida fuera del código (variable o secreto), en una ruta propia que responda 404 al resto, de sólo lectura y con registro de accesos; (2) **qué se mide y con qué privacidad:** conteos agregados, sin ver contenido financiero ni datos personales de terceros salvo necesidad (el marco de identidad pide privacidad por defecto y bienestar sin presión de rendimiento); (3) **«último uso»:** hoy no se registra de forma explícita; se deriva de las sesiones y la actividad existentes o se agrega un campo (migración, y qué cuenta como uso); (4) **Remanso hoy no envía nada al servidor** (la sesión corre en el navegador y el estado de ánimo no se guarda ni se envía), así que medir su uso exige decidir si se cuentan sesiones de forma anónima y agregada, sin estado de ánimo, y entonces actualizar el spec («sin enviar»), los términos y la política de privacidad, y evaluar si hace falta consentimiento; (5) **Fun TasKing** es otra app con su propia base y ya tiene un panel de estadísticas (usuarios, tableros y tarjetas): decidir si la consola lo incluye o se mantienen separados; (6) costo de las consultas sobre la base de producción (sólo lectura) y cómo evitar que la consola afecte a las personas usuarias. Aceptación: exploración con Pablo (`/opsx:explore`) de las métricas y la privacidad; change con spec, pruebas de autorización (sólo la persona dueña; las demás reciben 404) y de que no se filtra contenido; textos legales revisados si se mide algo nuevo.
+- **Prioridad alta — Exportación y eliminación administrada de un grupo (bloquea aceptar datos financieros reales en producción).** Hoy el export de infraestructura da un SQL de recuperación, no una exportación entendible, y no hay borrado de un grupo. Debe existir, según [ciclo de vida de datos](HOMESUITE_DATA_LIFECYCLE.md): (1) exportación de un grupo con miembros, movimientos, componentes, moneda, revisiones y eventos en un formato documentado; (2) eliminación administrada del grupo completo, con confirmación reforzada y autorización exclusiva de quien corresponda; (3) exportación previa a la eliminación y comprobación de que no quedan filas financieras huérfanas; (4) política para solicitudes de eliminación de cuenta cuando la identidad siga siendo necesaria en libros compartidos o auditoría. Anular o editar un movimiento sigue creando una revisión, no reescribe el pasado. Aceptación: exploración con Pablo (`/opsx:explore`), change con pruebas de autorización y de integridad, y el ensayo de exportar, eliminar y restaurar sobre una base descartable. Decidido el 2026-10-28: se hace después del primer deploy, antes de abrir producción a datos reales.
+- Automatizar la verificación previa al deploy de HomeSuite App y sitio. Las suites específicas entraron a CI el 2026-10-25; el comando de deploy aún no las encadena. Aceptación: fallos de cada suite bloquean la publicación.
+- Hacer verificable la correspondencia entre SHA revisado, staging y producción; coordinar el uso compartido de staging. Aceptación: rechazo o detección explícita de una versión distinta antes de publicar.
+- Revisar la detección de secretos de `verify-ready` y definir control efectivo. Aceptación: un fixture sintético demuestra detección sin exponer secretos reales.
+- Corregir el aislamiento de `scripts/db-restore.sh` local: hoy elimina `.wrangler/state` completo. Aceptación: restaurar en estado descartable sin borrar D1/R2 ajenos al ensayo.
+- Ensayar restauración aislada completa de TasKing y definir/comprobar recuperación y ciclo de vida de datos de HomeSuite antes de información irreemplazable. Incluir índices, triggers y archivos aplicables; registrar RPO/RTO y resultados.
+- Seguir el respaldo diario de HomeSuite, comprobar la notificación de fallos y acordar RPO/RTO. La primera ejecución programada corrió el 2026-10-28 11:19 UTC y terminó con éxito (run #40679091382); falta la notificación de fallos y el RPO/RTO. El ensayo manual del workflow del 2026-10-27 verificó exportación, carga en R2, descarga y restauración de la base vacía; no prueba aún el cron ni el comportamiento con datos reales.
+- **Prioridad alta antes de cargar datos reales — dejar funcionando el respaldo diario con el token nuevo.** Verificado el 2026-10-28 (panel de Cloudflare): el token anterior era **de usuario, de todas las cuentas y sin caducidad**, y `D1` no admite alcance por base (sólo dominios, Workers, apps y buckets de R2). Se creó `homesuite-token`, **de cuenta**: D1 Write de cuenta completa (alcanza a todas las bases de la cuenta, incluidas las de TasKing) y R2 Item Read/Write sólo en `homesuite-app-backups`; **sin caducidad por decisión de Pablo** (riesgo aceptado, su razón: probabilidad mínima de filtración). Falta: el secreto de GitHub falla en el runner con `Authentication error [10000]` aunque el token responde desde la terminal; recargarlo con el valor verificado (`printf %s "$CF_TOKEN" | gh secret set HOMESUITE_PROD_BACKUP_API_TOKEN`), obtener un run en `success`, y recién entonces revocar el token viejo y el `Cloudflare Agent Token` (más de 172 permisos, sin uso desde junio). Después, registrar la decisión en [recuperación](HOMESUITE_RECOVERY.md) (el documento dice «Account API token») y evaluar la alternativa de una cuenta de Cloudflare propia para producción. Responsable de revisión: Pablo.
+- Automatizar enlaces internos de documentación en CI. Aceptación: un enlace local roto falla y los enlaces válidos pasan sin consultar red.
+
+## 🧘 Remanso: decisiones y riesgos pendientes (2026-10-26)
+
+Ficha: [Remanso](productos/REMANSO.md). Primer corte en la rama `feature/remanso`
+(ver [STATUS](STATUS.md)). Nada de lo siguiente está decidido ni resuelto; los ítems
+marcados **investigar** requieren una investigación a fondo en internet (qué
+conviene y cómo) antes de elegir, y su resultado se registra aquí.
+
+- **Prioridad alta — Sonidos reales (grabaciones) para Remanso** (Pablo, 2026-10-28). Pablo reunió grabaciones reales que reemplazarían el sonido sintetizado del motor (fondos y, si corresponde, gongs). Hoy todo se sintetiza en el dispositivo y el spec dice «sin descargar audio»; esto lo cambia. Puntos a resolver: (1) **peso y carga:** órdenes de magnitud por minuto de audio, WAV estéreo 44,1 kHz ≈ 10,6 MB, MP3 a 128 kbps ≈ 1 MB, Opus a 64 kbps ≈ 0,5 MB; un fondo se resuelve con un **bucle** de 1 a 3 minutos (no la sesión entera), de modo que cada fondo pesaría del orden de 0,5 a 2 MB comprimido y habría que bajar **solo el elegido**, con caché; los pesos reales se miden con los archivos de Pablo; (2) **bucles sin corte audible** y volumen parejo entre fondos; (3) **licencia y atribución de cada archivo**, verificadas antes de usarlas y registradas en el repositorio (fuente, autor, licencia); (4) **el nivel con cuenta pasa a ser una restricción de servidor** si los archivos del nivel con cuenta no deben ser públicos: hoy los archivos son estáticos y cualquiera podría pedirlos; (5) el audio en iPhone y con la pantalla bloqueada cambia con archivos (un `<audio>` no se comporta como Web Audio); (6) cambios de spec («Fondos sonoros»), de la política de contenido, de las pruebas y del motor (huella fijada). Aceptación: Pablo reúne los archivos con fuente, licencia, duración y peso; exploración con Pablo (`/opsx:explore`) de formato, bucles y carga; change con spec modificada y prueba de carga en conexión lenta; escucha de los seis fondos seguidos en el teléfono. Sustituye al ítem «fondos sintetizados vs. grabados» de más abajo.
+- **Historial de sesiones** `{ fecha, minutos, fondo, ánimo }`: persona u hogar, para qué, sin rachas ni presión. Hoy el ánimo no se guarda ni se envía. Aceptación: exploración con Pablo; si se guarda, migración, privacidad y export definidos.
+- **Publicar Remanso en producción** (app y sitio público). La placa y la landing existen y funcionan en staging; el sitio de producción dice «en preparación». Aceptación: aprobación explícita de Pablo, publicación de la app y el sitio por separado según [operación](homesuite/OPERACION.md), y la landing de producción con enlace real a la app.
+- **Elección del gong en el perfil** para que siga a la persona entre dispositivos (hoy vive en el dispositivo). Aceptación: exploración con Pablo; si se guarda en el servidor, migración compatible, API con CSRF y qué pasa sin cuenta.
+- **Más sonidos de gong o campanas** si hace falta; hoy son tres (brillante, profundo, cuenco) y los dos últimos requieren cuenta.
+- **Modo oscuro para todo el shell de la app.** Hoy sólo Remanso adapta el encabezado. Aceptación: tokens compartidos y snapshots de las demás rutas actualizados con revisión visual.
+- **Investigar: iPhone en modo silencio.** Web Audio probablemente no suene con el interruptor activado. Hallazgo de la búsqueda del 2026-10-28 (fuentes: boletines de WebKit y guías de desarrollo, no documentación oficial): iOS trata Web Audio como sonido «ambiente», que obedece el interruptor, mientras que los elementos de medios lo ignoran; desde iOS 17 se puede pedir `navigator.audioSession.type = "playback"` (con detección de la función; evitar los tipos «transient»), y antes se usaba un `<audio>` silencioso de un segundo (con el efecto lateral de mostrar controles de medios en la pantalla de bloqueo). No hay API para leer el estado del interruptor; un botón propio de silencio es un respaldo. Nadie en el equipo tiene iPhone (decisión de Pablo): opciones para probarlo son una persona con iPhone con una lista de pasos, un servicio de dispositivos reales en la nube (BrowserStack o similar; precios sin verificar) o Playwright con WebKit, que no reproduce el interruptor ni el bloqueo. Aceptación: prueba en un dispositivo real en ambas posiciones y solución o aviso decidido; la línea de `audioSession` ya está implementada (2026-10-28, `ensureCtx()` en `SuiteEngine`) pero **sin verificar en un iPhone**: queda sin aceptar hasta esa prueba.
+- **Investigar: pantalla bloqueada o app en segundo plano.** El audio puede cortarse; el Wake Lock no se renueva al volver a la pestaña. Evaluar PWA/app nativa con reproducción en segundo plano. Aceptación: opciones comparadas con fuentes y decisión.
+- **Investigar: arranque suspendido del audio.** En Firefox headless ~1 de cada 8 inicios queda «En pausa» hasta pulsar «Reanudar». Aceptación: reproducir en iOS/Android reales y decidir si la interfaz debe reintentar.
+- **Volumen relativo entre fondos:** calibrado a mano. Aceptación: escuchar los seis seguidos en el teléfono y ajustar.
+- *(Superado por el ítem de prioridad alta «Sonidos reales», 2026-10-28.)* **Investigar: fondos sintetizados vs. grabados.** Sintetizados no tienen licencias ni peso pero suenan menos reales; si se pasa a grabaciones, verificar la licencia de cada archivo (p. ej. CC0). Si el nivel con cuenta llegara a incluir grabaciones, mover la restricción de nivel al servidor.
+- **Segundo motor de navegador (WebKit/Safari)** para las pruebas automáticas de Remanso; hoy Chromium y, de forma opcional e intermitente, Firefox.
+
+**Última actualización**: 2026-10-26
 **Reemplaza a**: `PROJECT_BACKLOG.md` (raíz) y `docs/backlog.txt` — unificados y borrados el 2026-07-04.
 
 Este es el documento madre de prioridades del producto: qué falta, por qué importa, y con qué nivel de detalle ya está pensado. Para el historial de qué se implementó y cómo, ver [`docs/STATUS.md`](STATUS.md).
+
+---
+
+## Identidad de marca: aplicación pendiente (2026-10-26)
+
+Origen: [Identidad y visión](HOMESUITE_IDENTIDAD_Y_VISION.md), §11. Son tareas de
+exploración y revisión, no un roadmap comprometido; ninguna autoriza cambios de código,
+logo ni paleta por sí sola. Priorización y aprobación: Pablo.
+
+- Explorar el alcance individual de Cuentas Claras (registro sin grupo, estructura mínima, privacidad, paso a compartido) antes de reflejarlo en landing o app.
+- Definir el alcance individual de TasKing y Compras y su comunicación.
+- Revisar la identidad visual actual (emblema y favicon) antes de proponer cambios. El acento por producto ya se aplicó (2026-10-27, `acentos-y-catalogo-publico`); el azul verdoso de Compras queda definido y sin uso.
+- Reponer Compras (sitio y app) cuando la herramienta exista: recuperar su landing del historial de git (`apps/site/public/compras.html` hasta el commit `da8626c`), reponer las tarjetas, la ruta, su entrada en `apps/app/src/tools.js` y su clase de acento, y quitarla de la lista de retiradas de `scripts/homesuite-coherencia.mjs`.
+- Decidir si y cómo comunicar productos en exploración (Rituales, Momentos, Bitácora) y sus nombres definitivos. «Pausa» salió el 2026-10-27: Remanso, la herramienta de meditación ya integrada, ocupa su lugar.
+- Definir estrategia de idioma/localización y privacidad/modelo de datos para herramientas de bienestar.
 
 ---
 
@@ -24,18 +76,19 @@ Este es el documento madre de prioridades del producto: qué falta, por qué imp
 
 **Estado:** visión y MVP documentados; landing pública en producción desde el
 2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
-autenticada, Cuentas Claras y Compras aún no están implementados. Esto no reemplaza
+autenticada funciona en staging; el núcleo cotidiano de Cuentas Claras está en
+una rama de revisión y Compras aún no está implementada. Esto no reemplaza
 automáticamente el foco vigente de TasKing.
 
-HomeSuite será la marca paraguas en `homesuite.info` para herramientas de vida
-compartida. La dirección acordada es reutilizar Cloudflare, autenticación y
+HomeSuite será la marca paraguas en `homesuite.info` para herramientas de la vida
+cotidiana del hogar (ver [identidad](HOMESUITE_IDENTIDAD_Y_VISION.md)). La dirección acordada es reutilizar Cloudflare, autenticación y
 operación mediante un monorepo. El sitio público tendrá un Worker sin datos ni
 sesión; la aplicación autenticada será un monolito modular con staging aislado,
 manteniendo separados los dominios de Tareas, Cuentas Claras y Compras.
 
 Orden estratégico inicial:
 
-1. plataforma mínima: identidad estable, sesión, espacios e invitaciones;
+1. plataforma mínima: identidad estable, sesión, grupos e invitaciones;
 2. **Cuentas Claras**, con el objetivo concreto de reemplazar Splitwise;
 3. migración gradual de TasKing a `/tareas`, sin big bang;
 4. **HomeSuite Compras**, reutilizando la plataforma colaborativa.
@@ -83,14 +136,14 @@ TasKing.
 
 #### Capacidad transversal posterior: administración y temas de la suite
 
-La titularidad de un espacio no equivale a administrar HomeSuite. Existirá un
+La titularidad de un grupo no equivale a administrar HomeSuite. Existirá un
 rol técnico y explícito de **administración de la suite**, inicialmente asignado
 al usuario administrador de la plataforma. Su perfil ofrecerá una entrada a la
 administración global y a la de cada producto habilitado.
 
-La primera consola deberá priorizar salud y operación: usuarios, espacios,
+La primera consola deberá priorizar salud y operación: usuarios, grupos,
 invitaciones, uso por producto y conteos agregados de registros (por ejemplo,
-transacciones). El acceso al contenido privado de un espacio o a movimientos
+transacciones). El acceso al contenido privado de un grupo o a movimientos
 individuales no será implícito por ser administrador: requerirá una capacidad
 separada, justificación visible y auditoría, si alguna vez resulta necesaria.
 
@@ -101,14 +154,14 @@ usable; no se congelan nombres ni colores antes de esa conversación de diseño.
 
 | Orden | Historia | Resultado observable |
 |---|---|---|
-| HA-01 | Como administrador de HomeSuite, quiero acceder desde mi perfil a una consola de suite y a las administraciones de productos para operar la plataforma sin confundir ese poder con la titularidad de un espacio. | El acceso sólo aparece y funciona para administradores de plataforma; toda acción administrativa queda auditada. |
-| HA-02 | Como administrador, quiero ver indicadores agregados de usuarios, espacios y uso de cada producto para conocer el estado de la suite sin exponer contenidos privados por defecto. | La consola muestra métricas agregadas y separa expresamente cualquier acceso excepcional a datos individuales. |
+| HA-01 | Como administrador de HomeSuite, quiero acceder desde mi perfil a una consola de suite y a las administraciones de productos para operar la plataforma sin confundir ese poder con la titularidad de un grupo. | El acceso sólo aparece y funciona para administradores de plataforma; toda acción administrativa queda auditada. |
+| HA-02 | Como administrador, quiero ver indicadores agregados de usuarios, grupos y uso de cada producto para conocer el estado de la suite sin exponer contenidos privados por defecto. | La consola muestra métricas agregadas y separa expresamente cualquier acceso excepcional a datos individuales. |
 | HT-01 | Como persona usuaria, quiero elegir temas visuales coherentes entre productos para reconocer mi experiencia de HomeSuite en Tareas, Cuentas Claras y Compras. | La selección usa tokens compartidos; cada producto conserva su composición y preferencias específicas. |
 | HT-02 | Como persona usuaria, quiero temas con nombres e historias inspirados en América Latina para que la suite tenga una identidad cercana y no genérica. | La paleta y sus nombres se definen en una exploración visual posterior, con referencias culturales cuidadosas y sin apropiación superficial. |
 
 | Orden | Historia | Resultado observable |
 |---|---|---|
-| HG-01 | Como titular, quiero iniciar sesión y crear un espacio con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su espacio y su libro nuevo. |
+| HG-01 | Como titular, quiero iniciar sesión y crear un grupo con mi libro de Cuentas Claras para tener una frontera privada y un punto de partida propio. | El titular ve únicamente su grupo y su libro nuevo. |
 | HG-02 | Como titular, quiero invitar a una persona por email para que ambos veamos el mismo libro sin compartir una cuenta. | La invitación se acepta una vez; ambas personas acceden al mismo grupo y no a grupos ajenos. |
 | HG-03 | Como titular, quiero previsualizar un CSV de exportación de Splitwise y mapear sus participantes para saber qué se importará antes de guardar. | Se distinguen participantes, movimientos y fila de resumen; se muestran conteos y saldos previstos por moneda. |
 | HG-04 | Como titular, quiero decidir qué hacer ante cada incidente de importación para no perder control sobre mi historia. | Cada incidente muestra fila y motivo; puedo cancelar, aplicar un supuesto explícito o importar el subconjunto seguro. |
@@ -118,11 +171,30 @@ usable; no se congelan nombres ni colores antes de esa conversación de diseño.
 
 **Estado 2026-09-22:** `plataforma-homesuite-minima` está en WIP. PR #59 dejó
 integrados Worker aislado, esquema D1, restricciones de owner/invitación y demo
-local. El corte en curso convierte creación de espacio e invitación en operaciones
+local. El corte en curso convierte creación de grupo e invitación en operaciones
 D1 locales cubiertas por integración; Google OAuth, sesión host-only, staging y
 producción siguen pendientes. Después, `importacion-splitwise-inicial` cubre
 HG-03 a HG-05; no se mezclarán autenticación, modelo financiero y parser de
 importación en un solo change.
+
+**Estado 2026-10-23:** el recorrido con dos cuentas y la base financiera están
+verificados en staging (#68 y #71, aún abiertos). La rama
+`feature/homesuite-financial-core` implementa HG-01, HG-02 y el uso cotidiano
+de HG-06, además de ingresos, transferencias, balances, correcciones y
+exportación. HG-03 a HG-05 y HG-07 quedan para el cambio de importación y
+búsqueda. No hay publicación productiva de Cuentas Claras.
+
+**Avance del mismo corte:** `feature/homesuite-splitwise-import`, apilada sobre
+el núcleo, implementa HG-03 a HG-05 y HG-07 con CSV, mapeo, incidentes,
+conciliación, importación idempotente y búsqueda conjunta. Falta integrar y
+validar ambas ramas en staging antes de cambiar el estado de estas historias a
+completado.
+
+**Ajustes de revisión 2026-10-23:** la rama apilada
+`feature/homesuite-review-feedback` amplía monedas a Sudamérica y México,
+incorpora URLs de grupo legibles pero estables, lleva a la segunda cuenta
+directamente a sus invitaciones pendientes y permite buscar fragmentos de
+montos ignorando separadores de miles.
 
 ---
 
@@ -164,11 +236,17 @@ importación en un solo change.
 
 | — | 📱 Tip diario completo en móvil, etiquetas en tarjeta nueva y teclado en checklists | 2026-10-23 — v2.3.1 (PRs #65, #66 y #67). `100dvh` en el `body`; `draftLabels` con el patrón de `draftGoals`; Tab/Enter/Backspace en ítems de checklist (ADR-014). Falta auditar el resto de los campos del modal con el mismo criterio de teclado. Ver `docs/STATUS.md` |
 | — | 🎯 Progreso de objetivos con varias columnas de cierre + validación de columna al guardar tarjetas | 2026-10-23 — v2.3.2 (PRs #77 y #78). El progreso cuenta todas las columnas `is_done` (servidor y cliente); crear/editar/reordenar rechazan columnas inexistentes con 400 y el import manda las tarjetas desconocidas a la primera columna. Ver `docs/STATUS.md` |
+| — | 🔎 Cuentas Claras: buscar la categoría escribiendo | 2026-10-29 — pedido de Flori (PR #121, con un (?) que muestra las categorías disponibles). Un solo campo que filtra mientras se escribe y ofrece crear si nada coincide; el `<select>` sigue como alternativa sin JavaScript. En `main` y staging; producción pendiente |
+| — | 💳 Cuentas Claras: forma de pago del movimiento | 2026-10-29 — pedido de Flori (PR #122, migración `0012_payment_method.sql`). Lista fija y opcional (Efectivo, Débito, Crédito, Transferencia, Billetera virtual); no aplica a transferencias entre personas. En `main` y staging; producción pendiente |
 ---
 
 ## 🛠️ Implementado, pendiente de publicar
 
-_Sin ítems pendientes — todo lo implementado está en producción desde el deploy v2.3.0 del 2026-09-18._
+En `main` y en staging desde 2026-10-31 (app `fdafbca7`, sitio `1b67cd8e`; detalle en [STATUS](STATUS.md)), **no publicado en producción**, que sigue en `main` `3d32ae5`. Publicar `main` lleva todo junto y requiere aprobación explícita y respaldo previo:
+
+- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124), pendiente de probar en un celular real.
+- **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
+- **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122), esta última con la migración `0012_payment_method.sql`, que cambia el esquema de la base de producción.
 
 ---
 
@@ -200,6 +278,8 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟡 Media prioridad
 
+- **Cuentas Claras: lo que quedó fuera de «buscar categoría» y «forma de pago»** (Flori, 2026-10-29; sin decidir). El mismo campo de búsqueda de categoría en el filtro de la lista y en el cambio en bloque. Y, a decidir si hace falta: filtro por forma de pago en la lista, informes, formas propias por grupo (como las categorías) y asignar la forma de pago en bloque. Esfuerzo 🟡.
+- **Jardín Zen v0.4: orientación, giro y visibilidad del rastrillo** (ajustes acordados con Pablo, 2026-10-31; **propuesto, sin implementar**). Mango invertido, giro suave del rastrillo y control «Rastrillo visible / oculto» que se recuerda en el navegador. Se incorpora cuando termine el orden de ramas y worktrees viejos. Cambio OpenSpec `jardin-zen-rastrillo-v04`; documento original en `docs/diseno/jardin-zen/propuestas/`. Falta verificar WebGL 2 y el giro en un celular real.
 - **Performance: localizar latencia residual del backend** — 🟡 esfuerzo medio. Después de aplicar y comprobar el set de mejoras estructurales, instrumentar etapas si la latencia sigue alta: rate limiting, autenticación/revocación, preparación de usuario y handler. Distinguir ejecución SQL de espera Worker-D1. Preservar revocación inmediata. Evaluar junto con “Rate limiting más granular” y el hallazgo técnico de overhead D1.
 - **Performance frontend en tableros grandes** — 🟡 esfuerzo por determinar. La primera mejora todavía llama a `render()` completo después de una mutación. Capturar tiempo de clic a actualización, tareas largas, tamaño de respuesta y costo de render con un tablero representativo antes de diseñar un render incremental.
 - **Guardados con recursos relacionados** — 🟡 esfuerzo medio, condicionado por medición. Adjuntos, checklists y objetivos conservan varias escrituras y una relectura de la tarjeta afectada. Medir esos flujos por separado; agrupar operaciones o respuestas solo si aparecen como parte relevante de la latencia.
@@ -212,6 +292,8 @@ Ideas de evolución, en orden de qué falta:
   - *Reordenar adjuntos (drag to reorder)*: requiere columna `position` en tabla `attachments`, drag handlers por adjunto, endpoint `PUT /api/attachments/reorder`.
 - **Panel lateral de actividad del tablero**: el historial existe por tarjeta y en Admin — falta un feed lateral tipo "¿qué pasó hoy en el tablero?" sin ir al panel de administración (similar a Notion/Linear).
 - **Notificaciones** (asignación de tarjeta, vencimiento próximo): badge en el tab del navegador, email, o Web Push. 🟡/🔴 esfuerzo.
+- **Cuentas Claras: envío de correo electrónico** (pedido por Pablo el 2026-10-27; prioridad por confirmar). Hoy invitar crea un registro: la persona invitada lo ve solo si entra con Google con ese mismo email y abre `/invitations`; nadie recibe un aviso. El primer caso es el correo de la invitación; más adelante podrían sumarse otros avisos (aceptación, recordatorios). Esfuerzo 🔴. Necesita su propia exploración: proveedor (hay Cloudflare Email Service) y dominio remitente con SPF/DKIM, qué dice el correo sin revelar datos del grupo antes de aceptar (hoy la invitación solo muestra quién invita), estado de entrega y reintentos, límites de envío por titular y por email, qué pasa si el correo rebota, y cómo se prueba sin enviar correos reales (local y staging).
+- **Cuentas Claras: borrar personas del grupo** (pedido por Pablo el 2026-10-27; prioridad por confirmar). Hoy no hay forma de quitar a nadie: una persona solo puede **unirse** con otra (sus movimientos pasan a la otra y deja de figurar) y la invitación pendiente se puede cancelar. Hay dos casos distintos y conviene decidirlos por separado: **quitar a un integrante** (con acceso: pierde el acceso al grupo, sus sesiones dejan de ver los saldos, el titular no puede quitarse a sí mismo y habría que ver «salir del grupo» por cuenta propia) y **borrar una persona que participa** (con o sin cuenta, que ya figura en movimientos y saldos). Preguntas abiertas: borrar de verdad o desactivar y ocultar (los movimientos viejos no pueden quedar sin nombre), qué pasa si tiene saldo distinto de cero o movimientos, si se puede volver a invitar, qué queda en la auditoría y en las revisiones, y cómo se habla de esto en el [glosario](homesuite/GLOSARIO.md) (integrante = tiene acceso; persona = participa). Esfuerzo 🟠.
 
 ## 🟢 Baja prioridad / ideas a futuro
 
@@ -223,10 +305,12 @@ Ideas de evolución, en orden de qué falta:
 - **Papelera (soft-delete)**: recuperar tarjetas borradas (distinto del archivo actual, que ya permite restaurar tarjetas archivadas — evaluar si esto ya cubre la necesidad antes de construir algo nuevo).
 - **Rol "solo lectura"** en tableros compartidos.
 - **PWA instalable** + mejoras de mobile.
+- **Cuentas Claras: categorías y subcategorías** (decidido 2026-10-26 con Pablo al unificar el lenguaje de «grupo»). Hoy «Casa» en «Casa - Otro» se llama «grupo de la categoría» (campo «Grupo», `group_name`, `group_key`, `category.group`) y choca con «grupo» como lugar compartido. Decisión: «Casa» es la categoría y «Otro» la subcategoría; el movimiento se asigna a una subcategoría. Esto reformula el modelo (`ledger_categories`, la pantalla de Categorías, filtros «Todo Casa», selectores con `optgroup`, recategorización, importación de Splitwise, pruebas) y necesita su propia exploración: qué nombre lleva lo que se asigna, cómo se muestra «Sin categoría», y qué pasa con las categorías sin subcategoría. Esfuerzo 🔴. Hasta entonces el código conserva `group` en las categorías como excepción conocida del [glosario](homesuite/GLOSARIO.md).
+- **Cuentas Claras: más de un libro por grupo** (decidido 2026-10-26 con Pablo: el concepto se conserva, la capacidad queda para después). El grupo es quiénes están y quién es titular; el libro (`ledger`) es donde viven movimientos, categorías y saldos, y hoy hay uno solo por grupo (`expense_ledgers.group_id` es `UNIQUE`). Mientras haya uno, la UI habla de «grupo», «movimientos» y «saldos», y «libro» aparece cuando exista el segundo. Las rutas ya separan `/ledger/…` del grupo, así que no hay que reescribirlas. Para abrirlo hará falta decidir: cómo se crea un libro y cuál es el principal, si los saldos son por libro o del grupo, si las categorías y las personas se comparten entre libros, y cómo elige el libro la persona al entrar. Esfuerzo 🔴. Se abre como cambio propio: la base solo quita el `UNIQUE` y suma un nombre de libro.
 - **Tips a medida basados en comportamiento** (explorado 2026-09-09, pensado junto con el tip diario de onboarding pero implementable por separado):
   - *Enfoque decidido*: mirada **sistémica** (el estado del flujo del tablero) mostrando además **cómo el comportamiento concreto de la persona contribuye a ese estado**. Ni acusación individual ("moviste 6 tarjetas y no terminaste ninguna") ni estadística abstracta que no le habla a nadie. Fundamento Lean: el problema es el proceso, no la persona; la persona necesita ver su aporte al flujo, no ser juzgada.
   - *Hallazgo técnico*: no requiere instrumentar nada nuevo. `audit_log` (migración 0005) ya registra `board_id | card_id | action | email | ts | details(JSON)` con 10 acciones (`card_created/moved/edited/archived/restored/deleted`, `column_created/renamed/moved/deleted`). Es un lector sobre un stream de eventos existente, no un feature de captura de datos.
-  - *Riesgo principal*: molestar o sonar vigilante. Necesita control de frecuencia explícito y un espacio de UI propio, distinto del tip diario.
+  - *Riesgo principal*: molestar o sonar vigilante. Necesita control de frecuencia explícito y un grupo de UI propio, distinto del tip diario.
 
 ---
 

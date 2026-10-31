@@ -1,0 +1,89 @@
+# Plataforma HomeSuite y sitio público
+
+Hereda la [base común](../homesuite/README.md). Diseño objetivo en
+[ADR-018](../ADRs/ADR-018-homesuite-suite-modular.md) y recursos concretos en
+[infraestructura](../HOMESUITE_INFRASTRUCTURE.md). Implementación por rama/entorno
+en [STATUS](../STATUS.md); no deducirla de los documentos de visión.
+
+## Identidad, home y landings
+
+Propósito, ejes, tono, voseo y borradores de copy en
+[Identidad y visión](../HOMESUITE_IDENTIDAD_Y_VISION.md); es intención de marca, no
+lista de tareas. Cambios de home, landings, descripciones y metadatos:
+
+- proponer un diff acotado y distinguir hechos actuales de aspiraciones;
+- presentar por separado productos disponibles, en desarrollo y exploraciones; no
+  anunciar exploraciones ni fechas sin decisión de Pablo;
+- no prometer funciones, privacidad, sincronización ni colaboración sin verificarlas;
+- no cambiar logo, favicon ni paleta antes de revisar la identidad vigente; el acento por
+  producto (verde, terracota y ámbar, sólo en rótulo, borde e ícono) usa colores que la
+  suite ya tenía y se aprobó el 2026-10-27 (change `acentos-y-catalogo-publico`);
+- el copy de home y landings se alineó con esta dirección el 2026-10-27 (change
+  `identidad-textos-suite`); el sitio público muestra sólo herramientas funcionales: Compras
+  no se nombra en ningún lugar del sitio ni de la app (se retiró el 2026-10-28); Cuentas Claras y Remanso se rotulan «Versión
+  Beta» y Fun TasKing «Disponible». Jardín Zen se añadió como beta (cambio `jardin-zen-beta`, PR #124): está en `main` y en staging, no en producción. Con cuatro herramientas, las tarjetas del inicio de la app y de la home del sitio se disponen en 2×2 (una columna en pantallas angostas).
+
+## Plataforma
+
+`apps/app/` implementa la app autenticada; su modelo compartido es identidad,
+sesiones, grupos, membresías, invitaciones y auditoría. Mantener invariantes de
+creación atómica del grupo/titular y aceptación atómica de invitaciones.
+Descubrir una invitación no concede acceso al contenido privado.
+
+La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
+ruta; Cuentas Claras muestra su estado en `/cuentas-claras` después de elegirla.
+El sitio público de staging replica home y landings en otro Worker. El HTML lleva los
+enlaces de producción (`app.homesuite.info`, TasKing de producción) y el worker de
+staging los reescribe a los del staging, así que cada sitio conduce a la app de su propio
+ambiente. `npm run verify:coherence:<ambiente>` comprueba que sitio y app cuenten lo
+mismo; la lista de herramientas de la app vive en `apps/app/src/tools.js`. Consultar STATUS para
+dominios y versión activa.
+
+Desde la raíz, comandos actualmente disponibles:
+
+- `npm run dev:homesuite-app`
+- `npm run test:homesuite-app`
+- `npm run test:homesuite-app:integration`
+- `npm run test:e2e:remanso` (Playwright sobre `wrangler dev`; ver [Remanso](REMANSO.md))
+- `npm run dev:homesuite-app:anonimo` (sin usuario local)
+- `npm run test:homesuite-site:e2e` (Playwright del sitio público)
+- `npm run test:homesuite-site`
+- `npm run db:migrate:homesuite-app:local`
+- `npm run deploy:homesuite-app:staging`
+
+Ver scripts en `package.json` y configuración en `apps/app/wrangler.jsonc` antes
+de usarlos. El deploy de staging no ejecuta tests: correr las suites específicas
+y los checks generales afectados primero. CI ejecuta las suites de app y sitio,
+además de las generales y Playwright; el login real sigue requiriendo prueba
+dirigida. No equiparar `test:all` con verificar toda la suite de productos.
+
+La aceptación de identidad y colaboración requiere dos cuentas reales en staging:
+crear grupo, invitar, descubrir sin filtrar contenido, aceptar/rechazar, comprobar
+roles y aislamiento. Registrar el SHA y resultado de cada recorrido. Un login
+exitoso no demuestra el resto. Separar identidades locales de sesiones reales.
+
+## Sitio público
+
+`apps/site/` sirve landings y assets, sin bindings de datos ni sesión de la app.
+Configurar y publicar con su propio `wrangler.jsonc`; verificar apex, redirección
+`www`, rutas, links y cabeceras. No publicar app para cambiar una landing ni enviar
+cookies autenticadas al sitio. Cambios de DNS preservan registros ajenos al alcance.
+
+## Límites
+
+La política de recuperación y ciclo de vida de datos debe demostrarse antes de
+operar con información irreemplazable. Estado actual y dependencias de integración
+no se copian aquí: consultar STATUS y el change correspondiente. Esta ficha no
+habilita publicar producción ni convierte condiciones pendientes en excepciones.
+
+## Perfil compartido
+
+Acuerdos de nombre, avatar y apodo por grupo en la
+[exploración](../HOMESUITE_PERFIL_EXPLORACION.md); contratos y plan en el
+[change de Perfil](../../openspec/changes/perfil-compartido-homesuite/proposal.md).
+La [API común](../HOMESUITE_PROFILE_API.md) implementa datos y gestión en la
+plataforma. La pantalla compartida `/perfil` se abre desde el avatar/nombre y
+desde el menú general de la app. Cuentas Claras muestra el aviso «Muy pronto» al
+entrar a su ruta tras el acceso con Google. La integración financiera y la
+migración de TasKing quedan para cortes posteriores. Consultar STATUS para el SHA
+y el estado de staging.

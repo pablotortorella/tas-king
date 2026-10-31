@@ -1,20 +1,24 @@
 import { expect, test } from "@playwright/test";
 
-test("presenta HomeSuite y lleva a las tres landings", async ({ page }) => {
+test("presenta HomeSuite y lleva a las cuatro landings", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", {
     level: 1,
-    name: "Organizarnos puede ser más simple.",
+    name: "Organizá, cuidá y disfrutá tu hogar.",
   })).toBeVisible();
   await expect(page.getByText("Fun TasKing", { exact: true })).toBeVisible();
   await expect(page.getByText("Cuentas Claras", { exact: true })).toBeVisible();
-  await expect(page.getByText("Compras", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Conocé las herramientas" })).toBeVisible();
+  await expect(page.getByText("Compras")).toHaveCount(0); // oculto hasta que exista
+  await expect(page.getByText("Remanso", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explorá las herramientas" })).toBeVisible();
+  // El hero lleva a Remanso en la app. Este servidor es el de producción (sin SITE_ENV=staging): el enlace es el de producción.
+  await expect(page.getByRole("link", { name: /Probá Remanso/ })).toHaveAttribute("href", "https://app.homesuite.info/remanso");
 
   await expect(page.getByRole("link", { name: "Conocé Fun TasKing" })).toHaveAttribute("href", "/tareas");
   await expect(page.getByRole("link", { name: "Conocé Cuentas Claras" })).toHaveAttribute("href", "/cuentas-claras");
-  await expect(page.getByRole("link", { name: "Conocé Compras" })).toHaveAttribute("href", "/compras");
+  await expect(page.getByRole("link", { name: "Conocé Remanso" })).toHaveAttribute("href", "/remanso");
+  await expect(page.getByRole("link", { name: "Conocé Jardín Zen" })).toHaveAttribute("href", "/jardin-zen");
 });
 
 test("entrega la portada con cabeceras de seguridad", async ({ request }) => {
@@ -25,6 +29,21 @@ test("entrega la portada con cabeceras de seguridad", async ({ request }) => {
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
 });
+
+for (const [slug, title] of [["privacidad", "Política de privacidad"], ["terminos", "Términos y condiciones"]]) {
+  test(`la portada enlaza a /${slug} y el documento cabe en móvil`, async ({ page, request }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/");
+    await page.getByRole("link", { name: title === "Política de privacidad" ? "Privacidad" : title }).click();
+    await expect(page).toHaveURL(new RegExp(`/${slug}$`));
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    const sizes = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+    expect(sizes.content).toBeLessThanOrEqual(sizes.viewport);
+    const response = await request.get(`/${slug}`);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-security-policy"]).toContain("script-src 'none'");
+  });
+}
 
 test("mantiene el contenido accesible en 360 píxeles", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
@@ -50,22 +69,24 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
   await expect(page.getByText("Por ahora, se abre en su dirección actual.")).toBeVisible();
 });
 
-for (const [slug, heading] of [
-  ["cuentas-claras", "Las cuentas compartidas, más claras."],
-  ["compras", "Una lista para comprar mejor, juntos."],
+for (const [slug, heading, nombre] of [
+  ["cuentas-claras", "Las cuentas claras, sin vueltas.", "Cuentas Claras"],
+  ["remanso", "Un rato de calma para la casa.", "Remanso"],
+  ["jardin-zen", "Un pequeño paisaje para crear y soltar.", "Jardín Zen"],
 ]) {
-  test(`/${slug} explica el producto sin fingir una app disponible`, async ({ page }) => {
+  test(`/${slug} explica el producto, dice que está en versión beta y lleva a la app`, async ({ page }) => {
     await page.goto(`/${slug}`);
 
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
-    await expect(page.getByText("Esta herramienta todavía está en preparación.")).toBeVisible();
+    await expect(page.getByText("Esta herramienta está en versión beta.")).toBeVisible();
     await expect(page.getByRole("link", { name: /Todas las herramientas/ })).toHaveAttribute("href", "/#herramientas");
     await expect(page.getByRole("link", { name: "Abrir Fun TasKing" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: `Entrar a ${nombre}` })).toHaveAttribute("href", `https://app.homesuite.info/${slug}`);
     await expect(page.locator("form, button")).toHaveCount(0);
   });
 }
 
-for (const slug of ["tareas", "cuentas-claras", "compras"]) {
+for (const slug of ["tareas", "cuentas-claras", "remanso", "jardin-zen"]) {
   test(`/${slug} sirve HTML con cabeceras de seguridad`, async ({ request }) => {
     const response = await request.get(`/${slug}`);
 
@@ -104,4 +125,11 @@ test("/gastos ya no conserva una landing ni redirige", async ({ request }) => {
   expect(response.status()).toBe(404);
   expect(response.headers().location).toBeUndefined();
   expect(await response.text()).not.toContain("Cuentas Claras");
+});
+
+test("/compras no se publica mientras la herramienta no exista", async ({ request }) => {
+  for (const ruta of ["/compras", "/compras.html"]) {
+    const response = await request.get(ruta, { maxRedirects: 0 });
+    expect(response.status(), ruta).toBe(404);
+  }
 });

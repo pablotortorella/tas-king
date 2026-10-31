@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuentas Claras · Por qué te deben</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{color-scheme:light dark;--bg:#f7f2e8;--surface:#fffdf8;--ink:#1f2c24;--ink-1:#3d4a41;--ink-2:#4d5950;--ink-3:#5b665e;--accent-bg:#245c43;--accent-text:#245c43;--accent-line:#245c43;--accent-deep:#174b34;--accent-soft:#d9eadc;--ok-bg:#eef6ef;--neg:#a8412c;--coral-soft:#f6d9d1;--coral-text:#7a2e1d;--yel-soft:#f8e7b9;--yel-text:#4a3300;--warn-bg:#fbf4de;--warn-line:#ecd48f;--warn-line-2:#b79b45;--sunken:#fbf7ee;--teal-soft:#e3eeeb;--teal-text:#24504b;--teal-line:#5b8a7f;--line-soft:#efe8db;--line:#e4dccd;--line-strong:#c9c1b2;--line-mid:#d9d2c5;--field:#7d887f;--chip:#ece4d5;--shadow:rgba(31,44,36,.2);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121c17;--surface:#1b2822;--ink:#ece6d8;--ink-1:#cdd5cb;--ink-2:#b9c3b9;--ink-3:#a0ab9f;--accent-bg:#2f7a58;--accent-text:#7fd0a6;--accent-line:#6fc29a;--accent-deep:#a8e0c2;--accent-soft:#1f3a2d;--ok-bg:#1a3126;--neg:#f2a08b;--coral-soft:#4a2b24;--coral-text:#f6bfb0;--yel-soft:#4a3d17;--yel-text:#f3d98e;--warn-bg:#2c2814;--warn-line:#6d5c22;--warn-line-2:#8c7430;--sunken:#1f2c26;--teal-soft:#1f3a39;--teal-text:#a3d6ce;--teal-line:#7fb3a6;--line-soft:#2a3931;--line:#31423a;--line-strong:#50625a;--line-mid:#3c4c43;--field:#8a998f;--chip:#26352d;--shadow:rgba(0,0,0,.55);}
+:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg)}
+button,input{font-family:inherit}
+a{color:var(--accent-text)}a:hover{color:var(--accent-deep)}
+</style>
+</helmet>
+<div style="width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,sans-serif;overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:4px;padding:10px 16px 0 6px">
+    <a href="Main.dc.html" aria-label="Volver a Saldos" style="width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--ink)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <span style="flex:1;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)">Casa compartida</span>
+  </header>
+
+  <main style="flex:1;min-height:0;overflow-y:auto;padding:0 16px 16px">
+
+    <section aria-label="Tu saldo en COP" style="margin-top:4px;padding:16px 18px;border-radius:22px;background:var(--accent-bg);color:#fffdf8">
+      <div style="font-size:12px;font-weight:600;color:#f2f8f4">Por qué te deben · COP</div>
+      <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums">+$1.748.350</div>
+      <p style="margin:4px 0 0;font-size:14px;line-height:1.45;color:#f2f8f4">Es la suma de lo que cada movimiento te suma o te resta. Nada se carga a mano.</p>
+    </section>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 2px 8px;font-size:13px;color:var(--ink-2)">
+      <span style="padding:3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line-mid);font-weight:600;color:var(--ink-1)">Solo COP</span>
+      <span>El saldo en USD se explica aparte.</span>
+    </div>
+
+    <ol style="margin:0;padding:0;list-style:none">
+
+      <li style="margin-bottom:8px;padding:12px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="display:flex;gap:12px">
+          <span aria-hidden="true" style="flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--coral-soft);color:var(--coral-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">Supermercado Éxito</div>
+            <div style="font-size:13px;line-height:1.4;color:var(--ink-2)">Gasto · 22 oct<br>Pagaste $286.400 y te tocan $71.600</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+$214.800</div>
+            <div style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">acumulado $1.748.350</div>
+          </div>
+        </div>
+      </li>
+
+      <li style="margin-bottom:8px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <a href="Detalle.dc.html" style="display:flex;gap:12px;padding:12px 14px;color:var(--ink);text-decoration:none">
+          <span aria-hidden="true" style="flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent-deep)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17M15 17H7V9"/></svg></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">Alquiler apto Laureles</div>
+            <div style="font-size:13px;line-height:1.4;color:var(--ink-2)">Ingreso · 20 oct<br>Lo recibió Ana y te tocan $900.000</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+$900.000</div>
+            <div style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">acumulado $1.533.550</div>
+          </div>
+        </a>
+      </li>
+
+      <li style="margin-bottom:8px;padding:12px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)">
+        <div style="display:flex;gap:12px">
+          <span aria-hidden="true" style="flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--teal-soft);color:var(--teal-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">Adelanto para la feria</div>
+            <div style="font-size:13px;line-height:1.4;color:var(--ink-2)">Transferencia · 18 oct<br>Le entregaste $150.000 a Laura</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+$150.000</div>
+            <div style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">acumulado $633.550</div>
+          </div>
+        </div>
+      </li>
+
+      <li style="margin-bottom:8px;padding:12px 14px;border-radius:18px;background:var(--warn-bg);border:1px solid var(--warn-line)">
+        <div style="display:flex;gap:12px">
+          <span aria-hidden="true" style="flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--yel-soft);color:var(--yel-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">Importado de Splitwise</div>
+            <div style="font-size:13px;line-height:1.4;color:var(--ink-1)">35 movimientos en COP, hasta el 15 oct. No incluye las filas 12 y 27, que quedaron fuera.</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent-text)">+$483.550</div>
+            <div style="font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums">acumulado $483.550</div>
+          </div>
+        </div>
+        <button style="display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:1.5px solid var(--warn-line-2);border-radius:12px;background:transparent;color:var(--yel-text);font-size:14px;font-weight:600">Ver los 35 movimientos</button>
+      </li>
+    </ol>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px 14px;border-radius:16px;background:var(--ok-bg);color:var(--accent-deep)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+      <p style="margin:0;font-size:14px;line-height:1.4"><strong style="font-weight:700">$483.550 + $150.000 + $900.000 + $214.800 = $1.748.350.</strong> Coincide con tu saldo.</p>
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

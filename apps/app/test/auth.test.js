@@ -47,7 +47,7 @@ describe("seguridad de OAuth", () => {
   });
 
   it("acepta sólo returnTo relativo seguro", () => {
-    expect(validReturnTo("/cuentas-claras?espacio=uno")).toBe("/cuentas-claras?espacio=uno");
+    expect(validReturnTo("/cuentas-claras?grupo=uno")).toBe("/cuentas-claras?grupo=uno");
     expect(validReturnTo("https://evil.example")).toBe("/");
     expect(validReturnTo("//evil.example")).toBe("/");
     expect(validReturnTo("/\\evil.example")).toBe("/");
@@ -63,7 +63,9 @@ describe("seguridad de OAuth", () => {
 
   it("acepta únicamente un ID token de Google firmado y con los claims esperados", async () => {
     const { token, fetcher } = await signedGoogleToken();
-    await expect(validateGoogleIdToken({ idToken: token, audience: "client-id", nonce: "nonce", fetcher, now: 1_800_000_000_000 })).resolves.toEqual({ sub: "google-sub", email: "zelda@example.test", name: "Zelda" });
+    await expect(validateGoogleIdToken({ idToken: token, audience: "client-id", nonce: "nonce", fetcher, now: 1_800_000_000_000 })).resolves.toEqual({ sub: "google-sub", email: "zelda@example.test", name: "Zelda", picture: null });
+    const withPicture = await signedGoogleToken({ picture: "https://lh3.googleusercontent.com/avatar" });
+    await expect(validateGoogleIdToken({ idToken: withPicture.token, audience: "client-id", nonce: "nonce", fetcher: withPicture.fetcher, now: 1_800_000_000_000 })).resolves.toMatchObject({ picture: "https://lh3.googleusercontent.com/avatar" });
     for (const overrides of [{ nonce: "otro" }, { iss: "https://not-google.example" }, { aud: "other-client" }, { email_verified: false }]) {
       const invalid = await signedGoogleToken(overrides);
       await expect(validateGoogleIdToken({ idToken: invalid.token, audience: "client-id", nonce: "nonce", fetcher: invalid.fetcher, now: 1_800_000_000_000 })).rejects.toThrow("claims");

@@ -16,5 +16,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run test:homesuite-app
+      - run: npm run test:homesuite-app:integration
+      - run: npm run test:homesuite-site
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run test:e2e:remanso
+      - run: npm run test:homesuite-site:e2e

@@ -1,6 +1,8 @@
 # HomeSuite Cuentas Claras — especificación funcional del MVP
 
-**Estado:** especificación de producto inicial actualizada; implementación no iniciada
+**Base heredada:** [documentos madre de HomeSuite](homesuite/README.md) y [ficha de Cuentas Claras](productos/CUENTAS-CLARAS.md). Este documento define el contrato funcional; el estado de implementación se consulta en STATUS, no se infiere de esta especificación.
+
+**Estado del documento:** especificación funcional; ver STATUS para avance por rama y entorno.
 
 **Fecha:** 2026-09-21
 
@@ -74,11 +76,11 @@ interfaz inicial ni introducir conceptos sin uso presente.
 
 ## 3. Vocabulario
 
-- **Espacio:** contexto compartido de HomeSuite, por ejemplo “Familia” o “Viaje a
+- **Grupo:** contexto compartido de HomeSuite, por ejemplo “Familia” o “Viaje a
   Cartagena”. Puede contener recursos de varias herramientas.
 - **Libro:** recurso de Gastos que contiene participantes y movimientos. En la
-  primera interfaz, crear un grupo crea un espacio y su primer libro.
-- **Miembro:** usuario autenticado con acceso al espacio.
+  primera interfaz, crear un grupo crea un grupo y su primer libro.
+- **Miembro:** usuario autenticado con acceso al grupo.
 - **Participante:** persona incluida en pagos, repartos o balances. Puede no tener
   cuenta HomeSuite.
 - **Movimiento:** hecho financiero que afecta el saldo neto. Puede ser gasto,
@@ -136,7 +138,7 @@ siguientes describen el uso cotidiano una vez iniciado el libro.
 
 1. La persona elige “Nuevo grupo”.
 2. Ingresa nombre, propósito opcional y moneda predeterminada.
-3. HomeSuite crea espacio, membresía de propietario, libro y participante vinculado
+3. HomeSuite crea grupo, membresía de propietario, libro y participante vinculado
    al propietario en una única operación lógica.
 4. Se abre el estado vacío con acciones para agregar participantes o un movimiento.
 
@@ -382,8 +384,8 @@ El modelo definitivo se diseñará en OpenSpec antes de migrar D1. La dirección
 Plataforma
   users
   external_identities
-  spaces
-  space_members
+  groups
+  group_members
   invitations
 
 Gastos
@@ -400,7 +402,7 @@ Gastos
 
 Relaciones principales:
 
-- un libro pertenece a un espacio;
+- un libro pertenece a un grupo;
 - un participante pertenece a un libro y puede vincularse a un usuario;
 - un movimiento pertenece a un libro y tiene tipo gasto, ingreso o transferencia;
 - pagadores, receptores, orígenes, destinos y beneficiarios son participantes del
@@ -422,8 +424,8 @@ No es un contrato definitivo, sino la frontera esperada:
 
 ```text
 /api/platform/me
-/api/platform/spaces
-/api/platform/spaces/:id/members
+/api/platform/groups
+/api/platform/groups/:id/members
 /api/platform/invitations/*
 
 /api/expenses/ledgers

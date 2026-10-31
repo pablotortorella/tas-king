@@ -1,30 +1,134 @@
 # AI_HANDOFF
 
-## Última sesión — HomeSuite App local (2026-09-22)
+**Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-Trabajo no integrado aún en la rama `feature/homesuite-spaces-local`.
+## Última sesión — HomeSuite en producción (2026-10-28)
 
-- `apps/app/` ya existe en `main` (PR #59): Worker aislado, esquema D1,
-  fundaciones y demo local.
-- Este corte convierte el recorrido en D1 local real: espacio + owner + auditoría,
-  invitación, cancelación, descubrimiento privado y aceptación/rechazo con rol
-  `member`. La UI local se revisó manualmente en `127.0.0.1:8792`.
-- Pruebas actuales: 5 unitarias y 5 integraciones D1 verdes. Una integración
-  encontró y corrigió el contexto de `crypto.randomUUID`; la revisión manual
-  encontró y corrigió la pérdida de identidad de desarrollo al aceptar.
-- No hay OAuth, sesión real, D1 remoto, staging, DNS ni despliegue. `DEV_LOCAL_MODE`
-  es obligatorio para las rutas locales; la identidad de demo no debe pasar a
-  producción.
-- Pendiente al retomar: añadir regresión del POST de aceptación, mostrar el
-  integrante aceptado en participantes, revisar el diff, actualizar snapshot
-  visual v0.1.2 y abrir PR. Ver `visual/history/README.md` y OpenSpec.
+Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
 
-## Estado actual
-**FUN TasKing!** es un tablero Kanban minimalista multiusuario, desplegado en producción en
-https://tas-king.pablotortorella.workers.dev. El proyecto está activo y en iteración continua.
+### Dónde estamos
+- **Producción:** app `app.homesuite.info` en la versión `979dc093` (`main` `3d32ae5`) y sitio `homesuite.info` en `f4f37db4`
+  (`main` `74d6ebd`). La base de producción está vacía. `npm run verify:coherence:production` pasó (23 comprobaciones).
+- **Staging:** app `0b36bf6e` y sitio `21c07a27`, ambos de `main` `3d32ae5`.
+- **Hoy se hizo (PRs #108 a #119):** ajustes de pantalla y sonido de Remanso (el inicio ya entra en 390 × 720 también con la
+  fuente del CI), identidad de la suite (textos, acentos por producto, Compras retirado de todo), enlaces del sitio por
+  ambiente, verificación de coherencia sitio ↔ app, arreglo de «Cerrar sesión» (faltaba el token CSRF), y el primer deploy
+  de la app y del sitio a producción, cada uno con respaldo previo y verificación.
 
-**Versión actual**: v2.1.2 — **Tests**: 121 unitarios + 45 E2E ✅ Todos pasan  
-**Rama**: `main` — producción actualizada ✅
+### Para mañana (orden sugerido)
+1. **Respaldo diario.** El secreto de GitHub `HOMESUITE_PROD_BACKUP_API_TOKEN` falla en el runner (`Authentication error
+   [10000]`) aunque el token nuevo (`homesuite-token`, de cuenta) responde desde la terminal. Recargarlo con el valor ya
+   verificado, **desde `/home/pablo/Dropbox/dev/tas-king`**, una línea por vez: `read -rsp "Pegá el token y Enter: " CF_TOKEN; echo`,
+   comprobar el D1 con `curl` (debe decir `"success":true`), `printf %s "$CF_TOKEN" | gh secret set HOMESUITE_PROD_BACKUP_API_TOKEN`,
+   `unset CF_TOKEN` y `gh workflow run homesuite-production-backup.yml --ref main`. Recién con un run en `success`, revocar el token
+   viejo (de usuario, todas las cuentas) y el `Cloudflare Agent Token`; después corregir `HOMESUITE_RECOVERY.md`.
+2. **Google Cloud:** que la URI `https://app.homesuite.info/auth/callback` esté autorizada, estado de la pantalla de consentimiento, y rotar
+   el secreto de Google (estuvo un rato en GitHub bajo otro nombre).
+3. **Alertas mínimas** y el **recorrido con dos cuentas reales en producción** (incluye probar «Cerrar sesión» ahí).
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta en el backlog).
+5. **Remanso:** sonidos reales (prioridad alta), prueba en iPhone con alguien que tenga uno (`audioSession` implementado, sin verificar) y
+   revisión de Pablo de la frase sobre versiones beta en los términos.
+6. **Consola de administración** de la persona dueña (nuevo en el backlog, prioridad por confirmar).
+7. **Orden:** carpetas de trabajo viejas (`git worktree list` muestra unas 18, varias de ramas ya integradas) y PRs abiertos viejos (#64, #69, #71, #75, #76, #81, #83, #85).
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio, `main` al día, CI verde,
+  `wrangler deployments list` y migraciones; mensaje de versión con SHA; después `verify:coherence:<ambiente>`. El primer intento de
+  deploy productivo lo bloqueó el clasificador de permisos de Claude Code y se repitió tras la orden explícita.
+- **Comandos para Pablo: indicar siempre el directorio** (tiene muchas carpetas del proyecto) y dárselos de a uno.
+- Un cambio lógico por rama; PR con merge commit; el registro en STATUS va en un PR de documentación aparte.
+- Cuatro credenciales distintas: token de Cloudflare de respaldo (GitHub), `GOOGLE_CLIENT_SECRET` y `SESSION_SECRET` (secretos del Worker de
+  producción) y el login de `wrangler` (su computadora).
+
+### Carpetas
+- Trabajo de esta sesión: `/home/pablo/Dropbox/dev/tas-king/.worktrees/remanso` (en `main` o en la rama del PR de turno). Checkout
+  principal: `/home/pablo/Dropbox/dev/tas-king`.
+
+## Sesión anterior - HomeSuite listo para integrar diseño (2026-10-23)
+
+### Empezar por aquí
+
+- La base que reúne el código más reciente y toda la funcionalidad de HomeSuite es
+  `integration/homesuite-design-base`. Fue actualizada con `main` v2.3.2 en
+  `9e8a8c1`. Crear el trabajo visual desde esta rama, no desde
+  `local/homesuite-full-preview` ni desde un PR funcional intermedio.
+- El sitio público ya tiene el arte nuevo. El PR #74 se integró en `main` como
+  `62b459e` y la versión Cloudflare
+  `fb7807ef-d328-4d98-b9eb-683e28748e6a` está al 100 % en producción.
+- El núcleo funcional todavía está en una cadena de PRs abiertos. El orden de
+  integración es #68 -> #71 -> #75 -> #76 -> #81. Todos están limpios respecto
+  de su base inmediata; no saltar directamente al último PR.
+- La rama consolidada es para desarrollar y revisar el diseño en paralelo. No es
+  una autorización para llevar Cuentas Claras a producción: faltan integrar la
+  cadena, volver a desplegar staging y cerrar las condiciones de recuperación y
+  ciclo de vida de datos.
+
+### Qué contiene la base visual
+
+- OAuth Google y sesión real; espacios privados, invitaciones, rechazo,
+  aceptación, roles y auditoría.
+- Libros, participantes, gastos, ingresos, transferencias, reparto igual o
+  exacto, saldos por moneda, cronología, detalle, corrección inmutable, anulación
+  y exportación JSON/CSV.
+- Importación CSV de Splitwise con previsualización, mapeo de participantes,
+  decisiones por fila, idempotencia, conciliación e incidentes explicados.
+- Monedas vigentes de Sudamérica, MXN y las monedas previas; URLs estables para
+  grupos; acceso local más claro para una segunda cuenta; búsqueda monetaria por
+  fragmentos que ignora separadores de miles.
+- Arte nuevo en la landing y favicon de HomeSuite.
+
+### Guía para el trabajo de diseño
+
+- Sitio público: `apps/site/public/`. Aplicación autenticada:
+  `apps/app/src/ledger-ui.js`, `apps/app/src/splitwise-ui.js` y las vistas de
+  `apps/app/src/index.js`.
+- Conservar nombres de campos, acciones POST, tokens CSRF, rutas con slug,
+  estados vacío/carga/error, permisos owner/member y comportamiento móvil. El
+  rediseño puede cambiar estructura visual y estilos, pero esos contratos están
+  cubiertos por pruebas.
+- No versionar el enlace temporal `Abrir demo local` hacia `127.0.0.1`; sólo
+  existió en `local/homesuite-full-preview` para recorrer ambos Workers.
+- Antes de integrar el diseño, actualizar la rama contra
+  `integration/homesuite-design-base`, ejecutar las suites generales y de
+  HomeSuite, y revisar visualmente escritorio y 390 px.
+
+## Sesión paralela — rediseño y propuestas de Cuentas Claras (2026-10-23)
+
+Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs/STATUS.md`
+(sección «Cuentas Claras: rediseño visual y propuestas OpenSpec»).
+
+- **Rediseño visual**: 10 pantallas en claro y oscuro, guardadas en el repo en
+  `docs/diseno/cuentas-claras/` (fuentes, índice del lienzo, tokens, 26 capturas PNG y un
+  README con cómo retomar y regenerar las capturas). Original en Claude Design:
+  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 18, con pasada de verificación; ver el README de la carpeta). Se renderizó y revisó en
+  Chromium; no se probó en teléfono real.
+- **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
+  (integrada en `main` por el PR #84): `libro-y-saldos-cuentas-claras`,
+  `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
+  `colaboracion-y-exportacion-del-libro`. Validan con `--strict`.
+- **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
+  pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
+  varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
+- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) hacer `explore` con
+  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (2) corregir
+  en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
+  «saldos anteriores» activa); (3) recién entonces `propose` definitivo.
+- **Dependencia**: nada de esto puede aplicarse hasta cerrar el grupo 3 de
+  `plataforma-homesuite-minima` (creación de espacios, membresías e invitaciones).
+- La sesión recibió acceso de escritura a `pablotortorella/tas-king` para empujar la rama;
+  no se tocó `main`.
+- Esta sesión se hizo en paralelo a la integración visual de arriba: el rediseño de Cuentas Claras aún no
+  se cruzó con `integration/homesuite-design-base` ni con la importación Splitwise ya implementada (#76).
+  Antes de aplicar los changes, comparar contra ese código (ver Open Questions de cada `design.md`).
+
+## Snapshot de contexto — 2026-10-23
+**FUN TasKing!** está en producción como v2.3.2. **HomeSuite** tiene el sitio
+público en producción y la aplicación autenticada en staging; el siguiente corte
+de producto es Cuentas Claras.
+
+**TasKing actual**: v2.3.2 - **Tests**: 230 unitarios + 101 E2E.
+**HomeSuite funcional**: rama `integration/homesuite-design-base`; todavía no
+integrada completa en `main` ni habilitada en producción.
 
 **Features completos**: Deep-link, Polling real-time, Celebración con confeti, Historial (#1),
 Etiquetas (#2) con gestión desde ⚙️, Checklists (#3), Protección adjuntos (#4), JWT Google (#5),
@@ -34,33 +138,36 @@ Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta
 CSP + Security headers, i18n landing, Panel admin, IO menu, Temas de color (#10),
 Fix arrastre sin selección de texto en Chrome.
 
-**Próximo**: retomar #9 ¡Pilas con esto! como puerta de entrada inteligente (ver
-docs/PRODUCT_BACKLOG.md), o mejoras de UX (onboarding nuevos usuarios, búsqueda full-text).
+**Próximo**: aplicar el sistema visual en la rama consolidada, sin alterar los
+contratos funcionales; después integrar la cadena de PRs y validar el resultado
+completo en staging.
 
-## 🎯 Objetivo siguiente sesión
+## Objetivo siguiente sesión
 
-Opciones priorizadas:
-
-1. **#9 ¡Pilas con esto! inteligente** (alta): convertir la sección en puerta de entrada activa al abrir la app — "¿por dónde empezamos hoy?". Ver ideas en docs/PRODUCT_BACKLOG.md.
-2. **Onboarding nuevos usuarios** (media): primera vez que alguien entra y ve el tablero vacío, guiarlos.
-3. **Búsqueda full-text** (baja): buscar por título + detalles en todas las tarjetas.
-4. **Objetivos: fecha límite + semáforo de riesgo** (media): extiende #8 con 🟢🟡🔴.
+1. Crear la rama del rediseño desde `integration/homesuite-design-base`.
+2. Aplicar el sistema visual a landing, shell autenticado, espacios, invitaciones,
+   libro, movimientos e importación.
+3. Ejecutar pruebas y recorrido visual completo en escritorio y móvil.
+4. Integrar los PRs funcionales en orden y resolver el destino final del PR de
+   diseño contra el `main` resultante.
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
-Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deben cumplirse en cada feature nueva.
+Consultar el método común para cómo trabajar y la ficha de TasKing para sus estándares de UI.
 
 ## Stack
 - **Runtime**: Cloudflare Workers
 - **Framework API**: Hono (JS)
 - **Base de datos**: Cloudflare D1 (SQLite) — migraciones en `migrations/`
 - **Almacenamiento de archivos**: Cloudflare R2 (`tas-king-uploads`)
-- **Frontend**: HTML/CSS/JS vanilla en un único `public/index.html` (sin build)
+- **Frontend**: HTML/CSS/JS vanilla sin build; TasKing está modularizado bajo
+  `public/js/` y HomeSuite vive en `apps/site` y `apps/app`
 - **Auth**: OAuth 2.0 con Google, implementado dentro del Worker. Cookie de sesión firmada con HMAC
 - **Dev local**: `wrangler dev` con D1/R2 emulados. Usuario simulado vía `DEV_USER_EMAIL` en `.dev.vars`
 
 ## Decisiones tomadas
-- **Un solo archivo de frontend**: `public/index.html` sin framework ni build step. Decisión
-  deliberada para mantener simplicidad operativa.
+- **Sin framework ni build step de frontend**: TasKing usa módulos nativos y
+  HomeSuite HTML/CSS/JS servido por Workers. La simplicidad operativa sigue
+  siendo deliberada, pero el frontend ya no vive en un único archivo.
 - **Sin Cloudflare Access**: se intentó pero no funciona en subdominios `*.workers.dev`. Se
   implementó OAuth de Google directamente en el Worker.
 - **Emails permitidos en D1**: la lista de acceso pasó del Secret `ALLOWED_EMAILS` a la tabla
@@ -76,7 +183,9 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 ## Archivos importantes
 - `src/index.js`: setup del Worker (~80 líneas) — importa routes y middlewares
 - `src/routes/`: auth, boards, cards, checklists, labels, uploads, admin, users
-- `public/index.html`: frontend completo — UI Kanban, modales, drag & drop, atajos (~2800 líneas)
+- `public/index.html` + `public/js/`: frontend modular de TasKing
+- `apps/site/`: landing y páginas públicas de HomeSuite
+- `apps/app/`: Worker autenticado y UI funcional de Cuentas Claras
 - `migrations/`: esquema D1 incremental (0001 init → 0010 goals)
 - `wrangler.jsonc`: configuración de Workers, D1 y R2
 - `.dev.vars`: variables locales (no commiteado — ver README para el formato)
@@ -86,62 +195,13 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 - `e2e/`: suites Playwright (attachments, checklists, critical-flows, history)
 - `test/fixtures/seed.sql`: estado inicial de la DB para E2E
 
-## Al finalizar cada sesión
+## Proceso vigente
 
-**1. Actualizar `docs/STATUS.md`**: (SIEMPRE, incluso si "no pasó nada")
-   - Agregar la feature completada en la sección correspondiente (✅ o ❌)
-   - Incluir: qué hace, dónde está implementado, qué tests tiene
-   - Actualizar fecha "Última actualización" y "Próxima feature"
-   - Si algo quedó a mitad, marcarlo con ⚠️ y notas de qué falta
+Las instrucciones de sesión se mantienen en el [método común](docs/homesuite/METODO.md). Comandos actuales en las fichas de producto; las secciones siguientes son referencias históricas.
 
-**2. Actualizar otros archivos si corresponde**:
-   - **`AI_HANDOFF.md`**: sección "Último handoff" con resumen de lo que se hizo
-   - **`README.md`**: si se agregaron funcionalidades, secrets, comandos o cambió el stack
-   - **`TESTING.md`**: si cambió la estrategia o se agregaron nuevos requisitos de testing
+## Comandos vigentes
 
-**3. Correr tests antes de commit**:
-   ```bash
-   npm run test:all
-   ```
-
-**4. Commit y push**:
-   - Incluir `docs/STATUS.md` en el commit (la razón principal)
-   - Mensaje: describe qué feature se completó o qué cambió
-   - Ejemplo: `Agregar tests E2E para deep-link: URL válida, inexistente, archivada`
-
-## Comandos útiles
-```bash
-# Inicio de sesión
-npm run check:env                  # diagnóstico rápido del ambiente (recomendado al iniciar)
-
-# Desarrollo
-npm install                        # instalar dependencias
-npm run dev                        # servidor local → http://localhost:8787
-npm run test:all                   # suite completa (unitarios + E2E)
-
-# Base de datos local
-npm run db:migrate:local           # aplicar migraciones pendientes en D1 local
-npm run db:reset:local             # borrar DB local y re-aplicar desde cero ⚠️
-npm run db:seed:local              # cargar datos de ejemplo (idempotente)
-
-# E2E
-npm run e2e:reset                  # limpiar estado E2E + re-aplicar seed (ante estado corrupto)
-npm run e2e:server                 # servidor E2E solo (para debugging de tests)
-
-# Deploy
-npm run deploy:staging             # deploy a staging (con tests)
-npm run deploy                     # deploy a producción (con tests) ⚠️ requiere aprobación
-npm run db:migrate:remote          # aplicar migraciones en D1 producción
-
-# Operación manual
-npm run operator                   # menú interactivo (solo para humanos — no usar en scripts)
-npx wrangler secret put <NOMBRE>   # cargar un secret en producción
-npx wrangler d1 execute tas-king --remote --command "SELECT ..."  # consulta SQL en prod
-```
-
-Hay tests unitarios y de API con Vitest ejecutándose en Workerd con D1/R2 emulados, más tests
-E2E con Playwright. `npm run test:all` ejecuta la suite completa. La estrategia y el checklist
-manual complementario para IAs y personas están en `TESTING.md`.
+Consultar las fichas de [TasKing](docs/productos/TASKING.md) y [plataforma](docs/productos/PLATAFORMA.md). Las tablas históricas siguientes no redefinen el estado registrado en STATUS.
 
 ## Estado de features del backlog
 
@@ -178,13 +238,9 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - [ ] #7 📊 Lead time y tasa de completitud
 - [ ] Búsqueda avanzada (full-text en título + detalles)
 
-## No hacer
-- No usar Cloudflare Access (no funciona en `*.workers.dev` sin dominio propio)
-- No introducir un framework JS ni paso de build en el frontend (decisión de producto)
-- No reemplazar datos al importar (import siempre agrega)
-- No hardcodear emails de usuarios/admins en el código fuente
-- No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
-- No borrar el tablero personal de un usuario (`is_personal=1`)
+## Reglas vigentes
+
+Consultar [la base común](docs/homesuite/README.md) y las particularidades del producto.
 
 ## Último handoff (2026-09-07, Deploy v2.1.1 + fix tarjeta duplicada al arrastrar (v2.1.2) — Sonnet 5)
 
