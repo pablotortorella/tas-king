@@ -65,15 +65,17 @@ describe("homesuite-site", () => {
 
   it("las landings y la portada enlazan a la app de producción de cada herramienta", async () => {
     const pagina = (name) => readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
-    const [home, cuentas, remanso, tareas] = await Promise.all(["index", "cuentas-claras", "remanso", "tareas"].map(pagina));
+    const [home, cuentas, remanso, tareas, zen] = await Promise.all(["index", "cuentas-claras", "remanso", "tareas", "jardin-zen"].map(pagina));
     expect(cuentas).toContain(`class="primary-action" href="${APP_PRODUCCION}/cuentas-claras"`);
     expect(cuentas).toContain("Entrar a Cuentas Claras");
     expect(remanso).toContain(`class="primary-action" href="${APP_PRODUCCION}/remanso"`);
     expect(remanso).toContain("Entrar a Remanso");
+    expect(zen).toContain(`class="primary-action" href="${APP_PRODUCCION}/jardin-zen"`);
+    expect(zen).toContain("Entrar a Jardín Zen");
     expect(home).toContain(`class="secondary-action" href="${APP_PRODUCCION}/remanso"`);
     expect(home).toContain("Probá Remanso");
     expect(tareas).toContain(`href="${TASKING_PRODUCCION}"`);
-    for (const html of [home, cuentas, remanso, tareas]) {
+    for (const html of [home, cuentas, remanso, tareas, zen]) {
       expect(html).not.toMatch(/staging/iu);
       expect(html).not.toContain("<!-- staging-app-entry -->");
     }
@@ -84,6 +86,7 @@ describe("homesuite-site", () => {
     ["index", "/index.html", [`${APP_PRODUCCION}/remanso`]],
     ["cuentas-claras", "/cuentas-claras", [`${APP_PRODUCCION}/cuentas-claras`]],
     ["remanso", "/remanso.html", [`${APP_PRODUCCION}/remanso`]],
+    ["jardin-zen", "/jardin-zen.html", [`${APP_PRODUCCION}/jardin-zen`]],
     ["tareas", "/tareas", [TASKING_PRODUCCION]],
   ])("en staging %s (%s) lleva a la app y a TasKing del propio staging; en producción no se reescribe nada", async (name, ruta, enlaces) => {
     const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
@@ -118,6 +121,8 @@ describe("homesuite-site", () => {
     expect(html).toContain('href="/cuentas-claras"');
     expect(html).toContain('href="/remanso"');
     expect(html).toContain("Conocé Remanso");
+    expect(html).toContain('href="/jardin-zen"');
+    expect(html).toContain("Conocé Jardín Zen");
     expect(html).toContain("Conocé Fun TasKing");
     expect(html).not.toContain("https://tas-king.pablotortorella.workers.dev");
     expect(html).toContain("Cuentas Claras");
@@ -143,7 +148,7 @@ describe("homesuite-site", () => {
   });
 
   it("usa el nuevo emblema y favicon en todas las páginas", async () => {
-    const pages = ["index", "tareas", "cuentas-claras", "remanso"];
+    const pages = ["index", "tareas", "cuentas-claras", "remanso", "jardin-zen"];
     for (const name of pages) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html).toContain('href="/HomeSuite-favicon-simplificado.svg"');
@@ -161,6 +166,7 @@ describe("homesuite-site", () => {
     ["tareas", "Fun TasKing!", true],
     ["cuentas-claras", "Las cuentas claras, sin vueltas.", false],
     ["remanso", "Un rato de calma para la casa.", false],
+    ["jardin-zen", "Un pequeño paisaje para crear y soltar.", false],
   ])("mantiene /%s como landing estática y honesta", async (slug, heading, available) => {
     const html = await readFile(
       new URL(`../public/${slug}.html`, import.meta.url),
@@ -212,12 +218,12 @@ describe("homesuite-site", () => {
     }
   });
 
-  // Catálogo público: sólo las tres herramientas funcionales. Compras no existe todavía y no se nombra en ningún lugar: ni tarjeta, ni
-  // landing, ni enlace, ni archivo (2026-10-28, Pablo).
-  it("la portada y las landings muestran sólo las tres herramientas funcionales y no nombran Compras", async () => {
+  // Catálogo público: sólo las cuatro herramientas funcionales. Compras no existe todavía y no se nombra en ningún lugar: ni tarjeta, ni
+  // landing, ni enlace, ni archivo (2026-10-28, Pablo; Jardín Zen sumado 2026-10-31).
+  it("la portada y las landings muestran sólo las cuatro herramientas funcionales y no nombran Compras", async () => {
     const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
-    expect(home.match(/class="tool-card[ "]/g)).toHaveLength(3);
-    for (const name of ["index", "tareas", "cuentas-claras", "remanso", "privacidad", "terminos"]) {
+    expect(home.match(/class="tool-card[ "]/g)).toHaveLength(4);
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso", "jardin-zen", "privacidad", "terminos"]) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html, name).not.toMatch(/href="\/compras"|Compras/u);
     }
@@ -227,13 +233,13 @@ describe("homesuite-site", () => {
     expect(await readFile(new URL("../public/styles.css", import.meta.url), "utf8")).not.toMatch(/shopping/iu);
   });
 
-  // Estado de cada herramienta (2026-10-27, Pablo): Fun TasKing está disponible; Cuentas Claras y Remanso funcionan y se rotulan
+  // Estado de cada herramienta: Fun TasKing está disponible; Cuentas Claras, Remanso y Jardín Zen funcionan y se rotulan
   // «Versión Beta». Ninguna página dice «Próximamente» ni «En preparación».
-  it("la portada rotula una herramienta Disponible y dos Versión Beta, sin «Próximamente»", async () => {
+  it("la portada rotula una herramienta Disponible y tres Versión Beta, sin «Próximamente»", async () => {
     const home = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
     expect(home.match(/class="status status-available">Disponible</g)).toHaveLength(1);
-    expect(home.match(/class="status">Versión Beta</g)).toHaveLength(2);
-    for (const name of ["index", "tareas", "cuentas-claras", "remanso"]) {
+    expect(home.match(/class="status">Versión Beta</g)).toHaveLength(3);
+    for (const name of ["index", "tareas", "cuentas-claras", "remanso", "jardin-zen"]) {
       const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
       expect(html, name).not.toMatch(/Próximamente|en preparación/iu);
     }

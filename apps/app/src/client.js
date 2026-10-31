@@ -135,18 +135,180 @@ import { searchable } from "/text.js";
     });
   });
 
-  // Categoría: escribir un nombre ofrece la existente (misma forma normalizada que usa el servidor) o avisa que se creará.
+  // Categoría: un solo campo que filtra mientras se escribe. El <select> y «O escribí una nueva» siguen en el formulario
+  // (son lo que se envía, y lo único que hay sin JavaScript); aquí se ocultan y este campo los gobierna. Elegir una fila
+  // fija el <select>; un texto que no coincide con ninguna se envía como nombre nuevo, igual que antes (misma forma normalizada).
+  var comboCount = 0;
   document.querySelectorAll(".category-field").forEach(function (field) {
     var select = field.querySelector("select");
     var typed = field.querySelector('input[name="categoryNew"]');
     var hint = field.querySelector(".category-hint");
     if (!select || !typed || !hint) return;
-    typed.addEventListener("input", function () {
-      var key = searchable(typed.value);
-      var match = key && Array.prototype.find.call(select.options, function (option) { return option.getAttribute("data-key") === key; });
-      if (!key) { hint.textContent = ""; return; }
-      if (match) { select.value = match.value; hint.textContent = "Ya existe «" + match.textContent.trim() + "»: se va a usar esa."; }
-      else { hint.textContent = "Se va a crear «" + typed.value.trim() + "» en Mis categorías."; }
+    var items = [];
+    Array.prototype.forEach.call(select.options, function (option) {
+      if (!option.value) return;
+      var group = option.parentNode.tagName === "OPTGROUP" ? option.parentNode.label : "";
+      var label = option.textContent.trim();
+      items.push({ value: option.value, key: option.getAttribute("data-key"), label: label, group: group, name: searchable(label), groupKey: searchable(group) });
+    });
+    comboCount += 1;
+    var listId = "category-list-" + comboCount;
+    var wrap = document.createElement("div");
+    wrap.className = "cat-combo";
+    var label = document.createElement("label");
+    label.textContent = "Buscá una o escribí una nueva";
+    var inputId = "category-input-" + comboCount;
+    label.htmlFor = inputId;
+    var box = document.createElement("div");
+    box.className = "cat-input";
+    var input = document.createElement("input");
+    input.id = inputId;
+    input.type = "text"; input.maxLength = 60; input.autocomplete = "off"; input.placeholder = "Ej.: Supermercado";
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-controls", listId);
+    var helpId = "category-help-" + comboCount;
+    var helpButton = document.createElement("button");
+    helpButton.type = "button"; helpButton.className = "cat-help-btn"; helpButton.textContent = "?";
+    helpButton.title = "Ver las categorías disponibles";
+    helpButton.setAttribute("aria-label", "Ver las categorías disponibles");
+    helpButton.setAttribute("aria-expanded", "false");
+    helpButton.setAttribute("aria-controls", helpId);
+    box.appendChild(input); box.appendChild(helpButton);
+    var list = document.createElement("ul");
+    list.id = listId; list.className = "cat-list"; list.hidden = true;
+    list.setAttribute("role", "listbox");
+    list.setAttribute("aria-label", "Categorías");
+    var help = document.createElement("div");
+    help.id = helpId; help.className = "cat-help"; help.hidden = true;
+    var helpGroup = null;
+    items.forEach(function (item) {
+      if (!item.group) return;
+      if (!helpGroup || helpGroup.name !== item.group) {
+        var title = document.createElement("p");
+        title.className = "cat-help-group"; title.textContent = item.group;
+        var row = document.createElement("div");
+        row.className = "cat-help-items";
+        help.appendChild(title); help.appendChild(row);
+        helpGroup = { name: item.group, row: row };
+      }
+      var chip = document.createElement("button");
+      chip.type = "button"; chip.className = "cat-help-item"; chip.textContent = item.label;
+      chip.addEventListener("click", function () { pick({ value: item.value, label: item.label }); });
+      helpGroup.row.appendChild(chip);
+    });
+    var note = document.createElement("p");
+    note.className = "cat-help-note"; note.textContent = "Si la que buscás no está, escribila y se crea.";
+    help.appendChild(note);
+    wrap.appendChild(label); wrap.appendChild(box); wrap.appendChild(list); wrap.appendChild(help);
+    field.insertBefore(wrap, hint);
+    field.classList.add("is-enhanced");
+    var chosen = select.options[select.selectedIndex];
+    if (chosen && chosen.value) input.value = chosen.textContent.trim();
+    var rows = [];
+    var active = -1;
+
+    function setActive(index) {
+      active = index;
+      rows.forEach(function (row, at) { row.node.classList.toggle("is-active", at === index); row.node.setAttribute("aria-selected", at === index ? "true" : "false"); });
+      if (index >= 0) { input.setAttribute("aria-activedescendant", rows[index].node.id); rows[index].node.scrollIntoView({ block: "nearest" }); }
+      else input.removeAttribute("aria-activedescendant");
+    }
+    var helpPinned = false;
+    function showHelp(pinned) {
+      helpPinned = pinned;
+      close();
+      help.hidden = false;
+      helpButton.setAttribute("aria-expanded", "true");
+    }
+    function hideHelp() { helpPinned = false; help.hidden = true; helpButton.setAttribute("aria-expanded", "false"); }
+    function close() { list.hidden = true; input.setAttribute("aria-expanded", "false"); setActive(-1); }
+    function render() {
+      var text = input.value;
+      var query = searchable(text);
+      list.textContent = "";
+      rows = [];
+      var lastGroup = null;
+      items.forEach(function (item) {
+        if (query && item.name.indexOf(query) === -1 && item.groupKey.indexOf(query) === -1) return;
+        if (item.group !== lastGroup) {
+          lastGroup = item.group;
+          if (item.group) { var heading = document.createElement("li"); heading.className = "cat-list-group"; heading.setAttribute("role", "presentation"); heading.textContent = item.group; list.appendChild(heading); }
+        }
+        addRow(item.label, { value: item.value, label: item.label });
+      });
+      if (query && !items.some(function (item) { return item.key === query; })) addRow("Crear «" + text.trim() + "»", { create: true, label: text.trim() });
+      if (!rows.length) { var none = document.createElement("li"); none.className = "cat-list-empty"; none.setAttribute("role", "presentation"); none.textContent = "No hay categorías."; list.appendChild(none); }
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      setActive(-1);
+    }
+    function addRow(text, choice) {
+      var node = document.createElement("li");
+      node.id = listId + "-" + rows.length;
+      node.className = "cat-list-option" + (choice.create ? " is-create" : "");
+      node.setAttribute("role", "option");
+      node.setAttribute("aria-selected", "false");
+      node.textContent = text;
+      node.addEventListener("mousedown", function (event) { event.preventDefault(); });
+      node.addEventListener("click", function () { pick(choice); });
+      list.appendChild(node);
+      rows.push({ node: node, choice: choice });
+    }
+    // Lo que se enviará según el texto: nada, una existente (misma forma normalizada que el servidor) o un nombre nuevo.
+    function settle(text) {
+      var key = searchable(text);
+      var match = key && items.filter(function (item) { return item.key === key; })[0];
+      if (!key) { select.value = ""; typed.value = ""; hint.textContent = ""; }
+      else if (match) { select.value = match.value; typed.value = ""; hint.textContent = "Ya existe «" + match.label + "»: se va a usar esa."; }
+      else { select.value = ""; typed.value = text.trim(); hint.textContent = "Se va a crear «" + text.trim() + "» en Mis categorías."; }
+    }
+    function pick(choice) {
+      hideHelp();
+      input.value = choice.label;
+      if (choice.create) settle(choice.label);
+      else { select.value = choice.value; typed.value = ""; hint.textContent = ""; }
+      close();
+    }
+    // El (?): con toque o clic se abre y se queda; en una pantalla con mouse también se asoma al pasar y se va al salir.
+    var hoverable = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+    helpButton.addEventListener("click", function () {
+      if (!help.hidden && helpPinned) hideHelp();
+      else showHelp(true);
+    });
+    if (hoverable) {
+      var peek = [helpButton, help];
+      peek.forEach(function (node) {
+        node.addEventListener("mouseenter", function () { if (help.hidden) showHelp(false); });
+        node.addEventListener("mouseleave", function () { if (!helpPinned) hideHelp(); });
+      });
+    }
+    wrap.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || help.hidden || event.target === input) return;
+      event.preventDefault();
+      hideHelp();
+      helpButton.focus();
+    });
+    document.addEventListener("pointerdown", function (event) { if (!help.hidden && !wrap.contains(event.target)) hideHelp(); });
+    input.addEventListener("input", function () { hideHelp(); settle(input.value); render(); });
+    input.addEventListener("focus", function () { if (list.hidden) { hideHelp(); render(); } });
+    input.addEventListener("click", function () { if (list.hidden) { hideHelp(); render(); } });
+    input.addEventListener("blur", close);
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (list.hidden) render();
+        if (!rows.length) return;
+        var step = event.key === "ArrowDown" ? 1 : -1;
+        setActive(active < 0 ? (step > 0 ? 0 : rows.length - 1) : (active + step + rows.length) % rows.length);
+      } else if (event.key === "Enter" && !list.hidden && active >= 0) {
+        event.preventDefault();
+        pick(rows[active].choice);
+      } else if (event.key === "Escape" && (!list.hidden || !help.hidden)) {
+        event.preventDefault();
+        close(); hideHelp();
+      }
     });
   });
 

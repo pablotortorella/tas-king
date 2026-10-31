@@ -98,3 +98,12 @@ export function useScheme(test, scheme, viewport = null) {
   test.use({ colorScheme: scheme, ...(viewport ? { viewport } : {}) });
   test.beforeEach(({ page }) => emulateScheme(page, scheme));
 }
+
+// El campo de categoría del formulario de movimientos: escribir filtra la lista y tocar una fila la elige.
+export const categoryCombo = page => page.getByRole("combobox", { name: "Buscá una o escribí una nueva" });
+
+// Elige una categoría existente buscándola por nombre, como lo haría una persona.
+export async function chooseCategory(page, name) {
+  await categoryCombo(page).fill(name);
+  await page.getByRole("option", { name, exact: true }).click();
+}

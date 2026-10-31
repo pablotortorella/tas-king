@@ -5,6 +5,7 @@ import { searchable } from "./text.js";
 import { categoryIcon } from "./category-data.js";
 import { resolveCategory } from "./categories.js";
 import { categoryOptionGroups } from "./category-options.js";
+import { PAYMENT_METHODS, paymentMethodName } from "./payment-methods.js";
 
 export { escapeHtml };
 
@@ -33,6 +34,12 @@ function categorySection(data, entry) {
   return `<fieldset class="category-field"><legend>Categoría (opcional)</legend><label>Elegí una<select name="categoryId"><option value="">Sin categoría</option>${archived}${groups}</select></label><label>O escribí una nueva<input name="categoryNew" maxlength="60" autocomplete="off" placeholder="Ej.: Peluquería"></label><p class="hint category-hint" role="status" aria-live="polite"></p></fieldset>`;
 }
 
+// Forma de pago: lista fija y corta, opcional. Una sola pregunta, sin administración (a diferencia de las categorías).
+function paymentSection(entry) {
+  const options = PAYMENT_METHODS.map(method => `<option value="${method.id}"${method.id === entry?.paymentMethod ? " selected" : ""}>${escapeHtml(method.name)}</option>`).join("");
+  return `<fieldset class="payment-field"><legend>Forma de pago (opcional)</legend><label>¿Con qué se pagó?<select name="paymentMethod"><option value="">Sin indicar</option>${options}</select></label></fieldset>`;
+}
+
 export function revisionSummary(row, previous) {
   const snapshot = JSON.parse(row.snapshot_json);
   if (row.action === "created") return "Movimiento creado";
@@ -47,6 +54,7 @@ export function revisionSummary(row, previous) {
   if (before.split !== undefined && JSON.stringify(snapshot.split) !== JSON.stringify(before.split)) changed.push("forma de reparto");
   // La categoría se compara por identificador: renombrarla después no cuenta como un cambio de este movimiento.
   if ((snapshot.categoryId ?? null) !== (before.categoryId ?? null)) changed.push("categoría");
+  if ((snapshot.paymentMethod ?? null) !== (before.paymentMethod ?? null)) changed.push("forma de pago");
   return changed.length ? `Cambió: ${changed.join(", ")}` : "Sin cambios de contenido";
 }
 
@@ -104,6 +112,7 @@ export function parseEntryForm(form) {
   const cashParties = payer === KEEP_PAYERS ? keptPayers(form, type, totalMinor) : [{ participantId: payer, direction: type === "expense" ? "out" : "in", amountMinor: totalMinor }];
   return { type, currency, totalMinor, description, note, occurredAt,
     categoryId: form.has("categoryId") ? String(form.get("categoryId")) : undefined, categoryName: form.has("categoryNew") ? String(form.get("categoryNew")) : undefined,
+    paymentMethod: form.has("paymentMethod") ? String(form.get("paymentMethod")) : undefined,
     split: { method, beneficiaries, inputs },
     cashParties, allocations: [] };
 }
@@ -176,7 +185,7 @@ export function renderEntryForm(data, { groupId, csrf, userId, type = "expense",
   const inputs = spec?.inputs ?? Object.fromEntries([...shares].map(([id, amount]) => [id, inputAmount(amount, currency)]));
   const fields = currentType === "transfer"
     ? `<fieldset><legend>De</legend>${radioChoices(people, "from", entry?.cashParties.find(p => p.direction === "out")?.participantId ?? prefill.from ?? ownId, ownId)}</fieldset><fieldset><legend>Para</legend>${radioChoices(people, "to", entry?.cashParties.find(p => p.direction === "in")?.participantId ?? prefill.to ?? people.find(p => p.active && p.id !== (prefill.from ?? ownId))?.id, ownId)}</fieldset>`
-    : `${payerFieldset({ type: currentType, entry, people, ownId, names: new Map(data.participants.map(p => [p.id, p.displayName])), currency })}${categorySection(data, entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
+    : `${payerFieldset({ type: currentType, entry, people, ownId, names: new Map(data.participants.map(p => [p.id, p.displayName])), currency })}${categorySection(data, entry)}${paymentSection(entry)}${splitSection({ data, visible, selected, ownId, method, inputs })}`;
   const tabs = edit ? "" : `<nav class="type-tabs" aria-label="Tipo de movimiento">${["expense", "income", "transfer"].map(kind => `<a href="${path(groupId)}/ledger/new?type=${kind}"${kind === currentType ? ' aria-current="page"' : ""}>${ICONS[kind].replace('width="22" height="22"', 'width="18" height="18"')}${escapeHtml(entryLabel(kind))}</a>`).join("")}</nav>`;
   const label = entryLabel(currentType).toLowerCase();
   return `<a class="back-link" href="${path(groupId)}">← Volver</a><p class="eyebrow">${escapeHtml(entryLabel(currentType))} · ${escapeHtml(data.ledger.default_currency)}</p><h1>${edit ? "Corregir" : "Agregar"} ${escapeHtml(label)}</h1>${tabs}<p class="hint">${escapeHtml(TYPE_HINTS[currentType] ?? "")}</p><form class="ledger-form" method="post" action="${action}" data-optimistic>${csrf}<input type="hidden" name="type" value="${escapeHtml(currentType)}"><input type="hidden" name="idempotencyKey" value="${crypto.randomUUID()}">${edit ? `<input type="hidden" name="expectedRevision" value="${entry.revision}">` : ""}<label>Descripción<input name="description" maxlength="240" required value="${escapeHtml(entry?.description ?? "")}" autofocus autocomplete="off"></label><div class="form-grid amount-row"><label>Importe<input class="amount-input" name="amount" inputmode="decimal" required value="${escapeHtml(entry ? inputAmount(entry.totalMinor, currency) : prefill.amount ?? "")}" placeholder="0,00" autocomplete="off"></label><label>Moneda<select name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(code => `<option value="${code}" data-units="${CURRENCY_MINOR_UNITS[code]}"${code === currency ? " selected" : ""}>${escapeHtml(currencyLabel(code))}</option>`).join("")}</select></label></div><label>Fecha<input name="occurredAt" type="date" required value="${escapeHtml(entry?.occurredAt ?? new Date().toISOString().slice(0, 10))}"></label>${fields}<label>Nota (opcional)<textarea name="note" maxlength="1000" rows="2">${escapeHtml(entry?.note ?? "")}</textarea></label><section class="effect-preview" aria-live="polite" hidden><h3>Cómo queda este movimiento</h3><ul></ul><p class="preview-note hint"></p></section><p class="form-feedback" role="status" aria-live="polite"></p><div class="form-actions sticky-actions"><button class="button" type="submit">${edit ? "Guardar cambios" : `Guardar ${escapeHtml(label)}`}</button><a class="button secondary" href="${path(groupId)}">Cancelar</a></div></form>`;
@@ -239,7 +248,7 @@ export function renderEntryDetail(entry, data, { groupId, userId, revisions }) {
   const history = [...revisions].map((row, index) => `<li><strong>Revisión ${row.revision} · ${escapeHtml(row.actor_name)} ${row.action === "created" ? "creó el movimiento" : row.action === "voided" ? "anuló el movimiento" : "corrigió el movimiento"}</strong><br><span class="muted">${escapeHtml(revisionSummary(row, revisions[index - 1]))}${batchMark(row)} · ${escapeHtml(stamp(row.created_at))}</span></li>`).reverse().join("");
   const mayEdit = entry.status === "active" && (data.ledger.role === "owner" || entry.createdByUserId === userId);
   const actions = mayEdit ? `<div class="detail-actions"><a class="button secondary" href="${path(groupId)}/ledger/entries/${encodeURIComponent(entry.id)}/edit">Corregir</a><a class="button danger" href="${path(groupId)}/ledger/entries/${encodeURIComponent(entry.id)}/void">Anular</a></div><p class="footnote">Anular no borra: queda visible como anulado y deja de contar en los saldos.</p>` : "";
-  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, groupId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
+  return `${back}<div class="badges"><span class="chip ${voided ? "void" : "ok"}">${escapeHtml(entryLabel(entry.type))}</span><span class="chip">${voided ? "Anulado" : "Vigente"} · revisión ${entry.revision}</span></div><h1>${escapeHtml(entry.description)}</h1><p class="entry-amount">${escapeHtml(formatMoney(entry.totalMinor, entry.currency))}${voided ? " · Anulado" : ""}</p>${provenance(entry, groupId)}${entry.type === "transfer" ? "" : `<p class="entry-category">${categoryChip(entry)}${entry.categoryInfo ? ` <span class="muted">${escapeHtml(entry.categoryInfo.group)}</span>` : ""}${entry.paymentMethod ? ` <span class="chip pay">${escapeHtml(paymentMethodName(entry.paymentMethod))}</span>` : ""}</p>`}<p class="muted">${escapeHtml(shortDate(entry.occurredAt))} · ${escapeHtml(who)} · Cargado por ${escapeHtml(creator)}</p>${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}<section class="ledger-section"><h2>${voided ? "Efecto original, no vigente" : "Cómo se repartió"}</h2>${splitTable(entry, data)}${splitNote(entry, data)}</section><section class="ledger-section"><h2>Historial</h2><ol class="timeline">${history}</ol></section>${actions}`;
 }
 export function ledgerCsv(data) {
   const quote = value => {
@@ -247,7 +256,7 @@ export function ledgerCsv(data) {
     const safe = typeof value === "string" && /^[\s]*[=+@-]/u.test(text) ? `'${text}` : text;
     return `"${safe.replaceAll('"', '""')}"`;
   };
-  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen", "categoria"]];
-  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.importBatchId ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? "", entry.categoryInfo?.name ?? ""]);
+  const lines = [["id", "fecha", "tipo", "descripcion", "nota", "moneda", "total_menor", "estado", "revision", "participante_id", "efecto_menor", "origen", "lote", "fila_origen", "categoria", "forma_pago"]];
+  for (const entry of data.entries) for (const effect of entry.effects) lines.push([entry.id, entry.occurredAt, entry.type, entry.description, entry.note, entry.currency, entry.totalMinor, entry.status, entry.revision, effect.participantId, entry.status === "active" ? effect.amountMinor : 0, entry.importBatchId ? "Splitwise" : "HomeSuite", entry.importBatchId ?? "", entry.sourceRowNumber ?? "", entry.categoryInfo?.name ?? "", paymentMethodName(entry.paymentMethod) ?? ""]);
   return `\uFEFF${lines.map(row => row.map(quote).join(",")).join("\r\n")}\r\n`;
 }

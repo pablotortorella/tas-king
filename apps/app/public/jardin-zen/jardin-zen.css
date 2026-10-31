@@ -1,0 +1,24 @@
+/* Jardín Zen · beta v0.2 · estilos aislados del shell de HomeSuite. */
+
+.zen-app{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#353b34;background:transparent;font-synthesis:none}
+*{box-sizing:border-box}body.jardin-zen{background:radial-gradient(ellipse at 55% 35%,#f8f5ed 5%,#eeebe4 58%,#e5e1da 100%)}
+.zen-app{max-width:1320px;margin:auto;min-height:calc(100dvh - 100px);display:flex;flex-direction:column;padding:25px clamp(14px,4vw,46px) 18px;gap:16px}
+.zen-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px} .zen-brand{font-weight:650;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7e897c}.zen-brand i{display:inline-block;width:9px;height:9px;border:1.5px solid #6c796d;transform:rotate(45deg);margin-right:9px}
+.zen-app h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,3.5vw,43px);line-height:1.12;font-weight:400;margin:9px 0 4px;color:#39463d} .subtitle{font-size:13px;color:#8a8b81;margin:0}
+.pill{border:1px solid #d7d5ca;background:rgba(255,255,255,.43);border-radius:100px;padding:10px 14px;color:#5e665c;cursor:pointer;font:inherit;font-size:13px;white-space:nowrap}.pill[aria-pressed="true"]{background:#526451;color:white;border-color:#526451}
+.scene{position:relative;flex:1;min-height:300px;max-height:calc(100dvh - 225px);height:58vh;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#f8f4eb,#e5e0d7 85%);border:1px solid rgba(177,170,158,.2);box-shadow:0 20px 55px rgba(69,62,49,.09);touch-action:none}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.scene-info{position:absolute;pointer-events:none;bottom:17px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;color:#797e72;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.7);backdrop-filter:blur(6px);border-radius:20px;padding:8px 13px;white-space:nowrap;font-size:12px;text-align:center;max-width:95%}.scene-info .dot{width:5px;height:5px;border-radius:50%;background:#95a98d;flex:none}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:2px 0}.tools,.actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.group{display:flex;align-items:center;gap:3px;padding:5px;background:rgba(255,255,255,.58);border:1px solid #dddcd2;border-radius:13px}.tool{background:transparent;border:0;padding:9px 13px;border-radius:9px;font-size:13px;font-weight:520;color:#6f756b;cursor:pointer;display:flex;gap:8px;align-items:center}.tool[aria-pressed="true"]{background:#556653;color:#fff;box-shadow:0 2px 8px rgba(49,61,47,.12)}.action{border:1px solid #dad8cc;background:rgba(255,255,255,.38);border-radius:10px;font-size:13px;padding:12px 13px;color:#5f685c;cursor:pointer}#rake-size{white-space:nowrap}.action:hover,.pill:hover{filter:brightness(.98)}.action:disabled{opacity:.35;cursor:default}.zen-foot{color:#a4a49b;font-size:11px;display:flex;justify-content:space-between;gap:15px;padding-top:4px}
+.scene-error{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;background:#ede8dd;color:#635d52}
+@media(max-width:720px){.zen-app{padding:20px 12px 14px;gap:14px}.zen-head{padding:0 5px}.zen-app h1{font-size:30px}.subtitle{font-size:12px}.scene{height:calc(100dvh - 310px);min-height:305px;max-height:none;border-radius:16px}.toolbar{justify-content:center}.tools{width:100%}.group{width:100%;justify-content:center}.tool{flex:1;justify-content:center;padding:11px 6px}.actions{width:100%;justify-content:center}.action{flex:1}.zen-foot{padding:0 4px}.scene-info{font-size:11px}.pill{padding:10px}.tool svg{display:none}}
+@media(max-height:630px) and (min-width:721px){.scene{height:45vh}.zen-app{gap:9px;padding-top:12px}.zen-app h1{margin-top:4px;font-size:27px}}
+
+body.jardin-zen .shell.wide{max-width:1400px;padding:0 14px 24px}
+body.jardin-zen .topbar .brand{color:#334738}
+.zen-app .zen-trail{font-weight:400;opacity:.55}
+.zen-app .zen-head{align-items:flex-start}
+.zen-app .zen-foot{flex-wrap:wrap}
+.zen-app .scene{flex-shrink:0}
+.zen-app button:focus-visible{outline:3px solid #526451;outline-offset:3px}
+@media(max-width:720px){body.jardin-zen .shell.wide{padding:0 8px 20px}.zen-app .scene{height:calc(100dvh - 365px);min-height:280px}}

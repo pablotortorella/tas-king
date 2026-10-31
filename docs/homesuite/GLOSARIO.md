@@ -10,6 +10,7 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 | Libro | no se muestra mientras haya uno solo por grupo | `ledger` | `/groups/:id/ledger/…` | `expense_ledgers`, `ledger_*` |
 | Persona | persona | `participant` | `/groups/:id/people` | `ledger_participants` |
 | Movimiento | movimiento | `entry` | `/groups/:id/ledger/entries` | `ledger_entries` |
+| Forma de pago | forma de pago | `paymentMethod` (`cash`, `debit`, `credit`, `transfer`, `wallet`) | campo `paymentMethod` del movimiento | `ledger_entries.payment_method` |
 | Titular | titular | `owner` | — | `memberships.role = 'owner'` |
 | Integrante | integrante | `member` | `/api/groups/:id/members` | `memberships` |
 | Invitación | invitación | `invitation` | `/invitations` | `invitations` |
