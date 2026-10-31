@@ -1,8 +1,8 @@
 ## 1. Modelo de datos
 
 - [ ] 1.1 Migración D1: monedas, libros, participantes, movimientos, partes de efectivo, asignaciones, revisiones y claves de idempotencia, con índices y `CHECK` de importe positivo.
-- [ ] 1.2 Migrar espacios existentes: libro vacío (COP) y participante vinculado al titular.
-- [ ] 1.3 Crear libro y participante titular dentro de la misma transacción que crea el espacio.
+- [ ] 1.2 Migrar grupos existentes: libro vacío (COP) y participante vinculado al titular.
+- [ ] 1.3 Crear libro y participante titular dentro de la misma transacción que crea el grupo.
 
 ## 2. Dominio puro
 

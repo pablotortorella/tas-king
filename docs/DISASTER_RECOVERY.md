@@ -1,5 +1,7 @@
 # Disaster Recovery — FUN TasKing!
 
+Este runbook de TasKing hereda [Operación de HomeSuite](homesuite/OPERACION.md). Sus instrucciones de restauración son operaciones de impacto: confirmar destino, respaldo y autorización aplicable. La existencia de estos comandos no certifica un simulacro completo; verificar índices, triggers y archivos además de datos antes de declarar recuperación.
+
 ## Estrategia de backups
 
 ### Automáticos (Cloudflare Cron Trigger — cada 8 horas)
@@ -97,7 +99,7 @@ npx wrangler rollback
 npx wrangler rollback <deployment-id>
 ```
 
-El rollback de código **no revierte** cambios de DB. Si el deploy incluyó una migración problemática, combinar rollback de código + restauración de backup.
+El rollback de código **no revierte** cambios de DB. Si hubo una migración problemática, evaluar compatibilidad y pérdida de datos antes de decidir restaurar. No restaurar automáticamente por revertir código.
 
 ---
 
@@ -138,30 +140,26 @@ Si los secrets de Cloudflare (Google OAuth, SESSION_SECRET) se pierden o comprom
 
 ---
 
-## Checklist pre-deploy (para cambios riesgosos)
+## Preparación de un despliegue
 
-Antes de un deploy que incluya migración de DB o cambio estructural importante:
+La secuencia común y su aprobación se mantienen en [Operación](homesuite/OPERACION.md).
+Los comandos de publicación y respaldo de TasKing están en [Deployment](DEPLOYMENT.md).
+No interpretar tamaño razonable del archivo como prueba de restaurabilidad.
 
-```bash
-# 1. Backup manual antes del deploy
-npm run db:backup:prod
+## Límite conocido del script de restauración local
 
-# 2. Verificar que el backup existe y tiene tamaño razonable
-ls -lh backups/
+Inspección 2026-10-24: `scripts/db-restore.sh` elimina `.wrangler/state` al usar
+`local`. Puede destruir también estado emulado ajeno a la base que se quiere
+ensayar. No usarlo sobre el entorno de desarrollo como prueba rutinaria de
+restauración. Preparar un entorno aislado descartable e inspeccionar el dump y el
+script; la corrección del aislamiento queda registrada en el backlog.
 
-# 3. Deploy normal
-npm run deploy:staging   # verificar en staging
-npm run deploy           # producción (requiere aprobación)
-```
-
----
-
-## RPO y RTO estimados
+## Objetivos históricos de recuperación — sin simulacro completo acreditado
 
 | Métrica | Valor | Notas |
 |---|---|---|
-| RPO (máx. pérdida de datos) | 8 horas | Intervalo entre backups automáticos |
-| RTO (tiempo de recuperación) | 15-30 min | Bajar backup + restaurar + verificar |
+| RPO objetivo (pérdida tolerable) | 8 horas | Derivado del cron; requiere confirmar ejecución exitosa y recuperación |
+| RTO estimado, no medido | 15-30 min | Estimación histórica; validar con simulacro completo |
 | Retención de backups | 30 días | En R2 (limpieza automática) + histórico en GitHub |
 
 Para reducir el RPO: cambiar el cron en `wrangler.jsonc` a `"0 */4 * * *"` (cada 4 horas).

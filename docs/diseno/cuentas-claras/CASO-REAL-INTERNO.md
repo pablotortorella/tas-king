@@ -1,0 +1,195 @@
+# Caso real de referencia para Cuentas Claras (reporte interno)
+
+Fecha de la medición: 2026-10-24. Sirve para decidir con datos reales qué tamaño, qué formas de reparto y qué casos límite tiene que resolver la herramienta, porque este export es el uso principal previsto del producto.
+
+**Privacidad.** Este documento contiene solo conteos, proporciones y tiempos. No incluye nombres, descripciones, importes, textos de categorías ni fechas exactas. El archivo original vive fuera del repositorio y no se copia. Las pruebas del repo siguen usando datos sintéticos.
+
+**Cómo se midió.** Con el parser y el planificador de importación de la app (`splitwise-csv.js` y `buildImportPlan`) ejecutados en Node, y con `searchLedger` sobre las filas ya parseadas. No se midió en un Worker real ni contra D1: los límites de Cloudflare citados abajo se recuerdan y **no están verificados**.
+
+## 1. Forma del archivo
+
+| Dato | Valor |
+|---|---|
+| Idioma de las columnas | Español (Fecha, Descripción, Categoría, Coste, Moneda, una columna por persona) |
+| Personas | 2 |
+| Moneda | Una sola |
+| Filas de movimiento | 2.485 |
+| Filas de resumen («Saldo total») | 1 (ver el hallazgo de la sección 2) |
+| Líneas vacías | 4 (una tras el encabezado y una antes del resumen, entre otras) |
+| Incidentes del parser en las filas de movimiento | 0 |
+| Antigüedad | 3,5 años, 43 meses con datos |
+| Orden | Ascendente por fecha |
+| Peso del CSV | unos 180 KB, 73 bytes por fila |
+| Descripciones con coma o comillas | 31 (se leen bien) |
+| Descripciones con emoji | 15 (se leen bien) |
+| Descripción más larga | 59 caracteres (el límite de la app es 240) |
+| Filas repetidas exactas (fecha, descripción e importe) | 1 clave, 2 filas: duplicados legítimos posibles; no hay que deduplicar por contenido |
+
+**Ritmo.** 58 filas por mes en promedio (mínimo 31, máximo 87) y hasta 11 en un día. Por año: 512 en 2023 (desde abril), 585 en 2024, 745 en 2025 y 644 en 2026 hasta octubre. Esto da unas 770 por año, así que se llega a unos 4.000 movimientos a fines de 2028 y a unos 5.000 hacia fines de 2029.
+
+## 2. Hallazgo crítico: la fila de resumen no se reconoce
+
+El export real trae la fila de saldo con la **fecha de exportación en la primera celda** y «Saldo total» en la segunda, con el importe y la moneda en blanco o en celdas con espacios y los saldos en las columnas de las personas. El detector actual (`isSummary` en `splitwise-csv.js`) solo reconoce «saldo total» en la **primera** celda o con la primera vacía, que es la forma del fixture sintético y de la E2E.
+
+Consecuencias comprobadas con el archivo real:
+
+- El parser informa **0 filas de resumen** y **1 movimiento de más**, con importe 0 y dos efectos distintos de cero.
+- El plan advierte «el archivo no incluye una fila de saldos para comparar», así que **la conciliación no corre**.
+- Si se confirmara, los saldos importados quedarían **duplicados**: la fila colada vale exactamente lo que deberían valer los saldos reales (la suma de las 2.485 filas reales coincide con el resumen).
+
+**Estado:** corregido en el PR #92 (pendiente de integrar). Con el arreglo, el mismo archivo da 0 filas de más, 1 resumen, 0 advertencias y diferencias de conciliación en cero para las dos personas; sin él, fallan las 3 pruebas nuevas. Hay que integrarlo antes de importar datos reales. La prueba debe usar un CSV sintético de la misma forma: fecha en la primera celda, descripción «Saldo total», importe y moneda en blanco, saldos opuestos en las columnas de las personas. Conviene reconocer también las variantes en inglés («Total balance») y exigir que el resumen no se importe nunca como movimiento.
+
+## 3. Cómo se reparte
+
+| Patrón | Filas | Proporción |
+|---|---|---|
+| Mitad y mitad | 2.378 | 95,7 % |
+| 100 % a una persona (pagos o préstamos cargados como gasto) | 103 | 4,1 % |
+| Otro reparto | 4 | 0,2 % |
+| Sin efecto en ninguna persona | 1 | 0,04 % |
+
+- Quién queda a favor está equilibrado: 47 % la primera persona y 53 % la segunda. En esta pareja quien paga va alternando, por lo que mostrar «quién pagó» o «a favor de» tiene valor real al buscar.
+- De los 103 repartos al 100 %, 26 están a cargo de la primera persona y 77 de la segunda. Se distinguen por estructura (un efecto igual al total), sin mirar el texto, lo que no contradice la regla de no clasificar filas por su descripción.
+- **Centavos.** Solo el 0,6 % de los totales tiene centavos, pero el 15 % de las filas tiene medios pesos en los efectos (381 filas, por dividir totales impares). La moneda necesita **dos decimales**.
+- El export arrastra un saldo de la planilla anterior como un gasto común en la primera fila. Con este uso, la «apertura con saldos» no es necesaria.
+
+## 4. Categorías
+
+- 41 categorías distintas, 1 sola con una única fila y 6 con sufijo «- Otro» (subcategorías genéricas).
+- La categoría genérica concentra el 34 % de las filas y las 6 más usadas cubren el 72 %.
+- Hoy la app guarda la categoría de los importados, la busca y la muestra solo en el detalle. No aparece en la lista, no se puede filtrar y los movimientos propios no tienen categoría.
+
+## 5. Repetición
+
+33 descripciones aparecen al menos 6 veces y cubren 415 filas, el 17 % del total. Son cobros periódicos (suscripciones y servicios) que se cargan a mano cada mes. Es una oportunidad futura (movimientos recurrentes) y queda fuera del alcance actual.
+
+## 6. Escala y rendimiento
+
+Mediciones con las 2.485 filas ya parseadas, en Node y sin red:
+
+| Consulta de búsqueda | CPU |
+|---|---|
+| Una palabra frecuente | 131 ms |
+| Dos palabras | 391 ms |
+| Un nombre de persona | 92 ms |
+| Un importe | 137 ms |
+| Una categoría | 128 ms |
+| Sin coincidencias | 131 ms |
+
+- **La búsqueda es lo caro.** Cada consulta normaliza todos los textos y formatea todos los importes, y la de dos palabras repite el trabajo (frase completa y luego cada término). Un prototipo que normaliza una sola vez por petición baja unas 100 veces (medido en datos sintéticos con reglas simplificadas; hay que conservar el comportamiento actual con pruebas).
+- **Derivar los efectos es barato:** 13 ms con 5.000 movimientos y 24 ms con 15.000 (datos sintéticos).
+- **Lectura de D1.** Cada vista lee hoy todo el libro: unas 7.500 filas con estos datos (3 por movimiento importado). Es aceptable ahora; a ~5.000 movimientos serían unas 15.000 por vista.
+- **Buscar un nombre de persona devuelve los 2.485 movimientos.** Con dos personas, todo movimiento involucra a ambas, así que la coincidencia por participante no filtra nada.
+
+## 7. Importación a esta escala
+
+- 7.456 sentencias de escritura, en unos 125 lotes de 60, cada uno en su propia transacción. La importación **no es atómica**: se apoya en un lote «pendiente» que se limpia si falla. La cantidad de llamadas puede chocar con el límite de subconsultas por petición de Cloudflare (**no verificado**) y tarda varios segundos.
+- La vista previa guarda el CSV parseado completo en una sola fila de D1: 650 KB para estas 2.485 filas, unos 262 bytes por fila. Si D1 limita las filas a 2 MB (**no verificado**), el techo práctico es de unas 7.600 filas, mucho antes del tope de 2 MiB del archivo (unas 28.500 filas con este formato). Un archivo mayor fallaría sin un mensaje claro.
+- No hay incidentes en el archivo (salvo el resumen), así que el flujo de decisiones por fila no se ejercita con este caso.
+
+### Medición de la carga por etapas (2026-10-25)
+
+Con un archivo sintético de la misma forma (2.485 filas, dos personas, resumen con fecha en la primera celda), ejecutado en el entorno de pruebas de integración con **D1 local** (SQLite en el mismo proceso, sin red). Se corre con `npm run test:homesuite-app:integration -- import-scale`.
+
+| Dato | Valor |
+|---|---|
+| Tanda | 100 filas (25 tandas) |
+| Sentencias por tanda | 5 (movimientos, revisiones, pagadores, reparto y filas de origen, cada una sobre un JSON) |
+| Sentencias de la publicación | 6, en un único lote |
+| Vista previa (2.485 filas) | 27 ms |
+| Mediana por tanda / máxima | 6 ms / 9 ms |
+| Carga completa | 165 ms |
+| Lectura del libro con 2.485 movimientos publicados | 33 ms |
+
+Lo que **no** dicen estos números: son de un SQLite local, así que no incluyen la latencia de red de D1 remoto ni sus límites (sentencias por lote, tamaño de sentencia, subconsultas por petición, CPU por petición), que siguen **sin verificar**. Lo que sí fija la medición es el orden de magnitud de las llamadas: unas 5 por tanda y unas 125 en total para el archivo completo, contra las 7.456 sentencias en unos 125 lotes del diseño anterior. Antes de importar datos reales hay que repetir esta medición contra D1 en staging.
+
+### Medición de una recategorización de 1.000 movimientos (2026-10-25)
+
+Mismo entorno que la medición anterior (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- recategorize`.
+
+| Dato | Valor |
+|---|---|
+| Movimientos por operación (tope) | 1.000 |
+| Escritura | 10 tandas de 100; 3 sentencias por tanda (revisiones, un UPDATE por categoría de destino y elementos del lote) y 3 de cierre |
+| Tamaño del JSON de una tanda | unos 68 KB (100 movimientos con su instantánea completa) |
+| Vista previa | 13 ms |
+| Aplicar | 52 ms |
+| Deshacer | 53 ms |
+
+Una versión anterior del UPDATE recorría el JSON por cada fila del libro (el plan elegía `ledger_entries` como tabla externa) y tardaba unos 4 s para las mismas 1.000 filas; se corrigió agrupando por categoría de destino y guardando el cambio con «existe nuestra revisión como la siguiente del movimiento» (búsqueda por clave primaria), más `CROSS JOIN` para fijar el orden de las uniones. Es un recordatorio para cualquier escritura nueva con `json_each`: mirar el plan.
+
+**Sin verificar:** el tamaño máximo de una sentencia en D1 remoto (68 KB por tanda queda cerca de los 100 KB que se recuerdan), las sentencias por lote y la CPU por petición.
+
+### Búsqueda con índice por petición y disparadores para pasar a SQL (2026-10-25)
+
+Libros sintéticos de la forma del caso real, en Node y sin red (`npm run test:homesuite-app -- search`):
+
+| Consulta | Antes (referencia) | Con el índice por petición |
+|---|---|---|
+| Dos palabras, 2.500 movimientos | unos 337 ms | unos 6 ms |
+| Una palabra, 5.000 movimientos | — | unos 6 ms (presupuesto: menos de 100 ms) |
+| Dos palabras, 5.000 movimientos | — | unos 12 ms (el costo se duplica al duplicar los movimientos) |
+
+Medido en el navegador contra el Worker local con un libro importado de 2.485 movimientos, una búsqueda de extremo a extremo (envío del formulario, servidor, página renderizada) tarda unos 280 ms.
+
+La prueba de equivalencia compara la búsqueda nueva con la anterior sobre miles de consultas y libros generados: encuentra los mismos movimientos con los mismos motivos, salvo el texto de las coincidencias por persona.
+
+**Disparadores para pasar a SQL (búsqueda con filtros en la base y paginación por cursor).** Alcanza con que se cumpla uno:
+
+1. Un libro llega a **5.000 movimientos**. Con el ritmo del caso real (unos 770 por año) ocurre hacia fines de 2029.
+2. El aviso estructurado `slow_book_open` (abrir el libro tarda más de **300 ms** de tiempo transcurrido) aparece de forma repetida en el uso real. El evento solo lleva cantidades y tiempos, sin nombres ni importes, e indica `overSqlTrigger` cuando el libro ya superó los 5.000 movimientos.
+
+Hasta entonces la lectura completa del libro (unas 7.500 filas por vista con 2.485 movimientos) y la búsqueda en JavaScript siguen dentro del presupuesto.
+
+### Medición de unir dos personas con 2.500 movimientos (2026-10-26)
+
+Mismo entorno (D1 local, sin red). Se corre con `npm run test:homesuite-app:integration -- people`. Una persona participa de los 2.500 movimientos del libro y se une a otra.
+
+| Dato | Valor |
+|---|---|
+| Escritura | 25 tandas de 100 movimientos; 7 sentencias por tanda (revisiones, suma y borrado de partes de efectivo y de asignaciones, subida de revisión, elementos de la unión) y 8 de cierre |
+| Sentencias en total | 190, en 27 `batch` |
+| Vista previa | 35 ms |
+| Aplicar | 189 ms |
+| Leer el libro después | 35 ms |
+
+Es una medición en local: los límites de D1 remoto (tamaño de la sentencia, tiempo por petición) se verifican en staging antes de cerrar el cambio `personas-del-grupo` (tarea 7.3).
+
+### Mediciones en D1 de staging (2026-10-26)
+
+Con la pila desplegada en staging (Worker `homesuite-app-staging`, migraciones `0004`–`0010` aplicadas con respaldo previo) se probó contra **D1 remoto** con `wrangler d1 execute --remote` y una tabla temporal (ya eliminada). No se pudo recorrer la app autenticada: staging usa Google y no hay sesión local.
+
+| Prueba | Resultado |
+|---|---|
+| `INSERT … SELECT … FROM json_each(<JSON>)` de 100 filas, sentencia de ~49 KB / ~69 KB | 6 ms de SQL |
+| Mismo, sentencia de ~99 KB | 26 ms de SQL |
+| Mismo, sentencia de ~110 KB | **error `SQLITE_TOOBIG` («statement too long»)**: el tope está entre 98,8 y 110 KB |
+| 25 sentencias de 100 filas en una sola ejecución (el tamaño de una importación de 2.485 filas) | 56 ms de SQL, 5.000 filas escritas |
+| `UPDATE … WHERE id IN (SELECT … FROM json_each(<1.000 ids>))` | 5 ms de SQL, 1.000 filas escritas |
+
+**Qué cambió por esto:** las escrituras por tandas ahora se parten también por tamaño (`chunking.js`, tope ~60 KB por sentencia): con notas de 1.000 caracteres, 100 movimientos pasarían el límite. Hay pruebas con notas largas en la importación y en la recategorización.
+
+**Sigue sin medirse:** la latencia y el costo de una importación completa pasando por el Worker (red, CPU por petición, subconsultas por petición), porque requiere sesión autenticada. Las pruebas de la sentencia usaron el texto SQL literal; la app envía el JSON como parámetro enlazado, que debería quedar por debajo (el límite se aplica al texto de la sentencia), pero no está comprobado en remoto.
+
+## 8. Qué informa esto
+
+| Decisión | Qué dice el caso real | Estado |
+|---|---|---|
+| Modelo de efectos (`entry_effects`) | Derivar efectos es barato; el costo está en la búsqueda y en la lectura completa del libro, no en el almacenamiento | **Decidido en el explore:** conservar los dos caminos, sin `entry_effects` |
+| Búsqueda | 90–390 ms por consulta hoy; con índice por petición debería bajar mucho | A confirmar: arreglo en JavaScript primero, SQL con umbral medible |
+| Paginación en SQL | A 2.500 filas no urge; se acerca a ~5.000 en unos tres años | Diferida, con una medición como disparador |
+| Importación | Necesita prueba a escala y mensajes claros de límite; hoy no es atómica | A decidir: atomicidad y manejo de errores |
+| Fila de resumen | Defecto que bloquea la conciliación | Corregido en el PR #92; falta integrarlo |
+| Decimales de COP | Hacen falta dos | Resuelto por evidencia |
+| Categoría | Existe pero es poco visible, y un tercio es genérica | A decidir: mostrarla en la lista, catálogo para movimientos propios, filtros |
+| Buscar por persona | Con dos personas devuelve todo | A decidir qué significa buscar por persona |
+| Repartos al 100 % | 4 % de las filas; detectables por estructura | A decidir si se rotulan |
+| Apertura con saldos | No hace falta para este caso | Diferir |
+| Movimientos recurrentes | 17 % de las filas | Fuera de alcance por ahora |
+
+## 9. Pendiente de verificar
+
+- Límites de D1 y de Workers (tamaño de fila, subconsultas por petición, CPU por petición) en el plan que se use.
+- Formato de la fila de resumen en otros idiomas y otras versiones de Splitwise (solo se vio el español).
+- Una importación de 2.485 filas contra D1 local, con un CSV sintético de la misma forma.
+- Que el arreglo de la búsqueda conserve exactamente las coincidencias actuales.

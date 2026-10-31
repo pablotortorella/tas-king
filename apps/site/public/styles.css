@@ -149,6 +149,36 @@ h1 {
   padding: 14px 22px;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 13px 21px;
+  border: 1px solid var(--green);
+  border-radius: 999px;
+  color: var(--green);
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+.secondary-action:hover {
+  background: var(--green-soft);
+}
+
+.secondary-action:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 4px;
+}
+
 .primary-action:hover,
 .tool-link:hover {
   background: #174b34;
@@ -204,9 +234,15 @@ h2 {
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
+
+/* Acento por producto: verde, terracota y ámbar de la paleta de la suite. Se usa en rótulos, bordes e íconos, nunca como
+   fondo de texto blanco (la terracota no cumple AA con blanco); los botones primarios siguen en el verde de la suite. */
+.tool-card-tasks, .product-page-tasks { --product-accent: #245c43; --product-accent-soft: #d9eadc; }
+.tool-card-expenses, .product-page-expenses { --product-accent: #904f2a; --product-accent-soft: #f5dfc6; }
+.tool-card-calm, .product-page-calm { --product-accent: #7a5418; --product-accent-soft: #f1e6c4; }
 
 .tool-card {
   display: flex;
@@ -218,6 +254,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: rgba(255, 253, 248, .7);
+}
+
+.tool-card-expenses,
+.tool-card-calm {
+  border-color: var(--product-accent);
 }
 
 .tool-card-active {
@@ -240,8 +281,8 @@ h2 {
   height: 50px;
   place-items: center;
   border-radius: 16px;
-  background: var(--green-soft);
-  color: var(--green);
+  background: var(--product-accent-soft, var(--green-soft));
+  color: var(--product-accent, var(--green));
   font-size: 1.4rem;
   font-weight: 850;
 }
@@ -249,16 +290,6 @@ h2 {
 .tool-card-active .tool-icon {
   background: rgba(255, 255, 255, .16);
   color: #fff;
-}
-
-.tool-icon-expenses {
-  background: #f5dfc6;
-  color: #97562f;
-}
-
-.tool-icon-shopping {
-  background: #dce9ed;
-  color: #3e6d73;
 }
 
 .tool-card-active .status {
@@ -281,6 +312,12 @@ h2 {
   margin-bottom: 9px;
   color: var(--muted);
   font-size: .7rem;
+}
+
+.tool-card-expenses .tool-kicker,
+.tool-card-calm .tool-kicker,
+.product-page .eyebrow {
+  color: var(--product-accent);
 }
 
 .tool-card h3 {
@@ -574,53 +611,26 @@ h2 {
   transform: rotate(-5deg);
 }
 
-.product-art-shopping {
-  background: linear-gradient(145deg, #e2eff0, #c2dad1);
+.product-art-calm {
+  background: linear-gradient(145deg, #f1e6c4, #d8e4cf);
 }
 
-.shopping-note {
-  display: grid;
-  width: 62%;
-  min-height: 280px;
-  align-content: center;
-  grid-template-columns: 24px 1fr;
-  align-items: center;
-  gap: 20px 15px;
-  padding: 32px;
-  border-radius: 15px;
-  background: #fffaf0;
-  box-shadow: 0 24px 45px rgba(43, 85, 84, .17);
-  transform: rotate(5deg);
+.calm-rings {
+  position: relative;
+  width: min(62%, 300px);
+  aspect-ratio: 1;
 }
 
-.note-dot {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #467d76;
-  border-radius: 6px;
-}
-
-.note-line {
-  width: 64%;
-  height: 10px;
-  border-radius: 999px;
-  background: #bed6cf;
-}
-
-.note-line-long { width: 94%; }
-.note-line-mid { width: 78%; }
-
-.shopping-spark {
+.calm-ring,
+.calm-dot {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: #f2c86b;
-  transform: rotate(22deg);
+  border-radius: 50%;
 }
 
-.shopping-spark-one { top: 14%; right: 14%; }
-.shopping-spark-two { bottom: 16%; left: 12%; width: 18px; height: 18px; }
+.calm-ring { border: 3px solid #bfb58f; }
+.calm-ring-outer { inset: 0; }
+.calm-ring-inner { inset: 17%; border-color: #94661a; }
+.calm-dot { inset: 40%; background: #94661a; }
 
 .product-story {
   display: grid;
@@ -684,6 +694,100 @@ h2 {
   font-weight: 650;
 }
 
+.legal-page {
+  padding-bottom: 100px;
+}
+
+.legal-heading {
+  max-width: 790px;
+  padding: 72px 0 66px;
+}
+
+.legal-heading h1 {
+  font-size: clamp(3rem, 6vw, 5.6rem);
+}
+
+.legal-heading > p:last-child {
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+
+.legal-updated {
+  margin: 24px 0 18px;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.legal-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(36px, 7vw, 110px);
+  border-top: 1px solid var(--line);
+  padding-top: 45px;
+}
+
+.legal-toc {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 13px;
+  font-size: .86rem;
+}
+
+.legal-toc a,
+.legal-content a,
+footer a {
+  color: var(--green);
+  text-underline-offset: 4px;
+}
+
+.legal-toc a:focus-visible,
+.legal-content a:focus-visible,
+footer a:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 4px;
+}
+
+.legal-content {
+  max-width: 760px;
+}
+
+.legal-content section {
+  scroll-margin-top: 30px;
+  padding: 0 0 40px;
+}
+
+.legal-content section + section {
+  border-top: 1px solid var(--line);
+  padding-top: 40px;
+}
+
+.legal-content h2 {
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+}
+
+.legal-content p,
+.legal-content li {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.legal-content li + li {
+  margin-top: 12px;
+}
+
+.legal-content strong {
+  color: var(--ink);
+}
+
+.legal-content code {
+  color: var(--ink);
+  font-size: .9em;
+}
+
 footer {
   display: flex;
   align-items: center;
@@ -699,7 +803,20 @@ footer span:first-child {
   font-weight: 800;
 }
 
+footer a {
+  color: inherit;
+}
+
 @media (max-width: 900px) {
+  .legal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .legal-toc {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .hero {
     min-height: auto;
     grid-template-columns: 1fr;
@@ -707,10 +824,6 @@ footer span:first-child {
   }
 
   .hero-emblem { width: min(100%, 390px); }
-
-  .tool-grid {
-    grid-template-columns: 1fr;
-  }
 
   .tool-card {
     min-height: 310px;
@@ -727,7 +840,21 @@ footer span:first-child {
   }
 }
 
+@media (max-width: 640px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 560px) {
+  .legal-heading {
+    padding: 48px 0 38px;
+  }
+
+  .legal-toc {
+    grid-template-columns: 1fr;
+  }
+
   .site-header,
   main,
   footer {
@@ -786,8 +913,6 @@ footer span:first-child {
   .balance-center strong { font-size: 1.5rem; }
 
   .balance-token { padding: 7px 10px; font-size: .72rem; }
-
-  .shopping-note { min-height: 215px; padding: 25px; }
 
   .product-story { grid-template-columns: 1fr; gap: 24px; padding: 66px 0; }
 
@@ -863,7 +988,17 @@ footer span:first-child {
 
   .product-art-expenses { background: linear-gradient(145deg, #503a32, #3e3529); }
 
-  .product-art-shopping { background: linear-gradient(145deg, #2b4548, #263d35); }
+  .product-art-calm { background: linear-gradient(145deg, #3a3a28, #2b3a30); }
+
+  .calm-ring { border-color: #5b6a58; }
+
+  .calm-ring-inner { border-color: #d4ad58; }
+
+  .calm-dot { background: #d4ad58; }
+
+  .tool-card-tasks, .product-page-tasks { --product-accent: #8ac29c; --product-accent-soft: #2f4938; }
+  .tool-card-expenses, .product-page-expenses { --product-accent: #ef927e; --product-accent-soft: #4a3226; }
+  .tool-card-calm, .product-page-calm { --product-accent: #d4ad58; --product-accent-soft: #3b3623; }
 
   .wall {
     background: #e9dfc8;

@@ -4,7 +4,7 @@ Diseño de las pantallas de Cuentas Claras, el producto financiero de HomeSuite.
 
 - **Estado**: borrador completo de 10 pantallas, en claro y oscuro, con datos de demostración sintéticos.
 - **Origen**: se hizo en Claude Design a partir de `docs/HOMESUITE_CUENTAS_CLARAS_MVP.md`, el Journey, el Story Map y los estilos de `apps/site/public`.
-- **Artefacto original** (privado, versión 16 al 2026-10-23): https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei
+- **Artefacto original** (versión 18 al 2026-10-23): https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei
 - **Propuestas OpenSpec que lo usan**: `openspec/changes/libro-y-saldos-cuentas-claras`, `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y `colaboracion-y-exportacion-del-libro`.
 
 ## Qué hay en esta carpeta
@@ -16,6 +16,8 @@ Diseño de las pantallas de Cuentas Claras, el producto financiero de HomeSuite.
 | `project/canvas.json` | Índice del lienzo: posición, tamaño y título de cada pantalla, y los rótulos de cada fila |
 | `tokens.json` | Colores claro y oscuro con su rol, valores fijos, tipografía y tabla de contraste calculada |
 | `herramientas/capturar.js` | Script de Playwright que regenera las capturas |
+| `herramientas/auditar.js` | Auditoría automática de contraste, tamaños táctiles y desbordes en las 10 pantallas |
+| `herramientas/capturar-completas.js` | Capturas de largo completo de las pantallas del celular con scroll interno |
 
 `project/` replica la estructura del artefacto, de modo que esa carpeta se puede volver a publicar tal cual.
 
@@ -45,7 +47,7 @@ Todas las pantallas comparten el mismo conjunto, para que los números cierren e
 
 ## Cómo retomar el trabajo
 
-**Opción A: seguir en Claude Design.** Abrir el artefacto de arriba (hay que tener acceso: es privado hasta que su dueño lo comparta). Si no está disponible, crear un lienzo nuevo con el tipo Design y publicar el contenido de `project/` tal cual (`project/canvas.json` más los `.dc.html`).
+**Opción A: seguir en Claude Design.** Abrir el artefacto de arriba (el acceso depende de cómo lo haya compartido su dueño). Si no está disponible, crear un lienzo nuevo con el tipo Design y publicar el contenido de `project/` tal cual (`project/canvas.json` más los `.dc.html`).
 
 **Opción B: tomarlo como especificación visual.** Las capturas y los `.dc.html` alcanzan para implementar. Los colores están en `tokens.json`; el modo oscuro se activa con `prefers-color-scheme` o con `data-theme="dark"` en `<html>`.
 
@@ -55,7 +57,7 @@ Todas las pantallas comparten el mismo conjunto, para que los números cierren e
 2. En esa carpeta: `python3 -m http.server 8899 --bind 127.0.0.1`.
 3. Desde `herramientas/`: `NODE_PATH=$(npm root -g) node capturar.js ../capturas` (requiere Playwright).
 
-Las capturas del repo se generaron con Chromium, a doble resolución y cuantizadas a 256 colores para ocupar ~2,3 MB en total.
+Las capturas del repo se generaron con Chromium, a doble resolución y cuantizadas a 256 colores para ocupar ~3,3 MB en total, con las completas.
 
 ## Decisiones y pendientes
 
@@ -69,7 +71,29 @@ Las decisiones de producto pendientes están en las **Open Questions** de cada `
 
 ## Verificación y límites
 
-- El contraste de los pares listados en `tokens.json` se calculó (todos ≥ 5,1 en las comprobaciones de texto). No se auditaron todos los pares de todas las pantallas.
-- Las pantallas se renderizaron en Chromium y se miraron en las capturas de esta carpeta: casi todas en modo oscuro y varias en claro, no todas. No se probaron en un teléfono ni en otros navegadores.
-- En una revisión visual se corrigieron tres cosas: las alturas de Importar (1512 px) y Escritorio (1108 px) en el lienzo, una columna de la tabla de conciliación que quedaba cortada y la coherencia de las personas entre las pantallas 3 y 10.
+Pasada de verificación del 2026-10-23, hecha con `herramientas/auditar.js` (Chromium, 10 pantallas, claro y oscuro; los estados USD de Saldos e Ingreso y Transferencia de Agregar se auditaron aparte con el mismo código).
+
+**Verificado y corregido**
+- Contraste de todo el texto contra su fondo efectivo: 1 fallo real (texto secundario sobre el bloque verde del saldo, modo oscuro: 4,39 contra 4,5 requerido; ahora 4,82) y placeholders del navegador sin tema (3,3 en oscuro; ahora 5,9 en claro y 6,4 en oscuro). Resultado actual: 0 fallos.
+- Controles táctiles: los botones «Quitar» de Nuevo grupo medían 36 px; ahora 44 px. Resultado actual: ningún botón del celular por debajo de 44 px.
+- Sin desbordes horizontales en el celular (390 px); las alturas de Importar (1512 px) y Escritorio (1108 px) coinciden con el lienzo.
+- Cifras cruzadas entre pantallas: los saldos en COP suman 0, el desglose de «Por qué te deben» suma $1.748.350, y los conteos (38 movimientos del saldo, 39 vigentes más 1 anulado, 36 importados válidos) son coherentes.
+- Las capturas anteriores usaban una serif de sustitución más angosta (Liberation Serif) en lugar de Georgia. Se regeneraron con Gelasio, que tiene las medidas de Georgia.
+
+**No verificado**
+- Teléfono real, Safari/iOS y Firefox (solo hay Chromium en el entorno de trabajo).
+- Georgia real: Gelasio mide igual pero dibuja distinto. En Android no existe Georgia y el navegador usa su serif propia, más ancha.
+- Contraste de bordes e íconos, estados hover, foco y deshabilitado, y fondos con degradé.
+- Navegación con teclado: ninguna pantalla define estilos de foco propios; se usa el del navegador.
+- Que el lienzo publicado en Claude Design se vea igual que las capturas.
+
+**Qué son las pantallas**
+- Son maquetas, no un prototipo completo. Solo Saldos (COP/USD) y Agregar (Gasto/Ingreso/Transferencia) responden; el resto de los botones es estático (reparto, pagadores y moneda de Agregar incluidos).
+- Las pantallas del celular tienen scroll interno y las capturas principales muestran solo los primeros 844 px. Las seis que tienen contenido debajo (1, 4, 5, 7, 8 y 10) tienen además una captura de largo completo en `capturas/<tema>/completas/`. Las pantallas 2 y 6 desbordan menos de 40 px y no tienen versión completa.
+- El atributo `aria-pressed` de los alternadores es estático.
+
+**Pendientes del diseño, no de la verificación**
+- La paleta oscura sigue siendo provisoria (identidad de temas HT-01 y HT-02 sin definir).
 - La tipografía Inter se carga desde Google Fonts; sin conexión se usa la del sistema.
+
+**Repetir la auditoría**: preparar la carpeta temporal como indica `herramientas/capturar.js` y ejecutar `NODE_PATH=$(npm root -g) node auditar.js` desde esa carpeta (con `auditar.js` copiado ahí).

@@ -1,6 +1,50 @@
 # AI_HANDOFF
 
-## Última sesión - HomeSuite listo para integrar diseño (2026-10-23)
+**Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
+
+## Última sesión — HomeSuite en producción (2026-10-28)
+
+Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
+
+### Dónde estamos
+- **Producción:** app `app.homesuite.info` en la versión `979dc093` (`main` `3d32ae5`) y sitio `homesuite.info` en `f4f37db4`
+  (`main` `74d6ebd`). La base de producción está vacía. `npm run verify:coherence:production` pasó (23 comprobaciones).
+- **Staging:** app `0b36bf6e` y sitio `21c07a27`, ambos de `main` `3d32ae5`.
+- **Hoy se hizo (PRs #108 a #119):** ajustes de pantalla y sonido de Remanso (el inicio ya entra en 390 × 720 también con la
+  fuente del CI), identidad de la suite (textos, acentos por producto, Compras retirado de todo), enlaces del sitio por
+  ambiente, verificación de coherencia sitio ↔ app, arreglo de «Cerrar sesión» (faltaba el token CSRF), y el primer deploy
+  de la app y del sitio a producción, cada uno con respaldo previo y verificación.
+
+### Para mañana (orden sugerido)
+1. **Respaldo diario.** El secreto de GitHub `HOMESUITE_PROD_BACKUP_API_TOKEN` falla en el runner (`Authentication error
+   [10000]`) aunque el token nuevo (`homesuite-token`, de cuenta) responde desde la terminal. Recargarlo con el valor ya
+   verificado, **desde `/home/pablo/Dropbox/dev/tas-king`**, una línea por vez: `read -rsp "Pegá el token y Enter: " CF_TOKEN; echo`,
+   comprobar el D1 con `curl` (debe decir `"success":true`), `printf %s "$CF_TOKEN" | gh secret set HOMESUITE_PROD_BACKUP_API_TOKEN`,
+   `unset CF_TOKEN` y `gh workflow run homesuite-production-backup.yml --ref main`. Recién con un run en `success`, revocar el token
+   viejo (de usuario, todas las cuentas) y el `Cloudflare Agent Token`; después corregir `HOMESUITE_RECOVERY.md`.
+2. **Google Cloud:** que la URI `https://app.homesuite.info/auth/callback` esté autorizada, estado de la pantalla de consentimiento, y rotar
+   el secreto de Google (estuvo un rato en GitHub bajo otro nombre).
+3. **Alertas mínimas** y el **recorrido con dos cuentas reales en producción** (incluye probar «Cerrar sesión» ahí).
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta en el backlog).
+5. **Remanso:** sonidos reales (prioridad alta), prueba en iPhone con alguien que tenga uno (`audioSession` implementado, sin verificar) y
+   revisión de Pablo de la frase sobre versiones beta en los términos.
+6. **Consola de administración** de la persona dueña (nuevo en el backlog, prioridad por confirmar).
+7. **Orden:** carpetas de trabajo viejas (`git worktree list` muestra unas 18, varias de ramas ya integradas) y PRs abiertos viejos (#64, #69, #71, #75, #76, #81, #83, #85).
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio, `main` al día, CI verde,
+  `wrangler deployments list` y migraciones; mensaje de versión con SHA; después `verify:coherence:<ambiente>`. El primer intento de
+  deploy productivo lo bloqueó el clasificador de permisos de Claude Code y se repitió tras la orden explícita.
+- **Comandos para Pablo: indicar siempre el directorio** (tiene muchas carpetas del proyecto) y dárselos de a uno.
+- Un cambio lógico por rama; PR con merge commit; el registro en STATUS va en un PR de documentación aparte.
+- Cuatro credenciales distintas: token de Cloudflare de respaldo (GitHub), `GOOGLE_CLIENT_SECRET` y `SESSION_SECRET` (secretos del Worker de
+  producción) y el login de `wrangler` (su computadora).
+
+### Carpetas
+- Trabajo de esta sesión: `/home/pablo/Dropbox/dev/tas-king/.worktrees/remanso` (en `main` o en la rama del PR de turno). Checkout
+  principal: `/home/pablo/Dropbox/dev/tas-king`.
+
+## Sesión anterior - HomeSuite listo para integrar diseño (2026-10-23)
 
 ### Empezar por aquí
 
@@ -55,20 +99,20 @@ Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs
 
 - **Rediseño visual**: 10 pantallas en claro y oscuro, guardadas en el repo en
   `docs/diseno/cuentas-claras/` (fuentes, índice del lienzo, tokens, 26 capturas PNG y un
-  README con cómo retomar y regenerar las capturas). Original en Claude Design, privado:
-  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 16). Se renderizó y revisó en
+  README con cómo retomar y regenerar las capturas). Original en Claude Design:
+  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 18, con pasada de verificación; ver el README de la carpeta). Se renderizó y revisó en
   Chromium; no se probó en teléfono real.
 - **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
-  (commit `699b3bc`, empujada a origin, sin PR ni merge): `libro-y-saldos-cuentas-claras`,
+  (integrada en `main` por el PR #84): `libro-y-saldos-cuentas-claras`,
   `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
   `colaboracion-y-exportacion-del-libro`. Validan con `--strict`.
 - **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
   pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
   varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
-- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) abrir el PR de la rama, mejor como borrador; (2) hacer `explore` con
-  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (3) corregir
+- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) hacer `explore` con
+  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (2) corregir
   en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
-  «saldos anteriores» activa); (4) recién entonces `propose` definitivo.
+  «saldos anteriores» activa); (3) recién entonces `propose` definitivo.
 - **Dependencia**: nada de esto puede aplicarse hasta cerrar el grupo 3 de
   `plataforma-homesuite-minima` (creación de espacios, membresías e invitaciones).
 - La sesión recibió acceso de escritura a `pablotortorella/tas-king` para empujar la rama;
@@ -77,7 +121,7 @@ Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs
   se cruzó con `integration/homesuite-design-base` ni con la importación Splitwise ya implementada (#76).
   Antes de aplicar los changes, comparar contra ese código (ver Open Questions de cada `design.md`).
 
-## Estado actual
+## Snapshot de contexto — 2026-10-23
 **FUN TasKing!** está en producción como v2.3.2. **HomeSuite** tiene el sitio
 público en producción y la aplicación autenticada en staging; el siguiente corte
 de producto es Cuentas Claras.
@@ -108,7 +152,7 @@ completo en staging.
    diseño contra el `main` resultante.
 
 Ver `docs/STATUS.md` para estado detallado de cada feature.
-Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deben cumplirse en cada feature nueva.
+Consultar el método común para cómo trabajar y la ficha de TasKing para sus estándares de UI.
 
 ## Stack
 - **Runtime**: Cloudflare Workers
@@ -151,62 +195,13 @@ Ver `docs/WORKFLOW.md` para cómo trabajar — incluye estándares de UI que deb
 - `e2e/`: suites Playwright (attachments, checklists, critical-flows, history)
 - `test/fixtures/seed.sql`: estado inicial de la DB para E2E
 
-## Al finalizar cada sesión
+## Proceso vigente
 
-**1. Actualizar `docs/STATUS.md`**: (SIEMPRE, incluso si "no pasó nada")
-   - Agregar la feature completada en la sección correspondiente (✅ o ❌)
-   - Incluir: qué hace, dónde está implementado, qué tests tiene
-   - Actualizar fecha "Última actualización" y "Próxima feature"
-   - Si algo quedó a mitad, marcarlo con ⚠️ y notas de qué falta
+Las instrucciones de sesión se mantienen en el [método común](docs/homesuite/METODO.md). Comandos actuales en las fichas de producto; las secciones siguientes son referencias históricas.
 
-**2. Actualizar otros archivos si corresponde**:
-   - **`AI_HANDOFF.md`**: sección "Último handoff" con resumen de lo que se hizo
-   - **`README.md`**: si se agregaron funcionalidades, secrets, comandos o cambió el stack
-   - **`TESTING.md`**: si cambió la estrategia o se agregaron nuevos requisitos de testing
+## Comandos vigentes
 
-**3. Correr tests antes de commit**:
-   ```bash
-   npm run test:all
-   ```
-
-**4. Commit y push**:
-   - Incluir `docs/STATUS.md` en el commit (la razón principal)
-   - Mensaje: describe qué feature se completó o qué cambió
-   - Ejemplo: `Agregar tests E2E para deep-link: URL válida, inexistente, archivada`
-
-## Comandos útiles
-```bash
-# Inicio de sesión
-npm run check:env                  # diagnóstico rápido del ambiente (recomendado al iniciar)
-
-# Desarrollo
-npm install                        # instalar dependencias
-npm run dev                        # servidor local → http://localhost:8787
-npm run test:all                   # suite completa (unitarios + E2E)
-
-# Base de datos local
-npm run db:migrate:local           # aplicar migraciones pendientes en D1 local
-npm run db:reset:local             # borrar DB local y re-aplicar desde cero ⚠️
-npm run db:seed:local              # cargar datos de ejemplo (idempotente)
-
-# E2E
-npm run e2e:reset                  # limpiar estado E2E + re-aplicar seed (ante estado corrupto)
-npm run e2e:server                 # servidor E2E solo (para debugging de tests)
-
-# Deploy
-npm run deploy:staging             # deploy a staging (con tests)
-npm run deploy                     # deploy a producción (con tests) ⚠️ requiere aprobación
-npm run db:migrate:remote          # aplicar migraciones en D1 producción
-
-# Operación manual
-npm run operator                   # menú interactivo (solo para humanos — no usar en scripts)
-npx wrangler secret put <NOMBRE>   # cargar un secret en producción
-npx wrangler d1 execute tas-king --remote --command "SELECT ..."  # consulta SQL en prod
-```
-
-Hay tests unitarios y de API con Vitest ejecutándose en Workerd con D1/R2 emulados, más tests
-E2E con Playwright. `npm run test:all` ejecuta la suite completa. La estrategia y el checklist
-manual complementario para IAs y personas están en `TESTING.md`.
+Consultar las fichas de [TasKing](docs/productos/TASKING.md) y [plataforma](docs/productos/PLATAFORMA.md). Las tablas históricas siguientes no redefinen el estado registrado en STATUS.
 
 ## Estado de features del backlog
 
@@ -243,13 +238,9 @@ manual complementario para IAs y personas están en `TESTING.md`.
 - [ ] #7 📊 Lead time y tasa de completitud
 - [ ] Búsqueda avanzada (full-text en título + detalles)
 
-## No hacer
-- No usar Cloudflare Access (no funciona en `*.workers.dev` sin dominio propio)
-- No introducir un framework JS ni paso de build en el frontend (decisión de producto)
-- No reemplazar datos al importar (import siempre agrega)
-- No hardcodear emails de usuarios/admins en el código fuente
-- No commitear `.dev.vars` (está en `.gitignore` — contiene credenciales)
-- No borrar el tablero personal de un usuario (`is_personal=1`)
+## Reglas vigentes
+
+Consultar [la base común](docs/homesuite/README.md) y las particularidades del producto.
 
 ## Último handoff (2026-09-07, Deploy v2.1.1 + fix tarjeta duplicada al arrastrar (v2.1.2) — Sonnet 5)
 

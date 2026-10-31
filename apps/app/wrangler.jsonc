@@ -3,6 +3,17 @@
   "name": "homesuite-app",
   "main": "./src/index.js",
   "compatibility_date": "2026-06-30",
+  // split.js y text.js se sirven al navegador con el texto de sus funciones (Function.prototype.toString): minificar renombraría
+  // los exports y rompería los import del navegador. Una prueba (served-modules-config.test.js) exige que siga apagado.
+  "minify": false,
+  // Archivos estáticos propios (hoy sólo Remanso). Sin `run_worker_first`: todo el
+  // HTML lo genera el Worker, así que la política y las cabeceras llegan al
+  // documento (ADR-017). NUNCA poner un .html en ./public: capturaría su ruta
+  // sin pasar por el Worker. Lo vigila apps/app/test/remanso-assets.test.js.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
   "d1_databases": [{
     "binding": "DB",
     "database_name": "homesuite-app-local",
@@ -14,13 +25,68 @@
       "name": "homesuite-app-staging",
       "workers_dev": true,
       "routes": [{ "pattern": "staging.homesuite.info", "custom_domain": true }],
-      "vars": {
-        "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com"
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1
       },
+      "triggers": {
+        "crons": ["17 4 * * *"]
+      },
+      "vars": {
+        "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com",
+        "REQUIRE_RATE_LIMITS": "true"
+      },
+      "ratelimits": [
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "31001",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "MUTATION_RATE_LIMITER",
+          "namespace_id": "31002",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
       "d1_databases": [{
         "binding": "DB",
         "database_name": "homesuite-app-db-staging",
         "database_id": "7d270a78-adbb-45fc-b5fc-7550c547af68",
+        "migrations_dir": "./migrations"
+      }]
+    },
+    "production": {
+      // Nombre explícito: --env production no debe crear homesuite-app-production.
+      "name": "homesuite-app",
+      "workers_dev": false,
+      "routes": [{ "pattern": "app.homesuite.info", "custom_domain": true }],
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+      },
+      "triggers": { "crons": ["23 4 * * *"] },
+      "vars": {
+        "GOOGLE_CLIENT_ID": "207614895482-3mlvb660i050sle8ictin8f258bg8qb7.apps.googleusercontent.com",
+        "REQUIRE_RATE_LIMITS": "true"
+      },
+      "secrets": { "required": ["GOOGLE_CLIENT_SECRET", "SESSION_SECRET"] },
+      "ratelimits": [
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "32001",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "MUTATION_RATE_LIMITER",
+          "namespace_id": "32002",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
+      "d1_databases": [{
+        "binding": "DB",
+        "database_name": "homesuite-app-db",
+        "database_id": "51f6a3b1-3c48-409a-b750-b87e4593c8ca",
         "migrations_dir": "./migrations"
       }]
     }

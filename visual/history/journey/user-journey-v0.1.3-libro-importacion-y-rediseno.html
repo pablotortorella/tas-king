@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HomeSuite Cuentas Claras · User Journey</title>
+  <style>
+@page {
+  size: A3 landscape;
+  margin: 0;
+}
+
+:root {
+  color-scheme: light;
+  --paper: #f7f2e8;
+  --ink: #22362b;
+  --muted: #56675c;
+  --green: #245c43;
+  --coral: #d7664f;
+  --gold: #f2c86b;
+  --mint: #dcece1;
+  --blue: #dbece9;
+  --line: #d8d4c8;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background: #d8ddd7;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+  position: relative;
+  width: 420mm;
+  height: 297mm;
+  overflow: hidden;
+  padding: 12mm 14mm 13mm;
+  background:
+    radial-gradient(circle at 93% 8%, rgba(242, 200, 107, .24), transparent 55mm),
+    var(--paper);
+}
+
+@media screen {
+  .page {
+    margin: 24px auto;
+    box-shadow: 0 20px 60px rgba(16, 36, 25, .18);
+  }
+}
+
+@media print {
+  html, body { background: white; }
+  .page { margin: 0; break-after: page; }
+  .sticky, .route, .slice-card, .activity, .task { break-inside: avoid; }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16mm;
+  min-height: 34mm;
+}
+
+.brandline {
+  margin: 0 0 3mm;
+  color: var(--coral);
+  font-size: 9pt;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30pt;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+}
+
+.subtitle {
+  max-width: 215mm;
+  margin: 3mm 0 0;
+  color: var(--muted);
+  font-size: 11pt;
+  line-height: 1.35;
+}
+
+.header-mark {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  padding-top: 1mm;
+  color: var(--green);
+  font-weight: 800;
+  font-size: 13pt;
+  white-space: nowrap;
+}
+
+.header-mark svg { width: 15mm; height: 15mm; }
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin: 4mm 0 3mm;
+  color: var(--green);
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.section-title::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+
+.route-grid,
+.journey-grid,
+.activity-grid,
+.task-grid {
+  display: grid;
+  gap: 3mm;
+}
+
+.route-grid { grid-template-columns: repeat(3, 1fr); }
+.journey-grid { grid-template-columns: repeat(7, 1fr); gap: 2.5mm; }
+
+.route,
+.sticky,
+.slice-card,
+.activity,
+.task {
+  border: 1px solid rgba(36, 92, 67, .13);
+  border-radius: 3mm;
+  box-shadow: 1mm 1.5mm 3mm rgba(31, 58, 42, .09);
+}
+
+.route {
+  position: relative;
+  min-height: 39mm;
+  padding: 4mm 5mm;
+  background: #fff8df;
+}
+
+.route:nth-child(2) { background: #e5f0e8; }
+.route:nth-child(3) { background: #f8e6e0; }
+
+.route-tag,
+.tiny-label {
+  display: block;
+  margin-bottom: 2mm;
+  color: var(--green);
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.route strong { display: block; font-size: 13pt; }
+.route p { margin: 2mm 0 0; font-size: 9.5pt; line-height: 1.3; }
+
+.journey-card {
+  position: relative;
+  height: 112mm;
+  padding: 5mm 4mm 4mm;
+  background: #fffdf2;
+  transform: rotate(-.45deg);
+}
+
+.journey-card:nth-child(even) { background: #e6f0e8; transform: rotate(.55deg); }
+.journey-card:nth-child(3n) { background: #fff1db; }
+
+.journey-card::before {
+  position: absolute;
+  top: -2mm;
+  left: 50%;
+  width: 17mm;
+  height: 5mm;
+  background: rgba(218, 142, 112, .32);
+  content: "";
+  transform: translateX(-50%) rotate(-3deg);
+}
+
+.step-no {
+  display: inline-grid;
+  width: 9mm;
+  height: 9mm;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-size: 10pt;
+  font-weight: 800;
+}
+
+.journey-card h2 {
+  min-height: 17mm;
+  margin: 3mm 0 4mm;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14pt;
+  line-height: 1.1;
+}
+
+.journey-card p { margin: 0 0 4mm; font-size: 9.5pt; line-height: 1.32; }
+.journey-card .risk { margin-top: auto; color: #8d493a; }
+.journey-card { display: flex; flex-direction: column; }
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3mm;
+  margin-top: 7mm;
+}
+
+.principle {
+  min-height: 24mm;
+  padding: 4mm 5mm;
+  border-left: 1.5mm solid var(--coral);
+  border-radius: 2mm;
+  background: white;
+  font-size: 9.5pt;
+  line-height: 1.3;
+}
+
+.principle strong { display: block; margin-bottom: 1mm; color: var(--green); }
+
+.footer {
+  position: absolute;
+  right: 14mm;
+  bottom: 6mm;
+  left: 14mm;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 2mm;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 8pt;
+}
+
+.map-intro {
+  margin: 1mm 0 4mm;
+  color: var(--muted);
+  font-size: 10pt;
+}
+
+.map-left-offset { margin-left: 18mm; }
+.activity-grid, .task-grid { grid-template-columns: repeat(6, 1fr); }
+
+.activity {
+  display: grid;
+  min-height: 22mm;
+  place-items: center;
+  padding: 3mm;
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+  font-size: 11pt;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.activity span { color: var(--gold); }
+
+.task {
+  min-height: 25mm;
+  padding: 3mm;
+  background: #fffdf5;
+  color: var(--muted);
+  font-size: 8.8pt;
+  line-height: 1.3;
+}
+
+.map-slices { margin-top: 5mm; }
+
+.slice-row {
+  display: grid;
+  grid-template-columns: 15mm repeat(6, 1fr);
+  gap: 3mm;
+  margin-bottom: 3mm;
+}
+
+.slice-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3mm;
+  background: var(--coral);
+  color: white;
+  font-size: 21pt;
+  font-weight: 800;
+}
+
+.slice-label small {
+  max-width: 12mm;
+  margin-top: 2mm;
+  font-size: 7pt;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.slice-row.b .slice-label { background: var(--green); }
+.slice-row.c .slice-label { background: #547c76; }
+
+.slice-card {
+  min-height: 43mm;
+  padding: 3.2mm;
+  background: #f9e2d9;
+  font-size: 9pt;
+  line-height: 1.25;
+}
+
+.slice-row.b .slice-card { background: #deeadf; }
+.slice-row.c .slice-card { background: #e0eeeb; }
+
+.slice-card strong { display: block; margin-bottom: 2mm; font-size: 9.6pt; }
+.slice-card p { margin: 0; }
+
+.map-note {
+  display: flex;
+  gap: 5mm;
+  margin: 5mm 0 0 18mm;
+  padding: 3mm 5mm;
+  border-radius: 2mm;
+  background: white;
+  font-size: 9pt;
+  line-height: 1.35;
+}
+
+.map-note strong { color: var(--green); white-space: nowrap; }
+
+/* Estado de cada post-it (desde v0.1.3): hecho, en revisión o pendiente. */
+.slice-card, .journey-card { display: flex; flex-direction: column; }
+.slice-card p { margin-bottom: 2mm; }
+
+.state {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: .7mm 2.4mm;
+  border-radius: 99px;
+  font-size: 6.8pt;
+  font-weight: 800;
+  letter-spacing: .05em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.journey-card .state { margin-top: 3mm; }
+.state.done { background: var(--green); color: white; }
+.state.wip { background: var(--gold); color: #4a3300; }
+.state.todo { border: .3mm dashed #7d8c82; color: var(--muted); }
+.slice-card.todo { border-style: dashed; box-shadow: none; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2mm 5mm;
+  margin: 1mm 0 3mm;
+  color: var(--muted);
+  font-size: 9pt;
+}
+
+.legend b { color: var(--ink); }
+.legend .state { margin: 0 1.5mm 0 0; }
+
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div>
+        <p class="brandline">HomeSuite · Cuentas Claras · Artefacto 01 · v0.1.3</p>
+        <h1>De Splitwise a una casa propia</h1>
+        <p class="subtitle">User Journey · La persona trae su historia, comprueba sus saldos y sigue organizando sus cuentas compartidas sin cambiar de lugar.</p>
+      </div>
+      <div class="header-mark" aria-label="HomeSuite">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#245c43"/><path d="M14 30h36v25H14z" fill="#fff8e8"/><path d="M7 31 28 10a6 6 0 0 1 8 0l21 21a4 4 0 0 1-3 7H10a4 4 0 0 1-3-7Z" fill="#d7664f"/><path d="M26 55V45a6 6 0 0 1 12 0v10" fill="#245c43"/><path d="M18 42a3 3 0 0 1 6 0v5h-6Zm22 0a3 3 0 0 1 6 0v5h-6Z" fill="#f2c86b"/></svg>
+        <span>HomeSuite</span>
+      </div>
+    </header>
+
+    <p class="legend" aria-label="Cómo leer el estado de cada post-it"><span><span class="state done">Hecho</span>verificado en staging</span><span><span class="state wip">En revisión</span>implementado y probado en una rama con PR abierto; sin integrar ni desplegar</span><span><span class="state todo">Pendiente</span>todavía sin construir</span></p>
+
+    <section aria-labelledby="paths-title">
+      <h2 id="paths-title" class="section-title">Tres puntos de partida</h2>
+      <div class="route-grid">
+        <article class="route"><span class="route-tag">01 · Traer historia</span><strong>Importar movimientos</strong><p>CSV de Splitwise, de un grupo o relación. Todas las líneas válidas conservan procedencia y efecto exacto en el saldo.</p></article>
+        <article class="route"><span class="route-tag">02 · Hoja nueva</span><strong>Comenzar en cero</strong><p>El grupo empieza sin historia anterior. No se inventa un movimiento de apertura cuando todos los saldos son cero.</p></article>
+        <article class="route"><span class="route-tag">03 · Continuidad breve</span><strong>Abrir con saldos</strong><p>Una apertura fechada y auditable preserva posiciones previas no nulas. Las posiciones de cada moneda deben sumar cero.</p></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="journey-title">
+      <h2 id="journey-title" class="section-title">El recorrido · de izquierda a derecha</h2>
+      <div class="journey-grid">
+        <article class="sticky journey-card"><span class="step-no">1</span><h2>Decidir cambiar</h2><span class="tiny-label">Hace</span><p>Busca dejar Splitwise sin perder el grupo ni su historia.</p><span class="tiny-label">Necesita</span><p>Entender que puede importar, empezar en cero o abrir con saldos.</p><p class="risk"><b>Fricción:</b> creer que tendrá que rehacerlo todo.</p><span class="state wip">Parcial · #89</span></article>
+        <article class="sticky journey-card"><span class="step-no">2</span><h2>Preparar el inicio</h2><span class="tiny-label">Hace</span><p>Exporta un grupo o define saldos y fecha de corte.</p><span class="tiny-label">Necesita</span><p>Una guía breve sobre qué abarca cada opción.</p><p class="risk"><b>Fricción:</b> olvidar un período, una relación o una moneda.</p><span class="state wip">Parcial · #76</span></article>
+        <article class="sticky journey-card"><span class="step-no">3</span><h2>Reconocer personas</h2><span class="tiny-label">Hace</span><p>Vincula participantes de origen e invita a una persona que acepta acceso.</p><span class="tiny-label">Necesita</span><p>Corregir correspondencias y confirmar colaboración real.</p><p class="risk"><b>Fricción:</b> duplicar a una persona.</p><span class="state wip">En revisión · #75 #76</span></article>
+        <article class="sticky journey-card"><span class="step-no">4</span><h2>Revisar saldos</h2><span class="tiny-label">Hace</span><p>Previsualiza el conjunto, sin revisar cada línea una por una.</p><span class="tiny-label">Necesita</span><p>Comparar saldos y ver incidentes con fila y motivo.</p><p class="risk"><b>Fricción:</b> líneas omitidas o saldos ajustados en silencio.</p><span class="state wip">En revisión · #76</span></article>
+        <article class="sticky journey-card"><span class="step-no">5</span><h2>Confirmar el inicio</h2><span class="tiny-label">Hace</span><p>Importa todo lo válido, excluye una fila o asume la moneda del grupo cuando falta.</p><span class="tiny-label">Necesita</span><p>Resumen de filas excluidas, supuestos y procedencia.</p><p class="risk"><b>Fricción:</b> duplicar el lote o solapar períodos.</p><span class="state wip">En revisión · #76</span></article>
+        <article class="sticky journey-card"><span class="step-no">6</span><h2>Continuar la vida</h2><span class="tiny-label">Hace</span><p>Agrega gastos, ingresos y transferencias nuevas.</p><span class="tiny-label">Necesita</span><p>Un solo saldo y un solo historial para lo nuevo y lo importado.</p><p class="risk"><b>Fricción:</b> sentir que son dos productos inconexos.</p><span class="state wip">En revisión · #75 #89</span></article>
+        <article class="sticky journey-card"><span class="step-no">7</span><h2>Encontrar y confiar</h2><span class="tiny-label">Hace</span><p>Usa un campo libre para texto, nombre o monto; corrige y exporta.</p><span class="tiny-label">Necesita</span><p>Resultados conjuntos con marca «Importado» y coincidencia explicada.</p><p class="risk"><b>Fricción:</b> no hallar una operación antigua.</p><span class="state wip">En revisión · #76 #90</span></article>
+      </div>
+    </section>
+
+    <div class="principles" aria-label="Principios de confianza">
+      <div class="principle"><strong>Una historia, un saldo</strong>Lo importado y lo nuevo alimentan el mismo balance por participante y moneda.</div>
+      <div class="principle"><strong>Sin pérdidas silenciosas</strong>Una duda sobre el pagador no elimina una línea válida ni modifica su efecto original.</div>
+      <div class="principle"><strong>Sin contar dos veces</strong>Importación y apertura pueden convivir solo con un corte temporal claro.</div>
+    </div>
+
+    <footer class="footer"><span>v0.1.3 · Libro, importación y rediseño en revisión</span><span>HomeSuite Cuentas Claras · User Journey · 24 oct 2026</span></footer>
+  </main>
+</body>
+</html>
