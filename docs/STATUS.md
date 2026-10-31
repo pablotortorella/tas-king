@@ -1,6 +1,43 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-29
+**Última actualización**: 2026-10-31
+
+## Jardín Zen beta v0.2 — integrado en rama y verificado; staging pendiente (2026-10-31)
+
+Rama `feature/jardin-zen-beta-v02` (desde `main` `215390f`). Producto de la dimensión
+**Disfrutar**, ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
+tarjeta de catálogo, landing pública y documentación/OpenSpec.
+
+**Implementado (en la rama, no desplegado):** ruta `apps/app/src/jardin-zen.js`, motor
+`apps/app/public/jardin-zen/*` (WebGL 2 + fallback Canvas 2.5D, rastrillo fino 5,6 px por
+defecto / normal 7,8 px, piedras, ondas, alisar, deshacer, sonido Web Audio opcional),
+tarjeta en `tools.js`, `_headers`, landing `apps/site/public/jardin-zen.html`, coherencia
+sitio↔app, docs y `openspec/changes/jardin-zen-beta/`.
+
+**Probado en este entorno (CI local):**
+- Unitarias app **494**, sitio **44**, integración **324**, test de ruta `/jardin-zen` ✅.
+- E2E sitio **20/20** (landing: beta, enlace a app, cabeceras, 360 px, modo oscuro).
+- E2E app: `jardin-zen.spec` (abre sin sesión, canvas visible, alterna Trazo fino/normal, sonido apagado) + shell/catálogo (34) + Cuentas Claras/grupos/importación (141) ✅.
+- Las 2 únicas E2E en rojo (`design` «recursos/CSP» con 404 y `recorridos` fusión multipestaña) **también fallan en `main` limpio** (verificado en worktree): son preexistentes/ambientales, **no regresiones** de Jardín Zen.
+
+**NO probado (requiere dispositivo real / pendiente de aceptación):**
+- **WebGL 2 real**: el navegador headless bloquea WebGL; sólo se verificó el **fallback 2.5D**. No se afirma el render 3D completo.
+- Gestos táctiles reales, batería/rendimiento en celular de gama media.
+- Audio tras `pagehide`/cambio de pestaña (comportamiento a validar/corregir).
+
+**Desplegado:** **nada**. Staging **no** fue desplegado desde este entorno: sin credenciales
+Cloudflare (`wrangler` no autenticado, `CLOUDFLARE_API_TOKEN` ausente) y `wrangler login` es
+interactivo. Único bloqueo para publicar.
+
+**Sobre el trabajo de Flori (sin riesgo de pisarlo):** se verificó que `main` (`215390f`) **ya
+contiene** buscar categoría (#121) y forma de pago (#122): `payment-methods.js` y la migración
+`0012_payment_method.sql` están en `main`, y `staging/pedidos-flori` quedó subsumida. Por eso
+`feature/jardin-zen-beta-v02` (= `main` + Jardín Zen) es un **superset** de lo que corre hoy en
+staging (`6595734`): desplegarla no pierde nada de Flori. (El merge de `pedidos-flori` probado en
+un worktree fue un no-op salvo un bloque CSS `.cat-*` que `main` ya trae.) Producción fuera de alcance.
+
+**Pendiente de aceptación:** probar en celular real (WebGL + tacto + audio) y desplegar/verificar staging con SHA.
+
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
 ## Pedidos de Flori en staging — 2026-10-29

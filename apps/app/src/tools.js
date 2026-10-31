@@ -5,6 +5,7 @@ export const HERRAMIENTAS = Object.freeze([
   { id: "tasks", nombre: "Fun TasKing", ruta: "/tareas", resumen: "Tableros para tus tareas y proyectos.", estado: "disponible", acento: "tool-card-tasks" },
   { id: "expenses", nombre: "Cuentas Claras", ruta: "/cuentas-claras", resumen: "Gastos e ingresos claros, con repartos cuando se comparten.", estado: "beta", acento: "tool-card-expenses" },
   { id: "calm", nombre: "Remanso", ruta: "/remanso", resumen: "Pausas de calma, con gong y sonidos de fondo.", estado: "beta", acento: "tool-card-calm" },
+  { id: "zen", nombre: "Jardín Zen", ruta: "/jardin-zen", resumen: "Arena, piedras y surcos para crear un momento de calma.", estado: "beta", acento: "tool-card-calm" },
 ]);
 
 // TasKing es un Worker aparte con un despliegue por ambiente; cada ambiente de la app lleva al suyo. La producción sólo se elige
