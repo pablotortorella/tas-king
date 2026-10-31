@@ -232,7 +232,7 @@ ${AVATAR_CSS}
 .menu nav a:hover,.menu nav button:hover{background:var(--accent-soft);color:var(--accent-deep)}
 .menu nav form{margin:0}
 .menu-title{margin:6px 12px 2px;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
-.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:24px}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:24px}@media(max-width:480px){.tools{grid-template-columns:1fr}}
 .tool-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;color:var(--ink);text-decoration:none}
 .tool-card:hover,.tool-card:focus-visible{border-color:var(--accent-line);color:var(--ink)}
 .tool-card strong{font-family:Georgia,"Times New Roman",serif;font-size:1.35rem}
