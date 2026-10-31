@@ -2,41 +2,37 @@
 
 **Última actualización**: 2026-10-31
 
-## Jardín Zen beta v0.2 — integrado en rama y verificado; staging pendiente (2026-10-31)
+## Jardín Zen beta v0.2 y tarjetas 2×2 — en `main` y en staging; producción pendiente (2026-10-31)
 
-Rama `feature/jardin-zen-beta-v02` (desde `main` `215390f`). Producto de la dimensión
-**Disfrutar**, ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
-tarjeta de catálogo, landing pública y documentación/OpenSpec.
+Producto de la dimensión **Disfrutar**: ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
+tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/jardin-zen-beta/`). Motor
+`apps/app/public/jardin-zen/*` (WebGL 2 con alternativa Canvas 2.5D, rastrillo fino 5,6 px por defecto / normal 7,8 px,
+piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni almacenamiento remoto.
 
-**Implementado (en la rama, no desplegado):** ruta `apps/app/src/jardin-zen.js`, motor
-`apps/app/public/jardin-zen/*` (WebGL 2 + fallback Canvas 2.5D, rastrillo fino 5,6 px por
-defecto / normal 7,8 px, piedras, ondas, alisar, deshacer, sonido Web Audio opcional),
-tarjeta en `tools.js`, `_headers`, landing `apps/site/public/jardin-zen.html`, coherencia
-sitio↔app, docs y `openspec/changes/jardin-zen-beta/`.
+| Unidad | `main` | Versión activa en staging | Mensaje de versión |
+|---|---|---|---|
+| HomeSuite App (`staging.homesuite.info`) | `5b0559c` | `fdafbca7` (antes `b232296d`, `a3d991b`; antes `a16e5b6c`, `215390f`) | «main 5b0559c · merge PR #125 · tarjetas 2x2» |
+| Sitio (`site-staging.homesuite.info`) | `5b0559c` | `1b67cd8e` (antes `a70394eb`, `a3d991b`; antes `21c07a27`, `3d32ae5`) | «main 5b0559c · merge PR #125 · tarjetas 2x2» |
 
-**Probado en este entorno (CI local):**
-- Unitarias app **494**, sitio **44**, integración **324**, test de ruta `/jardin-zen` ✅.
-- E2E sitio **20/20** (landing: beta, enlace a app, cabeceras, 360 px, modo oscuro).
-- E2E app: `jardin-zen.spec` (abre sin sesión, canvas visible, alterna Trazo fino/normal, sonido apagado) + shell/catálogo (34) + Cuentas Claras/grupos/importación (141) ✅.
-- Las 2 únicas E2E en rojo (`design` «recursos/CSP» con 404 y `recorridos` fusión multipestaña) **también fallan en `main` limpio** (verificado en worktree): son preexistentes/ambientales, **no regresiones** de Jardín Zen.
-
-**NO probado (requiere dispositivo real / pendiente de aceptación):**
-- **WebGL 2 real**: el navegador headless bloquea WebGL; sólo se verificó el **fallback 2.5D**. No se afirma el render 3D completo.
-- Gestos táctiles reales, batería/rendimiento en celular de gama media.
-- Audio tras `pagehide`/cambio de pestaña (comportamiento a validar/corregir).
-
-**Desplegado:** **nada**. Staging **no** fue desplegado desde este entorno: sin credenciales
-Cloudflare (`wrangler` no autenticado, `CLOUDFLARE_API_TOKEN` ausente) y `wrangler login` es
-interactivo. Único bloqueo para publicar.
-
-**Sobre el trabajo de Flori (sin riesgo de pisarlo):** se verificó que `main` (`215390f`) **ya
-contiene** buscar categoría (#121) y forma de pago (#122): `payment-methods.js` y la migración
-`0012_payment_method.sql` están en `main`, y `staging/pedidos-flori` quedó subsumida. Por eso
-`feature/jardin-zen-beta-v02` (= `main` + Jardín Zen) es un **superset** de lo que corre hoy en
-staging (`6595734`): desplegarla no pierde nada de Flori. (El merge de `pedidos-flori` probado en
-un worktree fue un no-op salvo un bloque CSS `.cat-*` que `main` ya trae.) Producción fuera de alcance.
-
-**Pendiente de aceptación:** probar en celular real (WebGL + tacto + audio) y desplegar/verificar staging con SHA.
+- **PR #124** (Jardín Zen, `a3d991b`): además del paquete original, corrige 5 líneas de docs que el test de glosario rechazaba y
+  ajusta el **encuadre de la cámara** a la forma real del recuadro (`fitDist` en `jardin-zen.js`): en recuadros apaisados se acerca,
+  nunca se aleja de 10,2, así que el celular vertical queda igual; la rueda sigue funcionando y desactiva el reajuste.
+- **PR #125** (`5b0559c`): las cuatro tarjetas de herramientas pasan a **2×2** en la app y en el sitio; una columna por debajo de
+  480 px (app) y 640 px (sitio).
+- **Pruebas** (rama de #124 y de #125): unitarias app **494**, sitio **44**; E2E app **177/177** y sitio **20/20**;
+  `npm run verify:coherence:staging` **28/28** tras publicar app y sitio. Las dos E2E que el PR #124 declaraba en rojo
+  (`design.spec.js` y `recorridos.spec.js`) **pasan** en la rama y en la suite completa: no se reprodujo el fallo, que
+  sería de la corrida original (base o puerto sucios); la causa exacta no se identificó.
+- **Visto a mano:** Pablo probó el jardín en Chrome de escritorio en local («anda de 10») y pidió el ajuste de cámara.
+- **NO probado (requiere dispositivo real):** WebGL 2 y gestos táctiles en celular, rendimiento y batería, audio tras
+  `pagehide` o cambio de pestaña. El E2E corre sin WebGL, así que sólo ejerce la alternativa 2.5D y no cubre la cámara.
+- **Staging sin pisar nada:** antes de publicar, la app servía `main 215390f` y el sitio `main 3d32ae5`; `main` ya contenía
+  buscar categoría (#121) y forma de pago (#122) con su migración `0012`, así que nada de Flori se perdió.
+- **Producción:** no se publicó nada de esto. Producción sigue en la app `979dc093` (`main 3d32ae5`) y el sitio `f4f37db4`.
+  Publicar `main` llevaría además buscar categoría, forma de pago (con la migración `0012_payment_method.sql`, que cambia
+  el esquema de la base de producción) y Jardín Zen: requiere aprobación explícita y respaldo previo.
+- **Propuesto, sin implementar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo), para
+  incorporar después de ordenar las ramas viejas.
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
@@ -124,6 +120,29 @@ de HomeSuite o abarca todas las D1 de la cuenta.
 **Release v2.3.0** (2026-09-18, Version ID `e20ace17-9736-4c7a-b1e0-13138d4074de`, SHA `fb8eb81`): despachó de un salto la v2.2.2, que nunca había llegado a producción, más el frontend modular y el endurecimiento de la política de contenido. `npm run deploy` aplicó la migración **0015 antes** del Worker nuevo —15 comandos— gracias al cambio de orden del mismo día; con el orden anterior habría habido una ventana de 500 por `no such column: sync_version`. Verificado en producción: v2.3.0 servida, `script-src 'self'` sin `'unsafe-inline'`, `frame-ancestors 'none'`, las 5 páginas con cabeceras, 24 assets en 200/304 y cero violaciones de política en navegador.
 
 **Release v2.2.1**: 154 pruebas de backend y 62 E2E pasan. PR #38 integrado en `main`; release PR #39 integrada como SHA `ed4ca6a`. Pablo aprobó staging y producción.
+
+## Sitio público publicado en producción — 2026-10-28
+
+Pablo ordenó publicar el sitio (la app ya estaba en producción desde el mismo día; el orden acordado era app primero y sitio
+después).
+
+**Estado:** el sitio de `https://homesuite.info` está en la versión `f4f37db4`, desplegada desde `main` en `74d6ebd` (versión
+previa `91bc0078`, de Pablo, con los textos anteriores). Desde ahora la portada y las landings de Cuentas Claras y Remanso
+**enlazan a `app.homesuite.info`** y el TasKing de producción: la app es alcanzable para cualquier visitante.
+
+- **Antes:** árbol limpio, CI de `main` verde, ensayo `--dry-run` (12 archivos, sin landing de Compras) y versión activa previa
+  comprobada. Comando: `wrangler deploy --env "" --config apps/site/wrangler.jsonc` con mensaje de versión (sin el flag de
+  ambiente, Wrangler avisa que conviene indicarlo).
+- **Verificación posterior:** portada, `/tareas`, `/cuentas-claras`, `/remanso`, `/privacidad` y `/terminos` 200; `/compras`
+  y `/compras.html` 404; `www` redirige 308 al dominio principal; cabeceras de seguridad presentes; estados «Disponible»,
+  «Versión Beta» y «Versión Beta»; cierre «Tu hogar, a tu ritmo.»; cero menciones a staging y a Compras.
+  **`npm run verify:coherence:production` pasó (23 comprobaciones):** herramientas, estados y rutas coinciden con la app
+  de producción, los enlaces responden, producción no menciona staging y Compras no figura.
+- **Estado abierto (documentado por Pablo antes de abrir a datos reales):** el respaldo diario sigue con el secreto de GitHub
+  fallando en el runner; el secreto de Google no se rotó; no hay alertas; no existe exportación ni eliminación de grupos
+  (prioridad alta); no se hizo el recorrido con dos cuentas reales en producción. Hasta cerrarlo, no cargar datos
+  financieros reales. Si Google tiene la pantalla de consentimiento en pruebas, sólo las cuentas de prueba pueden entrar
+  (no verificado).
 
 ## Arreglo de «Cerrar sesión» publicado en producción — 2026-10-28
 
