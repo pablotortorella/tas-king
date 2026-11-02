@@ -243,9 +243,9 @@ montos ignorando separadores de miles.
 
 ## 🛠️ Implementado, pendiente de publicar
 
-En producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [STATUS](STATUS.md)), todavía sin probar con una cuenta real de Google ni en un celular:
+En producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [STATUS](STATUS.md)). Pablo informó el 2026-11-02 que hizo el recorrido con su cuenta real de Google en producción (entrar y salir) y que probó Jardín Zen en un celular real (sin modelo ni navegador):
 
-- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): falta WebGL 2 y tacto en un celular real.
+- **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): probado por Pablo en un celular real (2026-11-02, sin detalles de dispositivo).
 - **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
 - **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122, migración `0012_payment_method.sql` ya aplicada en la base de producción).
 
@@ -285,6 +285,8 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟡 Media prioridad
 
+- **HSTS en la app de HomeSuite** (hallazgo del 2026-11-02). La app no envía `Strict-Transport-Security`; nunca lo tuvo (el HSTS de #128 es del TasKing). No es una regresión. Aceptación: cabecera presente en producción con una política decidida (duración, subdominios), prueba de regresión y verificación pública.
+- **Revisar las 12 vulnerabilidades de `npm audit`** (2 moderadas, 10 altas; informadas por `npm ci` el 2026-11-02, sin revisar). Aceptación: cada hallazgo clasificado (alcanza o no al código que se ejecuta), correcciones aplicadas con pruebas en verde y el resto registrado con su motivo.
 - **Cuentas Claras: lo que quedó fuera de «buscar categoría» y «forma de pago»** (Flori, 2026-10-29; sin decidir). El mismo campo de búsqueda de categoría en el filtro de la lista y en el cambio en bloque. Y, a decidir si hace falta: filtro por forma de pago en la lista, informes, formas propias por grupo (como las categorías) y asignar la forma de pago en bloque. Esfuerzo 🟡.
 - **Jardín Zen v0.4: orientación, giro y visibilidad del rastrillo** (ajustes acordados con Pablo, 2026-10-31; **propuesto, sin implementar**). Mango invertido, giro suave del rastrillo y control «Rastrillo visible / oculto» que se recuerda en el navegador. Se incorpora cuando termine el orden de ramas y worktrees viejos. Cambio OpenSpec `jardin-zen-rastrillo-v04`; documento original en `docs/diseno/jardin-zen/propuestas/`. Falta verificar WebGL 2 y el giro en un celular real.
 - **Performance: localizar latencia residual del backend** — 🟡 esfuerzo medio. Después de aplicar y comprobar el set de mejoras estructurales, instrumentar etapas si la latencia sigue alta: rate limiting, autenticación/revocación, preparación de usuario y handler. Distinguir ejecución SQL de espera Worker-D1. Preservar revocación inmediata. Evaluar junto con “Rate limiting más granular” y el hallazgo técnico de overhead D1.

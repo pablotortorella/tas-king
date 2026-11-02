@@ -119,5 +119,14 @@ exportó la D1, restauró localmente, subió a R2 y descargó/verificó el respa
 volvió a `true`. Esta prueba acredita una ejecución; comprobar la primera
 ejecución programada y las notificaciones de fallo sigue pendiente.
 
+**Diagnóstico al 2026-11-02.** Desde que se recargó el secreto (30/10), la exportación D1 y la
+restauración local funcionan. Las corridas del 31/10, 01/11 y 02/11 fallan al **subir a R2**:
+`403 Forbidden`, código 10000, en `/accounts/…/r2/buckets/homesuite-app-backups/objects/…`
+(run 41453274852). Hipótesis: `homesuite-token` tiene «R2 Item Read/Write» limitado al bucket y la
+API REST que usa `wrangler r2 object put` exige más permiso (por ejemplo «Workers R2 Storage: Edit»
+de cuenta). Pendiente: la prueba de Pablo desde la terminal y ajustar el token. La última corrida
+exitosa es del 27/10 (con el token viejo); los respaldos manuales previos a cada deploy sí están
+en R2 (el más reciente: `production/20261102T230416Z`).
+
 Pendientes operativos: comprobar la primera ejecución programada y alerta por
 fallos, acordar RPO/RTO y documentar exportación y eliminación de grupos.
