@@ -1,4 +1,4 @@
-// Jardín Zen · beta v0.2. Página generada por el Worker; recursos JS/CSS del mismo origen.
+// Jardín Zen · beta v0.4. Página generada por el Worker; recursos JS/CSS del mismo origen.
 // No requiere sesión, D1 ni APIs: la experiencia y el audio son locales al navegador.
 export function renderJardinZen() {
   return `<noscript><p class="notice">Jardín Zen necesita JavaScript para dibujar y mover las piedras.</p></noscript>
@@ -20,6 +20,7 @@ export function renderJardinZen() {
     </div></div>
     <div class="actions">
       <button class="action" id="rake-size" title="Alternar entre rastrillo fino y normal" aria-label="Ancho del rastrillo: fino. Pulsar para cambiar a normal">Trazo fino</button>
+      <button class="action" id="rake-visible" aria-pressed="true" title="Mostrar u ocultar el rastrillo">Rastrillo visible</button>
       <button class="action" id="waves" title="Crear un patrón de ondas">Ondas</button>
       <button class="action" id="clear" title="Alisar completamente la arena">Alisar</button>
       <button class="action" id="undo" title="Deshacer el último trazo">↶ Deshacer</button>

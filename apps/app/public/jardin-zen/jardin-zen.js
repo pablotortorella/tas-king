@@ -1,12 +1,26 @@
-// Jardín Zen beta v0.2 · motor original, separado del HTML para cumplir la CSP de HomeSuite.
+// Jardín Zen beta v0.4 · motor original, separado del HTML para cumplir la CSP de HomeSuite.
+// v0.4: rastrillo con el mango invertido, giro suave y visible u oculto (lógica pura en rake-motion.js).
+import {createRake,readRakeVisible,writeRakeVisible,getStorage,RAKE_PARTS,partCorners,SAND_W,SAND_D} from './rake-motion.js';
 (()=>{
 'use strict';
 const canvas=document.getElementById('scene'), container=document.getElementById('scene-box'), hint=document.querySelector('#hint span:last-child');
+// Rastrillo mostrado (postura y giro suave) y su visibilidad. La preferencia es local: nunca sale del navegador.
+const rake=createRake(), rakeBtn=document.getElementById('rake-visible');
+let rakeVisible=readRakeVisible(getStorage());
+function paintRake(){
+  if(rakeBtn){rakeBtn.setAttribute('aria-pressed',String(rakeVisible));rakeBtn.textContent=rakeVisible?'Rastrillo visible':'Rastrillo oculto';}
+  container.dataset.rake=!rakeVisible?'oculto':rake.state.following?'siguiendo':'reposo';
+  container.dataset.rakeHeading=String(Math.round(rake.state.heading*180/Math.PI));
+}
+function bindRakeToggle(onChange){
+  paintRake();
+  if(rakeBtn)rakeBtn.addEventListener('click',()=>{rakeVisible=!rakeVisible;writeRakeVisible(getStorage(),rakeVisible);paintRake();onChange();});
+}
 const gl=canvas.getContext('webgl2',{alpha:false,antialias:true,powerPreference:'low-power'});
 if(!gl){
   // Vista alternativa 2.5D: funciona incluso cuando el navegador bloquea WebGL.
   const ctx=canvas.getContext('2d'), tex=document.createElement('canvas');tex.width=900;tex.height=568;const t=tex.getContext('2d');
-  let tool='rake',preset='waves',strokes=[],active=null,down=false,stoneIndex=-1,orbitStart=null,skew=0,zoom=1,rakeGap=5.6;
+  let tool='rake',preset='waves',strokes=[],active=null,down=false,stoneIndex=-1,orbitStart=null,skew=0,zoom=1,rakeGap=5.6,raf=0,lastTs=0,dirty=false;
   const stones=[{x:-1.1,z:-.35,size:1.15,color:'#777b6e'},{x:1.2,z:.37,size:.85,color:'#88877c'},{x:.52,z:-.72,size:.52,color:'#59645d'}];
   const hints={rake:'Arrastrá sobre la arena para dibujar surcos',stone:'Arrastrá una piedra para cambiar el paisaje',orbit:'Arrastrá para cambiar el punto de vista'};
   function base(){t.fillStyle='#eee3d0';t.fillRect(0,0,900,568);let seed=917;function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}for(let k=0;k<44000;k++){t.fillStyle=rand()>.5?'rgba(255,255,255,.21)':'rgba(112,89,60,.085)';t.fillRect(rand()*900,rand()*568,1.2,1.2);}}
@@ -42,32 +56,46 @@ if(!gl){
     ctx.strokeStyle='#c79f72';ctx.lineJoin='round';ctx.lineWidth=Math.max(12,g.w*.014);ctx.beginPath();ctx.moveTo(...o[0]);o.slice(1).forEach(p=>ctx.lineTo(...p));ctx.closePath();ctx.stroke();
     ctx.strokeStyle='rgba(255,239,211,.62)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(...o[0]);ctx.lineTo(...o[1]);ctx.stroke();
     stones.slice().sort((a,b)=>a.z-b.z).forEach(s=>drawStone(s,stones.indexOf(s),i));
-    // Pequeño rastrillo apoyado sobre el costado del jardín.
-    const a=project(.87,.10,i),b=project(.87,.36,i),headL=project(.82,.36,i),headR=project(.92,.36,i);
-    ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='rgba(63,52,36,.18)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(a[0]+3,a[1]+3);ctx.lineTo(b[0]+3,b[1]+3);ctx.stroke();
-    ctx.strokeStyle='#a67c50';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
-    ctx.strokeStyle='#b78b5c';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(...headL);ctx.lineTo(...headR);ctx.stroke();
-    ctx.strokeStyle='#9c7044';ctx.lineWidth=2.8;for(let k=0;k<5;k++){let u=.824+k*.023,p=project(u,.37,i),q=project(u,.425,i);ctx.beginPath();ctx.moveTo(...p);ctx.lineTo(...q);ctx.stroke();}
+    drawRake(i);
+  }
+  // Rastrillo: las mismas piezas que en WebGL (RAKE_PARTS), proyectadas sobre la arena. En reposo queda apoyado en el costado.
+  function drawRake(inner){
+    if(!rakeVisible)return;
+    const pose=rake.pose(),lift=rake.lift()*canvas.clientWidth/9,colors={handle:'#a67c50',head:'#b78b5c',tooth:'#9c7044'};
+    const screen=(c)=>project(c[0]/SAND_W+.5,c[1]/SAND_D+.5,inner);
+    const quad=(part)=>partCorners(part,pose).map(screen);
+    ctx.save();ctx.lineJoin='round';
+    RAKE_PARTS.forEach(part=>{polygon(quad(part).map(c=>[c[0]+3,c[1]+3]),'rgba(63,52,36,.18)');});
+    RAKE_PARTS.forEach(part=>{const ps=quad(part).map(c=>[c[0],c[1]-lift]);polygon(ps,colors[part.color]);ctx.strokeStyle='rgba(63,52,36,.28)';ctx.lineWidth=1;ctx.stroke();});
+    ctx.restore();
   }
   function bary(p,a,b,c){const v0=[b[0]-a[0],b[1]-a[1]],v1=[c[0]-a[0],c[1]-a[1]],v2=[p[0]-a[0],p[1]-a[1]],den=v0[0]*v1[1]-v1[0]*v0[1];if(!den)return null;let x=(v2[0]*v1[1]-v1[0]*v2[1])/den,y=(v0[0]*v2[1]-v2[0]*v0[1])/den;return [1-x-y,x,y];}
   function pick(e){const rect=canvas.getBoundingClientRect(),p=[e.clientX-rect.left,e.clientY-rect.top],a=geometry().inner,first=bary(p,a[0],a[1],a[2]),second=bary(p,a[0],a[2],a[3]),eps=-.005;let u,v;if(first&&first.every(x=>x>=eps)){u=first[1]+first[2];v=first[2];}else if(second&&second.every(x=>x>=eps)){u=second[1];v=second[1]+second[2];}else return null;return {u,v,x:(u-.5)*5.72,z:(v-.5)*3.6,pix:[u*900,v*568]};}
-  function begin(e){e.preventDefault();canvas.setPointerCapture(e.pointerId);down=true;const p=pick(e);if(tool==='rake'){active=[];if(p)active.push(p.pix);}else if(tool==='stone'&&p){let closest=.9;stoneIndex=-1;stones.forEach((s,k)=>{let d=Math.hypot(p.x-s.x,p.z-s.z);if(d<closest){closest=d;stoneIndex=k;}});}else if(tool==='orbit')orbitStart=[e.clientX,skew];}
-  function move(e){if(!down)return;e.preventDefault();const p=pick(e);if(tool==='rake'&&active&&p){let last=active[active.length-1];if(!last||Math.hypot(last[0]-p.pix[0],last[1]-p.pix[1])>3){active.push(p.pix);regenerate();groove(active,1,rakeGap);draw();}}else if(tool==='stone'&&stoneIndex>=0&&p){stones[stoneIndex].x=Math.max(-2.6,Math.min(2.6,p.x));stones[stoneIndex].z=Math.max(-1.5,Math.min(1.5,p.z));draw();}else if(tool==='orbit'&&orbitStart){skew=Math.max(-1,Math.min(1,orbitStart[1]+(e.clientX-orbitStart[0])*.004));draw();}}
-  function finish(e){if(!down)return;down=false;try{canvas.releasePointerCapture(e.pointerId);}catch{}if(tool==='rake'&&active&&active.length){if(active.length===1)active.push([active[0][0]+1,active[0][1]+1]);strokes.push({pts:active.slice(),gap:rakeGap});if(strokes.length>60)strokes.shift();regenerate();draw();}active=null;stoneIndex=-1;orbitStart=null;}
-  canvas.addEventListener('pointerdown',begin);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.74,Math.min(1.12,zoom-Math.sign(e.deltaY)*.04));draw();},{passive:false});
-  document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));hint.textContent=hints[tool];}));
+  // Rastrillo: acompaña al puntero (con o sin pulsar) y el giro se anima en fotogramas; sólo se redibuja cuando algo cambia.
+  function schedule(){if(!raf)raf=requestAnimationFrame(tickFrame);}
+  function tickFrame(ts){raf=0;const turned=rake.tick(lastTs?ts-lastTs:16.7);lastTs=ts;if(dirty||(turned&&rakeVisible)){dirty=false;draw();}paintRake();if(rake.settled())lastTs=0;else schedule();}
+  function setCursor(){canvas.style.cursor=tool==='rake'&&rakeVisible&&rake.state.following?'none':'crosshair';}
+  function placeRake(p,hover){if(p)rake.follow(p.x,p.z);else if(hover)rake.release();if(rakeVisible)dirty=true;setCursor();schedule();}
+  function releaseRake(){rake.release();if(rakeVisible)dirty=true;setCursor();schedule();}
+  function begin(e){e.preventDefault();canvas.setPointerCapture(e.pointerId);down=true;const p=pick(e);if(tool==='rake'){active=[];if(p){active.push(p.pix);placeRake(p);}}else if(tool==='stone'&&p){let closest=.9;stoneIndex=-1;stones.forEach((s,k)=>{let d=Math.hypot(p.x-s.x,p.z-s.z);if(d<closest){closest=d;stoneIndex=k;}});}else if(tool==='orbit')orbitStart=[e.clientX,skew];}
+  function move(e){if(!down){if(tool==='rake'&&e.pointerType!=='touch')placeRake(pick(e),true);return;}e.preventDefault();const p=pick(e);if(tool==='rake'&&active&&p){placeRake(p);let last=active[active.length-1];if(!last||Math.hypot(last[0]-p.pix[0],last[1]-p.pix[1])>3){active.push(p.pix);regenerate();groove(active,1,rakeGap);dirty=true;}}else if(tool==='stone'&&stoneIndex>=0&&p){stones[stoneIndex].x=Math.max(-2.6,Math.min(2.6,p.x));stones[stoneIndex].z=Math.max(-1.5,Math.min(1.5,p.z));draw();}else if(tool==='orbit'&&orbitStart){skew=Math.max(-1,Math.min(1,orbitStart[1]+(e.clientX-orbitStart[0])*.004));draw();}}
+  function finish(e){if(!down)return;down=false;try{canvas.releasePointerCapture(e.pointerId);}catch{}if(tool==='rake'&&active&&active.length){if(active.length===1)active.push([active[0][0]+1,active[0][1]+1]);strokes.push({pts:active.slice(),gap:rakeGap});if(strokes.length>60)strokes.shift();regenerate();draw();}active=null;stoneIndex=-1;orbitStart=null;if(tool==='rake'&&e.pointerType!=='mouse')releaseRake();}
+  canvas.addEventListener('pointerdown',begin);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);canvas.addEventListener('pointerleave',()=>{if(!down&&rake.state.following)releaseRake();});canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.74,Math.min(1.12,zoom-Math.sign(e.deltaY)*.04));draw();},{passive:false});
+  document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));hint.textContent=hints[tool];if(tool!=='rake')releaseRake();else setCursor();}));
+  bindRakeToggle(()=>{setCursor();draw();});
   document.getElementById('rake-size').addEventListener('click',()=>{rakeGap=rakeGap===5.6?7.8:5.6;const b=document.getElementById('rake-size'),fine=rakeGap===5.6;b.textContent=fine?'Trazo fino':'Trazo normal';b.setAttribute('aria-label',fine?'Ancho del rastrillo: fino. Pulsar para cambiar a normal':'Ancho del rastrillo: normal. Pulsar para cambiar a fino');});
   document.getElementById('clear').addEventListener('click',()=>{preset='clear';strokes=[];regenerate();draw();});document.getElementById('waves').addEventListener('click',()=>{preset='waves';strokes=[];regenerate();draw();});document.getElementById('undo').addEventListener('click',()=>{if(strokes.length){strokes.pop();regenerate();draw();}});
   let audio=null,playing=false,soundTimer=null,nextNote=0;const notes=[293.66,349.23,392,440,523.25,392,349.23,293.66];function soundTick(){if(!playing||!audio||audio.state!=='running')return;let now=audio.currentTime;const osc=audio.createOscillator(),gain=audio.createGain();osc.type='sine';osc.frequency.value=notes[nextNote++%notes.length];gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.025,now+.03);gain.gain.exponentialRampToValueAtTime(.0001,now+2.7);osc.connect(gain);gain.connect(audio.destination);osc.start(now);osc.stop(now+2.71);}
   document.getElementById('sound').addEventListener('click',async()=>{const b=document.getElementById('sound');playing=!playing;if(playing){try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();await audio.resume();soundTick();soundTimer=setInterval(soundTick,2050);}catch(e){playing=false;}}else{clearInterval(soundTimer);if(audio)audio.suspend();}b.setAttribute('aria-pressed',String(playing));b.textContent=playing?'♪  Sonido encendido':'♪  Sonido apagado';});
-  document.querySelector('footer span:last-child').textContent='Vista alternativa 2.5D · sin aceleración 3D';regenerate();draw();window.addEventListener('resize',draw);return;
+  const foot=document.querySelector('.zen-foot span:last-child');if(foot)foot.textContent='Vista alternativa 2.5D · sin aceleración 3D';regenerate();draw();setCursor();window.addEventListener('resize',draw);return;
 }
 
 const V=`#version 300 es
 in vec3 aPosition;in vec3 aNormal;in vec2 aUv;
-uniform mat4 uVP;uniform vec3 uShift;
+uniform mat4 uVP;uniform vec3 uShift;uniform vec2 uRot;
 out vec3 vNormal;out vec2 vUv;out vec3 vWorld;
-void main(){vec3 p=aPosition+uShift;vNormal=aNormal;vUv=aUv;vWorld=p;gl_Position=uVP*vec4(p,1.0);}`;
+vec3 yaw(vec3 v){return vec3(uRot.x*v.x-uRot.y*v.z,v.y,uRot.y*v.x+uRot.x*v.z);}
+void main(){vec3 p=yaw(aPosition)+uShift;vNormal=yaw(aNormal);vUv=aUv;vWorld=p;gl_Position=uVP*vec4(p,1.0);}`;
 const F=`#version 300 es
 precision mediump float;
 in vec3 vNormal;in vec2 vUv;in vec3 vWorld;
@@ -82,7 +110,7 @@ if(uType==3){col=vec3(.882,.864,.833);brightness=.98;}
 outColor=vec4(col*brightness,1.0);}`;
 function shader(t,src){let s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
 let program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,V));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,F));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);
-const loc={p:gl.getAttribLocation(program,'aPosition'),n:gl.getAttribLocation(program,'aNormal'),uv:gl.getAttribLocation(program,'aUv'),vp:gl.getUniformLocation(program,'uVP'),shift:gl.getUniformLocation(program,'uShift'),color:gl.getUniformLocation(program,'uColor'),type:gl.getUniformLocation(program,'uType'),tex:gl.getUniformLocation(program,'uSand')};
+const loc={p:gl.getAttribLocation(program,'aPosition'),n:gl.getAttribLocation(program,'aNormal'),uv:gl.getAttribLocation(program,'aUv'),vp:gl.getUniformLocation(program,'uVP'),shift:gl.getUniformLocation(program,'uShift'),rot:gl.getUniformLocation(program,'uRot'),color:gl.getUniformLocation(program,'uColor'),type:gl.getUniformLocation(program,'uType'),tex:gl.getUniformLocation(program,'uSand')};
 function mesh(verts){let vao=gl.createVertexArray();gl.bindVertexArray(vao);let buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);let stride=8*4;gl.enableVertexAttribArray(loc.p);gl.vertexAttribPointer(loc.p,3,gl.FLOAT,false,stride,0);gl.enableVertexAttribArray(loc.n);gl.vertexAttribPointer(loc.n,3,gl.FLOAT,false,stride,12);gl.enableVertexAttribArray(loc.uv);gl.vertexAttribPointer(loc.uv,2,gl.FLOAT,false,stride,24);gl.bindVertexArray(null);return {vao,count:verts.length/8};}
 function face(out,a,b,c,d,n,uvs){const order=[[a,uvs[0]],[b,uvs[1]],[c,uvs[2]],[a,uvs[0]],[c,uvs[2]],[d,uvs[3]]];for(const [p,uv] of order)out.push(...p,...n,...uv);}
 function box(cx,cy,cz,w,h,d){let x=cx-w/2,X=cx+w/2,y=cy-h/2,Y=cy+h/2,z=cz-d/2,Z=cz+d/2;let o=[],uv=[[0,0],[1,0],[1,1],[0,1]];
@@ -103,7 +131,8 @@ function perspective(fov,aspect,n,f){let q=1/Math.tan(fov/2);return [q/aspect,0,
 function mul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){o[c*4+r]=0;for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];}return o;}
 const floor=box(0,-.35,0,200,.08,200),bottom=box(0,-.12,0,6.22,.28,4.13),sand=sandPlane();
 const rims=[box(0,.14,-1.96,6.25,.53,.23),box(0,.14,1.96,6.25,.53,.23),box(-3.025,.14,0,.22,.53,3.83),box(3.025,.14,0,.22,.53,3.83)];
-const rakeParts=[box(2.25,.3,-1.18,.048,.055,.74),box(2.25,.3,-.78,.54,.075,.075),...Array.from({length:5},(_,i)=>box(1.99+i*.13,.28,-.65,.038,.065,.20))];
+// Rastrillo v0.4: piezas en coordenadas locales (x = avance, z = lado), con el origen en el punto de contacto; el motor las gira (uRot) y las posa (uShift).
+const rakeParts=RAKE_PARTS.map(p=>box(p.w,p.y,p.s,p.lw,p.h,p.ls));
 const stones=[
 {x:-1.1,z:-.35,y:.53,mesh:stoneMesh(.64,.47,.52,1.2),color:[.43,.46,.41]},
 {x:1.2,z:.37,y:.47,mesh:stoneMesh(.54,.36,.46,2.3),color:[.48,.48,.43]},
@@ -128,24 +157,29 @@ function toPx(x,z){return [(x/sandW+.5)*900,(z/sandD+.5)*568];}
 function waves(){let paths=[];const cx=toPx(stones[0].x,stones[0].z)[0],cy=toPx(stones[0].x,stones[0].z)[1];for(let r=75;r<330;r+=48){let pts=[];for(let i=0;i<=160;i++){let a=Math.PI*2*i/160;pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.85]);}paths.push(pts);}return paths;}
 function redrawSand(){baseSand();if(preset==='waves')for(const p of waves())groove(p,.62);for(const s of strokes)groove(s.pts,1,s.gap);sandDirty=true;document.getElementById('undo').disabled=strokes.length===0;}
 const sandTex=gl.createTexture();gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sandTex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);let sandDirty=true;redrawSand();
-function renderMesh(m,type,color,shift=[0,0,0]){gl.uniform1i(loc.type,type);gl.uniform3fv(loc.color,color);gl.uniform3fv(loc.shift,shift);gl.bindVertexArray(m.vao);gl.drawArrays(gl.TRIANGLES,0,m.count);}
+function renderMesh(m,type,color,shift=[0,0,0],rot=[1,0]){gl.uniform1i(loc.type,type);gl.uniform3fv(loc.color,color);gl.uniform3fv(loc.shift,shift);gl.uniform2fv(loc.rot,rot);gl.bindVertexArray(m.vao);gl.drawArrays(gl.TRIANGLES,0,m.count);}
 let needsDraw=true;
 function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.7),w=Math.max(2,Math.floor(r.width*dpr)),h=Math.max(2,Math.floor(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}aspect=w/h;fitCamera();needsDraw=true;}
 function render(){if(!needsDraw)return;needsDraw=false;resizeIfNeeded();gl.clearColor(.933,.914,.881,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(program);gl.uniformMatrix4fv(loc.vp,false,new Float32Array(camera()));gl.uniform1i(loc.tex,0);if(sandDirty){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sandTex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,sandCanvas);sandDirty=false;}
 renderMesh(floor,3,[1,1,1]);renderMesh(bottom,0,[.58,.42,.28]);renderMesh(sand,1,[1,1,1]);
 for(let i=0;i<rims.length;i++)renderMesh(rims[i],0,i<2?[.68,.51,.34]:[.70,.54,.36]);
-for(const s of stones)renderMesh(s.mesh,2,s.color,[s.x,s.y,s.z]);for(const r of rakeParts)renderMesh(r,0,[.60,.42,.24]);gl.bindVertexArray(null);}
+for(const s of stones)renderMesh(s.mesh,2,s.color,[s.x,s.y,s.z]);if(rakeVisible){const pose=rake.pose(),at=[pose.x,rake.lift(),pose.z],rot=[Math.cos(pose.heading),Math.sin(pose.heading)];for(const r of rakeParts)renderMesh(r,0,[.60,.42,.24],at,rot);}gl.bindVertexArray(null);}
 function resizeIfNeeded(){let r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.7),w=Math.max(2,Math.floor(r.width*dpr)),h=Math.max(2,Math.floor(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);aspect=w/h;fitCamera();}}
-function frame(){render();requestAnimationFrame(frame);}gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);resize();frame();window.addEventListener('resize',()=>{resize();needsDraw=true;});
+let lastFrame=0;function frame(ts){const dt=lastFrame?ts-lastFrame:16.7;lastFrame=ts;if(rake.tick(dt)){if(rakeVisible)needsDraw=true;paintRake();}render();requestAnimationFrame(frame);}gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);resize();requestAnimationFrame(frame);window.addEventListener('resize',()=>{resize();needsDraw=true;});
 function pointOnSand(e){let rect=canvas.getBoundingClientRect(),nx=((e.clientX-rect.left)/rect.width)*2-1,ny=1-((e.clientY-rect.top)/rect.height)*2;let t=Math.tan(fov/2),dir=norm([forward[0]+right[0]*nx*aspect*t+camUp[0]*ny*t,forward[1]+right[1]*nx*aspect*t+camUp[1]*ny*t,forward[2]+right[2]*nx*aspect*t+camUp[2]*ny*t]);if(dir[1]>=-.001)return null;let scale=(sandY-eye[1])/dir[1],x=eye[0]+dir[0]*scale,z=eye[2]+dir[2]*scale;if(!Number.isFinite(x)||!Number.isFinite(z))return null;return {x,z,inside:Math.abs(x)<sandW/2&&Math.abs(z)<sandD/2};}
 function addPoint(p){if(!p||!p.inside||!activeStroke)return;let pix=toPx(p.x,p.z);if(activeStroke.length===0||Math.hypot(...[pix[0]-activeStroke[activeStroke.length-1][0],pix[1]-activeStroke[activeStroke.length-1][1]])>3){activeStroke.push(pix);if(activeStroke.length>=2){redrawSand();groove(activeStroke,1,rakeGap);sandDirty=true;needsDraw=true;}}}
-function down(e){e.preventDefault();canvas.setPointerCapture(e.pointerId);drag=true;camera();let p=pointOnSand(e);if(tool==='rake'){activeStroke=[];addPoint(p);}else if(tool==='stone'&&p){let dist=1.2;dragRock=-1;stones.forEach((s,i)=>{let d=Math.hypot(p.x-s.x,p.z-s.z);if(d<dist){dist=d;dragRock=i;}});}else if(tool==='orbit'){orbitLast=[e.clientX,e.clientY];}}
-function move(e){if(!drag)return;e.preventDefault();if(tool==='rake'){addPoint(pointOnSand(e));}else if(tool==='stone'&&dragRock>=0){let p=pointOnSand(e);if(p){stones[dragRock].x=Math.min(2.55,Math.max(-2.55,p.x));stones[dragRock].z=Math.min(1.47,Math.max(-1.47,p.z));needsDraw=true;}}else if(tool==='orbit'&&orbitLast){let dx=e.clientX-orbitLast[0],dy=e.clientY-orbitLast[1];az+=dx*.008;elev=Math.max(.34,Math.min(1.48,elev+dy*.007));orbitLast=[e.clientX,e.clientY];needsDraw=true;}}
-function up(e){if(!drag)return;drag=false;try{canvas.releasePointerCapture(e.pointerId);}catch{}if(tool==='rake'&&activeStroke){if(activeStroke.length===1)activeStroke.push([activeStroke[0][0]+.5,activeStroke[0][1]+.5]);if(activeStroke.length>0){strokes.push({pts:activeStroke.slice(),gap:rakeGap});if(strokes.length>60)strokes.shift();redrawSand();needsDraw=true;}}activeStroke=null;dragRock=-1;orbitLast=null;}
-canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+function down(e){e.preventDefault();canvas.setPointerCapture(e.pointerId);drag=true;camera();let p=pointOnSand(e);if(tool==='rake'){activeStroke=[];addPoint(p);placeRake(p,false);}else if(tool==='stone'&&p){let dist=1.2;dragRock=-1;stones.forEach((s,i)=>{let d=Math.hypot(p.x-s.x,p.z-s.z);if(d<dist){dist=d;dragRock=i;}});}else if(tool==='orbit'){orbitLast=[e.clientX,e.clientY];}}
+function move(e){if(!drag){if(tool==='rake'&&e.pointerType!=='touch'){if(!forward)camera();placeRake(pointOnSand(e),true);}return;}e.preventDefault();if(tool==='rake'){const p=pointOnSand(e);addPoint(p);placeRake(p,false);}else if(tool==='stone'&&dragRock>=0){let p=pointOnSand(e);if(p){stones[dragRock].x=Math.min(2.55,Math.max(-2.55,p.x));stones[dragRock].z=Math.min(1.47,Math.max(-1.47,p.z));needsDraw=true;}}else if(tool==='orbit'&&orbitLast){let dx=e.clientX-orbitLast[0],dy=e.clientY-orbitLast[1];az+=dx*.008;elev=Math.max(.34,Math.min(1.48,elev+dy*.007));orbitLast=[e.clientX,e.clientY];needsDraw=true;}}
+function up(e){if(!drag)return;drag=false;try{canvas.releasePointerCapture(e.pointerId);}catch{}if(tool==='rake'&&activeStroke){if(activeStroke.length===1)activeStroke.push([activeStroke[0][0]+.5,activeStroke[0][1]+.5]);if(activeStroke.length>0){strokes.push({pts:activeStroke.slice(),gap:rakeGap});if(strokes.length>60)strokes.shift();redrawSand();needsDraw=true;}}activeStroke=null;dragRock=-1;orbitLast=null;if(tool==='rake'&&e.pointerType!=='mouse')releaseRake();}
+// Rastrillo: acompaña al puntero (con o sin pulsar); fuera de la arena, o al soltar un dedo, vuelve a descansar en el costado.
+function setCursor(){canvas.style.cursor=tool==='rake'?(rakeVisible&&rake.state.following?'none':'crosshair'):tool==='orbit'?'grab':'move';}
+function placeRake(p,hover){if(p&&p.inside)rake.follow(p.x,p.z);else if(hover)rake.release();if(rakeVisible)needsDraw=true;paintRake();setCursor();}
+function releaseRake(){rake.release();if(rakeVisible)needsDraw=true;paintRake();setCursor();}
+canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('pointerleave',()=>{if(!drag&&rake.state.following)releaseRake();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();userZoom=true;dist=Math.min(15,Math.max(5.8,dist+Math.sign(e.deltaY)*.4));needsDraw=true;},{passive:false});
 const hints={rake:'Arrastrá sobre la arena para dibujar surcos',stone:'Arrastrá una piedra para cambiar el paisaje',orbit:'Arrastrá para girar el jardín · rueda para acercar'};
-document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));hint.textContent=hints[tool];canvas.style.cursor=tool==='orbit'?'grab':tool==='stone'?'move':'crosshair';}));
+document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));hint.textContent=hints[tool];if(tool!=='rake')releaseRake();else setCursor();}));
+bindRakeToggle(()=>{needsDraw=true;setCursor();});
 document.getElementById('rake-size').addEventListener('click',()=>{rakeGap=rakeGap===5.6?7.8:5.6;const b=document.getElementById('rake-size'),fine=rakeGap===5.6;b.textContent=fine?'Trazo fino':'Trazo normal';b.setAttribute('aria-label',fine?'Ancho del rastrillo: fino. Pulsar para cambiar a normal':'Ancho del rastrillo: normal. Pulsar para cambiar a fino');});
 document.getElementById('clear').addEventListener('click',()=>{preset='clear';strokes=[];redrawSand();needsDraw=true;});
 document.getElementById('waves').addEventListener('click',()=>{preset='waves';strokes=[];redrawSand();needsDraw=true;});
