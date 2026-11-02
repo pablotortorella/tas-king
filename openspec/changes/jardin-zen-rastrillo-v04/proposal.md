@@ -25,7 +25,7 @@ landing pública o las migraciones, y publicar en producción.
 
 ## Estado
 
-**Propuesto, sin implementar y sin aplicar al repositorio.** Se incorpora cuando termine el orden de ramas y worktrees
+**Implementado en la rama `feature/jardin-zen-v04`, pendiente de PR, CI y publicación.** Se incorporó tras ordenar las ramas y worktrees
 viejos (acordado el 2026-10-31). El documento original con los ajustes acordados y su evidencia está en
 `docs/diseno/jardin-zen/propuestas/HomeSuite-Jardin-Zen-v0.4-Cambios.md`.
 

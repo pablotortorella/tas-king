@@ -43,8 +43,8 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
     en un celular real. #123 se mergeó después (2026-10-31), así que el script de deploy ya no debería
     fallar en ese paso; el respaldo diario de GitHub falló en sus dos últimas corridas (30 y 31/10) por el secreto del token, que sigue
     sin resolverse, y habrá que mirar la próxima corrida.
-- **Propuesto, sin implementar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo), para
-  incorporar después de ordenar las ramas viejas.
+- **En rama, sin publicar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo) en
+  `feature/jardin-zen-v04`; pendiente de PR, CI, staging y prueba en WebGL 2 y celular reales (ver `docs/productos/JARDIN-ZEN.md`).
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
