@@ -174,6 +174,55 @@ test.describe("Jardín Zen v0.4 · rastrillo (alternativa 2.5D)", () => {
     await expect(page.locator("#scene")).toHaveCSS("cursor", "crosshair");
   });
 
+  test("hay un rastrillo por grosor: el ancho del modelo sigue al del surco, también en reposo y con el rastrillo oculto", async ({ page }) => {
+    await page.goto("/jardin-zen");
+    const scene = page.locator("#scene-box");
+    const size = page.locator("#rake-size");
+    const toggle = page.locator("#rake-visible");
+    const pixels = () => page.locator("#scene").evaluate((c) => c.toDataURL());
+    // Ancho de la huella en píxeles de textura: 4 separaciones + una línea (5,6 fino; 7,8 normal; línea de 3,3).
+    await expect(scene).toHaveAttribute("data-rake-width", "25.7");
+    const fine = await pixels();
+    await size.click();
+    await expect(size).toHaveText("Trazo normal");
+    await expect(scene).toHaveAttribute("data-rake-width", "34.5");
+    await expect.poll(pixels).not.toBe(fine); // en reposo, al costado, también cambia el modelo
+    const normal = await pixels();
+    await size.click();
+    await expect(scene).toHaveAttribute("data-rake-width", "25.7");
+    await expect.poll(pixels).toBe(fine);
+    // Con el rastrillo oculto el cambio de grosor no rompe nada y el modelo nuevo aparece al volver a mostrarlo.
+    await toggle.click();
+    await expect(scene).toHaveAttribute("data-rake", "oculto");
+    await size.click();
+    await expect(scene).toHaveAttribute("data-rake-width", "34.5");
+    const hidden = await pixels();
+    await toggle.click();
+    await expect(scene).toHaveAttribute("data-rake", "reposo");
+    await expect.poll(pixels).not.toBe(hidden);
+    expect(await pixels()).toBe(normal);
+  });
+
+  test("cambiar el grosor a mitad de la sesión no deshace ni mueve los surcos ya hechos", async ({ page }) => {
+    await page.goto("/jardin-zen");
+    const [x0, y0] = await sandPoint(page, 0.3, 0.5);
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    await page.mouse.move(x0 + 120, y0 + 20, { steps: 6 });
+    await page.mouse.up();
+    await expect(page.locator("#undo")).toBeEnabled();
+    await page.locator("#rake-size").click();
+    await expect(page.locator("#undo")).toBeEnabled();
+    await page.mouse.move(x0, y0 - 80);
+    await page.mouse.down();
+    await page.mouse.move(x0 + 120, y0 - 60, { steps: 6 });
+    await page.mouse.up();
+    await page.locator("#undo").click();
+    await expect(page.locator("#undo")).toBeEnabled(); // queda el primer surco
+    await page.locator("#undo").click();
+    await expect(page.locator("#undo")).toBeDisabled();
+  });
+
   for (const width of [360, 390]) {
     test(`no hay desplazamiento horizontal a ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 780 });

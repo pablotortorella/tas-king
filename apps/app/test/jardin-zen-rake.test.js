@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  ACTIVE_LIFT, HANDLE_AHEAD, HEADING_TIME_MS, MAX_TURN_PER_FRAME, MIN_MOVE, RAKE_PARTS, RAKE_VISIBLE_KEY, REST_POSE,
+  ACTIVE_LIFT, HANDLE_AHEAD, HEADING_TIME_MS, MAX_TURN_PER_FRAME, MIN_MOVE, RAKE_MODELS, RAKE_VISIBLE_KEY, REST_POSE,
+  GAP_FINE, GAP_NORMAL, GROOVE_LINE_PX, TEETH, TEX_H, TEX_W, SAND_D, SAND_W, WORLD_PER_PX, grooveOffsets, grooveWidthPx, rakeModelFor, rakeParts, rakeWidthPx,
   createHeadingTracker, createRake, getStorage, isSettled, normalizeAngle, partCorners, readRakeVisible, shortestArc,
   stepHeading, toWorld, trackHeading, writeRakeVisible,
 } from "../public/jardin-zen/rake-motion.js";
@@ -114,12 +115,14 @@ describe("rumbo objetivo a partir del puntero", () => {
 });
 
 describe("modelo del rastrillo (mango invertido)", () => {
+  const RAKE_PARTS = RAKE_MODELS.fine;
   const byId = Object.fromEntries(RAKE_PARTS.map((part) => [part.id, part]));
 
-  it("conserva los cinco dientes, separados 0,13 y centrados en el punto de contacto", () => {
+  it("conserva los cinco dientes, centrados en el punto de contacto y a la distancia de la huella del surco", () => {
     const teeth = RAKE_PARTS.filter((part) => part.id.startsWith("tooth-"));
     expect(teeth).toHaveLength(5);
-    expect(teeth.map((tooth) => tooth.s)).toEqual([-0.26, -0.13, 0, 0.13, 0.26].map((v) => expect.closeTo(v, 9)));
+    expect(teeth.map((tooth) => tooth.s)).toEqual(grooveOffsets(GAP_FINE).map((px) => expect.closeTo(px * WORLD_PER_PX, 12)));
+    expect(teeth[2].s).toBe(0);
     for (const tooth of teeth) expect(tooth.w).toBe(0);
   });
 
@@ -246,6 +249,74 @@ describe("preferencia «rastrillo visible»", () => {
   });
 });
 
+describe("dos rastrillos: el ancho del modelo coincide con la huella del surco", () => {
+  const widthOf = (parts) => parts.find((part) => part.id === "head").ls;
+  const teethOf = (parts) => parts.filter((part) => part.id.startsWith("tooth-"));
+
+  it.each([["fino", GAP_FINE, 5.6, 25.7], ["normal", GAP_NORMAL, 7.8, 34.5]])("rastrillo %s: cabezal, dientes y huella salen de las mismas constantes", (_name, gap, gapPx, widthPx) => {
+    expect(gap).toBe(gapPx);
+    const parts = rakeModelFor(gap);
+    const teeth = teethOf(parts);
+    // Cinco dientes separados exactamente lo que separa el surco (en unidades del jardín).
+    expect(teeth).toHaveLength(TEETH);
+    for (let i = 1; i < teeth.length; i += 1) expect((teeth[i].s - teeth[i - 1].s) / WORLD_PER_PX).toBeCloseTo(gap, 9);
+    // Cada diente mide lo que la línea del surco y cae sobre su línea.
+    grooveOffsets(gap).forEach((px, i) => {
+      expect(teeth[i].s / WORLD_PER_PX).toBeCloseTo(px, 9);
+      expect(teeth[i].ls / WORLD_PER_PX).toBeCloseTo(GROOVE_LINE_PX, 9);
+    });
+    // El cabezal cubre justo de borde exterior a borde exterior de la huella.
+    expect(widthOf(parts) / WORLD_PER_PX).toBeCloseTo(grooveWidthPx(gap), 9);
+    expect(widthOf(parts) / WORLD_PER_PX).toBeCloseTo(widthPx, 1);
+    expect(rakeWidthPx(gap)).toBeCloseTo(widthPx, 1);
+    const outer = teeth.at(-1).s + teeth.at(-1).ls / 2 - (teeth[0].s - teeth[0].ls / 2);
+    expect(outer).toBeCloseTo(widthOf(parts), 12);
+  });
+
+  it("el normal es más ancho que el fino en la misma proporción que el surco", () => {
+    expect(widthOf(RAKE_MODELS.normal)).toBeGreaterThan(widthOf(RAKE_MODELS.fine));
+    expect(widthOf(RAKE_MODELS.normal) / widthOf(RAKE_MODELS.fine)).toBeCloseTo(grooveWidthPx(GAP_NORMAL) / grooveWidthPx(GAP_FINE), 9);
+  });
+
+  it("el modelo es angosto: el fino mide ~0,16 y ya no ~0,54 unidades como en la v0.4 inicial", () => {
+    expect(widthOf(RAKE_MODELS.fine)).toBeLessThan(0.2);
+    expect(widthOf(RAKE_MODELS.normal)).toBeLessThan(0.25);
+  });
+
+  it("mismo mango, misma madera y mismo estilo en los dos", () => {
+    const [fine, normal] = [RAKE_MODELS.fine, RAKE_MODELS.normal];
+    expect(fine).toHaveLength(normal.length);
+    for (const [a, b] of fine.map((part, i) => [part, normal[i]])) {
+      expect(b.id).toBe(a.id);
+      expect(b.color).toBe(a.color);
+      expect([b.w, b.y, b.lw, b.h]).toEqual([a.w, a.y, a.lw, a.h]);
+    }
+    expect(fine.find((part) => part.id === "handle")).toEqual(normal.find((part) => part.id === "handle"));
+  });
+
+  it("rakeModelFor elige por grosor y cae en el fino ante un valor desconocido", () => {
+    expect(rakeModelFor(GAP_NORMAL)).toBe(RAKE_MODELS.normal);
+    expect(rakeModelFor(GAP_FINE)).toBe(RAKE_MODELS.fine);
+    expect(rakeModelFor(undefined)).toBe(RAKE_MODELS.fine);
+    expect(rakeParts(GAP_FINE)).toEqual(RAKE_MODELS.fine);
+  });
+
+  it("la textura y la bandeja conservan las medidas del motor", () => {
+    expect([TEX_W, TEX_H, SAND_W, SAND_D]).toEqual([900, 568, 5.72, 3.6]);
+    expect(WORLD_PER_PX).toBeCloseTo(SAND_W / TEX_W, 12);
+    expect(SAND_D / TEX_H).toBeCloseTo(WORLD_PER_PX, 3); // la textura es casi isótropa
+  });
+
+  it("el motor dibuja el surco con esas mismas constantes, sin números propios", () => {
+    const engine = readFileSync(new URL("../public/jardin-zen/jardin-zen.js", import.meta.url), "utf8");
+    expect(engine).toContain("for(const lateral of grooveOffsets(gap))");
+    expect(engine).toContain("for(const offset of grooveOffsets(gap))");
+    expect(engine.match(/GROOVE_LINE_PX/gu)?.length).toBeGreaterThanOrEqual(3);
+    expect(engine).not.toMatch(/(?<![\d.])(5\.6|7\.8|3\.3)(?![\d])/u);
+    expect(engine).not.toMatch(/(?<![\d.])(900|568)(?![\d.])/u);
+  });
+});
+
 describe("integración con el motor y la página", () => {
   const engine = readFileSync(new URL("../public/jardin-zen/jardin-zen.js", import.meta.url), "utf8");
 
@@ -261,8 +332,10 @@ describe("integración con el motor y la página", () => {
   });
 
   it("mantiene el ancho fino 5,6 y normal 7,8, y los dos rutas de render", () => {
-    expect(engine).toContain("rakeGap=5.6");
-    expect(engine).toContain("rakeGap=rakeGap===5.6?7.8:5.6");
+    expect(GAP_FINE).toBe(5.6);
+    expect(GAP_NORMAL).toBe(7.8);
+    expect(engine).toContain("rakeGap=GAP_FINE");
+    expect(engine).toContain("rakeGap=rakeGap===GAP_FINE?GAP_NORMAL:GAP_FINE");
     expect(engine).toContain("getContext('webgl2'");
     expect(engine).toContain("getContext('2d')");
   });

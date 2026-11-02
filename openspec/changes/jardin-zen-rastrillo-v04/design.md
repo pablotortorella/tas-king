@@ -57,6 +57,23 @@ aspecto ya incorporado en `main`). La v0.4 se apoya en la v0.3 del prototipo y e
 - **Redibujo 2.5D.** El dibujo del tablero pasa a un único `requestAnimationFrame` por cambio (antes era sincrónico en cada evento), para no
   repetirlo con el movimiento sin pulsar. No se optimizó el redibujado de la textura (fuera de alcance).
 
+## Decisión posterior a la prueba en staging: un rastrillo por grosor
+
+Pablo probó la v0.4 en staging (mango en el sentido correcto, giro suave) y pidió que el rastrillo tenga el ancho de la huella que deja:
+el modelo era ~0,54 unidades de ancho contra ~0,16 del surco fino, y rompía la ilusión.
+
+- **Dos modelos de madera,** uno por grosor (fino 5,6 px y normal 7,8 px), con el mismo mango, la misma madera y el mismo estilo. Al cambiar el
+  grosor cambia el modelo, también en reposo y con el rastrillo oculto (el modelo nuevo aparece al volver a mostrarlo). No toca los surcos ya hechos.
+- **El ancho se deriva de las constantes del surco, sin números duplicados.** `rake-motion.js` define `TEETH = 5`, `GAP_FINE`, `GAP_NORMAL`,
+  `GROOVE_LINE_PX = 3,3`, `TEX_W/TEX_H` (900 × 568) y `WORLD_PER_PX = SAND_W / TEX_W`. El motor dibuja el surco con `grooveOffsets(gap)` (las
+  cinco líneas) y el modelo sale de las mismas: los dientes caen en esos desplazamientos, cada uno mide `GROOVE_LINE_PX` y el cabezal mide
+  `grooveWidthPx(gap) = 4 · gap + GROOVE_LINE_PX` (25,7 px fino; 34,5 px normal), de borde exterior a borde exterior. En unidades del jardín:
+  ~0,163 y ~0,219. Una prueba unitaria impide que el motor vuelva a tener 5,6, 7,8, 3,3, 900 o 568 escritos a mano.
+- **Se conservan** el largo del cabezal, de los dientes y del mango, y las alturas de la v0.2 (el mango puede ser el mismo en los dos).
+  No se compensa el reflejo claro del surco (~1,7 px), por eso el cabezal coincide con las líneas oscuras.
+- **Gancho de prueba:** `#scene-box` expone `data-rake-width` (px de textura, un decimal), siempre actualizado, incluso con el rastrillo oculto.
+- Sin cambios en `HANDLE_AHEAD` ni en la constante de 185 ms (confirmados por Pablo en staging).
+
 ## Open Questions → decididas
 
 - ¿Qué lado es «invertido»? → mango del lado del avance (ver arriba); confirmar con Pablo al probarlo.

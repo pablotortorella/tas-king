@@ -11,9 +11,30 @@ export const MAX_FRAME_MS = 50;            // un fotograma largo (pestaña dormi
 export const MIN_MOVE = 0.06;              // unidades del jardín (~1 % del ancho): por debajo no cambia el rumbo
 export const SETTLED_RAD = 0.002;          // diferencia a partir de la cual se deja de animar
 
-// Medidas del jardín (las mismas del motor): la bandeja de arena y su proyección a la textura.
+// Medidas del jardín (las mismas del motor): la bandeja de arena y su proyección a la textura de 900 × 568 px.
 export const SAND_W = 5.72;
 export const SAND_D = 3.6;
+export const TEX_W = 900;
+export const TEX_H = 568;
+// Unidades del jardín por píxel de textura. El eje x y el z difieren en menos de 0,3 %; se usa el ancho.
+export const WORLD_PER_PX = SAND_W / TEX_W;
+
+// Huella del surco: cinco dientes, separación entre dientes (fino por defecto, normal) y ancho de cada línea, todo en píxeles de
+// textura. El surco del motor y el modelo del rastrillo salen de estas constantes, para que no se desfasen.
+export const TEETH = 5;
+export const GAP_FINE = 5.6;
+export const GAP_NORMAL = 7.8;
+export const GROOVE_LINE_PX = 3.3;
+
+// Desplazamientos laterales (px de textura) de las cinco líneas del surco respecto de su trazo central, para una separación dada.
+export function grooveOffsets(gap) {
+  return Array.from({ length: TEETH }, (_, i) => (i - (TEETH - 1) / 2) * gap);
+}
+
+// Ancho total de la huella (px de textura): de un borde exterior al otro de las líneas extremas.
+export function grooveWidthPx(gap) {
+  return (TEETH - 1) * gap + GROOVE_LINE_PX;
+}
 
 // Postura de descanso: el rastrillo apoyado en el costado, como en la beta v0.2 (cabezal en x 2,25; mango hacia -z).
 export const REST_POSE = Object.freeze({ x: 2.25, z: -0.65, heading: -Math.PI / 2 });
@@ -26,13 +47,26 @@ export const HANDLE_AHEAD = true;
 
 // Piezas en coordenadas locales: `w` es el avance (hacia donde apunta el rumbo), `s` el lado, `y` la altura.
 // El origen es el punto de contacto con la arena, en el centro de la fila de dientes.
-// Medidas de la beta v0.2: los cinco dientes y el punto de contacto no cambian; sólo cabezal y mango cruzan al otro lado.
+// Hay un rastrillo por grosor (fino y normal): mismo mango, misma madera y mismo estilo; cambian el ancho del cabezal y la separación de
+// los dientes, que se derivan de la huella del surco (grooveOffsets / grooveWidthPx). Largo del cabezal, del diente y del mango, y
+// alturas, son las de la beta v0.2.
 const dir = HANDLE_AHEAD ? 1 : -1;
-export const RAKE_PARTS = Object.freeze([
-  Object.freeze({ id: "handle", color: "handle", w: dir * 0.53, s: 0, y: 0.3, lw: 0.74, ls: 0.048, h: 0.055 }),
-  Object.freeze({ id: "head", color: "head", w: dir * 0.13, s: 0, y: 0.3, lw: 0.075, ls: 0.54, h: 0.075 }),
-  ...Array.from({ length: 5 }, (_, i) => Object.freeze({ id: `tooth-${i}`, color: "tooth", w: 0, s: -0.26 + i * 0.13, y: 0.28, lw: 0.2, ls: 0.038, h: 0.065 })),
-]);
+const toothSide = GROOVE_LINE_PX * WORLD_PER_PX;
+export function rakeParts(gap) {
+  return Object.freeze([
+    Object.freeze({ id: "handle", color: "handle", w: dir * 0.53, s: 0, y: 0.3, lw: 0.74, ls: 0.048, h: 0.055 }),
+    Object.freeze({ id: "head", color: "head", w: dir * 0.13, s: 0, y: 0.3, lw: 0.075, ls: grooveWidthPx(gap) * WORLD_PER_PX, h: 0.075 }),
+    ...grooveOffsets(gap).map((offset, i) => Object.freeze({ id: `tooth-${i}`, color: "tooth", w: 0, s: offset * WORLD_PER_PX, y: 0.28, lw: 0.2, ls: toothSide, h: 0.065 })),
+  ]);
+}
+// Los dos modelos, para que el motor arme sus mallas una sola vez.
+export const RAKE_MODELS = Object.freeze({ fine: rakeParts(GAP_FINE), normal: rakeParts(GAP_NORMAL) });
+export function rakeModelFor(gap) {
+  return gap === GAP_NORMAL ? RAKE_MODELS.normal : RAKE_MODELS.fine;
+}
+export function rakeWidthPx(gap) {
+  return grooveWidthPx(gap);
+}
 
 const TAU = Math.PI * 2;
 
