@@ -2,9 +2,48 @@
 
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-## Última sesión — HomeSuite en producción (2026-10-28)
+## Última sesión — Jardín Zen, tarjetas 2×2 y orden del repositorio (2026-10-31)
 
 Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
+
+### Dónde estamos
+- **`main` `69e220a`**, sin PRs abiertos y con **un solo worktree** (`/home/pablo/Dropbox/dev/tas-king`, en `main`). Se borraron 22 worktrees y todas
+  las ramas viejas (locales y remotas); cada una se verificó con `git cherry` contra `main` y los PRs cerrados conservan sus commits en `refs/pull/N/head`.
+- **Producción** (publicada hoy por orden de Pablo, desde `main` `5185d5d`): app `app.homesuite.info` `2f225b89` y sitio `homesuite.info`
+  `a1f89eb3`. Lleva Jardín Zen beta v0.2 (`/jardin-zen`), tarjetas en 2×2, buscar categoría, forma de pago y la migración
+  `0012_payment_method.sql`. `npm run verify:coherence:production` pasó (29). Antes de migrar había 2 usuarios, 2 grupos y 1 movimiento.
+- **Staging:** app `fdafbca7` y sitio `1b67cd8e` (`main` `5b0559c`), con el mismo código que producción.
+- **En `main` pero sin publicar en ningún ambiente:** la revisión de seguridad (PR #128): cookies malformadas, HSTS por hostname,
+  doble decodificación de parámetros en TasKing, `hono` 4.13.14 y respaldos fuera de Dropbox. Staging y producción no la tienen.
+- **Hecho hoy:** PRs #119, #123 a #129 y #83/#85 mergeados; #64, #69, #71, #75, #76 y #81 cerrados porque su contenido ya estaba en `main` o quedó viejo.
+
+### Para mañana (orden sugerido)
+1. **Pablo:** recorrido con una cuenta real de Google en producción (entrar y salir) y Jardín Zen en un celular real (WebGL 2, tacto, audio). Nada de esto se probó; avisar el resultado para anotarlo en STATUS.
+2. **Publicar la revisión de seguridad** (#128): primero staging y, con orden explícita, producción. Alcanza con redesplegar la app; revisar si también hay que redesplegar el Worker legacy de TasKing (`admin.js` y `boards.js` cambiaron). `deploy:homesuite-app:production` ya no debería fallar en el respaldo (#123), pero no se probó de punta a punta.
+3. **Respaldo diario:** el secreto `HOMESUITE_PROD_BACKUP_API_TOKEN` sigue fallando en el runner (falló el 30 y el 31/10). Pasos en el bloque del 2026-10-28, más abajo. Después, rotar el secreto de Google y revisar la pantalla de consentimiento.
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta), alertas mínimas y el recorrido con dos cuentas reales.
+5. **Jardín Zen v0.4** (mango invertido, giro suave, rastrillo visible u oculto): propuesto en `openspec/changes/jardin-zen-rastrillo-v04/`, sin código. Partir de `main` y no pisar el encuadre de cámara (`fitDist`) del motor actual.
+6. Remanso: sonidos reales y prueba en iPhone con alguien que tenga uno. Consola de administración de la persona dueña (backlog).
+7. Dos filas de «Alta prioridad» del backlog ya no están al día si se las lee junto a «Completado»: revisarlas al tocar el backlog.
+
+### Qué pasó que conviene saber
+- El script de deploy de producción se cortó en el respaldo previo: el restore drill fallaba con `no such table: main.splitwise_import_batches`. Eso ocurrió **antes** de migrar y de desplegar. Se corrió el respaldo con el arreglo de #123 (quedó en R2, `production/20261031T193343Z`) y la migración y el deploy se hicieron por separado. #123 se mergeó después.
+- Las dos E2E que el PR #124 daba por «rojas y preexistentes» pasan; la suite completa da 177/177 en la app y 20/20 en el sitio. Se corrió con una base propia (`E2E_STATE=<nombre>`).
+- El E2E de Jardín Zen corre sin WebGL, así que solo cubre la alternativa 2.5D: el motor 3D y la cámara se validan a mano.
+- El clasificador de permisos bloqueó un merge que no estaba pedido de forma explícita; se hizo cuando Pablo lo ordenó. Con staging, mergear y producción conviene esperar una orden clara de cada paso.
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio en un worktree de `main`, CI verde, `wrangler deployments list`, ensayo `--dry-run`, mensaje de versión con SHA, y después `verify:coherence:<ambiente>`. Para el sitio: `wrangler deploy --env "" --config apps/site/wrangler.jsonc`.
+- **Comandos para Pablo: indicar siempre el directorio** y dárselos de a uno. Lenguaje sin género y voseo; mostrarle el resultado antes de publicar.
+- Un cambio lógico por rama; PR con merge commit. El registro en STATUS va en un PR de documentación aparte.
+- No usar el término que el glosario descartó (`glossary.test.js` revisa todos los documentos): «grupo» es la palabra del dominio.
+
+### Carpetas
+- Un solo checkout: `/home/pablo/Dropbox/dev/tas-king`, en `main`. Para trabajar, crear un worktree nuevo con `git worktree add ../tas-king-<tema> -b <rama> origin/main` y quitarlo al terminar.
+
+## Sesión anterior — HomeSuite en producción (2026-10-28)
+
+Histórico: de esta lista ya se hizo el orden de carpetas y PRs viejos (ítem 7), y la app y el sitio ya se volvieron a publicar el 2026-10-31. Siguen abiertos el respaldo diario, Google Cloud y los puntos 3 a 6.
 
 ### Dónde estamos
 - **Producción:** app `app.homesuite.info` en la versión `979dc093` (`main` `3d32ae5`) y sitio `homesuite.info` en `f4f37db4`

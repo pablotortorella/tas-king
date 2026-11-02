@@ -1,6 +1,48 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-10-31
+**Última actualización**: 2026-11-02
+
+## Revisión de seguridad (PR #128) en producción — 2026-11-02
+
+Pablo ordenó pasar a producción («a producción», 2026-11-02): primero la app y después TasKing. El sitio no cambió y no se publicó.
+
+**Qué incluye #128:** cookies malformadas sin error 500 (`decodeCookieValue` en la app); HSTS por hostname en TasKing (antes se
+apagaba si la URL contenía «localhost»); sin `X-XSS-Protection`; sin doble decodificación de parámetros en TasKing (`admin.js`,
+`boards.js`); `hono` 4.13.14; respaldos fuera de Dropbox (`/home/pablo/dev/tas-king-backups/`).
+
+| Unidad | Staging | Producción |
+|---|---|---|
+| HomeSuite App | `staging.homesuite.info`: `5775ab89` (antes `fdafbca7`) | `app.homesuite.info`: `19341daf` (antes `2f225b89`) |
+| TasKing | `tas-king-staging`: `93d38468` (antes `6ccea7e0`, del 24/10, sin mensaje) | `tas-king`: `8a85baf6` (antes `0d8891dc`) |
+
+Mensaje de versión en staging: «main 69e220a · merge PR #128 · revisión de seguridad».
+
+- **Staging** (desde `main` `69e220a`, árbol limpio, dry-run de ambos). Respaldo de la app: `…/homesuite-app/staging/20261102T225308Z/`.
+  Sin migraciones. `verify-ready` de TasKing: 232 unitarias y 101 E2E.
+  - **Verificación:** app `/healthz`, `/`, `/jardin-zen`, `/remanso` y `/tareas` 200, `/cuentas-claras` 303, cookie malformada 303.
+    TasKing 200 con HSTS y cookie malformada sin 500. `npm run verify:coherence:staging` **28/28**.
+- **Producción, app.** Respaldo en R2 `homesuite-app-backups/production/20261102T230416Z` con restauración local verificada. Es la primera
+  corrida completa de `deploy:homesuite-app:production` desde el arreglo #123: funcionó de punta a punta. Sin migraciones.
+- **Producción, TasKing.** Respaldo `/home/pablo/dev/tas-king-backups/prod-20261102-180748.sql`. Sin migraciones. No se repitió
+  `verify-ready`: el mismo SHA ya había pasado en staging ese día y el CI de `main` está verde. Se corrieron respaldo, migraciones y
+  `wrangler deploy` por separado para no chocar con E2E de otro trabajo en paralelo.
+- **Verificación en producción:** app `/healthz`, `/`, `/jardin-zen`, `/remanso` y `/tareas` 200, `/cuentas-claras` 303, `/api/me` 401,
+  `/compras` 404, cookie malformada 303, cero menciones a staging. El primer intento de smoke dio «000» (sin respuesta) justo después
+  del deploy y el reintento dio todo bien. TasKing 200, HSTS presente, sin `X-XSS-Protection`, cookie malformada 200 y `/api/boards`
+  sin sesión 401. `npm run verify:coherence:production` **29/29**.
+- **Rollback disponible:** `2f225b89` (app) y `0d8891dc` (TasKing).
+- **Hallazgo:** la app de HomeSuite **no envía `Strict-Transport-Security`**; nunca lo tuvo (el HSTS de #128 es del TasKing). No es una
+  regresión. Queda en el backlog.
+- **Sin revisar:** `npm ci` informa 12 vulnerabilidades (2 moderadas, 10 altas). Queda en el backlog.
+- **Recorrido de Pablo (informado el 2026-11-02, «listo»):** hizo el recorrido con su cuenta real de Google en producción (entrar y salir)
+  y probó Jardín Zen en un celular real. No informó modelo de teléfono ni navegador. Cierra los pendientes «No hecho» del bloque de
+  Jardín Zen del 2026-10-31.
+- **Respaldo diario (diagnóstico actualizado):** desde que se recargó el secreto (30/10) la exportación D1 y la restauración local
+  funcionan. Las corridas del 31/10, 01/11 y 02/11 fallan al **subir a R2**: `403 Forbidden`, código 10000, en
+  `/accounts/…/r2/buckets/homesuite-app-backups/objects/…` (run 41453274852). Hipótesis: `homesuite-token` tiene «R2 Item Read/Write»
+  limitado al bucket y la API REST que usa `wrangler r2 object put` exige más permiso (por ejemplo «Workers R2 Storage: Edit» de cuenta).
+  Pendiente: la prueba de Pablo desde la terminal y ajustar el token. La última corrida exitosa es del 27/10 (token viejo); los respaldos
+  manuales previos a cada deploy sí están en R2.
 
 ## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
@@ -24,7 +66,7 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
   (`design.spec.js` y `recorridos.spec.js`) **pasan** en la rama y en la suite completa: no se reprodujo el fallo, que
   sería de la corrida original (base o puerto sucios); la causa exacta no se identificó.
 - **Visto a mano:** Pablo probó el jardín en Chrome de escritorio en local («anda de 10») y pidió el ajuste de cámara.
-- **NO probado (requiere dispositivo real):** WebGL 2 y gestos táctiles en celular, rendimiento y batería, audio tras
+- **Dispositivo real:** al 2026-10-31 no estaba probado; Pablo informó el 2026-11-02 que probó el jardín en un celular real (sin detalles). Lo que se pedía probar era: WebGL 2 y gestos táctiles en celular, rendimiento y batería, audio tras
   `pagehide` o cambio de pestaña. El E2E corre sin WebGL, así que sólo ejerce la alternativa 2.5D y no cubre la cámara.
 - **Staging sin pisar nada:** antes de publicar, la app servía `main 215390f` y el sitio `main 3d32ae5`; `main` ya contenía
   buscar categoría (#121) y forma de pago (#122) con su migración `0012`, así que nada de Flori se perdió.
@@ -39,12 +81,11 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
     `fitCamera` servidos, CSP intacta, cero menciones a staging. Sitio `/`, `/tareas`, `/cuentas-claras`, `/remanso`, `/jardin-zen`,
     `/privacidad` y `/terminos` 200, `/compras` 404, `www` 308; la landing enlaza a `app.homesuite.info/jardin-zen`.
     `npm run verify:coherence:production` **29/29**.
-  - **No hecho:** el recorrido de entrar y salir con una cuenta real de Google en producción (sólo lo puede hacer Pablo); WebGL 2 y tacto
-    en un celular real. #123 se mergeó después (2026-10-31), así que el script de deploy ya no debería
-    fallar en ese paso; el respaldo diario de GitHub falló en sus dos últimas corridas (30 y 31/10) por el secreto del token, que sigue
-    sin resolverse, y habrá que mirar la próxima corrida.
-- **En rama, sin publicar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo) en
-  `feature/jardin-zen-v04`; pendiente de PR, CI, staging y prueba en WebGL 2 y celular reales (ver `docs/productos/JARDIN-ZEN.md`).
+  - **Hecho después:** Pablo informó el 2026-11-02 («listo») que hizo el recorrido de entrar y salir con su cuenta real de Google en
+    producción y que probó Jardín Zen en un celular real (sin modelo ni navegador informados). Antes figuraba como no hecho.
+  - **Respaldo:** #123 se mergeó después (2026-10-31) y el script de deploy ya no falla en ese paso (confirmado el 2026-11-02). El respaldo
+    diario de GitHub sigue con un problema distinto: ver el bloque del 2026-11-02.
+- **Jardín Zen v0.4** (mango invertido, giro suave y mostrar u ocultar el rastrillo): implementado en `feature/jardin-zen-v04`, sin publicar.
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
