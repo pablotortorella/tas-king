@@ -249,7 +249,7 @@ En producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [S
 - **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): probado por Pablo en un celular real (2026-11-02, sin detalles de dispositivo).
 - **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
 - **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122, migración `0012_payment_method.sql` ya aplicada en la base de producción).
-- **HSTS en la app de HomeSuite** (PR #PRNUM): `Strict-Transport-Security: max-age=31536000; includeSubDomains`, sin `preload` (la app es un subdominio; el preload se pide en el apex). El Worker la envía salvo en `localhost`, `127.0.0.1` y `[::1]`, comparando el hostname. Los estáticos de `/remanso` y `/jardin-zen` la llevan por `public/_headers`, que no puede condicionar por hostname, así que va siempre (inocua en local). Falta verificación pública tras publicar.
+- **HSTS en la app de HomeSuite** (PR #133): `Strict-Transport-Security: max-age=31536000; includeSubDomains`, sin `preload` (la app es un subdominio; el preload se pide en el apex). El Worker la envía salvo en `localhost`, `127.0.0.1` y `[::1]`, comparando el hostname. Los estáticos de `/remanso` y `/jardin-zen` la llevan por `public/_headers`, que no puede condicionar por hostname, así que va siempre (inocua en local). Falta verificación pública tras publicar.
 
 En `main` pero **sin publicar en producción**: nada al 2026-11-02.
 
