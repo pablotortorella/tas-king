@@ -8,4 +8,4 @@
 - [x] Pruebas: ampliar `apps/app/e2e/jardin-zen.spec.js` (alternar el control, persistencia, almacenamiento no disponible, sin desborde a 360 y 390 px) y mantener en verde unitarias, E2E de app y sitio, y el glosario. Unitarias en `apps/app/test/jardin-zen-rake.test.js`.
 - [x] Dos rastrillos de madera, uno por grosor (fino 5,6 px y normal 7,8 px): ancho del cabezal y separación de los dientes derivados de las constantes del surco, en WebGL 2 y Canvas 2.5D; el modelo cambia con el grosor, también en reposo y con el rastrillo oculto. Unitarias en `jardin-zen-rake.test.js` y E2E con `data-rake-width`.
 - [ ] Verificar WebGL 2 en un navegador con aceleración y el giro en un celular real; ajustar constante y umbral si hace falta.
-- [ ] Abrir PR, esperar el CI y recién entonces coordinar staging; registrar SHA y versiones en STATUS.
+- [x] Abrir PR, esperar el CI y recién entonces coordinar staging; registrar SHA y versiones en STATUS.

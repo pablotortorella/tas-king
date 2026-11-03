@@ -2,6 +2,31 @@
 
 **Última actualización**: 2026-11-02
 
+## Jardín Zen v0.4 y HSTS de la app en producción — 2026-11-02
+
+Pablo dio la orden explícita de pasar a producción. Se mergearon el PR #132 (Jardín Zen v0.4, `5658a2d`) y el PR #133 (HSTS de la app,
+`992580c`). El CI de `main` quedó en verde (run 41551693790). El sitio y TasKing no cambiaron.
+
+- **Qué trae v0.4:** mango invertido, giro suave (185 ms), botón «Rastrillo visible / oculto» y dos rastrillos de madera, uno por grosor.
+  El ancho de cada rastrillo sale de las mismas constantes que el surco: 25,7 px el fino y 34,5 px el normal. También corrige el
+  `querySelector` de 2.5D, que impedía el primer dibujo sin WebGL.
+- **HSTS:** `max-age=31536000; includeSubDomains`, sin `preload`, en el Worker y en `_headers` de los estáticos.
+- **Revisión de Pablo en staging**, sobre la rama: confirmó el sentido del mango, el giro suave y los dos rastrillos («OK»).
+
+| Unidad | Antes | Ahora | Respaldo |
+|---|---|---|---|
+| HomeSuite App, staging (desde `main`) | `9ba3175c` | `f02f9310` | `…/homesuite-app/staging/20261103T002048Z/` |
+| HomeSuite App, producción | `19341daf` | `2efcc20f` | R2 `production/20261103T002148Z` |
+
+- **Sin migraciones.**
+- **Verificación en los dos ambientes:** rutas 200, `/cuentas-claras` 303, `/api/me` 401 y `/compras` 404; `rake-motion.js` servido; HSTS
+  presente en `/`, `/jardin-zen` y un asset; CSP con `script-src 'self'`; cookie malformada 303; coherencia 28/28 en staging y 29/29 en
+  producción.
+- **Pruebas:** 543 unitarias de la app, E2E de la app 189/189 y del sitio 20/20.
+- **Rollback disponible:** a `19341daf`.
+- **Sin verificar:** WebGL 2 con aceleración real en celular, y la prueba de Pablo en producción.
+- **Respaldo diario resuelto:** ver el diagnóstico actualizado en el bloque de abajo (PR #128).
+
 ## Revisión de seguridad (PR #128) en producción — 2026-11-02
 
 Pablo ordenó pasar a producción («a producción», 2026-11-02): primero la app y después TasKing. El sitio no cambió y no se publicó.
@@ -37,12 +62,11 @@ Mensaje de versión en staging: «main 69e220a · merge PR #128 · revisión de 
 - **Recorrido de Pablo (informado el 2026-11-02, «listo»):** hizo el recorrido con su cuenta real de Google en producción (entrar y salir)
   y probó Jardín Zen en un celular real. No informó modelo de teléfono ni navegador. Cierra los pendientes «No hecho» del bloque de
   Jardín Zen del 2026-10-31.
-- **Respaldo diario (diagnóstico actualizado):** desde que se recargó el secreto (30/10) la exportación D1 y la restauración local
-  funcionan. Las corridas del 31/10, 01/11 y 02/11 fallan al **subir a R2**: `403 Forbidden`, código 10000, en
-  `/accounts/…/r2/buckets/homesuite-app-backups/objects/…` (run 41453274852). Hipótesis: `homesuite-token` tiene «R2 Item Read/Write»
-  limitado al bucket y la API REST que usa `wrangler r2 object put` exige más permiso (por ejemplo «Workers R2 Storage: Edit» de cuenta).
-  Pendiente: la prueba de Pablo desde la terminal y ajustar el token. La última corrida exitosa es del 27/10 (token viejo); los respaldos
-  manuales previos a cada deploy sí están en R2.
+- **Respaldo diario (resuelto el 2026-11-02):** al token `homesuite-token` le faltaba el permiso de cuenta «Workers R2 Storage Write»
+  (las corridas del 31/10, 01/11 y 02/11 fallaban al subir a R2 con `403`, código 10000, run 41453274852). Pablo lo agregó el 2026-11-02 y
+  la corrida manual 41545757501 dio success: subida a R2 y verificación desde R2 de `production/20261102T232917Z`. Pablo informó que
+  **borró los dos tokens de usuario** que sobraban: `homesuite-production-backup` (el viejo, con acceso a todas las cuentas) y
+  `Cloudflare Agent Token - 2026-06-24`. Pendiente: confirmar que el cron programado corra solo en los próximos días.
 
 ## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
