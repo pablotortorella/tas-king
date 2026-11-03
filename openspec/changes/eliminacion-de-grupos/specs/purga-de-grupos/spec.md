@@ -75,14 +75,24 @@ Al purgar, el sistema SHALL conservar únicamente una fila en `group_deletion_lo
 - **WHEN** se purga un grupo llamado «Casa de playa» con 2 integrantes y 40 movimientos
 - **THEN** existe una fila de registro con el identificador opaco, las fechas y los conteos, y ninguna columna contiene «Casa de playa»
 
-### Requirement: Restaurar un respaldo no resucita grupos purgados
+### Requirement: Restaurar un respaldo nunca revive lo suprimido
 
-El procedimiento de recuperación SHALL, después de restaurar un respaldo anterior a una purga, reaplicar las purgas registradas en `group_deletion_log`: marcar como eliminados hace más de 30 días los grupos que reaparezcan para que el mantenimiento los purgue, antes de reabrir el servicio. Este procedimiento SHALL ensayarse sobre una base descartable con un ciclo completo de exportar, eliminar, purgar, restaurar un respaldo y reaplicar.
+Después de restaurar un respaldo, y antes de reabrir el servicio, el procedimiento de recuperación SHALL reaplicar la lista de supresiones: los grupos purgados registrados en `group_deletion_log` y en el registro externo de supresiones (si existe) que reaparezcan en la base restaurada SHALL marcarse como eliminados hace más de 30 días para que el mantenimiento los purgue, y no SHALL ser visibles para nadie en ningún momento. La purga SHALL registrar el identificador opaco del grupo en la lista antes de borrarlo. El procedimiento SHALL ensayarse sobre una base descartable con un ciclo completo de exportar, eliminar, purgar, restaurar un respaldo anterior y reaplicar.
 
 #### Scenario: Ensayo de recuperación
 
-- **WHEN** se restaura un respaldo tomado antes de la purga de un grupo y se reaplica el registro de purgas
+- **WHEN** se restaura un respaldo tomado antes de la purga de un grupo y se reaplica la lista de supresiones
 - **THEN** el grupo no es visible para nadie y el mantenimiento siguiente lo purga por completo
+
+#### Scenario: Supresión posterior al respaldo
+
+- **WHEN** un grupo se purgó después del respaldo restaurado y el registro externo lo contiene
+- **THEN** la reaplicación lo encuentra aunque no figure en las tablas de la base restaurada
+
+#### Scenario: Purga que no pudo registrarse
+
+- **WHEN** el registro externo no acepta la escritura
+- **THEN** la purga de ese grupo se pospone y se reintenta sin borrar nada
 
 ### Requirement: Los respaldos y la política dicen cuánto persiste un grupo eliminado
 

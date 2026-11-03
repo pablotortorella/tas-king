@@ -9,7 +9,7 @@ Hoy existe una exportación parcial (`GET /groups/:id/ledger/export.json` y `exp
 - No hay prueba de **fidelidad** (exportar y recalcular los saldos, que pide el contrato) y no queda registro de que alguien exportó.
 - Las páginas legales dicen que «la exportación completa […] aún no se ofrece».
 
-Decisiones tomadas por Pablo el 2026-11-02 que este cambio respeta: antes de eliminar un grupo la aplicación ofrece exportar (lo cubre `eliminacion-de-grupos`, que depende de este cambio) y la exportación existente cubre a cualquier integrante (así lo dice el MVP, §4).
+Decisiones de Pablo (2026-11-02) que este cambio respeta: **exporta cualquier integrante** (como hoy y como dice el MVP, §4) y, antes de eliminar un grupo, la aplicación ofrece exportar (lo cubre `eliminacion-de-grupos`, que depende de este cambio).
 
 ## What Changes
 
@@ -19,12 +19,14 @@ Decisiones tomadas por Pablo el 2026-11-02 que este cambio respeta: antes de eli
 - **CSV legible:** agrega el nombre de cada persona y de quien cargó el movimiento. Sigue siendo una fila por efecto con la versión vigente y la protección contra fórmulas; el JSON es la exportación completa.
 - **Auditoría de exportaciones:** cada exportación JSON deja un evento `ledger_exported` en `platform_audit_events` con formato y revisión del libro, sin subir la revisión del libro.
 - **Nombre del archivo** con el grupo y la fecha, y una pantalla de exportación única con ambas descargas, pensada para el teléfono.
+- **Exportación de «mis datos» de la cuenta** desde «Mi perfil»: perfil, grupos y roles, invitaciones recibidas, aceptaciones de términos y los eventos de auditoría propios. Es la respuesta gratuita a una consulta de acceso (Ley 1581, art. 8 f; Decreto 1074, art. 2.2.2.25.4.2) y la que ofrece la baja de cuenta.
 - **Límite de uso** para las exportaciones (son lecturas que escriben una fila de auditoría).
 - **Textos legales** actualizados (ver más abajo).
 
 ### Non-goals
 
 - Importar de vuelta un JSON exportado ni restaurar un grupo desde la exportación: el MVP lo declara operación, no interfaz.
+- Importar "mis datos" de vuelta o exportarlos en CSV (solo JSON).
 - Emails de integrantes e invitados en la exportación (dato personal de terceras personas que hoy no sale; ver `design.md`).
 - Exportar comentarios (no existen) o adjuntos.
 - Paginar o transmitir por partes la exportación; se mide con el caso real y se decide después.
@@ -51,13 +53,20 @@ Decisiones tomadas por Pablo el 2026-11-02 que este cambio respeta: antes de eli
 
 ## Dependencias y orden
 
-Orden de los cinco cambios de esta serie:
+Orden de los seis changes de esta serie (decisión de Pablo, 2026-11-02):
 
-1. `alertas-minimas-homesuite`. Independiente.
-2. **`exportacion-completa-del-grupo`** (este). No depende de ningún otro cambio de la serie; puede hacerse en paralelo con el 1.
-3. `salir-y-quitar-integrantes`. Usa esta exportación en su pantalla de salida (si todavía no existe, enlaza la exportación actual).
-4. `eliminacion-de-grupos`. **Depende de este cambio**: ofrece la exportación antes de eliminar y la deja disponible para la persona titular durante la ventana de 30 días.
-5. `baja-de-cuenta-homesuite`. Indirecta: la baja le pide a la persona que exporte sus grupos antes.
+1. `politica-y-aceptacion`. Primero; sin dependencias.
+2. `alertas-minimas-homesuite`. Independiente; en paralelo con `exportacion-completa-del-grupo`.
+   `exportacion-completa-del-grupo` (este). Independiente; en paralelo con `alertas-minimas-homesuite`.
+3. `salir-y-quitar-integrantes`.
+4. `eliminacion-de-grupos`.
+5. `baja-de-cuenta-homesuite`.
+
+- No depende de ningún otro change de la serie.
+- `salir-y-quitar-integrantes`: su pantalla de salida ofrece esta exportación (si todavía no existe, enlaza la actual).
+- `eliminacion-de-grupos` **depende de este change**: ofrece la exportación antes de eliminar, calcula si está al día y la deja disponible para la persona titular durante la ventana de 30 días.
+- `baja-de-cuenta-homesuite` ofrece la exportación de cada grupo y la de los datos de la cuenta antes de dar de baja.
+- `politica-y-aceptacion` define el procedimiento de solicitudes; la exportación de los datos de la cuenta es la respuesta gratuita a una consulta de acceso.
 
 ## Relación con los respaldos de 90 días
 
@@ -69,7 +78,7 @@ Cada exportación JSON registra en `platform_audit_events` el evento `ledger_exp
 
 ## Permisos de titular y de integrante
 
-Cualquier integrante puede exportar el grupo (como hoy). El contenido depende del rol: la persona titular recibe además invitaciones (sin email) y auditoría de la plataforma; un integrante recibe lo que ve en la aplicación. Quien no es integrante recibe 404 sin datos, igual que quien no inició sesión recibe el pedido de entrar. Un grupo archivado se puede exportar.
+Cualquier integrante puede exportar el grupo (decisión de Pablo, 2026-11-02; como hoy). El contenido depende del rol: la persona titular recibe además invitaciones (sin email) y auditoría de la plataforma; un integrante recibe lo que ve en la aplicación. Quien no es integrante recibe 404 sin datos, igual que quien no inició sesión recibe el pedido de entrar. Un grupo archivado se puede exportar.
 
 ## Móvil
 

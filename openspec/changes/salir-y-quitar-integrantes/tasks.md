@@ -38,4 +38,6 @@
 
 ## 7. Cierre
 
+- [ ] 7.0 Al archivar, verificar que el requisito modificado de `plataforma-homesuite-minima` queda coherente con `identidad-del-grupo` (la pantalla Administrar grupo suma «Transferir titularidad»; el orden final de la pantalla lo fija `eliminacion-de-grupos`)
+
 - [ ] 7.1 Validar con `openspec validate salir-y-quitar-integrantes --strict`, correr `test:homesuite-app`, `test:homesuite-app:integration` y el E2E afectado, y abrir el PR sin mergear

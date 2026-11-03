@@ -30,8 +30,9 @@
 
 ## 5. Recuperación y ensayo
 
-- [ ] 5.1 Documentar en `docs/HOMESUITE_RECOVERY.md` el paso posterior a una restauración (reaplicar `group_deletion_log` marcando `deleted_at` en el pasado) y escribir el script de solo lectura/escritura que lo hace sobre una base local de ensayo
-- [ ] 5.2 Ejecutar el ensayo «exportar, eliminar, purgar, restaurar un respaldo y reaplicar» sobre una base descartable (la maquinaria del restore drill) y registrar en STATUS fecha, SHA y resultado; verificar que el grupo no es visible tras reaplicar y que el siguiente mantenimiento lo purga
+- [ ] 5.1 Documentar en `docs/HOMESUITE_RECOVERY.md` el paso posterior a una restauración (reaplicar la lista de supresiones: `group_deletion_log`, `account_erasures` si existe y el registro externo) y escribir `scripts/homesuite-app-reapply-suppressions.sh`, en seco por defecto y con confirmación para escribir; verificar sobre una base local de ensayo
+- [ ] 5.1b Si Pablo confirma el registro externo (Open Questions 1): agregar el binding R2 del Worker de producción, escribir la línea de supresión antes del borrado final de la purga (idempotente, con reintento) y verificar que un fallo de R2 pospone la purga sin borrar; documentar el permiso y que el objeto queda fuera del prefijo que expira a los 90 días
+- [ ] 5.2 Ejecutar el ensayo «exportar, eliminar, purgar, restaurar un respaldo anterior y reaplicar la lista de supresiones» sobre una base descartable (la maquinaria del restore drill) y registrar en STATUS fecha, SHA y resultado; verificar que lo suprimido no reaparece en ningún momento, que el grupo no es visible tras reaplicar y que el siguiente mantenimiento lo purga
 
 ## 6. Móvil y accesibilidad
 
@@ -41,13 +42,20 @@
 
 ## 7. Excepción, glosario y documentación
 
-- [ ] 7.1 Registrar en `docs/homesuite/README.md` (Registro de excepciones) la excepción a la inmutabilidad del historial: regla, alcance (borrado de dos tablas, solo a los 30 días), necesidad, alternativas descartadas (borrado inmediato; tabla marcadora), riesgos, mitigación, prueba, responsable y fecha de revisión, marcada **propuesta pendiente de aprobación de Pablo**
-- [ ] 7.2 Actualizar `docs/HOMESUITE_DATA_LIFECYCLE.md` (principios, clases, «Exportación y eliminación» y «Bloqueos de producción» con la evidencia), `docs/productos/CUENTAS-CLARAS.md`, el glosario (eliminar frente a archivar), STATUS y backlog; verificar con la prueba del glosario
+- [ ] 7.1 La excepción a la inmutabilidad del historial (`DELETE` solo a los 30 días) ya figura **aprobada por Pablo el 2026-11-02** en `docs/homesuite/README.md` (registrada en este PR); al implementar, completar el estado con la evidencia de las pruebas de la tarea 1.2 y de la purga
+- [ ] 7.2 Completar `docs/HOMESUITE_DATA_LIFECYCLE.md` (la corrección «ofrece, no exige» ya está hecha; faltan las clases de datos, la ventana de 30 días, la lista de supresiones y los «Bloqueos de producción» con la evidencia), `docs/productos/CUENTAS-CLARAS.md`, el glosario (eliminar frente a archivar), STATUS y backlog; verificar con la prueba del glosario
 - [ ] 7.3 Agregar a la revisión semanal de `docs/HOMESUITE_VIGILANCIA.md` la comprobación de grupos eliminados hace más de 32 días sin purgar, si `alertas-minimas-homesuite` ya existe
+
+## 7b. Solicitudes, copias locales y operación
+
+- [ ] 7b.1 Escribir el script de operación que elimina un grupo por pedido de su persona titular recibido por correo (en seco por defecto, confirmación, `group_deleted` con la persona que actúa nula y el identificador de la solicitud en los metadatos); verificar con una prueba de integración que escribe el mismo evento y deja el grupo en la ventana, sin atajos
+- [ ] 7b.2 Agregar a `docs/HOMESUITE_SOLICITUDES_DATOS.md` (de `politica-y-aceptacion`) el caso «supresión de un grupo» con la plantilla de respuesta (inaccesible ya; purga a los 30 días; copias hasta 90 días) y el caso «una integrante pide suprimir sus datos: sale del grupo o da de baja su cuenta, el grupo no se elimina»
+- [ ] 7b.3 Inventariar las copias locales (`~/dev/tas-king-backups/homesuite-app/staging/`, `.wrangler/`, directorios temporales de ensayos) y registrar en `docs/HOMESUITE_RECOVERY.md` qué hay, de qué datos y cada cuánto se limpia; confirmar si staging contiene datos reales de la importación de prueba y registrar la decisión de Pablo (Open Questions 3)
+- [ ] 7b.4 Limpiar los respaldos locales de staging con más de 90 días y documentar la regla «staging y copias locales solo con datos sintéticos»; verificar con el inventario
 
 ## 8. Textos legales (texto legal que revisa Pablo)
 
-- [ ] 8.1 Redactar para `apps/site/public/privacidad.html` el flujo de eliminación (la persona titular elimina; desaparece al instante; recuperable 30 días; luego purga; las copias de seguridad lo conservan hasta 90 días más, unos 120 días en total; queda un registro sin contenido), reemplazar «La eliminación autónoma de un grupo o cuenta todavía no está disponible» en lo que corresponda al grupo, ajustar la frase de copias de seguridad y derechos de supresión, y actualizar «Última actualización». **Texto legal que revisa Pablo**
+- [ ] 8.1 Redactar para `apps/site/public/privacidad.html` el flujo de eliminación (la persona titular elimina; desaparece al instante; recuperable 30 días; luego purga; las copias de seguridad lo conservan hasta 90 días más, unos 120 días en total; no hay «eliminar ahora»; restaurar un respaldo no revive lo suprimido; queda un registro sin contenido; plazos de respuesta a un reclamo de supresión), reemplazar «La eliminación autónoma de un grupo o cuenta todavía no está disponible» en lo que corresponda al grupo, ajustar la frase de copias de seguridad y derechos de supresión, y actualizar «Última actualización». **Texto legal que revisa Pablo**
 - [ ] 8.2 Redactar para `apps/site/public/terminos.html` quién puede eliminar un grupo, que las demás personas dejan de verlo de inmediato, la recomendación de exportar antes y el plazo de recuperación. **Texto legal que revisa Pablo**
 - [ ] 8.3 Agregar una prueba del sitio que falle si `privacidad.html` conserva la frase «todavía no está disponible» sobre la eliminación de un grupo y si no menciona los 30 días; verificar con `npm run test:homesuite-site`
 

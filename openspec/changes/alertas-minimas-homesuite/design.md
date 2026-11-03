@@ -54,6 +54,8 @@ Este control también detecta el workflow desactivado y la variable `HOMESUITE_P
 5. Correos de incidentes y mantenimientos de Cloudflare.
 6. Los workflows de vigilancia siguen activos (no figuran como desactivados por inactividad).
 7. Issues `alerta-operativa` abiertos.
+8. Solicitudes de datos personales abiertas con 5 días hábiles o menos y vencidas (planilla y `scripts/solicitudes-plazos.mjs` de `politica-y-aceptacion`).
+9. Cuando exista `eliminacion-de-grupos`: grupos eliminados hace más de 32 días que siguen sin purgar.
 
 **Límite que Pablo debe conocer:** con retención de 3 días (plan gratuito) una revisión semanal solo ve las últimas 72 horas de logs; los 5xx anteriores se ven únicamente como métrica del panel (retención no verificada). Es la pregunta 13 de la exploración (plan de la cuenta) y queda en Open Questions.
 

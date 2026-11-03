@@ -76,6 +76,16 @@ aprobación registrada y fecha o señal de revisión. Una excepción pendiente d
 aprobación se marca como propuesta y no habilita omitir controles. Las brechas
 heredadas son deuda identificada, no excepciones implícitamente aceptadas.
 
+### Excepciones vigentes
+
+| Excepción | Regla y alcance | Estado |
+|---|---|---|
+| Borrado de historia inmutable al purgar un grupo | Regla: `entry_revisions` y `ledger_events` no admiten `DELETE` (`0003_financial_foundations.sql`). Excepción: el `DELETE` procede únicamente cuando el grupo del libro lleva 30 días o más marcado como eliminado; los `UPDATE` siguen prohibidos. Necesidad: eliminar un grupo exige purgar su historia. Alternativas descartadas: borrado físico inmediato; tabla marcadora que el código pueda activar. Riesgo: quien opera la base puede forzar `deleted_at`. Mitigación: la condición vive en el trigger y no hay otra puerta en el código. Prueba: aborta en grupo vivo y dentro de la ventana, procede a los 30 días solo para ese libro. Responsable: Pablo. Change: `eliminacion-de-grupos` | **Aprobada por Pablo el 2026-11-02**; pendiente de implementación y de verificación |
+| Reescritura de nombres en historia inmutable durante una baja de cuenta | Regla: `entry_revisions` y `ledger_events` no admiten `UPDATE`. Excepción: solo el JSON que contiene el nombre de la cuenta en baja, mientras la baja esté en curso, con la fila relacionada con esa cuenta y sin que cambie ninguna otra columna. Necesidad: seudonimizar el nombre sin tocar importes ni fechas. Alternativa descartada: enmascarar al leer. Riesgo: reescritura de historia. Mitigación: doble condición del trigger y comparación de todas las demás columnas. Prueba: aborta al cambiar un importe y sin baja en curso. Responsable: Pablo. Change: `baja-de-cuenta-homesuite` | **Aprobada por Pablo el 2026-11-02**; pendiente de implementación y de verificación |
+
+Aprobada significa que Pablo decidió la excepción de principio; no prueba que esté
+implementada. Cada una se verifica con las pruebas indicadas antes de archivar su change.
+
 ## Cumplimiento conocido al adoptar la base
 
 Inspección inicial del código versionado en `bdd3b2e`, con la fila de CI

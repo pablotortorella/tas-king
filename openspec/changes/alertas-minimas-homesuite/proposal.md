@@ -43,15 +43,16 @@ Decisión de Pablo (2026-11-02): alertas mínimas con **GitHub y Cloudflare**, s
 
 ## Dependencias y orden
 
-Orden de los cinco cambios de esta serie:
+Orden de los seis changes de esta serie (decisión de Pablo, 2026-11-02):
 
-1. **`alertas-minimas-homesuite`** (este). No depende de ningún otro. Va primero y en paralelo con `exportacion-completa-del-grupo`.
-2. `exportacion-completa-del-grupo`. Independiente.
-3. `salir-y-quitar-integrantes`. Conviene después de la exportación (la pantalla de salida la ofrece).
-4. `eliminacion-de-grupos`. Depende de 2 y 3.
-5. `baja-de-cuenta-homesuite`. Depende de 3 y 4.
+1. `politica-y-aceptacion`. Primero; sin dependencias.
+2. `alertas-minimas-homesuite` (este). Independiente; en paralelo con `exportacion-completa-del-grupo`.
+   `exportacion-completa-del-grupo`. Independiente; en paralelo con `alertas-minimas-homesuite`.
+3. `salir-y-quitar-integrantes`.
+4. `eliminacion-de-grupos`.
+5. `baja-de-cuenta-homesuite`.
 
-Prerrequisito cumplido: el respaldo diario funciona desde el 2026-11-02; sin eso toda alerta habría nacido en rojo. Este cambio no necesita que existan los demás, pero su revisión semanal y su documento deben actualizarse cuando 4 agregue la purga al cron y 5 la baja de cuenta.
+Prerrequisito cumplido: el respaldo diario funciona desde el 2026-11-02; sin eso toda alerta habría nacido en rojo. Este change no necesita que existan los demás, pero su revisión semanal y su documento deben actualizarse cuando `politica-y-aceptacion` agregue el control de plazos de solicitudes, cuando `eliminacion-de-grupos` agregue la purga al cron y cuando `baja-de-cuenta-homesuite` agregue la baja.
 
 ## Relación con los respaldos de 90 días
 

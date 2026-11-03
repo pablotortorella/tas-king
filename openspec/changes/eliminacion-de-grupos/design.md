@@ -40,11 +40,11 @@ Un único criterio `groups.deleted_at IS NULL` entra en los puntos de acceso com
 
 Las invitaciones pendientes dejan de ser aceptables (la invitación «no se encuentra»); al restaurar siguen su vencimiento normal.
 
-### D4. Eliminar: confirmación reforzada y exportación ofrecida, no impuesta
+### D4. Eliminar: confirmación reforzada y exportación ofrecida, no impuesta (decisión de Pablo)
 
 Pablo decidió que la aplicación **ofrece** exportar. La pantalla de eliminación muestra: cuántas personas pierden el acceso; que es recuperable 30 días; los botones de exportar; y el estado de la exportación, calculado con la auditoría de `exportacion-completa-del-grupo` (¿existe `ledger_exported` de formato JSON de esta persona con `ledgerRevision` igual a `expense_ledgers.revision`?). Si no la hay, aparece una advertencia visible y una casilla adicional («Entiendo que no exporté la versión actual»), no un bloqueo, porque la exportación sigue disponible durante la ventana (D5). La confirmación exige escribir el nombre exacto del grupo, comparado en el servidor sin distinguir mayúsculas ni blancos repetidos. El `POST` es idempotente: eliminar un grupo ya eliminado devuelve a la lista con el aviso.
 
-*Propuesta por decidir (Open Questions 1):* hacer la exportación obligatoria. Se deja afuera porque la ventana de 30 días la vuelve innecesaria, y porque `HOMESUITE_DATA_LIFECYCLE.md` (que dice «exige exportación previa») debe actualizarse a «ofrecida y disponible durante la ventana».
+*Decisión de Pablo (2026-11-02):* la exportación se **ofrece** y no es obligatoria. Por eso `HOMESUITE_DATA_LIFECYCLE.md` (que decía «exige exportación previa») se corrigió en este mismo PR: ahora dice «ofrecida antes de confirmar y disponible durante la ventana».
 
 ### D5. Quién ve qué durante la ventana
 
@@ -66,7 +66,7 @@ EXISTS (SELECT 1 FROM expense_ledgers l JOIN groups g ON g.id = l.group_id
 
 *Alternativa descartada:* una tabla marcadora que el trigger consulta. Agrega un estado y un camino de código que puede quedar activo por error.
 
-Este cambio relaja un invariante de la base común (historia inmutable). Se registra en `docs/homesuite/README.md` («Registro de excepciones») con alcance, alternativas, riesgos, prueba y responsable, **como propuesta pendiente de la aprobación escrita de Pablo**; la decisión de principio es de él (2026-11-02), pero el texto de la excepción lo revisa él.
+Este cambio relaja un invariante de la base común (historia inmutable). **Pablo aprobó la excepción el 2026-11-02** y quedó registrada como aprobada en el «Registro de excepciones» de `docs/homesuite/README.md`; queda pendiente de implementación y de las pruebas indicadas arriba, que son la evidencia de que funciona como se aprobó.
 
 ### D7. La purga corre en el cron diario, en lotes retomables
 
@@ -80,9 +80,15 @@ Una prueba de integración enumera desde `sqlite_master` todas las tablas con co
 
 `group_deletion_log` guarda lo mínimo para dos fines: reaplicar purgas tras restaurar un respaldo (D9) y explicar a quién preguntó qué pasó con un grupo. Una purga que falla escribe `group_purge_failed` (solo nombre de error e identificador opaco) en los logs, y la revisión semanal de `alertas-minimas-homesuite` suma «grupos eliminados hace más de 32 días que siguen sin purgar».
 
-### D9. Restaurar un respaldo no debe resucitar grupos purgados
+### D9. Restaurar un respaldo nunca revive lo suprimido: lista de supresiones (decisión de Pablo)
 
-Después de cualquier restauración a un punto anterior: leer `group_deletion_log` del respaldo sano más reciente (o de la base viva), y para cada `group_id` que reaparezca ejecutar `UPDATE groups SET deleted_at = '1970-01-01 00:00:00', deleted_by_user_id = NULL WHERE id IN (…)`; el cron los purga en la siguiente corrida mientras el servicio sigue cerrado a escrituras o con la aplicación detenida. Se documenta en `HOMESUITE_RECOVERY.md` y se ensaya.
+Decisión de Pablo (2026-11-02): «restaurar un respaldo nunca revive lo suprimido: reaplica la lista de supresiones». La **lista de supresiones** reúne tres fuentes: (a) `group_deletion_log` (grupos purgados), (b) `account_erasures` (cuentas dadas de baja, de `baja-de-cuenta-homesuite`) y (c) un **registro externo** (D9b). Los grupos todavía dentro de la ventana ya están marcados en la propia base y no necesitan la lista.
+
+Procedimiento tras cualquier restauración, antes de reabrir el servicio: ejecutar `scripts/homesuite-app-reapply-suppressions.sh`, que lee la lista y, para cada grupo que reaparezca, ejecuta `UPDATE groups SET deleted_at = '1970-01-01 00:00:00', deleted_by_user_id = NULL WHERE id IN (…)`; el cron los purga en la siguiente corrida (los triggers lo permiten porque la ventana está vencida). El script corre primero en seco, imprime el plan y solo escribe con confirmación; el ensayo lo ejecuta sobre una base descartable.
+
+### D9b. Registro externo de supresiones
+
+Las tablas de la base solo conocen las supresiones anteriores al punto restaurado: una supresión hecha **después** del respaldo restaurado se perdería con la base, y el grupo reaparecería. Para que la promesa de Pablo («nunca») sea verdadera, la purga escribe una línea (`{ id opaco, tipo: "group", fecha }`) en un objeto de R2 (`suppressions/AAAA-MM.jsonl`) del bucket de respaldos, **fuera del prefijo `production/`** que expira a los 90 días, mediante un binding R2 del Worker de producción. La línea se escribe **antes** del borrado final (idempotente por identificador); si falla, la purga de ese grupo se pospone y se reintenta. Contiene solo identificadores opacos y fechas. `baja-de-cuenta-homesuite` usa el mismo registro (`tipo: "account"`). Es una propuesta que agrega un binding y un permiso: Pablo debe confirmarla (Open Questions 1). Sin ella, la lista queda limitada a las tablas y a la planilla de solicitudes, y el límite se declara en el runbook.
 
 ### D10. Ensayo exigido por el backlog
 
@@ -91,6 +97,18 @@ Sobre una base descartable (la misma maquinaria de `homesuite-app-restore-drill.
 ### D11. Interfaz y vocabulario
 
 El glosario suma «Grupo eliminado», «Eliminar grupo» y «Restaurar grupo» (interfaz), `deleted_at` (base), `/groups/:id/delete`, `/groups/:id/restore`, `/groups/:id/deleted` (URLs) y distingue **archivar** (solo lectura, reversible, sigue visible para todos) de **eliminar** (invisible, recuperable 30 días, luego borrado). Estados vacíos y mensajes de error en voseo y sin género.
+
+### D12. Plazos de la Ley 1581 aplicados a la eliminación de grupos
+
+Eliminar desde la aplicación es inmediato y no genera un trámite. Si la persona titular lo pide por correo (por ejemplo, porque no puede entrar), se registra la solicitud según `politica-y-aceptacion` (reclamo de supresión: 15 días hábiles, prorrogables 8; leyenda «reclamo en trámite» dentro de 2 días hábiles; consultas: 10 días hábiles, más 5) y Pablo ejecuta la misma operación desde un script de operación con confirmación, que escribe `group_deleted` con la persona que actúa nula y el identificador de la solicitud en los metadatos. **No hay «eliminar ahora»** (decisión de Pablo): el grupo ya es invisible desde que se elimina, la ventana de 30 días es de arrepentimiento y los 90 días de respaldos son los publicados. La respuesta a un reclamo de supresión se envía dentro del plazo y dice qué quedó inaccesible ya y qué persiste hasta cuándo (ventana, base y copias); no espera a la purga. Es una interpretación que debe revisar una persona abogada (Open Questions 5).
+
+### D13. Copias locales
+
+Hay copias de datos fuera de Cloudflare: los respaldos previos al despliegue de staging en `~/dev/tas-king-backups/homesuite-app/staging/`, el estado local de desarrollo (`.wrangler/`) y los directorios temporales de los ensayos de restauración (se destruyen). TasKing, que es otro producto, tiene sus propios respaldos locales. Regla: **staging y las copias locales solo guardan datos sintéticos**; la exploración registró que el recorrido de importación se probó en staging con ~2.500 filas que podrían ser reales. Tareas: inventariar qué hay y de quién; si hay datos reales, decidir (Open Questions 3) entre borrarlos y tratarlos con el mismo procedimiento de supresión; limpiar los respaldos locales de staging con más de 90 días; y que el procedimiento de solicitudes incluya revisar estas copias.
+
+### D14. Quien pide la supresión de sus datos sale del grupo; el grupo no se elimina
+
+Una integrante que pide la supresión de sus datos no provoca la eliminación del grupo: sale (`salir-y-quitar-integrantes`) o da de baja su cuenta (`baja-de-cuenta-homesuite`). Eliminar un grupo es una decisión exclusiva de su persona titular. El procedimiento de solicitudes lo dice explícitamente.
 
 ## Risks / Trade-offs
 
@@ -110,14 +128,24 @@ El glosario suma «Grupo eliminado», «Eliminar grupo» y «Restaurar grupo» (
 3. Desplegar el Worker con el filtro de visibilidad, la pantalla y el paso de purga.
 4. Reversión: volver al Worker anterior es seguro si no hay grupos eliminados; con grupos en ventana, restaurarlos antes (o aceptar que seguirían visibles con el código viejo). Los triggers nuevos no se revierten automáticamente (OPERACION.md: no borrar triggers aditivos).
 
+## Decisions de Pablo (2026-11-02)
+
+Definitivas; no se reabren en este change.
+
+- **La exportación se ofrece antes de eliminar y no es obligatoria** (D4). `HOMESUITE_DATA_LIFECYCLE.md` ya no dice «exige».
+- **No hay «eliminar ahora».** Quedan 30 días de ventana más 90 de respaldos (D12).
+- **Restaurar un respaldo nunca revive lo suprimido:** se reaplica la lista de supresiones (D9).
+- **La excepción al `DELETE` de los triggers está aprobada** y registrada (D6).
+- **Plazos de la Ley 1581:** consultas 10 días hábiles (más 5), reclamos y supresión 15 días hábiles (más 8), leyenda «reclamo en trámite» dentro de 2 días hábiles (D12). Los pedidos por correo se registran y se miden como define `politica-y-aceptacion`.
+- La ventana de 30 días, el borrado lógico y la eliminación exclusiva de la persona titular ya estaban decididos.
+
 ## Open Questions
 
 Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar):
 
-1. **Exportación previa:** ofrecida y advertida, no obligatoria, y disponible durante la ventana para la persona titular. Alternativa: exigir una exportación a la revisión vigente antes de eliminar.
+1. **Registro externo de supresiones en R2** (D9b): se propone construirlo, con un binding R2 del Worker y solo identificadores opacos, porque sin él «nunca» no puede cumplirse para supresiones posteriores al respaldo restaurado. Alternativa: limitarse a las tablas de la base y a la planilla de solicitudes, y declarar el límite.
 2. **Nota para las demás personas:** durante 30 días ven el nombre del grupo eliminado, sin acceso. Alternativa: que desaparezca sin rastro.
-3. **Adelantar la purga:** no hay «eliminar ahora»; un pedido de privacidad urgente se atiende por correo. Alternativa: botón en la pantalla de recuperación.
+3. **Datos reales en staging y copias locales** (D13): qué hacer con lo que haya hoy (borrar o tratar como real). Por defecto, no cargar datos reales a staging desde ahora.
 4. **Eliminar un grupo archivado:** permitido.
-5. **Quién puede restaurar si la titular dio de baja su cuenta:** nadie; el grupo se purga a los 30 días (ver `baja-de-cuenta-homesuite`).
-6. **Plazo legal exacto** para atender solicitudes de supresión (derechos de la ley colombiana) y si 30 + 90 días es suficiente: no verificado, y no es asesoramiento legal; lo revisa Pablo.
-7. **Retención de los respaldos:** se mantiene en 90 días.
+5. **Plazo legal exacto y suficiencia de 30 + 90 días:** la investigación normativa del 2026-11-02 lo considera defendible si el acceso ya está bloqueado, los respaldos vencen solos, un restore no reintroduce lo suprimido y la respuesta informa qué persiste; no es asesoramiento legal y lo revisa Pablo (idealmente con una persona abogada).
+6. **Quién puede restaurar si la persona titular dio de baja su cuenta:** nadie; el grupo se purga a los 30 días (ver `baja-de-cuenta-homesuite`).

@@ -111,3 +111,35 @@ La pantalla de eliminación y la sección «Grupos eliminados» SHALL usar una c
 
 - **WHEN** la persona titular abre la pantalla de eliminación en 390 px
 - **THEN** ve las consecuencias, las exportaciones y el campo del nombre sin desplazarse horizontalmente y los botones miden al menos 44 px
+
+### Requirement: No existe eliminación inmediata ni adelanto de la purga
+
+La aplicación SHALL NOT ofrecer eliminar un grupo de forma inmediata ni adelantar la purga durante la ventana de 30 días. Un reclamo de supresión sobre un grupo SHALL responderse dentro de los plazos legales (15 días hábiles, prorrogables 8) informando qué quedó inaccesible y qué persiste hasta cuándo, sin esperar a la purga.
+
+#### Scenario: Sin adelantar la purga
+
+- **WHEN** la persona titular abre la pantalla de un grupo eliminado hace 2 días
+- **THEN** solo ofrece restaurar y exportar, y no ofrece eliminar ahora
+
+#### Scenario: Pedido por correo
+
+- **WHEN** la persona titular pide por correo la supresión de su grupo
+- **THEN** se registra la solicitud, se elimina el grupo con la misma operación y la respuesta dentro del plazo dice que el grupo es inaccesible ya, se purgará a los 30 días y puede persistir en copias hasta 90 días más
+
+### Requirement: Quien pide suprimir sus datos sale del grupo y el grupo no se elimina
+
+La supresión de los datos de un integrante que no es titular SHALL resolverse sacándolo del grupo o dando de baja su cuenta, sin eliminar el grupo. Eliminar un grupo SHALL ser decisión exclusiva de su persona titular.
+
+#### Scenario: Una integrante pide la supresión
+
+- **WHEN** una integrante que no es titular pide suprimir sus datos
+- **THEN** el grupo y los datos de las demás personas permanecen y solo cambia su membresía o su cuenta
+
+### Requirement: Staging y las copias locales no guardan datos reales
+
+Los ambientes de prueba y las copias locales de respaldo SHALL contener únicamente datos sintéticos. La operación SHALL mantener un inventario de las copias locales y SHALL incluirlas en el procedimiento de atención de una solicitud de supresión.
+
+#### Scenario: Inventario de copias
+
+- **WHEN** se prepara la respuesta a una solicitud de supresión
+- **THEN** se revisa el inventario de copias locales y la respuesta dice si había datos de la persona en alguna

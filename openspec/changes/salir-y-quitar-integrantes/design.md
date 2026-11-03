@@ -30,23 +30,23 @@ Al salir o ser quitada, la fila de `ledger_participants` no se toca salvo `linke
 
 `removeMembership(db, { groupId, actorUserId, targetUserId, reason })` con `reason` en `left` o `removed` hace en un `db.batch`: borra la fila de `memberships` solo si `role = 'member'`; desvincula la persona; escribe `member_left` o `member_removed` en `platform_audit_events` y `participant_unlinked` en `ledger_events` (sube la revisión). Las sentencias de auditoría y de desvinculación se condicionan al estado leído antes (el rol que se esperaba) para que una carrera —por ejemplo, transferirle la titularidad a quien está saliendo— no deje una auditoría sin cambio ni un cambio sin auditoría. Esa misma función la reutilizan la salida, la remoción y, más adelante, `baja-de-cuenta-homesuite` y la salida de grupos en la baja.
 
-### D3. Transferir la titularidad es inmediato y entre integrantes
+### D3. Transferir la titularidad es inmediato y entre integrantes (decisión de Pablo, 2026-11-02)
 
 `transferOwnership(db, { groupId, actorUserId, newOwnerUserId })` solo si quien actúa es titular y el destino es integrante. En un `db.batch`: primero baja a quien cede a `member` y después asciende a quien recibe (el índice único parcial se evalúa por sentencia, por lo que el orden importa y el grupo queda sin titular solo dentro de la transacción); escribe `ownership_transferred` con ambos ids. La transferencia **no** exige aceptación de quien la recibe.
 
-*Alternativa considerada:* dos pasos (oferta y aceptación, con vencimiento). Evita transferir a quien no la quiere, pero agrega un estado, vencimientos y una pantalla más. Como quien recibe puede volver a transferir (o, si es titular y quiere irse, eliminar el grupo), se elige el inmediato por simplicidad. Es una propuesta por decidir (Open Questions 1).
+*Alternativa descartada por Pablo:* dos pasos (oferta y aceptación, con vencimiento). Evitaba transferir a quien no la quiere, pero agrega un estado, vencimientos y una pantalla más. Quien recibe puede volver a transferir o, si es la única persona titular y quiere irse, eliminar el grupo.
 
 ### D4. Quién puede qué
 
 La persona titular no puede salir ni ser quitada: el servidor lo rechaza con un mensaje que explica el camino (transferir; o, cuando exista, eliminar el grupo). Un integrante no puede quitar a nadie. Nadie puede dejar sin titular a un grupo, ni siquiera con dos pedidos concurrentes (el índice único y la condición `role = 'member'` del borrado lo garantizan). Un grupo con un único integrante, su titular, no admite salir: se archiva o, con `eliminacion-de-grupos`, se elimina.
 
-### D5. Saldos: informar, no bloquear
+### D5. Saldos: informar, no bloquear (decisión de Pablo, 2026-11-02)
 
-La pantalla de confirmación muestra el saldo de la persona por moneda («Tu saldo: …» o «El saldo de Ana: …»). No bloquea porque obligar a saldar atraparía a quien necesita irse y la plataforma no mueve dinero. Un saldo distinto de cero queda a nombre de la persona sin cuenta, visible para el resto. Se avisa a la persona titular al quitar. Propuesta por decidir (Open Questions 2).
+La pantalla de confirmación muestra el saldo de la persona por moneda («Tu saldo: …» o «El saldo de Ana: …»). No bloquea porque obligar a saldar atraparía a quien necesita irse y la plataforma no mueve dinero. Un saldo distinto de cero queda a nombre de la persona sin cuenta, visible para el resto. Se avisa a la persona titular al quitar.
 
 ### D6. Aviso a quien sale, derivado de la auditoría
 
-No hay correo. Para que la salida no sea silenciosa, `GET /groups` muestra durante 30 días una nota por cada evento `member_left` o `member_removed` propio («Ya no sos integrante de “X”»), leída de `platform_audit_events` unida a `groups`; sin tabla nueva y sin guardar quién la quitó. No hay descarte persistido: la nota desaparece sola. Si el grupo se purga (`eliminacion-de-grupos`), sus eventos se van con él y la nota también. Propuesta por decidir (Open Questions 3).
+No hay correo. Para que la salida no sea silenciosa, `GET /groups` muestra durante 30 días una nota por cada evento `member_left` o `member_removed` propio («Ya no sos integrante de “X”»), leída de `platform_audit_events` unida a `groups`; sin tabla nueva y sin guardar quién la quitó. No hay descarte persistido: la nota desaparece sola. Si el grupo se purga (`eliminacion-de-grupos`), sus eventos se van con él y la nota también. Propuesta por decidir (Open Questions 1).
 
 ### D7. Pantallas y rutas
 
@@ -58,7 +58,7 @@ Cada `GET` es una confirmación con el resumen (saldo, qué se conserva, enlace 
 
 ### D8. Qué vuelve a aparecer si se restaura un respaldo
 
-Una restauración de D1 a un punto anterior trae de vuelta las membresías. El runbook agrega una consulta de solo lectura a `platform_audit_events` (`member_left`, `member_removed`, `ownership_transferred` posteriores al punto restaurado) y la regla de reaplicarlas antes de reabrir. No se construye un script automático en este cambio (Open Questions 5).
+Una restauración de D1 a un punto anterior trae de vuelta las membresías. El runbook agrega una consulta de solo lectura a `platform_audit_events` (`member_left`, `member_removed`, `ownership_transferred` posteriores al punto restaurado) y la regla de reaplicarlas antes de reabrir. No se construye un script automático en este cambio (Open Questions 3).
 
 ### D9. Vocabulario
 
@@ -76,13 +76,18 @@ El glosario suma las acciones: «Salir del grupo», «Quitar del grupo» y «Tra
 
 Sin migración. Despliegue aditivo: rutas y pantallas nuevas, sin cambios en las existentes salvo el ítem del menú y el botón en Personas. Reversión: volver al Worker anterior; los eventos de auditoría escritos quedan inofensivos. Sin datos que preservar más allá de los eventos nuevos.
 
+## Decisions de Pablo (2026-11-02)
+
+Definitivas; no se reabren en este change.
+
+- **La transferencia de titularidad es inmediata**, sin aceptación de quien la recibe (D3).
+- **Un saldo distinto de cero se informa, pero no bloquea** salir ni quitar (D5).
+
 ## Open Questions
 
 Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar):
 
-1. **Transferencia de titularidad:** inmediata, sin aceptación de quien la recibe. Alternativa: oferta con aceptación y vencimiento.
-2. **Saldo distinto de cero al salir o ser quitada:** se informa y no se bloquea.
-3. **Aviso a quien salió o fue quitada:** una nota de 30 días en la lista de grupos, derivada de la auditoría, sin decir quién la quitó. Alternativa: sin aviso.
-4. **Volver a entrar:** se puede volver a invitar a la misma persona vinculando su persona anterior, sin plazo de espera.
-5. **Reaplicar salidas tras restaurar un respaldo:** consulta y regla documentadas; un script queda para cuando exista un ensayo de restauración con datos reales.
-6. **Borrar una persona con historial:** fuera de alcance; sigue como pendiente en el backlog.
+1. **Aviso a quien salió o fue quitada:** una nota de 30 días en la lista de grupos, derivada de la auditoría, sin decir quién la quitó (D6). Alternativa: sin aviso.
+2. **Volver a entrar:** se puede volver a invitar a la misma persona vinculando su persona anterior, sin plazo de espera.
+3. **Reaplicar salidas tras restaurar un respaldo:** consulta y regla documentadas; un script queda para cuando exista un ensayo de restauración con datos reales. Ver también la lista de supresiones de `eliminacion-de-grupos`, que no incluye las salidas voluntarias: una salida restaurada vuelve a dar acceso, no resucita datos suprimidos.
+4. **Borrar una persona con historial:** fuera de alcance; sigue como pendiente en el backlog.

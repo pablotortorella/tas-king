@@ -14,7 +14,8 @@
 ## 3. Revisión semanal
 
 - [ ] 3.1 Crear `homesuite-weekly-ops-review.yml` (lunes 12:00 UTC) que abre el issue con la lista de comprobación y menciona al anterior si sigue abierto; verificar con `workflow_dispatch`
-- [ ] 3.2 Escribir la lista de comprobación con las consultas exactas de Workers Logs para `slow_book_open`, `unhandled_error`, `rate_limited`, `csrf_rejected` y `maintenance_completed`, y verificarlas una vez contra producción en solo lectura
+- [ ] 3.2 Escribir la lista de comprobación (incluidos los puntos 8 y 9 de `design.md` cuando existan `politica-y-aceptacion` y `eliminacion-de-grupos`)
+- [ ] 3.2b Escribir las consultas exactas de Workers Logs para `slow_book_open`, `unhandled_error`, `rate_limited`, `csrf_rejected` y `maintenance_completed`, y verificarlas una vez contra producción en solo lectura
 
 ## 4. Cloudflare
 

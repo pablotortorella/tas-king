@@ -105,3 +105,22 @@ El repositorio SHALL documentar cada sección del JSON, la unidad de los importe
 
 - **WHEN** la prueba de esquema valida una exportación de ejemplo contra lo documentado
 - **THEN** no hay secciones ni campos sin documentar ni documentados que falten
+
+### Requirement: La persona puede exportar los datos de su cuenta
+
+Una persona autenticada SHALL poder descargar, desde «Mi perfil», un JSON con los datos de su cuenta: identificador, nombre visible, su email, fecha de alta, perfil, grupos de los que es integrante con su rol y fecha de ingreso, invitaciones recibidas, aceptaciones de términos y los eventos de auditoría en los que ella actuó. La descarga SHALL ser gratuita, SHALL registrar un evento de auditoría, SHALL estar sujeta al límite de uso y SHALL estar disponible aunque haya una versión de términos sin aceptar. SHALL NOT incluir movimientos ni personas de los grupos, ni datos de otras personas. La pantalla SHALL enlazar la exportación de cada grupo.
+
+#### Scenario: Descargar mis datos
+
+- **WHEN** una persona con cuenta abre «Mi perfil» y descarga sus datos
+- **THEN** recibe un JSON con su cuenta, sus grupos, sus invitaciones y sus aceptaciones, y queda un evento `account_exported`
+
+#### Scenario: Sin datos de otras personas
+
+- **WHEN** se inspecciona el archivo de una integrante de un grupo con tres personas
+- **THEN** no contiene emails, nombres de otras personas ni movimientos
+
+#### Scenario: Sin sesión
+
+- **WHEN** alguien sin sesión pide `/perfil/mis-datos.json`
+- **THEN** se le pide iniciar sesión y no recibe datos

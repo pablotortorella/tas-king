@@ -35,7 +35,7 @@ Las secciones nuevas se agregan sin quitar ni renombrar las de la versión 3, y 
 
 El email de un integrante o de una persona invitada es un dato personal de otra persona que hoy no sale de la aplicación y que la política de privacidad no promete entregar a todos. Se identifica a cada integrante por `userId` y `displayName` (que los demás integrantes ya ven). Las invitaciones se exportan con estado, fechas y persona vinculada, pero sin el email. Si Pablo decide incluirlos, debe actualizarse la política (Open Questions 3).
 
-### D4. Contenido por rol: lo que se ve en la aplicación
+### D4. Contenido por rol: lo que se ve en la aplicación (exporta cualquier integrante, decisión de Pablo)
 
 Todo integrante exporta lo que la aplicación ya le muestra (grupo, personas, categorías, movimientos, revisiones, eventos del libro, importaciones). Las invitaciones y la auditoría de la plataforma solo salen para la persona titular, porque un integrante no las ve (en Personas solo ve la lista). Una sola función arma el documento y filtra por rol; no hay dos exportadores.
 
@@ -59,6 +59,10 @@ Cada exportación escribe una fila y arma el documento en memoria. Se aplica el 
 
 `docs/HOMESUITE_CUENTAS_CLARAS_EXPORTACION.md` explica cada sección, los tipos, la semántica de importes en unidad menor con moneda explícita, cómo recalcular saldos y la regla de versionado. Es la fuente que la prueba de esquema lee para no desfasarse.
 
+### D10. «Mis datos» de la cuenta: respuesta gratuita a una consulta de acceso
+
+`GET /perfil/mis-datos.json` (sesión obligatoria, enlazada en «Mi perfil») devuelve un JSON con `schemaVersion`, `exportedAt`, `account` (identificador, nombre visible, email de la persona, fecha de alta), `profile` (nombre, apodo por grupo, emoji, color, modo de avatar), `memberships` (grupo, rol, fecha de ingreso, apodo), `invitations` (las recibidas por su email), `legalAcceptances` (de `politica-y-aceptacion`, si existe) y `auditEvents` (los de `platform_audit_events` donde ella es la persona que actúa, sin metadatos de otras personas). No incluye los movimientos ni las personas de los grupos: para eso está la exportación de cada grupo, que se enlaza desde la misma pantalla. Registra `account_exported` en `platform_audit_events` (sin grupo). Es gratuito, está sujeto al limitador y funciona aun con una versión de términos sin aceptar. Es la respuesta a una consulta de acceso (Ley 1581, art. 8 f; Decreto 1074, art. 2.2.2.25.4.2) y la que la pantalla de baja de cuenta ofrece antes de borrar.
+
 ## Risks / Trade-offs
 
 - [Un archivo grande armado en memoria puede exceder el tiempo o la memoria del Worker con mucho más que ~2.500 filas] → se mide en staging con el caso real; si hace falta, otro cambio para paginar o transmitir por partes.
@@ -75,13 +79,18 @@ Sin migración de esquema. Despliegue compatible hacia adelante: el Worker nuevo
 
 Este cambio absorbe su capacidad `exportacion-y-archivo-del-libro` en lo que a exportar se refiere (archivar y restaurar ya existen por otros cambios). La recomendación sobre ese cambio activo está en el reporte del PR y en `salir-y-quitar-integrantes`/`eliminacion-de-grupos`, que cubren lo que quedaba de «revocar miembros» y de «eliminación definitiva».
 
+## Decisions de Pablo (2026-11-02)
+
+Definitivas; no se reabren en este change.
+
+- **Exporta cualquier integrante** (hoy y MVP §4). Ver D4: el contenido depende del rol, pero la posibilidad de exportar no.
+
 ## Open Questions
 
 Propuestas por decidir (con su valor por defecto):
 
-1. **Quién exporta:** cualquier integrante (hoy y MVP §4). Por defecto se mantiene.
-2. **CSV:** una sola tabla con nombres agregados, sin archivo de repartos aparte. Por defecto.
-3. **Emails de integrantes e invitados en el JSON:** excluidos. Por defecto; incluirlos exige cambiar la política de privacidad.
-4. **Escala:** el límite de tamaño y el uso de streaming se deciden tras medir contra D1 remota con el caso real (~2.500 filas). Por defecto no se pagina.
-5. **Auditar también las exportaciones CSV:** sí, con `format: "csv"`. Por defecto.
-6. **Descarga de «mis datos» de la cuenta** (perfil, membresías) fuera de los grupos: no entra aquí; se evalúa en `baja-de-cuenta-homesuite`.
+1. **CSV:** una sola tabla con nombres agregados, sin archivo de repartos aparte. Por defecto.
+2. **Emails de integrantes e invitados en el JSON:** excluidos. Por defecto; incluirlos exige cambiar la política de privacidad.
+3. **Escala:** el límite de tamaño y el uso de streaming se deciden tras medir contra D1 remota con el caso real (~2.500 filas). Por defecto no se pagina.
+4. **Auditar también las exportaciones CSV:** sí, con `format: "csv"`. Por defecto.
+5. **Contenido de «mis datos»:** perfil, grupos y roles, invitaciones recibidas (con su propio email), aceptaciones y eventos de auditoría propios. Por defecto no incluye los datos de otras personas; la lista exacta se confirma contra la política de privacidad.

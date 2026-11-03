@@ -10,9 +10,9 @@ Decisión de Pablo (2026-11-02): salir del grupo y quitar integrante, con transf
 
 - **Salir del grupo:** un integrante (que no es titular) abandona el grupo desde el menú del grupo. Pierde el acceso al instante, deja de verlo en su lista y su cookie del último grupo deja de servir. La persona del grupo vinculada a su cuenta **se conserva** con su nombre y su saldo, pero queda sin cuenta (`linked_user_id` en nulo), de modo que se puede volver a invitar vinculándola.
 - **Quitar integrante:** la persona titular saca a un integrante con cuenta desde Personas, con una pantalla de confirmación. Mismos efectos que salir.
-- **Transferir la titularidad:** la persona titular elige a otro integrante con cuenta y le cede la titularidad en el acto; quien la cedía pasa a integrante. Requisito para que una persona titular pueda salir.
+- **Transferir la titularidad (decisión de Pablo: inmediata, sin aceptación):** la persona titular elige a otro integrante con cuenta y le cede la titularidad en el acto; quien la cedía pasa a integrante. Requisito para que una persona titular pueda salir.
 - **Reglas de borde:** la persona titular no puede salir ni ser quitada (debe transferir antes; hasta que exista la eliminación de grupos, un grupo con un solo integrante solo se puede archivar); nadie se quita a sí misma por «quitar»; no se puede transferir a alguien que no es integrante.
-- **Informar, no bloquear, por saldo:** la pantalla muestra el saldo de la persona que se va por moneda; no impide salir.
+- **Informar, no bloquear, por saldo (decisión de Pablo):** la pantalla muestra el saldo de la persona que se va por moneda; no impide salir.
 - **Aviso en la app** a quien salió o fue quitada: una nota en su lista de grupos durante 30 días, sin crear tablas nuevas (se deriva de la auditoría).
 - **Auditoría** de cada operación en `platform_audit_events` y en la línea de tiempo del libro.
 - **Textos legales** actualizados (ver más abajo).
@@ -24,7 +24,7 @@ Decisión de Pablo (2026-11-02): salir del grupo y quitar integrante, con transf
 - Correo o notificaciones fuera de la aplicación (no hay correo transaccional).
 - Eliminar el grupo (`eliminacion-de-grupos`) ni la cuenta (`baja-de-cuenta-homesuite`).
 - Seudonimizar el nombre de quien se va: sigue en el historial del grupo. Eso lo hace la baja de cuenta, no la salida.
-- Aceptación de la titularidad por parte de quien la recibe en dos pasos (ver `design.md`).
+- Aceptación de la titularidad por parte de quien la recibe en dos pasos (descartado por Pablo).
 
 ## Capabilities
 
@@ -35,7 +35,7 @@ Decisión de Pablo (2026-11-02): salir del grupo y quitar integrante, con transf
 
 ### Modified Capabilities
 
-<!-- Ninguna: openspec/specs/ no contiene capacidades de plataforma ni de Cuentas Claras. -->
+- `plataforma-homesuite-minima`: el requisito «Roles iniciales preservan una titularidad transferible» deja de decir que la transferencia no forma parte del corte; ahora existe.
 
 ## Impact
 
@@ -47,13 +47,18 @@ Decisión de Pablo (2026-11-02): salir del grupo y quitar integrante, con transf
 
 ## Dependencias y orden
 
-Orden de los cinco cambios de esta serie:
+Orden de los seis changes de esta serie (decisión de Pablo, 2026-11-02):
 
-1. `alertas-minimas-homesuite`. Independiente.
-2. `exportacion-completa-del-grupo`. Independiente. Conviene antes de este cambio porque la pantalla de salida ofrece exportar.
-3. **`salir-y-quitar-integrantes`** (este). Sin dependencias duras: si la exportación completa todavía no existe, la pantalla enlaza la exportación actual.
-4. `eliminacion-de-grupos`. **Depende de este cambio**: la titularidad se transfiere o el grupo se elimina; el estado «sin titular» no existe.
-5. `baja-de-cuenta-homesuite`. **Depende de este cambio** y de 4: exige transferir o eliminar los grupos que la persona titular tenga y sale de los demás con esta misma operación.
+1. `politica-y-aceptacion`. Primero; sin dependencias.
+2. `alertas-minimas-homesuite`. Independiente; en paralelo con `exportacion-completa-del-grupo`.
+   `exportacion-completa-del-grupo`. Independiente; en paralelo con `alertas-minimas-homesuite`.
+3. `salir-y-quitar-integrantes` (este).
+4. `eliminacion-de-grupos`.
+5. `baja-de-cuenta-homesuite`.
+
+- Sin dependencias duras. Conviene después de `exportacion-completa-del-grupo`, porque la pantalla de salida la ofrece.
+- `eliminacion-de-grupos` **depende de este change**: la titularidad se transfiere o el grupo se elimina; el estado «sin titular» no existe.
+- `baja-de-cuenta-homesuite` **depende de este change** y del 4: exige transferir o eliminar los grupos que la persona titular tenga y sale de los demás con esta misma operación.
 
 ## Relación con los respaldos de 90 días
 
