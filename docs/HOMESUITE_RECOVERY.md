@@ -100,8 +100,8 @@ desde R2 después. Usa el secreto de repositorio
 `HOMESUITE_PROD_BACKUP_API_TOKEN` y la variable
 `HOMESUITE_PROD_BACKUPS_ENABLED=true`. La credencial es un Account API token
 personalizado de Cloudflare; el alcance exacto de su permiso D1 debe confirmarse
-en el panel. R2 usa `Workers R2 Storage Bucket Item Write` limitado al bucket
-de backups. No usar una clave global ni un token S3 exclusivo de R2.
+en el panel. R2 usa `Workers R2 Storage Write` de cuenta más `Bucket Item Read/Write`
+limitado al bucket de backups (ver los permisos actuales abajo). No usar una clave global ni un token S3 exclusivo de R2.
 
 **Consulta abierta (2026-10-27):** ¿el permiso `D1 Edit` concedido para que
 `wrangler d1 export` funcione está restringido a `homesuite-app-db` o habilita
@@ -119,14 +119,17 @@ exportó la D1, restauró localmente, subió a R2 y descargó/verificó el respa
 volvió a `true`. Esta prueba acredita una ejecución; comprobar la primera
 ejecución programada y las notificaciones de fallo sigue pendiente.
 
-**Diagnóstico al 2026-11-02.** Desde que se recargó el secreto (30/10), la exportación D1 y la
-restauración local funcionan. Las corridas del 31/10, 01/11 y 02/11 fallan al **subir a R2**:
-`403 Forbidden`, código 10000, en `/accounts/…/r2/buckets/homesuite-app-backups/objects/…`
-(run 41453274852). Hipótesis: `homesuite-token` tiene «R2 Item Read/Write» limitado al bucket y la
-API REST que usa `wrangler r2 object put` exige más permiso (por ejemplo «Workers R2 Storage: Edit»
-de cuenta). Pendiente: la prueba de Pablo desde la terminal y ajustar el token. La última corrida
-exitosa es del 27/10 (con el token viejo); los respaldos manuales previos a cada deploy sí están
-en R2 (el más reciente: `production/20261102T230416Z`).
+**Diagnóstico resuelto el 2026-11-02.** Desde que se recargó el secreto (30/10), la exportación D1 y la
+restauración local funcionaban, pero las corridas del 31/10, 01/11 y 02/11 fallaban al **subir a R2** (`403 Forbidden`,
+código 10000, run 41453274852). Al token `homesuite-token` le faltaba el permiso de cuenta «Workers R2 Storage Write»: Pablo lo
+agregó el 2026-11-02 y la corrida manual 41545757501 dio success, con subida a R2 y verificación desde R2 de
+`production/20261102T232917Z`. Pablo informó que borró los dos tokens de usuario que sobraban: `homesuite-production-backup`
+(el viejo, con acceso a todas las cuentas) y `Cloudflare Agent Token - 2026-06-24`.
+
+**Permisos actuales de `homesuite-token`:** D1 Write de toda la cuenta, Workers R2 Storage Write de toda la cuenta y
+R2 Bucket Item Read/Write de `homesuite-app-backups`; sin caducidad, por decisión de Pablo. El permiso de R2 de cuenta alcanza a
+**todos los buckets** de la cuenta. La alternativa (subir por S3 con una credencial limitada al bucket) quedó descartada por ahora.
+Pendiente: confirmar que el cron programado corra solo en los próximos días.
 
 Pendientes operativos: comprobar la primera ejecución programada y alerta por
 fallos, acordar RPO/RTO y documentar exportación y eliminación de grupos.

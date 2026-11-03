@@ -1,4 +1,8 @@
+# Los estáticos los sirve la plataforma sin pasar por el Worker, y _headers no puede condicionar por hostname:
+# HSTS va siempre. Es inocuo en local: los navegadores lo ignoran sobre http. Sin `preload` (igual que el Worker).
 /remanso/*
   X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 /jardin-zen/*
   X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

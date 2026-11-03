@@ -2,6 +2,31 @@
 
 **Última actualización**: 2026-11-02
 
+## Jardín Zen v0.4 y HSTS de la app en producción — 2026-11-02
+
+Pablo dio la orden explícita de pasar a producción. Se mergearon el PR #132 (Jardín Zen v0.4, `5658a2d`) y el PR #133 (HSTS de la app,
+`992580c`). El CI de `main` quedó en verde (run 41551693790). El sitio y TasKing no cambiaron.
+
+- **Qué trae v0.4:** mango invertido, giro suave (185 ms), botón «Rastrillo visible / oculto» y dos rastrillos de madera, uno por grosor.
+  El ancho de cada rastrillo sale de las mismas constantes que el surco: 25,7 px el fino y 34,5 px el normal. También corrige el
+  `querySelector` de 2.5D, que impedía el primer dibujo sin WebGL.
+- **HSTS:** `max-age=31536000; includeSubDomains`, sin `preload`, en el Worker y en `_headers` de los estáticos.
+- **Revisión de Pablo en staging**, sobre la rama: confirmó el sentido del mango, el giro suave y los dos rastrillos («OK»).
+
+| Unidad | Antes | Ahora | Respaldo |
+|---|---|---|---|
+| HomeSuite App, staging (desde `main`) | `9ba3175c` | `f02f9310` | `…/homesuite-app/staging/20261103T002048Z/` |
+| HomeSuite App, producción | `19341daf` | `2efcc20f` | R2 `production/20261103T002148Z` |
+
+- **Sin migraciones.**
+- **Verificación en los dos ambientes:** rutas 200, `/cuentas-claras` 303, `/api/me` 401 y `/compras` 404; `rake-motion.js` servido; HSTS
+  presente en `/`, `/jardin-zen` y un asset; CSP con `script-src 'self'`; cookie malformada 303; coherencia 28/28 en staging y 29/29 en
+  producción.
+- **Pruebas:** 543 unitarias de la app, E2E de la app 189/189 y del sitio 20/20.
+- **Rollback disponible:** a `19341daf`.
+- **Sin verificar:** WebGL 2 con aceleración real en celular, y la prueba de Pablo en producción.
+- **Respaldo diario resuelto:** ver el diagnóstico actualizado en el bloque de abajo (PR #128).
+
 ## Revisión de seguridad (PR #128) en producción — 2026-11-02
 
 Pablo ordenó pasar a producción («a producción», 2026-11-02): primero la app y después TasKing. El sitio no cambió y no se publicó.
@@ -37,17 +62,16 @@ Mensaje de versión en staging: «main 69e220a · merge PR #128 · revisión de 
 - **Recorrido de Pablo (informado el 2026-11-02, «listo»):** hizo el recorrido con su cuenta real de Google en producción (entrar y salir)
   y probó Jardín Zen en un celular real. No informó modelo de teléfono ni navegador. Cierra los pendientes «No hecho» del bloque de
   Jardín Zen del 2026-10-31.
-- **Respaldo diario (diagnóstico actualizado):** desde que se recargó el secreto (30/10) la exportación D1 y la restauración local
-  funcionan. Las corridas del 31/10, 01/11 y 02/11 fallan al **subir a R2**: `403 Forbidden`, código 10000, en
-  `/accounts/…/r2/buckets/homesuite-app-backups/objects/…` (run 41453274852). Hipótesis: `homesuite-token` tiene «R2 Item Read/Write»
-  limitado al bucket y la API REST que usa `wrangler r2 object put` exige más permiso (por ejemplo «Workers R2 Storage: Edit» de cuenta).
-  Pendiente: la prueba de Pablo desde la terminal y ajustar el token. La última corrida exitosa es del 27/10 (token viejo); los respaldos
-  manuales previos a cada deploy sí están en R2.
+- **Respaldo diario (resuelto el 2026-11-02):** al token `homesuite-token` le faltaba el permiso de cuenta «Workers R2 Storage Write»
+  (las corridas del 31/10, 01/11 y 02/11 fallaban al subir a R2 con `403`, código 10000, run 41453274852). Pablo lo agregó el 2026-11-02 y
+  la corrida manual 41545757501 dio success: subida a R2 y verificación desde R2 de `production/20261102T232917Z`. Pablo informó que
+  **borró los dos tokens de usuario** que sobraban: `homesuite-production-backup` (el viejo, con acceso a todas las cuentas) y
+  `Cloudflare Agent Token - 2026-06-24`. Pendiente: confirmar que el cron programado corra solo en los próximos días.
 
 ## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
 Producto de la dimensión **Disfrutar**: ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
-tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/jardin-zen-beta/`). Motor
+tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/archive/2026-11-03-jardin-zen-beta/`). Motor
 `apps/app/public/jardin-zen/*` (WebGL 2 con alternativa Canvas 2.5D, rastrillo fino 5,6 px por defecto / normal 7,8 px,
 piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni almacenamiento remoto.
 
@@ -85,8 +109,7 @@ piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni
     producción y que probó Jardín Zen en un celular real (sin modelo ni navegador informados). Antes figuraba como no hecho.
   - **Respaldo:** #123 se mergeó después (2026-10-31) y el script de deploy ya no falla en ese paso (confirmado el 2026-11-02). El respaldo
     diario de GitHub sigue con un problema distinto: ver el bloque del 2026-11-02.
-- **Propuesto, sin implementar:** Jardín Zen v0.4 (mango invertido, giro suave y mostrar u ocultar el rastrillo), para
-  incorporar después de ordenar las ramas viejas.
+- **Jardín Zen v0.4** (mango invertido, giro suave y mostrar u ocultar el rastrillo): implementado en `feature/jardin-zen-v04`, sin publicar.
 
 **Producción registrada**: v2.3.2, desplegada y verificada.
 
@@ -408,7 +431,7 @@ general ya no lista herramientas) y sus E2E corren con `test:e2e:remanso`. Se pu
 staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`, pero ese
 despliegue **fue reemplazado el mismo día** por el de grupos (staging tiene un solo SHA
 activo por Worker); el próximo despliegue de `main` lo vuelve a publicar. **Sin publicar
-en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/archive/2026-11-03-remanso-meditacion/proposal.md);
 ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 [ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
 
@@ -802,7 +825,7 @@ Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden:
 - **Bug latente encontrado y corregido:** `admin.js` usaba `avatarHtml` sin importarlo, en una rama que ningún test alcanzaba. Lo detectó un verificador estático, no la suite. Tiene test propio, verificado en rojo.
 - **Staging:** Version ID `1d6810de-94d3-433f-a5d6-ebb6383bda66`. Los 19 archivos de `js/` se sirven como `text/javascript` y fuera del Worker; el navegador resuelve el grafo completo de imports (21 assets, incluidos los de dos niveles que el HTML no menciona); cero errores de consola y cero violaciones de política en las 5 páginas; 304 condicional y cabeceras intactos. **Falta que Pablo confirme el login con Google autenticado.**
 - **Efecto colateral medido:** el documento pasó de 208.867 a 25.756 bytes, y el JS y el CSS quedaron cacheables por separado.
-- **Andamiaje:** tres herramientas en `openspec/changes/extraer-frontend-a-modulos/tools/` (análisis de dependencias, extractor por AST, verificador de identificadores). Se archivan con el change. Requieren `acorn`, instalado con `--no-save` por no ser dependencia del producto.
+- **Andamiaje:** tres herramientas en `openspec/changes/archive/2026-11-03-extraer-frontend-a-modulos/tools/` (análisis de dependencias, extractor por AST, verificador de identificadores). Se archivan con el change. Requieren `acorn`, instalado con `--no-save` por no ser dependencia del producto.
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 
