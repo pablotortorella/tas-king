@@ -11,7 +11,7 @@
   completar las condiciones de esta página.
 - Los importes se almacenan como enteros en unidad menor y con moneda explícita.
 - La historia financiera y su auditoría no se purgan por antigüedad.
-- Una eliminación destructiva exige exportación previa y una acción explícita.
+- Una eliminación destructiva ofrece la exportación antes de confirmar (no es obligatoria) y exige una acción explícita; el grupo eliminado queda recuperable y exportable por su titular durante 30 días.
 
 ## Clases y retención
 
@@ -37,10 +37,14 @@ de aceptar datos financieros reales deben existir:
    revisiones y eventos en un formato documentado;
 2. eliminación administrada del grupo completo, con confirmación reforzada y
    autorización exclusiva de quien corresponda;
-3. exportación previa a la eliminación y comprobación de que no quedan filas
+3. exportación ofrecida antes de la eliminación (no obligatoria; decisión de Pablo, 2026-11-02) y comprobación de que no quedan filas
    financieras huérfanas;
 4. una política para solicitudes de eliminación de cuenta cuando la identidad
    siga siendo necesaria en libros compartidos o auditoría.
+
+Referencia normativa (Ley 1581 de 2012, Decreto 1074 de 2015; no es
+asesoramiento legal): [HOMESUITE_NORMATIVA_DATOS.md](HOMESUITE_NORMATIVA_DATOS.md).
+Las reglas viven en los specs de OpenSpec, no allí.
 
 Hasta entonces no se implementa borrado directo de filas financieras. Anular o
 editar un movimiento crea una revisión nueva; no reescribe el pasado.
