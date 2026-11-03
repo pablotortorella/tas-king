@@ -6,8 +6,8 @@ con gong y sonidos de fondo. Es la exploración que el [marco de identidad](../H
 llamaba «Pausa»; Pablo decidió el 2026-10-27 que ese nombre sale y Remanso ocupa su lugar.
 No es «una mitad» de la suite: organizar, cuidar y disfrutar son dimensiones de la marca,
 no categorías de navegación. Su
-especificación vive en el change `remanso-meditacion` (`openspec/changes/`, y en
-`openspec/specs/` cuando se archive); el paquete de diseño recibido está en
+especificación vive en `openspec/specs/remanso-*` (change `remanso-meditacion`, archivado en
+`openspec/changes/archive/2026-11-03-remanso-meditacion/`); el paquete de diseño recibido está en
 [docs/diseno/remanso](../diseno/remanso/README.md). Ver [STATUS](../STATUS.md) para
 distinguir rama, integración, publicación y aceptación; esta ficha no lo acredita.
 

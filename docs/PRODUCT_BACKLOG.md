@@ -256,6 +256,19 @@ En `main` pero **sin publicar en producción**: nada al 2026-11-02 (HSTS y Jard�
 
 ---
 
+## 🧪 Verificaciones manuales pendientes de changes archivados
+
+Changes de OpenSpec archivados el 2026-11-03 (implementados y en producción) que conservan una tarea sin marcar porque solo la puede cerrar Pablo con un dispositivo real o de oído. Cada tarea lleva en su `tasks.md` la nota «pendiente de verificación manual, ver backlog».
+
+| Change archivado | Qué falta verificar | Cómo se cierra |
+|---|---|---|
+| `remanso-meditacion` (7.5) | Remanso en el teléfono de Pablo: sin cuenta y con cuenta, iPhone y Android, modo silencio, pantalla bloqueada, cambio de pestaña, claro y oscuro, los seis fondos seguidos | Pablo prueba y registra los hallazgos aquí. Relacionado: «Investigar: iPhone en modo silencio» |
+| `jardin-zen-beta` (2 tareas) | WebGL 2 con aceleración real y tacto en un celular; aceptación de la beta (Pablo probó en un celular real el 2026-11-02, sin modelo ni navegador) | Pablo informa dispositivo y navegador y acepta la beta |
+| `personas-del-grupo` (7.3) | Unir en staging las dos personas duplicadas del caso real y registrar el resultado | Prueba de Pablo en staging, sin tocar producción |
+| `forma-de-pago` (3.3) | Probar la forma de pago con Pablo en staging (ya está en producción desde 2026-10-31) | Confirmación de Pablo del recorrido |
+
+---
+
 ## 🔴 Prioritario — en foco
 
 ### #9 ¡Pilas con esto! como puerta de entrada inteligente

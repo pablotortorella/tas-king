@@ -41,11 +41,11 @@ reescribe la historia: cada movimiento recibe una revisión nueva marcada como u
 la persona unida se conserva como registro y el saldo total del grupo no cambia. El
 reparto por método de un movimiento afectado se reabre con importes exactos. Una
 transferencia entre las dos personas se anula (quedaría de una persona a sí misma).
-Cambio: `openspec/changes/personas-del-grupo`.
+Cambio: `openspec/changes/archive/2026-11-03-personas-del-grupo`.
 
 ## Grupos: identidad, administración y último grupo
 
-Decisiones de Pablo (2026-10-26), cambio `openspec/changes/grupos-con-identidad`:
+Decisiones de Pablo (2026-10-26), cambio `openspec/changes/archive/2026-11-03-grupos-con-identidad`:
 
 - **Una palabra por concepto.** «Grupo» (`group`) es el lugar compartido, en la
   interfaz, las URLs (`/groups`), la API, el código y la base. «Libro» (`ledger`) se
