@@ -35,7 +35,9 @@ manejador.
 Remanso SHALL NOT crear tablas, columnas ni migraciones, y SHALL NOT enviar al
 servidor datos de la sesión de meditación (duración, estado de ánimo, gongs, pausas).
 La única solicitud relacionada con el sonido SHALL ser la descarga del archivo público
-del fondo natural elegido, hecha sin cookies, que revela cuál es ese fondo y nada más.
+del fondo natural elegido, que revela cuál es ese fondo y nada más. Esa solicitud SHALL
+resolverse como archivo estático sin invocar el código de la app, de modo que la app no lee ninguna cookie
+en ella ni la asocia a una cuenta.
 Las únicas lecturas del servidor SHALL ser la sesión y el nombre del perfil;
 una visita sin sesión SHALL NOT requerir lecturas de base de datos ni crear
 cookies.
@@ -43,7 +45,17 @@ cookies.
 #### Scenario: Sesión completa sin datos de la sesión
 
 - **WHEN** se completa una sesión
-- **THEN** el navegador no envía al servidor ninguna petición con la duración, el estado de ánimo ni otros datos de la sesión, y las únicas peticiones de audio son las del archivo del fondo elegido, sin cookies
+- **THEN** el navegador no envía al servidor ninguna petición con la duración, el estado de ánimo ni otros datos de la sesión, y las únicas peticiones de audio son las del archivo del fondo elegido, que la app no vincula a una cuenta
+
+#### Scenario: El archivo de audio no pasa por el código de la app
+
+- **WHEN** se pide un archivo de `/remanso/audio/`, con o sin cookie de sesión
+- **THEN** lo sirve el almacén de archivos estáticos sin invocar al Worker, la respuesta no establece cookies y la configuración del despliegue no obliga a ejecutar el Worker primero para esa ruta
+
+#### Scenario: Soporte de rangos para el flujo
+
+- **WHEN** se pide un archivo de audio con una cabecera `Range` a un servidor en ejecución
+- **THEN** responde 206 con `Accept-Ranges: bytes` y el fragmento pedido
 
 #### Scenario: Sesión sintetizada sin tráfico de audio
 

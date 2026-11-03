@@ -2,18 +2,18 @@
 
 Los fondos de Remanso se sintetizan en el dispositivo y suenan menos reales que una
 grabación. Pablo reunió un kit de audio (seis archivos Ogg Opus de 48 kHz, todos CC0 de
-Freesound, 4,4 MiB en total) y decidió el 2026-11-02 que los cinco fondos con sonido
-(agua, lluvia, bosque, fuego y noche) tengan una versión **natural**, para todas las
-personas, **conviviendo** con la sintetizada: una preferencia «Natural / Sintetizado» por
-dispositivo y, si la grabación no carga o no se puede decodificar, el sintetizado de
-siempre. Los gongs siguen sintetizados.
+Freesound, 4,4 MiB en total) y decidió el 2026-11-02, tras escuchar un prototipo, que los
+cinco fondos con sonido (agua, lluvia, bosque, fuego y noche) tengan una versión **natural**,
+**por defecto y para todas las personas**, **conviviendo** con la sintetizada: una preferencia
+«Natural / Sintetizado» por dispositivo y, si la grabación no carga o no se puede reproducir,
+el sintetizado de siempre. Los gongs siguen sintetizados.
 
 Esto cambia tres cosas que hoy están escritas como invariantes: el requisito «Fondos
 sonoros» (dice «sin descargar audio»), el non-goal «Grabaciones de audio» de
 `remanso-meditacion` y los textos públicos («audio generado en tu dispositivo», «sin
 descargas»). También abre dos riesgos técnicos que este cambio resuelve con números: la
-memoria al decodificar (una lluvia de 316 s son unos 121 MB de PCM) y la compatibilidad de
-Ogg Opus en Safari e iPhone.
+memoria al decodificar (la lluvia larga de 316 s, que Pablo eligió, son unos 121 MB de PCM, tres veces el
+presupuesto de 40 MB) y la compatibilidad de Ogg Opus en Safari e iPhone.
 
 ## What Changes
 
@@ -22,19 +22,22 @@ Ogg Opus en Safari e iPhone.
   motor con fondo `silencio` y conecta la grabación al nodo `session.amb` que el motor ya
   crea. Hereda gratis el fundido de 4 s, el de 6 s, el volumen, el silencio del fondo, la
   pausa y el cierre. **El motor no se edita** y su huella SHA-256 sigue fijada.
-- **Reproducción con `AudioBufferSourceNode`** (decodificada en memoria) para todos los
-  fondos, con un presupuesto de 40 MB decodificados por fondo; empalme con bucle nativo o
-  con cruce entre dos instancias, calibrado por fondo. Para eso la lluvia de la primera
-  versión es la **alternativa de 87,6 s** (33,6 MB decodificados), no la de 316 s (121 MB).
-  La comparación con `<audio loop>` y las otras salidas están en `design.md` (D2) y en las
-  preguntas abiertas.
-- **Preferencia «Natural / Sintetizado»** por dispositivo (`localStorage`), por defecto
-  Natural, en la fila del rótulo «Fondo». Sin cuenta o con cuenta, cada fondo mantiene el
+- **Dos caminos de reproducción según el tamaño decodificado** (presupuesto de 40 MB por fondo, decidido por el manifiesto):
+  - **Buffer** (agua, bosque, fuego y noche, de 3 a 34 MB decodificados): `AudioBufferSourceNode`, como los gongs.
+  - **Flujo** (la lluvia de 316 s, 121 MB): `<audio loop>` conectado al mismo grafo con `MediaElementAudioSourceNode`; la memoria queda
+    acotada por el navegador y el empalme medido de ese archivo es 0, así que no necesita cruce. Si el flujo no arranca, suena el
+    sintetizado; **nunca** se decodifica entera. Alternativas (mono o menor frecuencia, recortar, partir en trozos) y sus riesgos en
+    `design.md` (D2); lo que solo se cierra con un iPhone, en la pregunta abierta 1.
+- **Empalme y repetición por fondo, según lo que Pablo decidió al escuchar el prototipo:**
+  `lluvia` (larga) y `agua` sin cruce; `noche` con cruce de 4 s; `bosque` y `fuego` con **dos capas** (el mismo buffer, una a velocidad
+  normal y otra a 0,94, desfasada un tercio de la duración, con paneo opuesto de 0,25 y volumen 0,7 la segunda), para que el patrón corto deje de
+  repetirse. `bosque` además se **iguala en sonoridad** (≈ 20 dB más fuerte que los demás, `design.md` D6).
+- **Preferencia «Natural / Sintetizado»** por dispositivo (`localStorage`), **Natural por defecto** (decidido), en la fila del rótulo «Fondo». Sin cuenta o con cuenta, cada fondo mantiene el
   nivel de acceso que ya tiene: **los niveles no cambian**.
 - **Respaldo automático** al sintetizado si el navegador no reproduce Ogg Opus, si la
-  descarga falla o tarda más de 3 s, o si el archivo no se decodifica. La sesión indica
+  descarga falla o tarda más de 3 s, si el archivo no se decodifica o si el flujo no arranca. La sesión indica
   «sintetizado» cuando eso ocurre.
-- **Carga solo del fondo elegido**, sin cookies, desde archivos estáticos con nombre
+- **Carga solo del fondo elegido** (los de buffer, sin cookies; la lluvia, en flujo desde que se comienza), desde archivos estáticos con nombre
   versionado, `Content-Type: audio/ogg` y caché `immutable` por `_headers`. La política de
   contenido **no cambia** (`default-src 'self'` ya cubre `fetch` y medios del mismo origen).
 - **Procedencia y créditos:** manifiesto con autor, título, enlace, licencia y SHA-256 por
@@ -55,6 +58,9 @@ Ogg Opus en Safari e iPhone.
 - Un segundo formato (AAC/M4A) en la primera versión; queda como alternativa decidida con
   la prueba en iPhone (ver preguntas abiertas).
 - Mezclar eventos sintetizados sobre la grabación (chispazos del fuego, etc.).
+- La lluvia de 87,6 s (`lluvia-alternativa`): queda fuera de la entrega por decisión de Pablo; no se copia ni se acredita.
+- Un sonido de mar (olas en la orilla): con la versión natural de «agua» (un arroyo) se pierde el mar que tenía el sintetizado;
+  queda en el backlog hasta que haya una grabación real con licencia compatible.
 - Datos, tablas, migraciones o cualquier envío de la sesión al servidor.
 - Publicar en producción: staging primero, con confirmación de Pablo.
 
@@ -77,7 +83,7 @@ Ogg Opus en Safari e iPhone.
 ## Impact
 
 - `apps/app/public/remanso/`: `remanso-fondos.js` (capa), `remanso-sonidos.js` (manifiesto),
-  `audio/*.opus` (cinco archivos, 2,34 MiB) y ajustes de `remanso.js` y `remanso.css`.
+  `audio/*.opus` (cinco archivos, 4 123 752 B = 3,93 MiB; se descarga uno por sesión, el mayor la lluvia con 2,09 MiB) y ajustes de `remanso.js` y `remanso.css`.
   `remanso-engine.js` y `remanso-gongs.js` no cambian.
 - `apps/app/public/_headers`: regla de caché y tipo para `/remanso/audio/*`.
 - `apps/app/src/remanso.js` y `apps/app/src/index.js`: ruta `/remanso/creditos` y enlace.
@@ -94,6 +100,7 @@ Ogg Opus en Safari e iPhone.
 ## Estado y orden
 
 **Propuesto, sin implementar y sin copiar los audios al repositorio.** Se implementa después
-de los changes de Cuentas Claras. `remanso-meditacion` sigue sin archivar: sus requisitos
-todavía no están en `openspec/specs/`, así que los `MODIFIED` de este cambio solo se aplican
-al archivar si `remanso-meditacion` se archivó antes (tarea 0.1).
+de los changes de Cuentas Claras. `remanso-meditacion` ya está archivado (sus requisitos están en
+`openspec/specs/`), así que los `MODIFIED` de este cambio tienen contra qué aplicarse. Queda una
+pregunta que solo se cierra con un iPhone (flujo de la lluvia): hasta entonces no se publica en
+producción.
