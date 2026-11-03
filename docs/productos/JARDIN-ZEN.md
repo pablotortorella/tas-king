@@ -21,6 +21,7 @@ sin duración impuesta, frente a una meditación con sesiones temporizadas.
 Archivos propios:
 
 - `apps/app/src/jardin-zen.js`: markup desde Worker y registro de ruta.
+- `apps/app/public/jardin-zen/rake-motion.js`: lógica pura del rastrillo v0.4 (giro suave, piezas, preferencia local); se prueba con unitarias.
 - `apps/app/public/jardin-zen/jardin-zen.js`: motor beta, extraído del HTML autónomo. Una sola diferencia con el prototipo: el encuadre inicial de la cámara se ajusta a la relación de aspecto del recuadro (`fitDist`; sólo acerca, nunca aleja de 10,2, así que el celular vertical queda igual, y la rueda desactiva el reajuste).
 - `apps/app/public/jardin-zen/jardin-zen.css`: CSS adaptado al shell.
 - `apps/site/public/jardin-zen.html`: landing pública.
@@ -29,8 +30,15 @@ Archivos propios:
 **Estado (2026-10-31):** en `main` (PR #124), en staging y **en producción** (`app.homesuite.info/jardin-zen` y la landing `homesuite.info/jardin-zen`);
 versiones y pruebas en [STATUS](../STATUS.md). Se probó a mano en Chrome de escritorio; falta WebGL 2 y tacto en un celular real.
 
-**Propuesto, sin implementar:** v0.4 (mango invertido, giro suave y rastrillo visible u oculto), cambio OpenSpec
-`jardin-zen-rastrillo-v04` y documento en `docs/diseno/jardin-zen/propuestas/`.
+**En rama (probada en staging):** v0.4 (`feature/jardin-zen-v04`), según el cambio OpenSpec `jardin-zen-rastrillo-v04` y el documento en
+`docs/diseno/jardin-zen/propuestas/`: el rastrillo acompaña al puntero con el mango invertido (hacia el avance) y gira de forma suave
+(~185 ms, tope por fotograma, umbral de desplazamiento); el control «Rastrillo visible / oculto» recuerda la preferencia en `localStorage`
+(`homesuite:jardin-zen:rake-visible`, sin red). La lógica pura vive en `apps/app/public/jardin-zen/rake-motion.js`.
+Pablo la probó en staging: el mango va en el sentido correcto y el giro es suave (se conservan `HANDLE_AHEAD` y los 185 ms). A pedido suyo hay
+**un rastrillo de madera por grosor** (fino 5,6 px y normal 7,8 px): el ancho del cabezal y la separación de los cinco dientes salen de las
+mismas constantes que el surco (`grooveOffsets`, `grooveWidthPx` y `GROOVE_LINE_PX` en `rake-motion.js`; 25,7 px fino y 34,5 px normal de
+textura), en WebGL 2 y en Canvas 2.5D; al cambiar el grosor cambia el modelo, también en reposo y con el rastrillo oculto. Sigue pendiente
+probar WebGL 2 con aceleración real y el tacto en un celular.
 
 ## Riesgos abiertos
 
