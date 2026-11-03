@@ -82,13 +82,13 @@ Una prueba de integración enumera desde `sqlite_master` todas las tablas con co
 
 ### D9. Restaurar un respaldo nunca revive lo suprimido: lista de supresiones (decisión de Pablo)
 
-Decisión de Pablo (2026-11-02): «restaurar un respaldo nunca revive lo suprimido: reaplica la lista de supresiones». La **lista de supresiones** reúne tres fuentes: (a) `group_deletion_log` (grupos purgados), (b) `account_erasures` (cuentas dadas de baja, de `baja-de-cuenta-homesuite`) y (c) un **registro externo** (D9b). Los grupos todavía dentro de la ventana ya están marcados en la propia base y no necesitan la lista.
+Decisión de Pablo (2026-11-02): «restaurar un respaldo nunca revive lo suprimido: reaplica la lista de supresiones». La **lista de supresiones** reúne tres fuentes: (a) `group_deletion_log` (grupos purgados), (b) `account_erasures` (cuentas dadas de baja, de `baja-de-cuenta-homesuite`) y (c) el **registro externo en R2** (D9b, decidido). Los grupos todavía dentro de la ventana ya están marcados en la propia base y no necesitan la lista.
 
 Procedimiento tras cualquier restauración, antes de reabrir el servicio: ejecutar `scripts/homesuite-app-reapply-suppressions.sh`, que lee la lista y, para cada grupo que reaparezca, ejecuta `UPDATE groups SET deleted_at = '1970-01-01 00:00:00', deleted_by_user_id = NULL WHERE id IN (…)`; el cron los purga en la siguiente corrida (los triggers lo permiten porque la ventana está vencida). El script corre primero en seco, imprime el plan y solo escribe con confirmación; el ensayo lo ejecuta sobre una base descartable.
 
 ### D9b. Registro externo de supresiones
 
-Las tablas de la base solo conocen las supresiones anteriores al punto restaurado: una supresión hecha **después** del respaldo restaurado se perdería con la base, y el grupo reaparecería. Para que la promesa de Pablo («nunca») sea verdadera, la purga escribe una línea (`{ id opaco, tipo: "group", fecha }`) en un objeto de R2 (`suppressions/AAAA-MM.jsonl`) del bucket de respaldos, **fuera del prefijo `production/`** que expira a los 90 días, mediante un binding R2 del Worker de producción. La línea se escribe **antes** del borrado final (idempotente por identificador); si falla, la purga de ese grupo se pospone y se reintenta. Contiene solo identificadores opacos y fechas. `baja-de-cuenta-homesuite` usa el mismo registro (`tipo: "account"`). Es una propuesta que agrega un binding y un permiso: Pablo debe confirmarla (Open Questions 1). Sin ella, la lista queda limitada a las tablas y a la planilla de solicitudes, y el límite se declara en el runbook.
+Las tablas de la base solo conocen las supresiones anteriores al punto restaurado: una supresión hecha **después** del respaldo restaurado se perdería con la base, y el grupo reaparecería. Para que la promesa de Pablo («nunca») sea verdadera, la purga escribe una línea (`{ id opaco, tipo: "group", fecha }`) en un objeto de R2 (`suppressions/AAAA-MM.jsonl`) del bucket de respaldos, **fuera del prefijo `production/`** que expira a los 90 días, mediante un binding R2 nuevo del Worker (`SUPPRESSIONS`, sobre el bucket `homesuite-app-backups`; en staging, sobre un bucket propio de staging para no mezclar ni tocar producción). La regla de expiración de 90 días de ese bucket SHALL seguir limitada al prefijo `production/` y se verifica que no alcanza a `suppressions/`. La línea se escribe **antes** del borrado final (idempotente por identificador); si falla, la purga de ese grupo se pospone y se reintenta. Contiene solo identificadores opacos y fechas. `baja-de-cuenta-homesuite` usa el mismo registro (`tipo: "account"`). **Decidido por Pablo (2026-11-02):** el registro se construye. Agrega un binding y un permiso (el Worker escribe en `suppressions/`; no lee respaldos ni borra objetos de `production/`), se documenta en `docs/HOMESUITE_RECOVERY.md` y se prueba que un fallo de R2 pospone la purga sin borrar.
 
 ### D10. Ensayo exigido por el backlog
 
@@ -135,17 +135,17 @@ Definitivas; no se reabren en este change.
 - **La exportación se ofrece antes de eliminar y no es obligatoria** (D4). `HOMESUITE_DATA_LIFECYCLE.md` ya no dice «exige».
 - **No hay «eliminar ahora».** Quedan 30 días de ventana más 90 de respaldos (D12).
 - **Restaurar un respaldo nunca revive lo suprimido:** se reaplica la lista de supresiones (D9).
+- **Registro externo de supresiones en R2: sí** (D9b). Se guarda en R2 con identificadores opacos, sin datos personales, mediante un binding nuevo, para que una restauración de respaldo nunca revive datos suprimidos.
 - **La excepción al `DELETE` de los triggers está aprobada** y registrada (D6).
 - **Plazos de la Ley 1581:** consultas 10 días hábiles (más 5), reclamos y supresión 15 días hábiles (más 8), leyenda «reclamo en trámite» dentro de 2 días hábiles (D12). Los pedidos por correo se registran y se miden como define `politica-y-aceptacion`.
 - La ventana de 30 días, el borrado lógico y la eliminación exclusiva de la persona titular ya estaban decididos.
 
 ## Open Questions
 
-Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar):
+Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar). La numeración conserva la original; la pregunta 1 (registro externo en R2) pasó a decisión.
 
-1. **Registro externo de supresiones en R2** (D9b): se propone construirlo, con un binding R2 del Worker y solo identificadores opacos, porque sin él «nunca» no puede cumplirse para supresiones posteriores al respaldo restaurado. Alternativa: limitarse a las tablas de la base y a la planilla de solicitudes, y declarar el límite.
 2. **Nota para las demás personas:** durante 30 días ven el nombre del grupo eliminado, sin acceso. Alternativa: que desaparezca sin rastro.
 3. **Datos reales en staging y copias locales** (D13): qué hacer con lo que haya hoy (borrar o tratar como real). Por defecto, no cargar datos reales a staging desde ahora.
 4. **Eliminar un grupo archivado:** permitido.
-5. **Plazo legal exacto y suficiencia de 30 + 90 días:** la investigación normativa del 2026-11-02 lo considera defendible si el acceso ya está bloqueado, los respaldos vencen solos, un restore no reintroduce lo suprimido y la respuesta informa qué persiste; no es asesoramiento legal y lo revisa Pablo (idealmente con una persona abogada).
+5. **Plazo legal exacto y suficiencia de 30 + 90 días:** la investigación normativa del 2026-11-02 ([`docs/HOMESUITE_NORMATIVA_DATOS.md`](../../../docs/HOMESUITE_NORMATIVA_DATOS.md)) lo considera defendible si el acceso ya está bloqueado, los respaldos vencen solos, un restore no reintroduce lo suprimido y la respuesta informa qué persiste; no es asesoramiento legal y lo revisa Pablo (idealmente con una persona abogada).
 6. **Quién puede restaurar si la persona titular dio de baja su cuenta:** nadie; el grupo se purga a los 30 días (ver `baja-de-cuenta-homesuite`).

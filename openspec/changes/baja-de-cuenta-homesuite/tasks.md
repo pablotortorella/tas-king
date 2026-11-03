@@ -40,7 +40,7 @@
 
 - [ ] 6.1 Extender `scripts/homesuite-app-reapply-suppressions.sh` (de `eliminacion-de-grupos`) para reaplicar las bajas de `account_erasures` y del registro externo con la elección original de nombre, y documentarlo en `docs/HOMESUITE_RECOVERY.md`
 - [ ] 6.2 Incluir la reaplicación de bajas en el ensayo de `eliminacion-de-grupos`, registrar en STATUS fecha, SHA y resultado, y verificar que la cuenta restaurada queda anonimizada, fuera de sus grupos y con la elección registrada
-- [ ] 6.3 Si Pablo confirmó el registro externo, escribir allí el identificador de la cuenta al terminar la fase 1 (con reintento del cron hasta lograrlo); verificar que un fallo de R2 no deshace la baja y se reintenta
+- [ ] 6.3 Con el registro externo en R2 decidido por Pablo (binding `SUPPRESSIONS` de `eliminacion-de-grupos`, 5.1b), escribir allí el identificador de la cuenta al terminar la fase 1 (con reintento del cron hasta lograrlo); verificar que un fallo de R2 no deshace la baja y se reintenta; cubrir con una prueba de integración que la línea contiene solo identificador opaco, tipo y fecha
 
 ## 7. Recorrido con dos cuentas
 

@@ -10,7 +10,7 @@ Ver `proposal.md` para el motivo. Estado verificado en `main` (1553229):
 - No se guardan tokens de Google: solo `sub`, email, nombre y URL de foto. No hay nada que revocar del lado de Google.
 - La política de privacidad dice que Remanso no guarda nada de la persona en el servidor; se verifica en las tareas.
 - TasKing es una aplicación aparte con sesión y cuenta propias.
-- La investigación normativa del 2026-11-02 (Ley 1581; no es asesoramiento legal) concluye que conservar el nombre por defecto es la opción más expuesta, que ninguna base legal sola sostiene mantenerlo contra la voluntad de la persona, y que Splitwise y Tricount quitan o seudonimizan el nombre. De ahí la elección explícita sin opción marcada.
+- La investigación normativa del 2026-11-02 ([`docs/HOMESUITE_NORMATIVA_DATOS.md`](../../../docs/HOMESUITE_NORMATIVA_DATOS.md); Ley 1581; no es asesoramiento legal) concluye que conservar el nombre por defecto es la opción más expuesta, que ninguna base legal sola sostiene mantenerlo contra la voluntad de la persona, y que Splitwise y Tricount quitan o seudonimizan el nombre. De ahí la elección explícita sin opción marcada.
 
 ## Goals / Non-Goals
 
@@ -80,7 +80,7 @@ La pantalla lista cada grupo en el que es integrante con el enlace a su exportac
 
 ### D8. Lista de supresiones: restaurar un respaldo nunca revive una cuenta dada de baja
 
-`account_erasures` guarda el `user_id` (opaco) y, junto con el registro externo de supresiones de `eliminacion-de-grupos` (si Pablo lo confirma; `tipo: "account"`), forma la lista de supresiones. Tras restaurar, `scripts/homesuite-app-reapply-suppressions.sh` (compartido con la eliminación de grupos) vuelve a ejecutar las fases 1 a 3 para cada `user_id` que figure como activo en la base restaurada; la función es idempotente y rehace sesiones, anonimización y seudonimización con la **elección original** de nombre. Se ensaya en el mismo ensayo de `eliminacion-de-grupos`.
+`account_erasures` guarda el `user_id` (opaco) y, junto con el registro externo de supresiones de `eliminacion-de-grupos` (decidido por Pablo el 2026-11-02; `tipo: "account"`, solo el identificador opaco), forma la lista de supresiones. Tras restaurar, `scripts/homesuite-app-reapply-suppressions.sh` (compartido con la eliminación de grupos) vuelve a ejecutar las fases 1 a 3 para cada `user_id` que figure como activo en la base restaurada; la función es idempotente y rehace sesiones, anonimización y seudonimización con la **elección original** de nombre. Se ensaya en el mismo ensayo de `eliminacion-de-grupos`.
 
 ### D9. Inventario de claves hacia `users` como prueba
 

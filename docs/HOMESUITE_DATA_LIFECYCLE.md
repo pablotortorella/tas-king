@@ -42,6 +42,10 @@ de aceptar datos financieros reales deben existir:
 4. una política para solicitudes de eliminación de cuenta cuando la identidad
    siga siendo necesaria en libros compartidos o auditoría.
 
+Referencia normativa (Ley 1581 de 2012, Decreto 1074 de 2015; no es
+asesoramiento legal): [HOMESUITE_NORMATIVA_DATOS.md](HOMESUITE_NORMATIVA_DATOS.md).
+Las reglas viven en los specs de OpenSpec, no allí.
+
 Hasta entonces no se implementa borrado directo de filas financieras. Anular o
 editar un movimiento crea una revisión nueva; no reescribe el pasado.
 

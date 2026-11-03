@@ -50,7 +50,7 @@ Cada tarea redacta el texto propuesto en un commit aparte del código; ninguno s
 ## 7. Respaldo en GitHub
 
 - [ ] 7.1 Verificar que `homesuite-production-backup.yml` no sube artefactos ni caché con datos, que no imprime contenido de la base y que el directorio temporal se destruye; registrar el resultado y documentar qué ve GitHub (runner transitorio con la base sin cifrar durante unos minutos)
-- [ ] 7.2 Registrar en el documento de encargados la decisión de Pablo sobre cifrar el respaldo antes de que salga del runner (costo: la verificación automática de restauración pasa a ser manual y la clave privada se custodia aparte); no implementarlo sin esa decisión
+- [ ] 7.2 Registrar en el documento de encargados la decisión de Pablo (2026-11-02) de no cifrar el respaldo antes de que salga del runner por ahora (motivo: se perdería la verificación automática de restauración y habría que custodiar una clave), con las condiciones para revisarla (el respaldo sale de Cloudflare o cambia el runner); no implementar el cifrado
 
 ## 8. Verificación
 

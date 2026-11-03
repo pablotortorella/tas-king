@@ -6,7 +6,7 @@ Ver `proposal.md` para el motivo. Estado verificado en `main` tras el merge del 
 - `/auth/google` y `/auth/callback` (`index.js`, `auth.js`) usan una cookie firmada de 10 minutos para `state`, nonce y PKCE; `upsertGoogleUser` crea o recupera el usuario por `sub`.
 - No existe ninguna tabla de aceptaciones. `users` tiene 2 usuarios en producción (al 31/10): ambos entraron sin ver el aviso.
 - El respaldo diario corre en un runner de GitHub Actions: exporta D1, restaura en local en un directorio temporal, sube a R2 y verifica la descarga. La salida de `wrangler d1 export` se suprime (traía una URL temporal). No sube artefactos de Actions.
-- Normas consultadas por la investigación (2026-11-02): Ley 1581 de 2012 (arts. 2, 4, 5, 7, 8, 9, 12, 14, 15, 16, 25 y 26), Decreto 1074 de 2015 (arts. 2.2.2.25.2.4, 2.2.2.25.2.6, 2.2.2.25.2.8, 2.2.2.25.3.1, 2.2.2.25.3.6, 2.2.2.25.5.2, 2.2.2.26.1.2) y la Circular Única de la SIC, Título V (versión del 29-09-2022). La lectura del texto de la Ley y del Decreto se hizo a través de compilaciones de terceros y de un PDF obtenido con la verificación TLS desactivada; conviene releer cada artículo en la fuente oficial antes de citarlo en un texto publicado.
+- Investigación de referencia versionada en [`docs/HOMESUITE_NORMATIVA_DATOS.md`](../../../docs/HOMESUITE_NORMATIVA_DATOS.md) (no es asesoramiento legal; las fuentes deben releerse en navegador; las reglas viven en los specs, no allí). Normas consultadas (2026-11-02): Ley 1581 de 2012 (arts. 2, 4, 5, 7, 8, 9, 12, 14, 15, 16, 25 y 26), Decreto 1074 de 2015 (arts. 2.2.2.25.2.4, 2.2.2.25.2.6, 2.2.2.25.2.8, 2.2.2.25.3.1, 2.2.2.25.3.6, 2.2.2.25.5.2, 2.2.2.26.1.2) y la Circular Única de la SIC, Título V (versión del 29-09-2022). La lectura del texto de la Ley y del Decreto se hizo a través de compilaciones de terceros y de un PDF obtenido con la verificación TLS desactivada; conviene releer cada artículo en la fuente oficial antes de citarlo en un texto publicado.
 
 ## Goals / Non-Goals
 
@@ -78,7 +78,7 @@ Solicitudes por correo a `pablotortorella@gmail.com`. Tipos y plazos (días háb
 
 ### D10. Copias del respaldo en GitHub
 
-Verificable ya: que el workflow no use `actions/upload-artifact` ni cache de datos, que no imprima contenido (la salida de exportación está suprimida) y que el directorio temporal se destruya (`trap`). Se documenta qué ve GitHub: el runner transitorio tiene la base descifrada durante unos minutos. **Cifrar el respaldo antes de que salga del runner** (por ejemplo con `age` y una clave pública guardada como variable del repositorio, con la clave privada solo en poder de Pablo) reduce lo que GitHub y R2 ven, pero cambia dos cosas: `db:verify-backup` ya no puede restaurar ni probar la integridad automáticamente en el runner (solo comprobar suma y tamaño), y la recuperación depende de custodiar la clave privada. Es una decisión de Pablo (Open Questions 4); no se implementa en este change.
+Verificable ya: que el workflow no use `actions/upload-artifact` ni cache de datos, que no imprima contenido (la salida de exportación está suprimida) y que el directorio temporal se destruya (`trap`). Se documenta qué ve GitHub: el runner transitorio tiene la base descifrada durante unos minutos. **Cifrar el respaldo antes de que salga del runner** (por ejemplo con `age` y una clave pública guardada como variable del repositorio, con la clave privada solo en poder de Pablo) reduce lo que GitHub y R2 ven, pero cambia dos cosas: `db:verify-backup` ya no puede restaurar ni probar la integridad automáticamente en el runner (solo comprobar suma y tamaño), y la recuperación depende de custodiar la clave privada. **Decisión de Pablo (2026-11-02): no se cifra por ahora.** Motivo: se perdería la verificación automática de restauración y habría que custodiar una clave; además ya se verifica que el workflow no sube artefactos ni imprime datos. **Condiciones para revisarla:** que el respaldo salga de Cloudflare (otro destino de almacenamiento), que cambie el runner o el modelo de ejecución del respaldo, o que una revisión profesional o un cambio de la norma lo exija. No se implementa en este change.
 
 ### D11. Advertencia de datos sensibles
 
@@ -91,7 +91,7 @@ Texto de ayuda breve junto a cada campo de texto libre (nombre de persona, descr
 - [Los DPA estándar no bastan para el art. 2.2.2.25.5.2] → constancia escrita de aceptación y analogía; revisión de una persona abogada.
 - [Registrar la versión mostrada complica el flujo OAuth] → solo agrega un campo a la cookie de estado firmada que ya existe.
 - [Los festivos mal cargados dan plazos errados] → archivo configurable, caso de prueba por festivo y revisión de las fechas por Pablo.
-- [Cifrar el respaldo reduce la verificabilidad automática] → decisión pendiente de Pablo.
+- [Sin cifrar, el runner transitorio tiene la base descifrada unos minutos] → decisión de Pablo de no cifrar por ahora (D10), con verificación de que no hay artefactos ni salida de datos y condiciones de revisión documentadas.
 
 ## Migration Plan
 
@@ -101,12 +101,12 @@ Texto de ayuda breve junto a cada campo de texto libre (nombre de persona, descr
 
 ## Open Questions
 
-Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar):
+Propuestas por decidir (valor por defecto entre paréntesis, que Pablo debe confirmar). La numeración conserva la original; la pregunta 4 (cifrado del respaldo) pasó a decisión.
 
 1. **Una versión por documento** (sí). Alternativa: una versión única para ambos.
 2. **Plazo de aviso previo para cambios sustanciales:** 15 días con franja en la aplicación. La norma exige avisar antes pero no fija el plazo.
 3. **Aplicabilidad de los DPA de Cloudflare y GitHub a cuentas gratuitas:** no verificada; se documenta la aceptación y se consulta a cada proveedor si hace falta.
-4. **Cifrado del respaldo antes de que salga del runner:** no se implementa; decisión de Pablo sobre el costo en verificabilidad y custodia de la clave.
+4. **Cifrado del respaldo antes de que salga del runner:** decidido (2026-11-02): no por ahora; ver D10 y las condiciones para revisarlo. Se conserva la numeración.
 5. **Conservar `legal_acceptances` tras la baja de cuenta** (sí, con identificador opaco). Alternativa: borrarlas con la baja.
 6. **Revisión por una persona abogada especialista en datos** de los ocho bloques de texto antes de publicarlos: recomendada, no verificada como realizada.
 7. **Leyenda «reclamo en trámite» dentro de la aplicación:** la leyenda se registra en la planilla y en la respuesta; no se agrega una marca en el dato porque la supresión se ejecuta antes del plazo. Si el reclamo es de corrección de un dato que sigue visible, queda por decidir si hace falta una marca.

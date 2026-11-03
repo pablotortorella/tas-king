@@ -77,7 +77,7 @@ Al purgar, el sistema SHALL conservar únicamente una fila en `group_deletion_lo
 
 ### Requirement: Restaurar un respaldo nunca revive lo suprimido
 
-Después de restaurar un respaldo, y antes de reabrir el servicio, el procedimiento de recuperación SHALL reaplicar la lista de supresiones: los grupos purgados registrados en `group_deletion_log` y en el registro externo de supresiones (si existe) que reaparezcan en la base restaurada SHALL marcarse como eliminados hace más de 30 días para que el mantenimiento los purgue, y no SHALL ser visibles para nadie en ningún momento. La purga SHALL registrar el identificador opaco del grupo en la lista antes de borrarlo. El procedimiento SHALL ensayarse sobre una base descartable con un ciclo completo de exportar, eliminar, purgar, restaurar un respaldo anterior y reaplicar.
+Después de restaurar un respaldo, y antes de reabrir el servicio, el procedimiento de recuperación SHALL reaplicar la lista de supresiones: los grupos purgados registrados en `group_deletion_log` y en el registro externo de supresiones en R2 que reaparezcan en la base restaurada SHALL marcarse como eliminados hace más de 30 días para que el mantenimiento los purgue, y SHALL NOT ser visibles para nadie en ningún momento. La purga SHALL registrar el identificador opaco del grupo en la lista, incluido el registro externo (que SHALL contener solo identificador opaco, tipo y fecha), antes de borrarlo. El procedimiento SHALL ensayarse sobre una base descartable con un ciclo completo de exportar, eliminar, purgar, restaurar un respaldo anterior y reaplicar.
 
 #### Scenario: Ensayo de recuperación
 
