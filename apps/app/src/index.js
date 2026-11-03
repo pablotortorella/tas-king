@@ -39,6 +39,10 @@ const SECURITY_HEADERS = Object.freeze({
   "X-Frame-Options": "DENY",
 });
 
+// Sin `preload`: la app vive en un subdominio y el preload se pide en el apex (decisión aparte).
+const HSTS = "max-age=31536000; includeSubDomains";
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
 const DEMO_PAIRS = Object.freeze([
   ["Zelda", "Link"], ["Tom", "Jerry"], ["Sherlock", "Watson"],
   ["Quijote", "Sancho"], ["Robin", "Marian"], ["Shrek", "Fiona"],
@@ -140,6 +144,8 @@ app.use("*", async (c, next) => {
   await next();
   c.header("X-Request-Id", requestId(c));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+  // Se compara el hostname, no la URL: «?x=localhost» no debe apagar HSTS.
+  if (!LOCAL_HOSTNAMES.has(new URL(c.req.url).hostname)) c.header("Strict-Transport-Security", HSTS);
   const path = new URL(c.req.url).pathname;
   if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso", "/jardin-zen"].includes(path)) c.header("Cache-Control", "private, no-store");
 });

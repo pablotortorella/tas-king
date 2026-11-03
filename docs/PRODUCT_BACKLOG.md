@@ -249,6 +249,7 @@ En producción desde 2026-10-31 (app `2f225b89`, sitio `a1f89eb3`; detalle en [S
 - **Jardín Zen beta v0.2** (`/jardin-zen`, PR #124): probado por Pablo en un celular real (2026-11-02, sin detalles de dispositivo).
 - **Tarjetas de herramientas en 2×2** en la app y en el sitio (PR #125).
 - **Cuentas Claras: buscar la categoría** (PR #121) y **forma de pago** (PR #122, migración `0012_payment_method.sql` ya aplicada en la base de producción).
+- **HSTS en la app de HomeSuite** (PR #133): `Strict-Transport-Security: max-age=31536000; includeSubDomains`, sin `preload` (la app es un subdominio; el preload se pide en el apex). El Worker la envía salvo en `localhost`, `127.0.0.1` y `[::1]`, comparando el hostname. Los estáticos de `/remanso` y `/jardin-zen` la llevan por `public/_headers`, que no puede condicionar por hostname, así que va siempre (inocua en local). Falta verificación pública tras publicar.
 
 En `main` pero **sin publicar en producción**: nada al 2026-11-02.
 
@@ -282,7 +283,6 @@ Ideas de evolución, en orden de qué falta:
 
 ## 🟡 Media prioridad
 
-- **HSTS en la app de HomeSuite** (hallazgo del 2026-11-02). La app no envía `Strict-Transport-Security`; nunca lo tuvo (el HSTS de #128 es del TasKing). No es una regresión. Aceptación: cabecera presente en producción con una política decidida (duración, subdominios), prueba de regresión y verificación pública.
 - **Revisar las 12 vulnerabilidades de `npm audit`** (2 moderadas, 10 altas; informadas por `npm ci` el 2026-11-02, sin revisar). Aceptación: cada hallazgo clasificado (alcanza o no al código que se ejecuta), correcciones aplicadas con pruebas en verde y el resto registrado con su motivo.
 - **Cuentas Claras: lo que quedó fuera de «buscar categoría» y «forma de pago»** (Flori, 2026-10-29; sin decidir). El mismo campo de búsqueda de categoría en el filtro de la lista y en el cambio en bloque. Y, a decidir si hace falta: filtro por forma de pago en la lista, informes, formas propias por grupo (como las categorías) y asignar la forma de pago en bloque. Esfuerzo 🟡.
 - **Jardín Zen v0.4: orientación, giro y visibilidad del rastrillo** (ajustes acordados con Pablo, 2026-10-31; **propuesto, sin implementar**). Mango invertido, giro suave del rastrillo y control «Rastrillo visible / oculto» que se recuerda en el navegador. Se incorpora cuando termine el orden de ramas y worktrees viejos. Cambio OpenSpec `jardin-zen-rastrillo-v04`; documento original en `docs/diseno/jardin-zen/propuestas/`. Falta verificar WebGL 2 y el giro en un celular real.
