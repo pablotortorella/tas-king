@@ -36,4 +36,11 @@ describe("archivos estáticos de la app", () => {
     const headers = await readFile(path.join(publicDir, "_headers"), "utf8");
     expect(headers).toMatch(/^\/remanso\/\*\s*\n\s+X-Content-Type-Options: nosniff/mu);
   });
+
+  it.each(["remanso", "jardin-zen"])("_headers pide HSTS sin preload para los estáticos de /%s", async (dir) => {
+    const headers = await readFile(path.join(publicDir, "_headers"), "utf8");
+    const block = headers.split(/^(?=\/)/mu).find((b) => b.startsWith(`/${dir}/*`));
+    expect(block).toMatch(/^\s+Strict-Transport-Security: max-age=31536000; includeSubDomains\s*$/mu);
+    expect(block).not.toMatch(/preload/u);
+  });
 });

@@ -9,7 +9,7 @@ rastrillo. Forma parte de la dimensión «Disfrutar» de HomeSuite; no exige com
 un hogar ni una cuenta para ser útil. Se distingue de Remanso: es actividad táctil
 sin duración impuesta, frente a una meditación con sesiones temporizadas.
 
-## Beta v0.2
+## Beta v0.4 (en producción)
 
 - Ruta objetivo HomeSuite App: `/jardin-zen`, accesible sin login.
 - Escena WebGL 2 con alternativa Canvas 2D (2.5D), sin bibliotecas externas.
@@ -21,16 +21,25 @@ sin duración impuesta, frente a una meditación con sesiones temporizadas.
 Archivos propios:
 
 - `apps/app/src/jardin-zen.js`: markup desde Worker y registro de ruta.
+- `apps/app/public/jardin-zen/rake-motion.js`: lógica pura del rastrillo v0.4 (giro suave, piezas, preferencia local); se prueba con unitarias.
 - `apps/app/public/jardin-zen/jardin-zen.js`: motor beta, extraído del HTML autónomo. Una sola diferencia con el prototipo: el encuadre inicial de la cámara se ajusta a la relación de aspecto del recuadro (`fitDist`; sólo acerca, nunca aleja de 10,2, así que el celular vertical queda igual, y la rueda desactiva el reajuste).
 - `apps/app/public/jardin-zen/jardin-zen.css`: CSS adaptado al shell.
 - `apps/site/public/jardin-zen.html`: landing pública.
 - `docs/diseno/jardin-zen/artefactos/HomeSuite-Jardin-Zen-Beta-v0.2.html`: copia del prototipo autónomo original; no es un asset servido por la app.
 
-**Estado (2026-10-31):** en `main` (PR #124), en staging y **en producción** (`app.homesuite.info/jardin-zen` y la landing `homesuite.info/jardin-zen`);
-versiones y pruebas en [STATUS](../STATUS.md). Se probó a mano en Chrome de escritorio; falta WebGL 2 y tacto en un celular real.
+**Estado (2026-11-02):** v0.4 en `main` (PR #132, `5658a2d`) y **en producción** (`app.homesuite.info/jardin-zen`, app `2efcc20f`);
+versiones y pruebas en [STATUS](../STATUS.md). La v0.2 (PR #124) llegó a producción el 2026-10-31. El change OpenSpec `jardin-zen-rastrillo-v04`
+quedó archivado.
 
-**Propuesto, sin implementar:** v0.4 (mango invertido, giro suave y rastrillo visible u oculto), cambio OpenSpec
-`jardin-zen-rastrillo-v04` y documento en `docs/diseno/jardin-zen/propuestas/`.
+**Qué trae v0.4:** el rastrillo acompaña al puntero con el mango invertido (hacia el avance) y gira de forma suave (185 ms, tope por
+fotograma, umbral de desplazamiento); el control «Rastrillo visible / oculto» recuerda la preferencia en `localStorage`
+(`homesuite:jardin-zen:rake-visible`, sin red). Hay **un rastrillo de madera por grosor** (fino 5,6 px y normal 7,8 px): el ancho del
+cabezal y la separación de los cinco dientes salen de las mismas constantes que el surco (`grooveOffsets`, `grooveWidthPx` y
+`GROOVE_LINE_PX` en `rake-motion.js`; 25,7 px el fino y 34,5 px el normal de textura), en WebGL 2 y en Canvas 2.5D; al cambiar el grosor
+cambia el modelo, también en reposo y con el rastrillo oculto. También corrige el `querySelector` de 2.5D, que impedía el primer dibujo
+sin WebGL. Pablo lo aprobó en staging (mango, giro y rastrillos).
+
+**Sin verificar:** WebGL 2 con aceleración real y el tacto en un celular, y la prueba de Pablo en producción.
 
 ## Riesgos abiertos
 
