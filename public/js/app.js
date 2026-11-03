@@ -12,7 +12,7 @@
 // varios overlays abiertos es cableado entre módulos, no lógica de ninguno. Es
 // también la razón de que varias features exporten su overlay.
 //
-// Ver ADR-017 y openspec/changes/extraer-frontend-a-modulos/design.md (D3) para
+// Ver ADR-017 y openspec/changes/archive/2026-11-03-extraer-frontend-a-modulos/design.md (D3) para
 // la dirección de dependencias entre capas.
 
 import {

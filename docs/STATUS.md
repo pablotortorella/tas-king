@@ -71,7 +71,7 @@ Mensaje de versión en staging: «main 69e220a · merge PR #128 · revisión de 
 ## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
 Producto de la dimensión **Disfrutar**: ruta `/jardin-zen` sin sesión, assets JS/CSS del mismo origen (CSP intacta),
-tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/jardin-zen-beta/`). Motor
+tarjeta de catálogo, landing pública y documentación/OpenSpec (`openspec/changes/archive/2026-11-03-jardin-zen-beta/`). Motor
 `apps/app/public/jardin-zen/*` (WebGL 2 con alternativa Canvas 2.5D, rastrillo fino 5,6 px por defecto / normal 7,8 px,
 piedras, ondas, alisar, deshacer, sonido Web Audio opcional). Sin migraciones ni almacenamiento remoto.
 
@@ -431,7 +431,7 @@ general ya no lista herramientas) y sus E2E corren con `test:e2e:remanso`. Se pu
 staging el 2026-10-26 desde el SHA `527e668b25bc003c7d8dad109ecb2f734d9af6ef`, pero ese
 despliegue **fue reemplazado el mismo día** por el de grupos (staging tiene un solo SHA
 activo por Worker); el próximo despliegue de `main` lo vuelve a publicar. **Sin publicar
-en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/remanso-meditacion/proposal.md);
+en producción y sin aceptar** (falta la prueba de Pablo en su teléfono). Change OpenSpec [`remanso-meditacion`](../openspec/changes/archive/2026-11-03-remanso-meditacion/proposal.md);
 ficha [Remanso](productos/REMANSO.md); decisión de plataforma
 [ADR-019](ADRs/ADR-019-archivos-estaticos-en-homesuite-app.md).
 
@@ -825,7 +825,7 @@ Tres arreglos de uso diario, cada uno en su rama y PR, integrados en este orden:
 - **Bug latente encontrado y corregido:** `admin.js` usaba `avatarHtml` sin importarlo, en una rama que ningún test alcanzaba. Lo detectó un verificador estático, no la suite. Tiene test propio, verificado en rojo.
 - **Staging:** Version ID `1d6810de-94d3-433f-a5d6-ebb6383bda66`. Los 19 archivos de `js/` se sirven como `text/javascript` y fuera del Worker; el navegador resuelve el grafo completo de imports (21 assets, incluidos los de dos niveles que el HTML no menciona); cero errores de consola y cero violaciones de política en las 5 páginas; 304 condicional y cabeceras intactos. **Falta que Pablo confirme el login con Google autenticado.**
 - **Efecto colateral medido:** el documento pasó de 208.867 a 25.756 bytes, y el JS y el CSS quedaron cacheables por separado.
-- **Andamiaje:** tres herramientas en `openspec/changes/extraer-frontend-a-modulos/tools/` (análisis de dependencias, extractor por AST, verificador de identificadores). Se archivan con el change. Requieren `acorn`, instalado con `--no-save` por no ser dependencia del producto.
+- **Andamiaje:** tres herramientas en `openspec/changes/archive/2026-11-03-extraer-frontend-a-modulos/tools/` (análisis de dependencias, extractor por AST, verificador de identificadores). Se archivan con el change. Requieren `acorn`, instalado con `--no-save` por no ser dependencia del producto.
 
 ## 🔄 Sincronización de comentarios, checklists y borrados — v2.2.2 preparada
 
