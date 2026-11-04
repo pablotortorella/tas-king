@@ -6,3 +6,5 @@ dist/
 test-results/
 playwright-report/
 backups/
+solicitudes*.csv
+planilla-solicitudes*
