@@ -35,7 +35,9 @@
       },
       "vars": {
         "GOOGLE_CLIENT_ID": "207614895482-6j7lq0k3g85r6s4pfkubuc3ieq7urg4b.apps.googleusercontent.com",
-        "REQUIRE_RATE_LIMITS": "true"
+        "REQUIRE_RATE_LIMITS": "true",
+        // Puerta de nueva aceptación de los textos legales (change politica-y-aceptacion). En staging encendida para probarla.
+        "LEGAL_GATE": "on"
       },
       "ratelimits": [
         {
@@ -70,7 +72,11 @@
       "triggers": { "crons": ["23 4 * * *"] },
       "vars": {
         "GOOGLE_CLIENT_ID": "207614895482-3mlvb660i050sle8ictin8f258bg8qb7.apps.googleusercontent.com",
-        "REQUIRE_RATE_LIMITS": "true"
+        "REQUIRE_RATE_LIMITS": "true",
+        // Puerta de nueva aceptación: se despliega APAGADA y se enciende ("on") después de publicar en el sitio los textos legales que
+        // Pablo aprobó (orden del despliegue en openspec/changes/politica-y-aceptacion/design.md, Migration Plan). Apagada, el aviso y el
+        // registro de la aceptación al iniciar sesión funcionan igual; sólo no se exige aceptar de nuevo.
+        "LEGAL_GATE": "off"
       },
       "secrets": { "required": ["GOOGLE_CLIENT_SECRET", "SESSION_SECRET"] },
       "ratelimits": [

@@ -25,7 +25,9 @@ import { ledgerCsv } from "./ledger-ui.js";
 import { assertLedgerWritable, setLedgerArchived } from "./ledger-admin.js";
 import { PAGE_SIZE, renderBookHead, renderLedgerOverview } from "./overview-ui.js";
 import { slowBookEvent } from "./perf.js";
-import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, noticeFor } from "./ui-parts.js";
+import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, LEGAL_BAND_MARKER, LEGAL_FOOTER_MARKER, noticeFor, SENSITIVE_HINT } from "./ui-parts.js";
+import { isGateExempt, legalDocuments, legalGateEnabled, pendingFor, recordAcceptances, requiredVersions, sanitizeVersions, stateVersions, upcomingNotices } from "./legal.js";
+import { renderAcceptPage, renderAcceptRequired, renderLegalBand, renderLegalFooter } from "./legal-ui.js";
 import { runMaintenance } from "./maintenance.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
@@ -118,7 +120,7 @@ const html = escapeHtml;
 function isProtectedMutation(c) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) return false;
   const path = new URL(c.req.url).pathname;
-  return path === "/auth/logout" || path === "/groups" || path.startsWith("/groups/") || path.startsWith("/invitations/");
+  return path === "/auth/logout" || path === "/aceptar" || path === "/groups" || path.startsWith("/groups/") || path.startsWith("/invitations/");
 }
 
 function isMutation(c) {
@@ -156,7 +158,7 @@ app.use("*", async (c, next) => {
   }
   // Se compara el hostname, no la URL: «?x=localhost» no debe apagar HSTS.
   if (!LOCAL_HOSTNAMES.has(new URL(c.req.url).hostname)) c.header("Strict-Transport-Security", HSTS);
-  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso", "/jardin-zen"].includes(path)) c.header("Cache-Control", "private, no-store");
+  if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso", "/jardin-zen", "/aceptar"].includes(path)) c.header("Cache-Control", "private, no-store");
 });
 
 // Reemplaza las marcas de cuenta del encabezado en las páginas HTML con la persona que tiene sesión (si la hay).
@@ -169,7 +171,12 @@ app.use("*", async (c, next) => {
   const profile = session ? await readOwnProfile(c.env.DB, session.user_id) : null;
   const secret = sessionSecret(c.env);
   const csrfField = session && secret ? `<input type="hidden" name="_csrf" value="${html(await createCsrfToken({ sessionId: session.id, secret }))}">` : "";
-  c.res = new Response(fillAccount(body, profile, csrfField), c.res);
+  // Pie con los enlaces a términos y privacidad (siempre) y franja de versión próxima (sólo con sesión), según el ambiente.
+  const hostname = new URL(c.req.url).hostname;
+  const filled = fillAccount(body, profile, csrfField)
+    .replace(LEGAL_BAND_MARKER, session ? renderLegalBand(upcomingNotices(), hostname) : "")
+    .replace(LEGAL_FOOTER_MARKER, renderLegalFooter(hostname));
+  c.res = new Response(filled, c.res);
 });
 
 // En las pantallas de un grupo: completa el encabezado con el grupo (nombre con avatar que lleva a la lista) y el menú con sus secciones
@@ -204,6 +211,22 @@ app.use("/auth/*", async (c, next) => {
   const limited = await enforceRateLimit(c, c.env?.AUTH_RATE_LIMITER, clientAddress(c));
   if (limited) return limited;
   await next();
+});
+
+// Puerta de nueva aceptación (design.md, D4): si la versión vigente de los Términos o de la Política es posterior a la que la persona aceptó,
+// lleva a /aceptar (pantallas) o rechaza (mutaciones y API) hasta que acepte. Apagada salvo LEGAL_GATE=on. Las rutas exentas viven en legal.js.
+app.use("*", async (c, next) => {
+  if (!legalGateEnabled(c.env)) return next();
+  const url = new URL(c.req.url);
+  if (isGateExempt(c.req.method, url.pathname)) return next();
+  const user = await signedInUser(c);
+  if (!user) return next();
+  const { pending } = await pendingFor(c.env.DB, user.user_id);
+  if (!pending.length) return next();
+  const isApi = url.pathname.startsWith("/api/");
+  if (isApi) return c.json({ error: "Falta aceptar los textos vigentes.", code: "legal_acceptance_required", location: "/aceptar" }, 403);
+  if (c.req.method === "GET" || c.req.method === "HEAD") return c.redirect(`/aceptar?next=${encodeURIComponent(`${url.pathname}${url.search}`)}`, 303);
+  return c.html(page("Falta aceptar los textos", renderAcceptRequired()), 403);
 });
 
 app.use("*", async (c, next) => {
@@ -284,6 +307,9 @@ app.get("/api/local/session", async (c) => {
   if (!email || !secret) return c.json({ error: "Ruta local no disponible." }, 404);
   const user = await ensureLocalUser(c.env.DB, email);
   const session = await createSession(c.env.DB, { userId: user.id, secret });
+  // Identidades de desarrollo: aceptan solas las versiones vigentes para que la puerta no moleste a los recorridos locales y E2E. Con
+  // `sin_aceptar=1` (sólo en esta ruta local) no se acepta nada, para probar la puerta misma.
+  if (c.req.query("sin_aceptar") !== "1") await recordAcceptances(c.env.DB, user.id, requiredVersions(), "login");
   setCookie(c, sessionCookie(session.token, true));
   const invitation = await c.env.DB.prepare("SELECT id FROM invitations WHERE invitee_email = ? AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP LIMIT 1").bind(user.email).first();
   const membership = invitation ? null : await c.env.DB.prepare("SELECT 1 AS found FROM memberships WHERE user_id = ? LIMIT 1").bind(user.id).first();
@@ -300,7 +326,10 @@ app.get("/auth/google", async (c) => {
   if (!config) return c.html(page("Acceso no configurado", "<h1>El acceso todavía no está configurado.</h1><p>Esta aplicación aún no tiene un cliente de Google para este ambiente.</p>"), 503);
   const secure = isSecureRequest(c);
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback`;
-  const authorization = await createGoogleAuthorization({ clientId: config.clientId, redirectUri, returnTo: validReturnTo(c.req.query("returnTo")) });
+  // `acepta=1` lo agrega el botón de una pantalla con el aviso de aceptación: se guardan las versiones vigentes en el estado firmado. Un enlace
+  // directo sin ese parámetro no registra aceptación y la puerta la pedirá (design.md, D3).
+  const legal = c.req.query("acepta") === "1" ? requiredVersions() : null;
+  const authorization = await createGoogleAuthorization({ clientId: config.clientId, redirectUri, returnTo: validReturnTo(c.req.query("returnTo")), legal });
   setCookie(c, oauthCookie(await seal(authorization.state, config.sessionSecret), secure));
   return c.redirect(authorization.url, 302);
 });
@@ -321,6 +350,8 @@ app.get("/auth/callback", async (c) => {
     const tokens = await exchangeGoogleCode({ code, clientId: config.clientId, clientSecret: config.clientSecret, redirectUri, codeVerifier: state.verifier });
     const identity = await validateGoogleIdToken({ idToken: tokens.id_token, audience: config.clientId, nonce: state.nonce });
     const user = await upsertGoogleUser(c.env.DB, identity);
+    // Las versiones que la persona vio al empezar (guardadas en el estado firmado), no las vigentes al volver.
+    if (state.legal) await recordAcceptances(c.env.DB, user.id, stateVersions(state.legal), "login");
     const session = await createSession(c.env.DB, { userId: user.id, secret: config.sessionSecret });
     setCookie(c, oauthCookie("", secure, 0));
     setCookie(c, sessionCookie(session.token, secure));
@@ -331,6 +362,31 @@ app.get("/auth/callback", async (c) => {
     const message = error instanceof GoogleIdentityConflictError ? "Este email ya está vinculado a otra identidad de HomeSuite." : "No pudimos completar el acceso con Google. Intentá de nuevo.";
     return c.html(page("No pudimos iniciar sesión", `<h1>No pudimos iniciar sesión.</h1><p>${message}</p>`), 400);
   }
+});
+
+function acceptNext(value) {
+  const target = validReturnTo(value);
+  return target.startsWith("/aceptar") ? "/" : target;
+}
+
+app.get("/aceptar", async (c) => {
+  const user = await signedInUser(c);
+  if (!user) return c.redirect("/", 303);
+  const next = acceptNext(c.req.query("next"));
+  const { required, accepted, pending } = await pendingFor(c.env.DB, user.user_id);
+  if (!pending.length) return c.redirect(next, 303);
+  const csrf = await csrfInput(c, user);
+  return c.html(page("Aceptar los textos", renderAcceptPage({ pending, accepted, versions: required, hostname: new URL(c.req.url).hostname, csrf, next, documents: legalDocuments() })));
+});
+
+app.post("/aceptar", async (c) => {
+  const user = c.get("protectedUser");
+  const body = await c.req.parseBody();
+  const { required } = await pendingFor(c.env.DB, user.user_id);
+  // Se registra lo que la pantalla mostró (versiones del formulario, si el sistema las conoce); si la versión cambió mientras tanto, la puerta
+  // vuelve a pedir la nueva.
+  await recordAcceptances(c.env.DB, user.user_id, sanitizeVersions(body, legalDocuments(), required), "gate");
+  return c.redirect(acceptNext(body.next), 303);
 });
 
 app.post("/auth/logout", async (c) => {
@@ -468,7 +524,7 @@ app.use("/groups/:groupId/*", canonicalGroupPath);
 app.get("/groups/new", async (c) => {
   const user = await signedInUser(c);
   if (!user) return signInRequired(c);
-  return c.html(page("Crear grupo", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el grupo en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/groups">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida"><label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear grupo</button></form>`));
+  return c.html(page("Crear grupo", `<a class="back-link" href="/">← Volver</a><p class="eyebrow">Cuentas Claras</p><h1>Un grupo nuevo, cuentas claras.</h1><p>Un grupo puede ser tu casa, un viaje o un proyecto. Creás el grupo en un solo paso; después sumás personas e historial.</p><form class="card" method="post" action="/groups">${await csrfInput(c, user)}<label class="label" for="nombre">Nombre</label><input id="nombre" name="name" required maxlength="120" autocomplete="off" placeholder="Ej. Casa compartida">${SENSITIVE_HINT}<label class="label" for="currency">Moneda predeterminada</label><select id="currency" name="currency">${Object.keys(CURRENCY_MINOR_UNITS).map(currency => `<option value="${currency}"${currency === "COP" ? " selected" : ""}>${html(currencyLabel(currency))}</option>`).join("")}</select><p class="hint">Cada movimiento puede usar otra moneda.</p><fieldset class="start-choice"><legend>Cómo querés empezar</legend><div class="choices"><label class="choice"><input type="radio" name="start" value="zero" checked><span>Empezar en cero</span></label><label class="choice"><input type="radio" name="start" value="splitwise"><span>Traer de Splitwise</span></label><label class="choice"><input type="radio" name="start" value="opening" disabled><span>Saldos anteriores · todavía no disponible</span></label></div><p class="hint">No se guarda ningún dato hasta que confirmes la importación.</p></fieldset><button class="button" type="submit">Crear grupo</button></form>`));
 });
 
 app.post("/groups", async (c) => {

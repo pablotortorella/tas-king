@@ -99,7 +99,7 @@ test.describe("sin cuenta", () => {
     await page.locator('[data-m="20"]').click({ force: true });
     await expect(page.locator("#rem-aviso")).toBeVisible();
     await expect(page.locator("#rem-aviso-texto")).toContainText("cuenta de HomeSuite");
-    await expect(page.getByRole("link", { name: "Continuar con Google" }).first()).toHaveAttribute("href", "/auth/google?returnTo=%2Fremanso");
+    await expect(page.getByRole("link", { name: "Continuar con Google" }).first()).toHaveAttribute("href", "/auth/google?returnTo=%2Fremanso&acepta=1");
     await expect(page.locator('[data-m="5"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator('[data-m="20"]')).toHaveAttribute("aria-pressed", "false");
 

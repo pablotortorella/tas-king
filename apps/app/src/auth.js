@@ -73,7 +73,9 @@ export async function unseal(token, secret) {
   try { return decodeJson(body); } catch { return null; }
 }
 
-export async function createGoogleAuthorization({ clientId, redirectUri, returnTo }) {
+// `legal` (opcional): las versiones de los textos legales que mostraba la pantalla de la que partió el flujo ({ terms, privacy }). Viajan en la
+// cookie firmada de estado para registrar, al volver, lo que la persona vio al empezar y no lo vigente al terminar.
+export async function createGoogleAuthorization({ clientId, redirectUri, returnTo, legal = null }) {
   const verifier = randomBase64Url(48);
   const challenge = base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(verifier))));
   const state = randomBase64Url();
@@ -89,7 +91,7 @@ export async function createGoogleAuthorization({ clientId, redirectUri, returnT
     code_challenge: challenge,
     code_challenge_method: "S256",
   }).toString();
-  return { url: url.toString(), state: { state, verifier, nonce, returnTo: validReturnTo(returnTo), expiresAt: Date.now() + 10 * 60 * 1000 } };
+  return { url: url.toString(), state: { state, verifier, nonce, returnTo: validReturnTo(returnTo), expiresAt: Date.now() + 10 * 60 * 1000, ...(legal ? { legal } : {}) } };
 }
 
 export async function exchangeGoogleCode({ code, clientId, clientSecret, redirectUri, codeVerifier, fetcher = fetch }) {
