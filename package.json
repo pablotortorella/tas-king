@@ -68,6 +68,7 @@
     "@cloudflare/vitest-pool-workers": "^0.16.19",
     "@playwright/test": "^1.61.1",
     "vitest": "^4.1.9",
-    "wrangler": "^4.104.0"
+    "wrangler": "^4.104.0",
+    "yaml": "^2.8.1"
   }
 }

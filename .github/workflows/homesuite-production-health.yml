@@ -1,0 +1,41 @@
+name: HomeSuite production health
+
+# Consulta /healthz de producción cada 30 minutos (GitHub puede retrasar los programados). Hasta tres intentos separados
+# por 15 segundos; si los tres fallan abre o comenta un issue, y cuando vuelve a responder lo comenta y lo cierra.
+# Solo usa GITHUB_TOKEN. Guía: docs/HOMESUITE_VIGILANCIA.md
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      simulate:
+        description: 'Ensayo con un issue "[Simulacro]": caida, tropiezo o recuperacion. none consulta producción de verdad.'
+        type: choice
+        options: [none, caida, tropiezo, recuperacion]
+        default: none
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homesuite-production-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SIMULATE: ${{ inputs.simulate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/alertas-operativas.mjs
+          sparse-checkout-cone-mode: false
+      - name: Check /healthz and report
+        run: node scripts/alertas-operativas.mjs salud

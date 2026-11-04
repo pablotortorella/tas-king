@@ -1,0 +1,38 @@
+name: HomeSuite backup freshness
+
+# Una vez por día verifica que exista una corrida exitosa del respaldo de producción con menos de 26 horas. Cubre el respaldo
+# que falló y el que ni corrió (workflow desactivado, variable HOMESUITE_PROD_BACKUPS_ENABLED distinta de true, retraso extremo).
+# Solo usa GITHUB_TOKEN. Guía: docs/HOMESUITE_VIGILANCIA.md
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      simulate:
+        description: 'Ensayo con un issue "[Simulacro]": desactualizado o al-dia. none consulta las corridas reales.'
+        type: choice
+        options: [none, desactualizado, al-dia]
+        default: none
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SIMULATE: ${{ inputs.simulate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/alertas-operativas.mjs
+          sparse-checkout-cone-mode: false
+      - name: Check the latest successful backup and report
+        run: node scripts/alertas-operativas.mjs antiguedad
