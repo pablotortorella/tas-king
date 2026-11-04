@@ -131,8 +131,9 @@ R2 Bucket Item Read/Write de `homesuite-app-backups`; sin caducidad, por decisi�
 **todos los buckets** de la cuenta. La alternativa (subir por S3 con una credencial limitada al bucket) quedó descartada por ahora.
 Confirmado el 2026-11-03: la corrida programada (evento schedule) 41638511964 del 2026-11-03 a las 12:46 UTC terminó en success (40 s): subida a R2 y verificación desde R2 de `production/20261103T124638Z`. Seguimiento del 2026-11-11: la corrida programada terminó en success todos los días del 2026-11-03 al 2026-11-10.
 
-Pendientes operativos: comprobar la primera ejecución programada y alerta por
-fallos, acordar RPO/RTO y documentar exportación y eliminación de grupos.
+Pendientes operativos: acordar RPO/RTO y documentar exportación y eliminación de grupos.
+La alerta por fallos y el control de antigüedad están implementados (change `alertas-minimas-homesuite`,
+en PR desde el 2026-11-11) y sin verificar: ver [vigilancia](HOMESUITE_VIGILANCIA.md).
 
 
 ## Adjuntos de Tareas en el respaldo (implementación local, 2026-11-09)

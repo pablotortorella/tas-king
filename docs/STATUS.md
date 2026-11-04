@@ -2,6 +2,25 @@
 
 **Última actualización**: 2026-11-10
 
+## Alertas mínimas de operación — en PR, sin integrar ni verificar — 2026-11-11 (implementadas el 2026-11-03)
+
+**Estado: implementado el 2026-11-03 en la rama `feature/alertas-minimas` y rebasado sobre `main` el 2026-11-11
+(después de la migración de Tareas); sin integrar ni aceptar.** Change `alertas-minimas-homesuite`. Los workflows programados solo corren desde `main`: empiezan a
+correr al mergear; hasta entonces los caminos se ensayaron únicamente con pruebas unitarias y un `gh` simulado. Guía y checklist: [vigilancia](HOMESUITE_VIGILANCIA.md).
+
+- **Qué trae:** job `notify-failure` en el respaldo diario, `homesuite-production-health.yml` (`/healthz` cada 30 minutos con tres
+  intentos), `homesuite-backup-freshness.yml` (respaldo exitoso de menos de 26 horas, diario 20:00 UTC) y
+  `homesuite-weekly-ops-review.yml` (lunes 12:00 UTC). Usan solo `GITHUB_TOKEN`; el aviso es un issue de GitHub sin duplicar.
+- **Dato que lo motivó:** el respaldo diario falló del 30/10 al 02/11 (permiso de R2 del token) y se detectó a mano. Se arregló el
+  2026-11-02; la corrida programada 41638511964 del 2026-11-03 (12:46 UTC) dio success.
+- **Pendiente de Pablo:** integrar, verificar la etiqueta `alerta-operativa` y los permisos del `GITHUB_TOKEN`, disparar los ensayos
+  `simulate`, comprobar que la asignación notifica por correo y aplicación móvil, y configurar las notificaciones de Cloudflare
+  (ninguna está configurada; no se afirma que exista una alerta de errores del Worker). La retención real de Workers Logs y el
+  plan de la cuenta siguen sin verificar.
+- **Pruebas en la rama (2026-11-03):** app 582 unitarias, raíz 232, sitio 44, glosario, `actionlint` 1.7.12 sin errores y
+  `openspec validate alertas-minimas-homesuite --strict` válido. No se corrieron E2E ni la integración D1 (no tocan este cambio).
+  Los avisos no se dan por aceptados hasta tener la evidencia del checklist.
+
 ## TasKing en HomeSuite — publicado en producción — 2026-11-10
 
 - [PR #145](https://github.com/pablotortorella/tas-king/pull/145) integrado en `main`

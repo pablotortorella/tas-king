@@ -84,6 +84,15 @@ No usar `rm -rf .wrangler` ni resetear bases como limpieza de caché. Diagnostic
 el proceso, configuración y almacenamiento afectados antes de cambiar estado.
 El reset específico de una base descartable no habilita borrar otras.
 
+## Vigilancia y avisos
+
+Los avisos mínimos de producción (respaldo fallido, `/healthz` caído, respaldo desactualizado),
+la revisión semanal de las señales que no alertan y las notificaciones de Cloudflare están en
+[Vigilancia de HomeSuite](../HOMESUITE_VIGILANCIA.md), con qué se vigila, quién se entera, qué
+hacer ante cada aviso y los límites conocidos. Son issues de GitHub; el repositorio es público, así
+que no llevan registros, emails ni nombres de grupos. Estado de implementación y de aceptación:
+[STATUS](../STATUS.md).
+
 ## Registro de operación
 
 STATUS conserva hechos fechados y estado de integración/publicación. Las novedades
