@@ -18,6 +18,7 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 | Integrante del tablero | integrante | `boardMember` | `/api/tareas/boards/:id/members` | `tasking_board_members`, `identity_id`, `role` |
 | Identidad de TasKing, pendiente o vinculada | cuenta habitual | `identity` | resuelta desde sesión HomeSuite | `tasking_identities`, `user_id`, `verified_sub` |
 | Tarjeta | tarjeta | `card` | `/api/tareas/cards/:id` | `tasking_cards` |
+| Aceptación de los textos legales | aceptar los «Términos y condiciones» y la «Política de privacidad» | `legal` (`LEGAL_DOCUMENTS`, documentos `terms` y `privacy`) | `/aceptar`, `/auth/google?…&acepta=1` | `legal_acceptances` |
 
 ## Reglas
 
@@ -34,6 +35,11 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 - El término anterior para «grupo» fue eliminado de todo el repositorio, salvo del
   registro histórico de `openspec/changes/archive/`. La prueba
   `apps/app/test/glossary.test.js` falla si reaparece.
+
+- **Aceptación** es el registro de que una persona aceptó una versión de los
+  Términos o de la Política de privacidad (la versión es la fecha de «Última
+  actualización» de la página). Se registra al iniciar sesión desde una pantalla
+  con el aviso (`login`) o en la pantalla de nueva aceptación (`gate`).
 
 ## Pendiente de unificar
 
