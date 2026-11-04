@@ -1,5 +1,5 @@
 import { formatMoney } from "./finance.js";
-import { avatar, escapeHtml, plural, shortDate, groupPath as path } from "./ui-parts.js";
+import { avatar, escapeHtml, plural, SENSITIVE_HINT, shortDate, groupPath as path } from "./ui-parts.js";
 
 const signed = (amountMinor, currency) => `${amountMinor > 0 ? "+" : ""}${formatMoney(amountMinor, currency)}`;
 
@@ -19,7 +19,7 @@ export function renderPeople({ data, group, members, invitations, csrf, owner, u
   const canMerge = owner && !archived && data.participants.filter(person => person.active).length > 1;
   const tools = person => {
     if (!owner || archived) return "";
-    const rename = `<details class="person-tools"><summary>Renombrar</summary><form class="ledger-form" action="${groupHref}/people/${encodeURIComponent(person.id)}/rename" method="post">${csrf}<label for="rename-${escapeHtml(person.id)}">Nombre de ${escapeHtml(person.displayName)}</label><input id="rename-${escapeHtml(person.id)}" name="name" required maxlength="120" value="${escapeHtml(person.displayName)}"><div class="form-actions"><button class="button secondary">Guardar nombre</button></div></form></details>`;
+    const rename = `<details class="person-tools"><summary>Renombrar</summary><form class="ledger-form" action="${groupHref}/people/${encodeURIComponent(person.id)}/rename" method="post">${csrf}<label for="rename-${escapeHtml(person.id)}">Nombre de ${escapeHtml(person.displayName)}</label><input id="rename-${escapeHtml(person.id)}" name="name" required maxlength="120" value="${escapeHtml(person.displayName)}">${SENSITIVE_HINT}<div class="form-actions"><button class="button secondary">Guardar nombre</button></div></form></details>`;
     const merge = canMerge && person.active ? `<a class="button secondary" href="${groupHref}/people/${encodeURIComponent(person.id)}/merge" aria-label="Unir a ${escapeHtml(person.displayName)} con otra persona">Unir con otra persona</a>` : "";
     return `<div class="row-actions">${merge}</div>${rename}`;
   };
@@ -41,7 +41,7 @@ export function renderPeople({ data, group, members, invitations, csrf, owner, u
   const merged = mergedPeople.length ? `<section class="ledger-section" id="unidas"><h2>Personas unidas</h2><p class="muted">Ya no figuran en los repartos ni en los saldos: sus movimientos pasaron a la persona indicada. Siguen apareciendo en el historial de cada movimiento.</p><ul class="plain-list">${mergedPeople.map(person => `<li><strong>${escapeHtml(person.displayName)}</strong> <span class="muted">unida a ${escapeHtml(nameOf.get(person.mergedIntoId) ?? "otra persona")}</span></li>`).join("")}</ul></section>` : "";
   const invited = new Set(invitations.map(invitation => invitation.target_participant_id));
   const nominal = data.participants.filter(person => !person.linkedUserId && person.active && !invited.has(person.id)).map(person => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.displayName)}</option>`).join("");
-  const addPerson = `<form class="ledger-form" action="${groupHref}/participants" method="post">${csrf}<label for="participant-name">Participante sin cuenta<span class="hint">Podés sumar a alguien sin invitarlo todavía: figura en los saldos aunque no tenga acceso.</span></label><input id="participant-name" name="name" required maxlength="120"><div class="form-actions"><button class="button secondary">Agregar participante</button></div></form>`;
+  const addPerson = `<form class="ledger-form" action="${groupHref}/participants" method="post">${csrf}<label for="participant-name">Participante sin cuenta<span class="hint">Podés sumar a alguien sin invitarlo todavía: figura en los saldos aunque no tenga acceso.</span></label><input id="participant-name" name="name" required maxlength="120">${SENSITIVE_HINT}<div class="form-actions"><button class="button secondary">Agregar participante</button></div></form>`;
   const invite = `<form class="ledger-form" action="${groupHref}/invitations" method="post">${csrf}<label for="email">Invitar por email</label><input id="email" name="email" type="email" required autocomplete="email" inputmode="email"><label for="target-participant">Vincular con participante (opcional)<span class="hint">Al aceptar, la cuenta se vincula a esa persona y conserva su historial y saldos.</span></label><select id="target-participant" name="targetParticipantId"><option value="">Crear uno nuevo</option>${nominal}</select><div class="form-actions"><button class="button">Invitar</button></div></form>`;
   const add = owner && !archived ? `<section class="ledger-section" id="sumar"><h2>Sumar personas</h2>${addPerson}${invite}</section>` : "";
   const lead = owner ? "Participar en las cuentas no es lo mismo que tener acceso." : "Participar en las cuentas no es lo mismo que tener acceso. La administración queda en manos del titular.";
