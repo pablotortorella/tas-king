@@ -164,7 +164,7 @@ Mensaje de versión en staging: «main 69e220a · merge PR #128 · revisión de 
   (las corridas del 31/10, 01/11 y 02/11 fallaban al subir a R2 con `403`, código 10000, run 41453274852). Pablo lo agregó el 2026-11-02 y
   la corrida manual 41545757501 dio success: subida a R2 y verificación desde R2 de `production/20261102T232917Z`. Pablo informó que
   **borró los dos tokens de usuario** que sobraban: `homesuite-production-backup` (el viejo, con acceso a todas las cuentas) y
-  `Cloudflare Agent Token - 2026-06-24`. Pendiente: confirmar que el cron programado corra solo en los próximos días.
+  `Cloudflare Agent Token - 2026-06-24`. Confirmado el 2026-11-03: la corrida programada (evento schedule) 41638511964 del 2026-11-03 a las 12:46 UTC terminó en success (40 s): subida a R2 y verificación desde R2 de `production/20261103T124638Z`.
 
 ## Jardín Zen beta v0.2 y tarjetas 2×2 — en producción desde 2026-10-31
 
