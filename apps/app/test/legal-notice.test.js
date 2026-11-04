@@ -51,13 +51,19 @@ describe("aviso de aceptación en las pantallas de acceso", () => {
   });
 
   it("el pie con privacidad y términos está en las pantallas con y sin acceso", async () => {
-    for (const path of ["/", "/tareas", "/remanso", "/jardin-zen", "/groups/new"]) {
+    for (const path of ["/", "/tareas", "/jardin-zen", "/groups/new"]) {
       const { body } = await visit(path);
       if (!body) continue;
       expect(body, path).toContain('<nav class="legal-footer" aria-label="Textos legales">');
       expect(body).toContain('>Privacidad</a>');
       expect(body).toContain('>Términos y condiciones</a>');
     }
+  });
+
+  it("Remanso conserva su inicio sin desplazamiento: no lleva el pie, pero sí el aviso junto al botón de acceso", async () => {
+    const { body } = await visit("/remanso");
+    expect(body).not.toContain("legal-footer");
+    expect(body).toContain("Al continuar aceptás los");
   });
 
   it("en staging los enlaces apuntan al sitio de staging", async () => {

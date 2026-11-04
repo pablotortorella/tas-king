@@ -175,9 +175,13 @@ app.use("*", async (c, next) => {
   const hostname = new URL(c.req.url).hostname;
   const filled = fillAccount(body, profile, csrfField)
     .replace(LEGAL_BAND_MARKER, session ? renderLegalBand(upcomingNotices(), hostname) : "")
-    .replace(LEGAL_FOOTER_MARKER, renderLegalFooter(hostname));
+    .replace(LEGAL_FOOTER_MARKER, IMMERSIVE_BODY.test(body) ? "" : renderLegalFooter(hostname));
   c.res = new Response(filled, c.res);
 });
+
+// Remanso se diseñó para verse completo en la ventana sin desplazarse (pruebas «caben en la ventana»): el pie con los textos legales no
+// entra ahí. Sus enlaces aparecen junto al botón de acceso (aviso de aceptación) y en el resto de la aplicación.
+const IMMERSIVE_BODY = /<body class="[^"]*\bremanso\b/u;
 
 // En las pantallas de un grupo: completa el encabezado con el grupo (nombre con avatar que lleva a la lista) y el menú con sus secciones
 // (y «Administrar grupo» para la persona titular), y recuerda el grupo en una cookie del navegador para volver a él al entrar a
