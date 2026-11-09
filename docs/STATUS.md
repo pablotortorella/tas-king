@@ -20,6 +20,10 @@
   pasó a «HomeSuite staging» (`pwa.js`, prueba del manifiesto y `design.md`). Staging quedó en la versión `a2f18b62`
   («PR #142 · SHA 0c566b7 · …», respaldo previo `20261109T204344Z`, sin migraciones); el manifiesto servido ya trae el nombre nuevo.
   Los accesos directos ya creados no se renombran solos: hay que borrarlos y crearlos de nuevo.
+- **Ajuste por la prueba en modo avión (2026-11-09, sin publicar):** Remanso sin conexión se leía como una sesión cerrada. El aviso ahora
+  aclara que la sesión sigue abierta y se quitó el enlace «Continuar con Google» (sin conexión no puede funcionar). Como las tres páginas
+  sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
+  [backlog](PRODUCT_BACKLOG.md) (opción 2).
 - **Aprendizaje:** la base local de `wrangler dev` sin `--persist-to` puede quedar con un esquema viejo y `/remanso` da 500 (falta la tabla de
   perfiles de `0007_shared_profiles`); se resolvió con una base nueva (`--persist-to .wrangler/pwa-local`) y las migraciones al día.
 - **Intento de staging fallido (2026-11-09, desde la sesión en la nube):** el token de Cloudflare se cargó como secreto de red del entorno en la nube; el proxy reemplaza todo `Authorization` hacia `api.cloudflare.com` y pisa la credencial temporal que Wrangler usa para subir los estáticos (`POST …/workers/assets/upload` → 401). Staging no cambió en ese intento; se publicó después desde la máquina de Pablo.

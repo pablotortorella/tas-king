@@ -148,7 +148,9 @@ llamada, igual que hoy. Cerrar sesión no necesita borrar la caché: no hay nada
   y Remanso aclarando que funcionan sin conexión si ya se abrieron en este dispositivo.
 - `/sin-conexion/jardin-zen`: el mismo contenido de `/jardin-zen`, sin cuenta.
 - `/sin-conexion/remanso`: Remanso con el **nivel sin cuenta** (`renderRemanso` con `nombre: null`)
-  y un aviso «Sin conexión: se muestran las opciones sin cuenta».
+  y un aviso «Sin conexión: se muestran las opciones sin cuenta. Si ya entraste, tu sesión sigue abierta: cuando vuelva la
+  conexión, recargá para ver todo» (2026-11-09: la primera versión no lo aclaraba y se leía como una sesión cerrada). Sin enlace
+  «Continuar con Google»: sin conexión `/auth/google` no puede funcionar y mostraría el error del navegador.
 
 `renderPage` suma la opción `cuenta: false`, que omite las cuatro marcas. Las tres rutas responden
 `Cache-Control: no-cache` (públicas, revalidables) y reciben las cabeceras de seguridad comunes.
@@ -164,9 +166,9 @@ Con conexión también se pueden abrir directamente; no se enlazan desde ningún
   respuesta pública; un error de rama personalizaría la copia. Una ruta propia se prueba sola.
 
 Consecuencia: una persona con cuenta que abre Remanso sin conexión ve el nivel libre (1, 2 y 5 min;
-silencio, agua y bosque; Gong brillante). Es el default conservador (ver preguntas abiertas). Los
-enlaces «Entrar con Google» de esas copias llevan a `/auth/google`, que sin conexión muestra el
-error propio del navegador (D2 no intercepta `/auth/*`).
+silencio, agua y bosque; Gong brillante). Es el default conservador (ver preguntas abiertas). Las copias
+no llevan enlace de acceso (2026-11-09): `/auth/google` sin conexión muestra el error propio del navegador (D2 no intercepta
+`/auth/*`). Mostrar el nivel de la cuenta sin conexión (recordar en el dispositivo un solo dato) queda en el backlog.
 
 ### D5. Estrategia para los estáticos: red primero, sin escritura
 
@@ -193,8 +195,8 @@ En «red lenta pero no caída» el pedido espera a la red; no se agrega un tiemp
 
 - **Versión** = primeros 12 hex de SHA-256 sobre: el texto de las reglas y del service worker, las
   huellas de `pwa-precache.js` (archivos de `public/`) y las huellas calculadas en el Worker de las
-  cadenas precargadas (`/app.css`, `/ledger-ui.js`, …, y las tres páginas sin conexión, que dependen
-  del ambiente porque Remanso muestra si el acceso con Google está configurado). Se calcula una vez
+  cadenas precargadas (`/app.css`, `/ledger-ui.js`, …, y las tres páginas sin conexión, que no dependen
+  del ambiente: desde 2026-11-09 Remanso sin conexión no lleva el enlace de acceso con Google). Se calcula una vez
   por *isolate* (memoizada) y viaja dentro del texto de `/sw.js`, que además lleva `ETag` con ella.
   Cualquier cambio de contenido cambia los bytes de `/sw.js` y el navegador instala la versión nueva.
 - **Instalación atómica:** `install` precarga toda la lista en `homesuite-pwa-<versión>`; si un
@@ -467,9 +469,9 @@ Ninguna bloquea la implementación. Las marcadas bloquean la **publicación en p
    o usar Cuentas Claras en Safari) o se espera a un cambio que lo resuelva? *Bloquea producción,
    solo si la prueba falla.* Default: no publicar en producción hasta decidirlo.
 2. **Nombre de la instalación de staging:** «HomeSuite (staging)» / «HomeSuite staging». Se cambió «HS staging» (2026-11-09) porque Android lo usa como etiqueta del acceso directo. No bloquea.
-3. **Remanso sin conexión para personas con cuenta:** se muestra el nivel libre con aviso. ¿Vale,
-   o preferís que sin conexión diga solo «Remanso necesita conexión para las opciones con cuenta»?
-   No bloquea.
+3. **Remanso sin conexión para personas con cuenta:** se muestra el nivel libre con aviso. *Resuelta el 2026-11-09 con Pablo:* queda así,
+   con el aviso aclarado («tu sesión sigue abierta») y sin enlace de acceso, porque en modo avión se leía como una sesión cerrada.
+   La alternativa de mostrar el nivel de la cuenta (recordar un solo dato en el dispositivo) quedó en el backlog.
 4. **Favicon en la app:** se usa el mismo favicon simplificado del sitio (hoy la app no tiene). Y
    los íconos derivan de ese favicon, no del `LOGO` cuadrado del encabezado. ¿Confirmás? No bloquea
    la implementación; la revisión visual de los PNG sí antes de producción.
@@ -489,7 +491,7 @@ Desvíos y precisiones de la implementación de los grupos 0 a 5 (2026-11-09). N
 - **`/pwa.js` apagado también borra las cachés `homesuite-pwa-*`** (además de desregistrar). Motivo: `/pwa.js` desregistra la página en cuanto carga y puede hacerlo antes de que el service worker viejo se actualice y ejecute su propia limpieza; sin esto podían quedar cachés huérfanas (inofensivas, pero la spec pide que no queden). Es más conservador y solo toca `homesuite-pwa-*`.
 - **La instalación también rechaza respuestas con `redirected: true`**, además de las de D3. Motivo: un redireccionamiento (por ejemplo a un acceso) nunca es una copia válida de un recurso público.
 - **`cachesABorrar(nombres, actual)` recibe el nombre completo de la caché actual** (`homesuite-pwa-<versión>`), no la versión.
-- **`versionPwa(googleConfigured)`** recibe el booleano de si el acceso con Google está configurado (no el `env`): `index.js` ya tiene `authConfig`. La parte pura es `calcularVersion({ sw, huellas, cadenas, paginas })`. El manifiesto entra en la versión con sus dos variantes de nombre (producción y staging): el isolate sirve varios hosts y la versión no debe depender del host del primer pedido.
+- **`versionPwa()`** no recibe parámetros (hasta 2026-11-09 recibía si el acceso con Google estaba configurado; ya ninguna página sin conexión lo usa). La parte pura es `calcularVersion({ sw, huellas, cadenas, paginas })`. El manifiesto entra en la versión con sus dos variantes de nombre (producción y staging): el isolate sirve varios hosts y la versión no debe depender del host del primer pedido.
 - **ETag de `/sw.js`**: la versión entre comillas (`"<12 hex>"`); en modo apagado, `"apagado"`.
 - **Navigation preload descartado (verificado)**: con *navigation preload* habilitado, Chromium hace **dos** pedidos a `GET /auth/google` aunque el service worker no lo intercepte: el precargado (cabecera `Service-Worker-Navigation-Preload: true`, visible en `context.on('request')` con `request.serviceWorker()` verdadero) y el de red. Sonda del 2026-11-09 contra `wrangler dev` con Google ficticio: `context.on('request')` registró ambos y el registro del servidor mostró dos veces `GET /auth/google 302`, es decir, dos cookies `homesuite_oauth` con `state` distinto (en esa corrida coincidió el último, pero depende del orden y rompe el acceso al azar). Decisión: no se habilita; `activate` llama `navigationPreload.disable()` si existe y `navegar` usa solo `fetch(event.request)`. Costo: el arranque del service worker se suma a la navegación (aceptado). Lo cubren `pwa-sw.test.js` (el texto no habilita ni lee `preloadResponse`; activate deshabilita; un solo `fetch` por navegación) y `e2e/pwa.spec.js` («`/auth/google` llega una sola vez…», que falla con el service worker anterior porque el estado queda `enabled: true`).
 - **Sonda de `setOffline` (0.3)**: con `@playwright/test` del lockfile y Chromium 1243, `context.setOffline(true)` hace fallar los `fetch` del service worker (la navegación sin red recibe la copia de `/sin-conexion*` desde la caché); no hizo falta `context.route`. Las suites se corren con `E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium` (opción nueva en las configs de Playwright; sin la variable usan el navegador que Playwright resuelve).
