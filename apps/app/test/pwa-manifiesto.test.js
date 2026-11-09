@@ -20,7 +20,7 @@ describe("manifiesto web", () => {
   it.each(["staging.homesuite.info", "localhost", "homesuite-app-staging.example.workers.dev"])("en %s el nombre identifica a staging", async (host) => {
     const datos = await (await pedir(host)).json();
     expect(datos.name).toBe("HomeSuite (staging)");
-    expect(datos.short_name).toBe("HS staging");
+    expect(datos.short_name).toBe("HomeSuite staging");
     expect(datos.name).not.toBe("HomeSuite");
   });
 

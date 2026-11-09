@@ -190,7 +190,7 @@ export function manifiesto(hostname) {
     start_url: "/",
     scope: "/",
     name: produccion ? "HomeSuite" : "HomeSuite (staging)",
-    short_name: produccion ? "HomeSuite" : "HS staging",
+    short_name: produccion ? "HomeSuite" : "HomeSuite staging",
     description: "Organizá, cuidá y disfrutá tu hogar.",
     lang: "es",
     dir: "ltr",
