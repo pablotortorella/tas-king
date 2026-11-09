@@ -58,16 +58,16 @@ Comandos: `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`
 ## 7. Revisión y verificación local
 
 - [x] 7.1 (2026-11-09: `test:homesuite-app` 45 archivos / 711 pruebas; `…:integration` 27 / 352; `test:e2e:homesuite-app` 198; `test:e2e:remanso` 37; `test:homesuite-site` 2 / 44; todo en verde) Las cuatro suites en verde; `npm run test:homesuite-site` sin cambios.
-- [ ] 7.2 `wrangler deploy --dry-run --env staging --config apps/app/wrangler.jsonc` sin advertencias nuevas.
-- [ ] 7.3 Revisión manual en Chrome de escritorio local: DevTools → Application → Manifest sin errores de instalabilidad; Service Workers y Cache Storage con lo esperado; Lighthouse no aplica (retiró la categoría PWA).
-- [ ] 7.4 `openspec validate pwa-instalable --strict`.
+- [x] 7.2 (2026-11-09: sin errores ni advertencias nuevas; 17 archivos, 544 KiB) `wrangler deploy --dry-run --env staging --config apps/app/wrangler.jsonc` sin advertencias nuevas.
+- [x] 7.3 (2026-11-09, Pablo: Manifest sin errores, solo avisos opcionales de capturas; service worker activo con alcance /; caché con 18 entradas públicas; Jardín Zen y Remanso andan sin conexión, Remanso con el sintetizado) Revisión manual en Chrome de escritorio local: DevTools → Application → Manifest sin errores de instalabilidad; Service Workers y Cache Storage con lo esperado; Lighthouse no aplica (retiró la categoría PWA).
+- [x] 7.4 (2026-11-09: válido) `openspec validate pwa-instalable --strict`.
 
 ## 8. Staging y verificación manual (pendiente de Pablo)
 
-- [ ] 8.1 Con confirmación de Pablo: `wrangler deployments list --env staging` (la versión activa es la propia o está coordinado), publicar con `--message` (SHA y rama). Smoke del mismo SHA: cabeceras de `/sw.js`, `/manifest.webmanifest`, `/icons/*`, `/sin-conexion*` con `curl -I`; entrar y salir con una cuenta real.
-- [ ] 8.2 **Pendiente de Pablo — Android + Chrome:** lista de design.md («Verificación manual pendiente de Pablo»).
+- [x] 8.1 (2026-11-09, con orden de Pablo: versión `7daec2bc`, SHA 6afbb87, respaldo `20261109T203120Z`, sin migraciones; smoke de siete rutas en 200 con las cabeceras esperadas; Pablo entró y salió con su cuenta de Google en staging) Con confirmación de Pablo: `wrangler deployments list --env staging` (la versión activa es la propia o está coordinado), publicar con `--message` (SHA y rama). Smoke del mismo SHA: cabeceras de `/sw.js`, `/manifest.webmanifest`, `/icons/*`, `/sin-conexion*` con `curl -I`; entrar y salir con una cuenta real.
+- [ ] 8.2 (parcial, 2026-11-09: Pablo instaló en Android, usó la app y entró con Google; falta confirmar modo avión y el resto de la lista; observó que el acceso directo se llamaba «HS staging» y se cambió a «HomeSuite staging», sin publicar) **Pendiente de Pablo — Android + Chrome:** lista de design.md («Verificación manual pendiente de Pablo»).
 - [ ] 8.3 **Pendiente de Pablo — iPhone + Safari:** ídem, incluido el acceso con Google dentro de la app (y habiendo entrado antes en Safari). Si falla, registrar el hallazgo y responder la pregunta abierta 1 antes de producción.
-- [ ] 8.4 **Pendiente de Pablo — escritorio (Chrome o Edge).**
+- [ ] 8.4 (parcial, 2026-11-09: Pablo instaló en escritorio, la usó y entró con Google en staging) **Pendiente de Pablo — escritorio (Chrome o Edge).**
 - [ ] 8.5 Apagado en staging: publicar con `PWA_SW=off`, comprobar en DevTools y volver a publicar normal.
 - [ ] 8.6 Revisión visual de Pablo de los íconos (incluida la máscara redonda de Android y el ícono de iPhone) y de los textos sin conexión.
 

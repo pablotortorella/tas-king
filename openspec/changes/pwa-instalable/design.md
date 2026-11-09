@@ -251,7 +251,7 @@ cambie), exige tocar `wrangler.jsonc` y no se puede probar en Vitest sin simular
 - Todas las URLs son **relativas**: el mismo Worker sirve producción y staging sin URLs absolutas.
 - El **nombre** se resuelve por host con `PRODUCTION_APP_HOST` (`tools.js`): en
   `app.homesuite.info`, «HomeSuite»; en cualquier otro host (staging, local), «HomeSuite (staging)»
-  y `short_name` «HS staging», para distinguir las dos instalaciones en un mismo teléfono (son
+  y `short_name` «HomeSuite staging», para distinguir las dos instalaciones en un mismo teléfono (son
   orígenes distintos, así que el sistema ya las trata como apps distintas).
 - `theme_color` y `background_color` = `LIGHT.bg` (`#f7f2e8`), el mismo valor que la
   `theme-color` clara que ya emite `renderPage`. El manifiesto no admite variantes por esquema de
@@ -466,7 +466,7 @@ Ninguna bloquea la implementación. Las marcadas bloquean la **publicación en p
    igual en producción (con la limitación documentada: entrar desde Safari antes de agregar a inicio,
    o usar Cuentas Claras en Safari) o se espera a un cambio que lo resuelva? *Bloquea producción,
    solo si la prueba falla.* Default: no publicar en producción hasta decidirlo.
-2. **Nombre de la instalación de staging:** «HomeSuite (staging)» / «HS staging». No bloquea.
+2. **Nombre de la instalación de staging:** «HomeSuite (staging)» / «HomeSuite staging». Se cambió «HS staging» (2026-11-09) porque Android lo usa como etiqueta del acceso directo. No bloquea.
 3. **Remanso sin conexión para personas con cuenta:** se muestra el nivel libre con aviso. ¿Vale,
    o preferís que sin conexión diga solo «Remanso necesita conexión para las opciones con cuenta»?
    No bloquea.
