@@ -101,8 +101,10 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
+    // Sin navigation preload: con él activo Chromium pide también las navegaciones que no se interceptan (/auth/google) y el servidor
+    // recibe dos pedidos (dos cookies de estado OAuth). Se desactiva por si una instalación previa lo había habilitado.
     if (self.registration.navigationPreload) {
-      try { await self.registration.navigationPreload.enable(); } catch (error) { /* sin navigation preload */ }
+      try { await self.registration.navigationPreload.disable(); } catch (error) { /* sin navigation preload */ }
     }
     const nombres = await caches.keys();
     await Promise.all(cachesABorrar(nombres, CACHE).map((nombre) => caches.delete(nombre)));
@@ -114,7 +116,7 @@ self.addEventListener("activate", (event) => {
 // Solo si la red falla se sirve la copia de una página sin conexión. No se lee ni se guarda nada de la respuesta.
 async function navegar(event, ruta) {
   try {
-    return (await event.preloadResponse) || (await fetch(event.request));
+    return await fetch(event.request);
   } catch (error) {
     const cache = await caches.open(CACHE);
     return (await cache.match(paginaSinConexion(ruta), { ignoreVary: true })) || Response.error();

@@ -11,6 +11,10 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     trace: "retain-on-failure",
+    // Por defecto los service workers se bloquean para que las suites existentes no cambien; pwa.spec.js los permite.
+    serviceWorkers: process.env.E2E_SERVICE_WORKERS ?? "block",
+    // Navegador ya instalado cuando el que busca el Playwright del lockfile no está (p. ej. E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium).
+    launchOptions: { executablePath: process.env.E2E_CHROMIUM_PATH || undefined },
   },
   webServer: {
     command: "npm run dev:e2e:homesuite-app",

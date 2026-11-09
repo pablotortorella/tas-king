@@ -17,7 +17,8 @@ const vars = [
   "SESSION_SECRET:e2e-session-secret-0123456789abcdef",
 ].map((pair) => `--var ${pair}`).join(" ");
 
-const projects = [{ name: "chromium", use: devices["Desktop Chrome"] }];
+// E2E_CHROMIUM_PATH: navegador ya instalado cuando el que busca el Playwright del lockfile no está (solo para Chromium).
+const projects = [{ name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath: process.env.E2E_CHROMIUM_PATH || undefined } } }];
 if (process.env.REMANSO_E2E_FIREFOX) projects.push({ name: "firefox", use: devices["Desktop Firefox"] });
 
 export default defineConfig({
@@ -28,6 +29,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
+    serviceWorkers: process.env.E2E_SERVICE_WORKERS ?? "block",
     screenshot: "only-on-failure",
   },
   projects,

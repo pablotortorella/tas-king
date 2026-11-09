@@ -30,7 +30,7 @@ revocación inmediata ([ADR-015](../../../docs/ADRs/ADR-015-revocacion-acceso-se
   línea).
 - **Service worker** `/sw.js` generado por el Worker (`Cache-Control: no-cache`, cabeceras de
   seguridad, alcance `/`), con las reglas de intercepción en una función pura probada:
-  - navegaciones: siempre a la red (con *navigation preload*); solo si la red falla, una página sin
+  - navegaciones: siempre a la red (sin *navigation preload*); solo si la red falla, una página sin
     conexión **sin datos**;
   - estáticos de una **lista cerrada** (precarga): red primero y, si falla, la copia guardada;
   - nunca intercepta `/auth/*`, `/api/*`, métodos distintos de `GET`, otros orígenes, pedidos con

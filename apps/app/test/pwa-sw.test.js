@@ -111,7 +111,7 @@ function entorno({ respuestas = {}, red = true, cachesPrevias = [] } = {}) {
       addEventListener: (tipo, funcion) => { oyentes[tipo] = funcion; },
       skipWaiting: () => { salto = true; return Promise.resolve(); },
       clients: { claim: async () => { reclamado = true; } },
-      registration: { navigationPreload: { enable: async () => { contexto.preloadHabilitado = true; } } },
+      registration: { navigationPreload: { enable: async () => { contexto.preloadHabilitado = true; }, disable: async () => { contexto.preloadDeshabilitado = true; } } },
     },
     caches: {
       open: async (nombre) => { if (!almacenes.has(nombre)) almacenes.set(nombre, new Map()); return cacheDe(nombre); },
@@ -193,13 +193,19 @@ describe("service worker (texto real de /sw.js, entorno simulado)", () => {
     await expect(instalacion).resolves.toBeUndefined();
   });
 
-  it("activa: habilita navigation preload, borra solo las homesuite-pwa-* viejas y toma el control", async () => {
+  it("el texto del service worker no habilita navigation preload ni lee preloadResponse", () => {
+    expect(TEXTO).not.toMatch(/navigationPreload\.enable|preloadResponse/u);
+    expect(TEXTO).toContain("navigationPreload.disable()");
+  });
+
+  it("activa: deshabilita navigation preload (nunca lo habilita), borra solo las homesuite-pwa-* viejas y toma el control", async () => {
     const e = await cargar({ cachesPrevias: ["homesuite-pwa-a", CACHE, "ajena"] }, TEXTO);
     let activacion;
     e.oyentes.activate({ waitUntil: (valor) => { activacion = valor; } });
     await activacion;
     expect([...e.almacenes.keys()].sort()).toEqual([CACHE, "ajena"].sort());
-    expect(e.contexto.preloadHabilitado).toBe(true);
+    expect(e.contexto.preloadDeshabilitado).toBe(true);
+    expect(e.contexto.preloadHabilitado).toBeUndefined();
     expect(e.estado().reclamado).toBe(true);
   });
 
@@ -247,11 +253,11 @@ describe("service worker (texto real de /sw.js, entorno simulado)", () => {
     expect(e.escrituras).toEqual([]);
   });
 
-  it("navegación: usa la respuesta de navigation preload si existe, sin pedir otra", async () => {
+  it("navegación: ignora preloadResponse y pide una sola vez a la red", async () => {
     const e = await conCopias({});
     const { respuesta } = await pedido(e, { url: "/", modo: "navigate", preload: { cuerpo: "precargada" } });
-    expect(respuesta.cuerpo).toBe("precargada");
-    expect(e.llamadas).toEqual([]);
+    expect(respuesta.cuerpo).toBe("copia de /");
+    expect(e.llamadas).toHaveLength(1);
   });
 
   it("un 404 o 500 del servidor se entrega tal cual, no la página sin conexión", async () => {

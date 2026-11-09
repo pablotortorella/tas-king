@@ -94,7 +94,7 @@ eso importa que `minify` siga apagado). El orden de evaluación es el de la tabl
 | Con cabecera `Range` | No intercepta | `Cache.put` rechaza respuestas 206 y el reproductor de medios necesita los 206 del servidor |
 | `/remanso/audio/*` | No intercepta | Lo gestionan la caché HTTP inmutable y el respaldo de `remanso-sonidos-naturales` (D9) |
 | `/sw.js` | No intercepta | El navegador lo actualiza por su cuenta |
-| Navegación (`mode: navigate`) a cualquier otra ruta | **Solo red** (con *navigation preload* si está disponible). Si la red **falla** (error de red, no un 4xx/5xx): `/jardin-zen` → copia de `/sin-conexion/jardin-zen`, `/remanso` → copia de `/sin-conexion/remanso`, el resto → copia de `/sin-conexion` | La página real siempre viene del servidor, con su sesión vigente |
+| Navegación (`mode: navigate`) a cualquier otra ruta | **Solo red** (`fetch(event.request)`, sin *navigation preload*: ver «Notas de implementación»). Si la red **falla** (error de red, no un 4xx/5xx): `/jardin-zen` → copia de `/sin-conexion/jardin-zen`, `/remanso` → copia de `/sin-conexion/remanso`, el resto → copia de `/sin-conexion` | La página real siempre viene del servidor, con su sesión vigente |
 | `GET` de una ruta de la **lista de precarga** (D3), sin parámetros de búsqueda | **Red primero**; si la red falla, la copia de la versión instalada. No escribe en la caché | Siempre fresco con conexión; coherente sin ella (D5) |
 | Cualquier otro `GET` del mismo origen | No intercepta | Lo que no está en la lista nunca se guarda |
 
@@ -204,7 +204,7 @@ En «red lenta pero no caída» el pedido espera a la red; no se agrega un tiemp
   porque con conexión todo va a la red (D5): no hay mezcla de versiones en una página abierta.
 - **Sin quedar viejo:** `/sw.js` con `Cache-Control: no-cache`, y el registro con
   `updateViaCache: 'none'`. El navegador busca actualización al navegar dentro del alcance.
-- **Navigation preload** se habilita en `activate` cuando existe; si no, `fetch(request)`.
+- **Sin navigation preload**: `activate` llama `navigationPreload.disable()` cuando existe (limpia instalaciones previas) y las navegaciones usan solo `fetch(event.request)`. Motivo en «Notas de implementación».
 
 Alternativa descartada: usar el identificador del despliegue (`version_metadata`) como versión.
 Es más simple pero cambia en cada despliegue (re-descarga ~200 KB por dispositivo aunque nada
@@ -334,8 +334,8 @@ redirecciones son las de hoy. Lo que cambia es el contenedor:
 - **Worker:** `/sw.js` se consulta en cada navegación con `no-cache` (una invocación chica; `304`
   con `ETag` cuando no cambió). `/pwa.js` y el manifiesto con `max-age=3600` como `/shell.js`. Los
   íconos no invocan al Worker.
-- **Navegación:** el service worker suma su arranque a cada navegación; *navigation preload* lo
-  solapa con el pedido de red donde existe.
+- **Navegación:** el service worker suma su arranque a cada navegación (decenas de milisegundos con el
+  service worker ya en memoria); no se usa *navigation preload* porque duplica `/auth/google`.
 - **Dispositivo:** ~200 KB precargados por ambiente instalado.
 
 ### D13. Pruebas
@@ -491,7 +491,8 @@ Desvíos y precisiones de la implementación de los grupos 0 a 5 (2026-11-09). N
 - **`cachesABorrar(nombres, actual)` recibe el nombre completo de la caché actual** (`homesuite-pwa-<versión>`), no la versión.
 - **`versionPwa(googleConfigured)`** recibe el booleano de si el acceso con Google está configurado (no el `env`): `index.js` ya tiene `authConfig`. La parte pura es `calcularVersion({ sw, huellas, cadenas, paginas })`. El manifiesto entra en la versión con sus dos variantes de nombre (producción y staging): el isolate sirve varios hosts y la versión no debe depender del host del primer pedido.
 - **ETag de `/sw.js`**: la versión entre comillas (`"<12 hex>"`); en modo apagado, `"apagado"`.
-- **Navigation preload y `/auth/*`**: al habilitarse para todas las navegaciones, Chromium puede iniciar el pedido precargado también en las navegaciones que el service worker no intercepta (`/auth/google`). Se espera que reutilice esa respuesta en lugar de pedir dos veces, pero no está verificado: comprobarlo en el E2E del grupo 6 (que `/auth/google` llegue una sola vez al servidor y fije una sola cookie `homesuite_oauth`). Si pidiera dos veces, la alternativa conservadora es no habilitar navigation preload.
+- **Navigation preload descartado (verificado)**: con *navigation preload* habilitado, Chromium hace **dos** pedidos a `GET /auth/google` aunque el service worker no lo intercepte: el precargado (cabecera `Service-Worker-Navigation-Preload: true`, visible en `context.on('request')` con `request.serviceWorker()` verdadero) y el de red. Sonda del 2026-11-09 contra `wrangler dev` con Google ficticio: `context.on('request')` registró ambos y el registro del servidor mostró dos veces `GET /auth/google 302`, es decir, dos cookies `homesuite_oauth` con `state` distinto (en esa corrida coincidió el último, pero depende del orden y rompe el acceso al azar). Decisión: no se habilita; `activate` llama `navigationPreload.disable()` si existe y `navegar` usa solo `fetch(event.request)`. Costo: el arranque del service worker se suma a la navegación (aceptado). Lo cubren `pwa-sw.test.js` (el texto no habilita ni lee `preloadResponse`; activate deshabilita; un solo `fetch` por navegación) y `e2e/pwa.spec.js` («`/auth/google` llega una sola vez…», que falla con el service worker anterior porque el estado queda `enabled: true`).
+- **Sonda de `setOffline` (0.3)**: con `@playwright/test` del lockfile y Chromium 1243, `context.setOffline(true)` hace fallar los `fetch` del service worker (la navegación sin red recibe la copia de `/sin-conexion*` desde la caché); no hizo falta `context.route`. Las suites se corren con `E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium` (opción nueva en las configs de Playwright; sin la variable usan el navegador que Playwright resuelve).
 - **El script de íconos acepta `CHROMIUM_PATH`**: el `@playwright/test` del lockfile busca `chromium_headless_shell-1228` y en esta máquina está instalado el 1243 (`/opt/pw-browsers/chromium`); sin la variable el script usa el navegador que Playwright resuelve por sí mismo.
 - **`test/helpers/documento.js` admite `href=""`** (el «Reintentar» de las páginas sin conexión vuelve a pedir la misma URL); sigue rechazando cualquier otra URL que no sea del mismo origen.
 - **Páginas sin conexión: textos provisorios** (D14) en `pwa.js` (`htmlSinConexion`) y `remanso.js` (`AVISO_SIN_CONEXION`); los revisa Pablo.

@@ -297,7 +297,7 @@ dispositivo real antes de publicar en producción.
 
 `/sw.js`, `/pwa.js`, `/manifest.webmanifest` y las páginas sin conexión SHALL NOT consultar D1.
 Los íconos SHALL servirse desde el almacén de assets sin invocar al Worker. Las navegaciones SHALL
-usar *navigation preload* donde el navegador lo admita.
+ir a la red con un único `fetch` (sin *navigation preload*, que duplica los pedidos no interceptados como `/auth/google`).
 
 #### Scenario: Cero consultas
 
