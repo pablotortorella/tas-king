@@ -153,6 +153,15 @@ async function currentProfile(c, { localUser, ensureLocalUser, signedInUser }) {
   return session ? readOwnProfile(c.env.DB, session.user_id) : null;
 }
 
+// Copia pública de Remanso para abrir sin conexión (/sin-conexion/remanso): el nivel sin cuenta y un aviso, sin nombre ni sesión
+// (texto provisorio, lo revisa Pablo). La precarga el service worker.
+export const AVISO_SIN_CONEXION = "Sin conexión: se muestran las opciones sin cuenta.";
+
+export function htmlRemansoSinConexion({ page, html, loginDisponible }) {
+  const aviso = `<p class="notice" role="status">${html(AVISO_SIN_CONEXION)}</p>`;
+  return page("Remanso", aviso + renderRemanso({ html, nombre: null, loginDisponible }), { ...REMANSO_ASSETS, cuenta: false });
+}
+
 export function registerRemansoRoutes(app, { page, html, googleConfigured, ...deps }) {
   app.get("/remanso", async (c) => {
     const profile = await currentProfile(c, deps);
@@ -163,4 +172,6 @@ export function registerRemansoRoutes(app, { page, html, googleConfigured, ...de
     });
     return c.html(page("Remanso", content, REMANSO_ASSETS));
   });
+
+  app.get("/sin-conexion/remanso", (c) => c.html(htmlRemansoSinConexion({ page, html, loginDisponible: googleConfigured(c.env) }), 200, { "Cache-Control": "no-cache" }));
 }

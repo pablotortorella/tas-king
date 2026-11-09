@@ -481,3 +481,17 @@ Ninguna bloquea la implementación. Las marcadas bloquean la **publicación en p
    bloquea.
 8. **Texto de privacidad** del sitio sobre la copia local: lo redacta el implementador y lo revisás
    antes de publicar el sitio. Bloquea la publicación del sitio, no la de la app.
+
+## Notas de implementación
+
+Desvíos y precisiones de la implementación de los grupos 0 a 5 (2026-11-09). Ninguno cambia la política de contenido, `SECURITY_HEADERS` ni `wrangler.jsonc`.
+
+- **`/pwa.js` apagado también borra las cachés `homesuite-pwa-*`** (además de desregistrar). Motivo: `/pwa.js` desregistra la página en cuanto carga y puede hacerlo antes de que el service worker viejo se actualice y ejecute su propia limpieza; sin esto podían quedar cachés huérfanas (inofensivas, pero la spec pide que no queden). Es más conservador y solo toca `homesuite-pwa-*`.
+- **La instalación también rechaza respuestas con `redirected: true`**, además de las de D3. Motivo: un redireccionamiento (por ejemplo a un acceso) nunca es una copia válida de un recurso público.
+- **`cachesABorrar(nombres, actual)` recibe el nombre completo de la caché actual** (`homesuite-pwa-<versión>`), no la versión.
+- **`versionPwa(googleConfigured)`** recibe el booleano de si el acceso con Google está configurado (no el `env`): `index.js` ya tiene `authConfig`. La parte pura es `calcularVersion({ sw, huellas, cadenas, paginas })`. El manifiesto entra en la versión con sus dos variantes de nombre (producción y staging): el isolate sirve varios hosts y la versión no debe depender del host del primer pedido.
+- **ETag de `/sw.js`**: la versión entre comillas (`"<12 hex>"`); en modo apagado, `"apagado"`.
+- **Navigation preload y `/auth/*`**: al habilitarse para todas las navegaciones, Chromium puede iniciar el pedido precargado también en las navegaciones que el service worker no intercepta (`/auth/google`). Se espera que reutilice esa respuesta en lugar de pedir dos veces, pero no está verificado: comprobarlo en el E2E del grupo 6 (que `/auth/google` llegue una sola vez al servidor y fije una sola cookie `homesuite_oauth`). Si pidiera dos veces, la alternativa conservadora es no habilitar navigation preload.
+- **El script de íconos acepta `CHROMIUM_PATH`**: el `@playwright/test` del lockfile busca `chromium_headless_shell-1228` y en esta máquina está instalado el 1243 (`/opt/pw-browsers/chromium`); sin la variable el script usa el navegador que Playwright resuelve por sí mismo.
+- **`test/helpers/documento.js` admite `href=""`** (el «Reintentar» de las páginas sin conexión vuelve a pedir la misma URL); sigue rechazando cualquier otra URL que no sea del mismo origen.
+- **Páginas sin conexión: textos provisorios** (D14) en `pwa.js` (`htmlSinConexion`) y `remanso.js` (`AVISO_SIN_CONEXION`); los revisa Pablo.

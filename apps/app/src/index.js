@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, decodeCookieValue, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
 import { registerProfileRoutes } from "./profile-routes.js";
+import { registerPwaRoutes } from "./pwa.js";
 import { registerRemansoRoutes } from "./remanso.js";
 import { registerJardinZenRoutes } from "./jardin-zen.js";
 import { readOwnProfile } from "./profiles.js";
@@ -250,6 +251,7 @@ function localUser(c) {
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
 registerRemansoRoutes(app, { page, html, signedInUser, localUser, ensureLocalUser, googleConfigured: (env) => Boolean(authConfig(env)) });
 registerJardinZenRoutes(app, { page });
+registerPwaRoutes(app, { googleConfigured: (env) => Boolean(authConfig(env)) });
 
 app.get("/api/me", async (c) => {
   const email = localUser(c);
