@@ -29,6 +29,8 @@ cambiar la selección ni sonar. La única definición de los niveles es
 `REMANSO_ACCESO` en `apps/app/src/remanso.js`; el navegador la recibe por atributos
 de datos.
 
+**Sin conexión:** si la red falla, `/remanso` abre `/sin-conexion/remanso`: solo el nivel sin cuenta, con el aviso «Sin conexión: se muestran las opciones sin cuenta.»
+
 **Límite del nivel libre:** el audio se sintetiza en el navegador y los archivos son
 estáticos, así que el nivel libre es un incentivo de producto, **no un control de
 seguridad**: quien use las herramientas del navegador puede saltarlo. Si el nivel

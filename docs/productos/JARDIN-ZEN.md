@@ -17,6 +17,7 @@ sin duración impuesta, frente a una meditación con sesiones temporizadas.
 - Mover piedras, explorar perspectiva, ondas, alisar toda la superficie y deshacer.
 - Audio original sintetizado, optativo y local. No contiene grabaciones de instrumentos japoneses.
 - Sin D1, sin migraciones, sin persistencia, sin historial y sin sincronización.
+- Sin conexión: si la red falla, `/jardin-zen` abre `/sin-conexion/jardin-zen` (sin cuenta); dibujar y rastrillar no necesitan red.
 
 Archivos propios:
 

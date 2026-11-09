@@ -73,8 +73,8 @@ Comandos: `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`
 
 ## 9. Documentación (al final)
 
-- [ ] 9.1 `docs/productos/PLATAFORMA.md`: sección breve «App instalable» (qué se guarda y qué nunca, rutas nuevas, apagado con `PWA_SW=off`, scripts de íconos y precarga, enlace a este change). Mencionar en `docs/productos/REMANSO.md` y `JARDIN-ZEN.md` solo el comportamiento sin conexión (una línea cada una).
-- [ ] 9.2 `apps/site/public/privacidad.html`: ítem en «Cookies y almacenamiento local» sobre la copia local de archivos públicos (texto legal que revisa Pablo; se publica con el sitio, después de la app).
-- [ ] 9.3 `docs/STATUS.md`: hecho fechado con SHA, pruebas, staging y resultados de la verificación manual (o pendientes).
+- [x] 9.1 `docs/productos/PLATAFORMA.md`: sección breve «App instalable» (qué se guarda y qué nunca, rutas nuevas, apagado con `PWA_SW=off`, scripts de íconos y precarga, enlace a este change). Mencionar en `docs/productos/REMANSO.md` y `JARDIN-ZEN.md` solo el comportamiento sin conexión (una línea cada una).
+- [x] 9.2 (borrador, revisión de Pablo pendiente) `apps/site/public/privacidad.html`: ítem en «Cookies y almacenamiento local» sobre la copia local de archivos públicos (texto legal que revisa Pablo; se publica con el sitio, después de la app).
+- [x] 9.3 (2026-11-09: bloque en rama, sin publicar; sin SHA porque no hay commit) `docs/STATUS.md`: hecho fechado con SHA, pruebas, staging y resultados de la verificación manual (o pendientes).
 - [ ] 9.4 Si se integró después de `remanso-sonidos-naturales` (o antes, y aquel se integra después): actualizar su frase «Sin Service Worker» según «Cambios sugeridos a otros documentos» del design.
 - [ ] 9.5 Producción solo con aprobación explícita de Pablo; primero la app, después el sitio; `npm run verify:coherence:production`.
