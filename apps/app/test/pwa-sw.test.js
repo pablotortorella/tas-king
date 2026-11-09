@@ -22,7 +22,7 @@ describe("GET /sw.js", () => {
   it("lleva la versión, la lista de precarga y el texto de las reglas", async () => {
     const respuesta = await sw();
     const texto = await respuesta.text();
-    const { version } = await versionPwa(false);
+    const { version } = await versionPwa();
     expect(version).toMatch(/^[0-9a-f]{12}$/u);
     expect(texto).toContain(`const VERSION = "${version}";`);
     expect(texto).toContain(JSON.stringify(RUTAS_PRECARGA));
@@ -30,7 +30,7 @@ describe("GET /sw.js", () => {
   });
 
   it("ETag igual a la versión y 304 con If-None-Match", async () => {
-    const { version } = await versionPwa(false);
+    const { version } = await versionPwa();
     const primera = await sw();
     expect(primera.headers.get("ETag")).toBe(`"${version}"`);
     const segunda = await app.request(`${ORIGEN}/sw.js`, { headers: { "If-None-Match": `"${version}"` } });
@@ -41,12 +41,13 @@ describe("GET /sw.js", () => {
     expect(otra.status).toBe(200);
   });
 
-  it("la versión es la misma entre pedidos y cambia con la configuración de Google (cambia la página de Remanso)", async () => {
-    const sinGoogle = await versionPwa(false);
-    expect((await versionPwa(false)).version).toBe(sinGoogle.version);
-    expect((await versionPwa(true)).version).not.toBe(sinGoogle.version);
+  it("la versión es la misma entre pedidos y no depende de la configuración de Google (las páginas sin conexión no llevan el acceso)", async () => {
+    const { version } = await versionPwa();
+    expect((await versionPwa()).version).toBe(version);
+    const sinGoogle = await app.request(`${ORIGEN}/sw.js`);
     const conGoogle = await app.request(`${ORIGEN}/sw.js`, {}, { GOOGLE_CLIENT_ID: "c", GOOGLE_CLIENT_SECRET: "s", SESSION_SECRET: "s".repeat(32) });
-    expect(conGoogle.headers.get("ETag")).toBe(`"${(await versionPwa(true)).version}"`);
+    expect(sinGoogle.headers.get("ETag")).toBe(`"${version}"`);
+    expect(conGoogle.headers.get("ETag")).toBe(`"${version}"`);
   });
 
   it("con PWA_SW=off responde 200 con el service worker de apagado: sin fetch, con unregister, sin navigate", async () => {

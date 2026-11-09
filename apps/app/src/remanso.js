@@ -155,11 +155,12 @@ async function currentProfile(c, { localUser, ensureLocalUser, signedInUser }) {
 
 // Copia pública de Remanso para abrir sin conexión (/sin-conexion/remanso): el nivel sin cuenta y un aviso, sin nombre ni sesión
 // (texto provisorio, lo revisa Pablo). La precarga el service worker.
-export const AVISO_SIN_CONEXION = "Sin conexión: se muestran las opciones sin cuenta.";
+export const AVISO_SIN_CONEXION = "Sin conexión: se muestran las opciones sin cuenta. Si ya entraste, tu sesión sigue abierta: cuando vuelva la conexión, recargá para ver todo.";
 
-export function htmlRemansoSinConexion({ page, html, loginDisponible }) {
+// Sin enlace de acceso: sin conexión `/auth/google` no puede funcionar (el service worker no lo intercepta) y la persona vería el error del navegador.
+export function htmlRemansoSinConexion({ page, html }) {
   const aviso = `<p class="notice" role="status">${html(AVISO_SIN_CONEXION)}</p>`;
-  return page("Remanso", aviso + renderRemanso({ html, nombre: null, loginDisponible }), { ...REMANSO_ASSETS, cuenta: false });
+  return page("Remanso", aviso + renderRemanso({ html, nombre: null, loginDisponible: false }), { ...REMANSO_ASSETS, cuenta: false });
 }
 
 export function registerRemansoRoutes(app, { page, html, googleConfigured, ...deps }) {
@@ -173,5 +174,5 @@ export function registerRemansoRoutes(app, { page, html, googleConfigured, ...de
     return c.html(page("Remanso", content, REMANSO_ASSETS));
   });
 
-  app.get("/sin-conexion/remanso", (c) => c.html(htmlRemansoSinConexion({ page, html, loginDisponible: googleConfigured(c.env) }), 200, { "Cache-Control": "no-cache" }));
+  app.get("/sin-conexion/remanso", (c) => c.html(htmlRemansoSinConexion({ page, html }), 200, { "Cache-Control": "no-cache" }));
 }

@@ -76,12 +76,16 @@ describe("/sin-conexion/remanso", () => {
     expect(html).toContain('data-acceso="libre"');
     expect(html).not.toContain("data-nombre=");
     expect(html).toContain("Sin conexión: se muestran las opciones sin cuenta.");
+    expect(html).toContain("Si ya entraste, tu sesión sigue abierta: cuando vuelva la conexión, recargá para ver todo.");
     expect(html).toContain('data-libre-fondos="silencio,agua,bosque"');
     expect(html).toContain("/remanso/remanso.js");
   });
 
-  it("el enlace de acceso con Google solo aparece si el ambiente lo tiene configurado", async () => {
-    expect(await (await app.request(`${ORIGEN}/sin-conexion/remanso`, {}, CON_GOOGLE)).text()).toContain("data-login=");
-    expect(await (await app.request(`${ORIGEN}/sin-conexion/remanso`)).text()).not.toContain("data-login=");
+  it("no ofrece entrar con Google: sin conexión ese enlace no puede funcionar, aunque el ambiente lo tenga configurado", async () => {
+    for (const env of [CON_GOOGLE, undefined]) {
+      const html = await (await app.request(`${ORIGEN}/sin-conexion/remanso`, {}, env)).text();
+      expect(html).not.toContain("data-login=");
+      expect(html).not.toContain("Continuar con Google");
+    }
   });
 });

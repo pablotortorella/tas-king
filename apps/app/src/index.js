@@ -251,7 +251,7 @@ function localUser(c) {
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
 registerRemansoRoutes(app, { page, html, signedInUser, localUser, ensureLocalUser, googleConfigured: (env) => Boolean(authConfig(env)) });
 registerJardinZenRoutes(app, { page });
-registerPwaRoutes(app, { googleConfigured: (env) => Boolean(authConfig(env)) });
+registerPwaRoutes(app);
 
 app.get("/api/me", async (c) => {
   const email = localUser(c);

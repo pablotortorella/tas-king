@@ -229,7 +229,7 @@ export async function calcularVersion({ sw, huellas, cadenas, paginas }) {
 }
 
 // El nombre del ambiente cambia el nombre del manifiesto, y el manifiesto se precarga: entran las dos variantes.
-function textosPrecargados(googleConfigured) {
+function textosPrecargados() {
   return {
     cadenas: {
       "/app.css": appCss(),
@@ -243,36 +243,34 @@ function textosPrecargados(googleConfigured) {
     paginas: {
       "/sin-conexion": htmlSinConexion(),
       "/sin-conexion/jardin-zen": htmlJardinZenSinConexion(renderPage),
-      "/sin-conexion/remanso": htmlRemansoSinConexion({ page: renderPage, html: escapeHtml, loginDisponible: googleConfigured }),
+      "/sin-conexion/remanso": htmlRemansoSinConexion({ page: renderPage, html: escapeHtml }),
     },
   };
 }
 
-// Se calcula una vez por isolate y por si el acceso con Google está configurado (lo único del ambiente que cambia una página sin conexión).
-const memo = new Map();
+// Se calcula una vez por isolate: ninguna página sin conexión depende del ambiente (ni del acceso con Google).
+let memo = null;
 
-export function versionPwa(googleConfigured = false) {
-  const clave = Boolean(googleConfigured);
-  if (!memo.has(clave)) {
+export function versionPwa() {
+  if (!memo) {
     const sw = swNormal({ version: "", precarga: RUTAS_PRECARGA });
-    const promesa = calcularVersion({ sw, huellas: PRECACHE_PUBLIC, ...textosPrecargados(clave) }).then((version) => ({ version, texto: swNormal({ version, precarga: RUTAS_PRECARGA }) }));
-    promesa.catch(() => memo.delete(clave));
-    memo.set(clave, promesa);
+    memo = calcularVersion({ sw, huellas: PRECACHE_PUBLIC, ...textosPrecargados() }).then((version) => ({ version, texto: swNormal({ version, precarga: RUTAS_PRECARGA }) }));
+    memo.catch(() => { memo = null; });
   }
-  return memo.get(clave);
+  return memo;
 }
 
 // --- Rutas ------------------------------------------------------------------------------------------------------------------------------
 
 const JS = "text/javascript; charset=utf-8";
 
-export function registerPwaRoutes(app, { googleConfigured }) {
+export function registerPwaRoutes(app) {
   const apagado = (c) => c.env?.PWA_SW === MODO_APAGADO;
 
   app.get("/sw.js", async (c) => {
     const cabeceras = { "Content-Type": JS, "Cache-Control": "no-cache" };
     if (apagado(c)) return c.body(swApagado(), 200, { ...cabeceras, ETag: '"apagado"' });
-    const { version, texto } = await versionPwa(googleConfigured(c.env));
+    const { version, texto } = await versionPwa();
     const etag = `"${version}"`;
     const candidatas = (c.req.header("If-None-Match") ?? "").split(",").map((valor) => valor.trim().replace(/^W\//u, ""));
     if (candidatas.includes(etag)) return c.body(null, 304, { "Cache-Control": "no-cache", ETag: etag });
