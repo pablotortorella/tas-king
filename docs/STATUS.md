@@ -5,11 +5,13 @@
 ## HomeSuite App instalable (PWA) — en rama, sin publicar — 2026-11-09
 
 - **Rama:** `ccr-a7efcef7-25zjqk`. Implementado en la rama; **no integrado ni desplegado** en staging ni en producción.
+- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `d82beeb`, sin conflictos ni comentarios.
+- **Intento de staging fallido (2026-11-09, desde la sesión en la nube):** el token de Cloudflare se cargó como secreto de red del entorno en la nube; el proxy reemplaza todo `Authorization` hacia `api.cloudflare.com` y pisa la credencial temporal que Wrangler usa para subir los estáticos (`POST …/workers/assets/upload` → 401). **Staging no cambió** (sigue `main 3fe9cd6`, versión `66804688`). El respaldo previo quedó solo en el contenedor y se borró; no hubo migraciones.
 - **Pruebas:** Vitest 711 unitarias y 352 de integración; E2E de la app 198 (189 + 9 nuevas); Remanso 37; sitio 44. Todo en verde en la corrida del grupo 7. En la sonda con service worker activo falló una vez `personas.spec.js` («dark … 44 px»), que no se reprodujo.
 - **Hallazgo:** con navigation preload, Chromium pedía dos veces `/auth/google` (dos cookies de estado OAuth); el acceso con Google podía fallar según el orden de llegada. No se observó la falla, pero sí el pedido doble. Quedó desactivado y lo cubre un E2E.
 - **Pendientes:**
   - `openspec validate` (el CLI no está instalado) y `wrangler deploy --dry-run`.
-  - Staging y verificación manual de Pablo en Android, en iPhone (incluido el acceso con Google dentro de la app instalada) y en escritorio.
+  - Publicar en staging desde la máquina de Pablo (pasos en [AI_HANDOFF](../AI_HANDOFF.md)) y verificación manual de Pablo en Android, en iPhone (incluido el acceso con Google dentro de la app instalada) y en escritorio.
   - Revisión de los íconos, de los textos sin conexión y del texto de privacidad (borrador).
   - Firefox y WebKit no probados (no están instalados).
   - CI no corre los E2E de la app (`test:e2e:homesuite-app` no está en `.github/workflows/test.yml`; hueco previo a este cambio), así que `pwa.spec.js` tampoco corre ahí.
