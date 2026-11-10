@@ -16,10 +16,11 @@ Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**
 | `npm run test:e2e` | 101 recorridos originales más un caso dirigido de mudanza aprobados (102 casos cubiertos) |
 | `npm run test:e2e:tasking` | 79 de 79 aprobados en corrida completa Chromium; incluye PWA instalada antes de entrar a Tareas y vuelta sin conexión |
 | `TASKING_BROWSER=firefox npm run test:e2e:tasking` | 77 aprobados y 2 omisiones declaradas por límites de emulación del motor (tema oscuro con COOP y red del SW), sin fallos |
+| `npm run test:e2e:remanso` | 37 recorridos aprobados; cabeceras de Tareas actualizadas al acceso autenticado |
 | `npm run test:homesuite-site:e2e` | 20 recorridos aprobados con el enlace a `/tareas` |
 | `npm run test:e2e:homesuite-app`, puerto 8799 / estado `tasking-platform-e2e` | 196 de 198 inicialmente; apagado PWA y teclado de clasificación aprobados en corrida dirigida aislada (198 casos cubiertos), ver abajo |
 | `npm run verify:tasking-assets` | 28 assets inventariados; SVG de corona idéntico al original y al del puente |
-| Builds `wrangler deploy --dry-run` app/puente staging | Correctos; app 684,60 KiB y puente 6,29 KiB; puente con una única variable de destino y sin bindings de datos |
+| Builds `wrangler deploy --dry-run` app/puente staging | Correctos; app 685,31 KiB y puente 6,29 KiB; puente con una única variable de destino y sin bindings de datos |
 | `openspec validate migrar-tasking-homesuite --strict` | Válido; no archivado |
 
 D1/R2 son recursos emulados propios. Los E2E de Tareas usan puertos 8816/8817 y
@@ -73,6 +74,10 @@ como ventana ni RTO de producción: falta medir el volumen de staging.
   esas frases concretas, con motivo y regresión, manteniendo prohibido el antiguo
   nombre del grupo. El scanner sólo ve archivos versionados; por eso apareció en
   CI después de incorporar las copias nuevas al commit.
+- La suite de Remanso usaba la antigua pantalla pública `/tareas` como destino
+  de salida. Ahora comprueba el redirect autenticado y cierra audio navegando al
+  inicio público del mismo origen, sin seguir OAuth a Google ni consultar allí
+  un `sessionStorage` distinto. Se conserva el comportamiento de Remanso.
 - La primera corrida de regresión de backup esperaba 12 triggers. La migración
   agrega el cerrojo; ahora compara todos los triggers respaldables, preserva la
   aserción de 12 de sincronización y comprueba el de congelación.

@@ -38,8 +38,9 @@ test.describe("cabeceras sobre el servidor real", () => {
   for (const route of ROUTES_HTML) {
     test(`${route} entrega política y cabeceras de seguridad`, async ({ request }) => {
       const response = await request.get(route, { maxRedirects: 0 });
-      // Sin sesión, /cuentas-claras redirige al acceso (303); las demás rutas responden 200.
-      expect(response.status()).toBe(route === "/cuentas-claras" ? 303 : 200);
+      // Sin sesión, los productos con datos personales redirigen al acceso; las páginas públicas responden 200.
+      expect(response.status()).toBe(["/cuentas-claras","/tareas"].includes(route) ? 303 : 200);
+      if(route === "/tareas") expect(response.headers()["location"]).toBe("/auth/google?returnTo=%2Ftareas");
       const headers = response.headers();
       expect(headers["content-security-policy"]).toContain("script-src 'self'; style-src 'self'");
       expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
@@ -182,7 +183,7 @@ test.describe("sin cuenta", () => {
     await page.goto("/remanso");
     await page.getByRole("button", { name: "Comenzar · 5 min" }).click();
     await expect(page.locator("#rem-sesion")).toBeVisible();
-    await page.goto("/tareas");
+    await page.goto("/");
     expect(await page.evaluate(() => Number(sessionStorage.getItem("closed") || 0))).toBeGreaterThanOrEqual(1);
   });
 });
