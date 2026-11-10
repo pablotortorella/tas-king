@@ -33,6 +33,21 @@ Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS
 6. **Backlog nuevo:** «Remanso sin conexión con el nivel de la cuenta» (opción 2, para decidir después) y el estándar de pruebas por escenarios
    (ver abajo). Preguntas abiertas 4 a 8 de `design.md`: ninguna bloquea.
 
+### Coordinación con la migración de TasKing (Codex, `feature/migrar-tasking-homesuite`)
+- La rama de Codex (worktree `/tmp/tasking-homesuite-proposal`) **ya parte de `main` `65a1b53`, con la PWA**: no hay una versión «pre PWA» de
+  `main` ni de staging. Solo producción sigue sin la PWA hasta que Pablo dé la orden.
+- **Staging compartido:** Lucio prueba la PWA en iPhone sobre la versión `1a2f3bfc`. No publicar otra versión en staging hasta que esa prueba
+  termine o Pablo lo coordine; mirar `wrangler deployments list --env staging` antes de publicar (lección del 2026-10-27 en APRENDIZAJES).
+- **Archivos que tocan los dos trabajos:** `apps/app/src/ui-parts.js` (la cabeza común lleva manifiesto, íconos y `/pwa.js`; las páginas de
+  `/tareas` deberían usarla para que la app se pueda instalar desde ahí), `apps/app/src/index.js` (rutas de la PWA), `apps/app/public/_headers`
+  (regla de `/icons/*`). Pruebas que van a avisar: `remanso-assets.test.js` (sin HTML en `public/`), `pwa-precarga.test.js` (la lista de
+  precarga debe coincidir con el disco; regenerar con `npm run pwa:precache:homesuite-app` si cambia `public/jardin-zen` o `public/remanso`),
+  los snapshots de `shell-characterization.test.js` y `e2e/pwa.spec.js` (la caché no puede contener datos privados).
+- **Después de integrar Tareas, Claude extiende la PWA a `/tareas` (lo básico):** página sin conexión propia de Tareas (hoy cae en la genérica),
+  `/tareas` en el recorrido del E2E que comprueba que la caché no guarde datos privados, revisión de instalación y actualización con Tareas
+  servido, y prueba manual en Android, escritorio e iPhone. Nada de Tareas sin conexión (fuera de alcance). Codex deja el aviso de integración en
+  este archivo.
+
 ### Qué conviene saber
 - **Fuera de alcance, documentado en el backlog:** TasKing como PWA, notificaciones push (opción 3) y Cuentas Claras sin conexión (opción 4).
 - **El estándar de pruebas por escenarios nunca se implementó.** `openspec/changes/estandar-pruebas-escenarios/` tiene solo `proposal.md` y `design.md`
