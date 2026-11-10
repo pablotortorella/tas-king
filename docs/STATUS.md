@@ -22,11 +22,14 @@
   consumidores tail; cinco secretos heredados aún presentes. Callback sintético manual
   en 302 a `/#mudanza`, sin reenviar `code/state`. Coherencia de staging: 29 comprobaciones aprobadas.
 - Verificación y límites: [evidencia](tasking/VERIFICACION.md); recursos y recuperación:
-  [runbook](tasking/MIGRACION-HOMESUITE.md). CI completo en verde sobre `1acbe00`
-  ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42808930372)); incluye CLI remoto y configuración del puente.
-- Pendiente consultado a Pablo: ensayo con dos cuentas Google reales, que los tests
-  sintéticos no sustituyen. Las pruebas físicas de PWA quedan en el handoff para Claude Code. Faltan aceptación
-  y aprobación explícita de producción; no se da por retirada su app original.
+  [runbook](tasking/MIGRACION-HOMESUITE.md). CI completo en verde sobre `a46dfcc`
+  ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42810776415)); incluye CLI remoto, puente y handoff.
+- **Validación real de Pablo (2026-11-10):** confirmó con su cuenta Google la entrada
+  desde el aviso, sus tableros de staging y salida/reingreso. La comprobación de
+  base confirma identidad vinculada, personal importado conservado y un solo personal.
+- Quedan la segunda cuenta Google (invitación/revocación/aislamiento), aceptación
+  completa, integración en main y aprobación de publicación. Las pruebas físicas de PWA
+  quedan en el handoff para Claude Code. Producción mantiene su app original.
   Dock separado en backlog.
 
 ## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09

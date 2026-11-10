@@ -126,9 +126,14 @@ consumidores tail tras desactivar logs y trazas. Callback sintético manual:
 302 a `/#mudanza`, sin reenviar `code/state`. Coherencia: 29 comprobaciones aprobadas.
 No se consultaron logs de usuarios para verificarlo.
 
-Pendientes antes de producción: ensayo Google con dos cuentas reales y dispositivos
-físicos con PWA instalada (consultados a Pablo), aceptación del staging, cierre de CI
-para los últimos cambios CLI/configuración y revisión del SHA final integrado.
+Pablo confirmó el 2026-11-10 que el recorrido funciona con su cuenta Google:
+entrada desde el aviso, tableros y salida/reingreso. Una consulta agregada confirmó
+la identidad vinculada y el personal importado conservado sin duplicados.
+CI completo aprobado sobre `a46dfcc`.
+
+Pendientes antes de producción: segunda cuenta Google para invitación, revocación
+y aislamiento; aceptación completa y revisión del SHA final integrado. Las pruebas
+físicas de PWA quedan coordinadas en el handoff para Claude Code.
 Validar los recursos y permisos de producción y completar su matriz operativa antes
 de pedir aprobación explícita de esa publicación. Producción y su infraestructura
 siguen intactas; el change permanece abierto y sin archivar.
