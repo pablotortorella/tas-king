@@ -28,6 +28,10 @@ El sistema SHALL recuperar el tablero personal y todas las membresías vigentes 
 - **WHEN** alguien cuyos datos de TasKing fueron trasladados crea después su cuenta de HomeSuite con la misma cuenta de Google
 - **THEN** recupera su tablero personal y sus membresías conservadas aunque aún no tenía usuario de HomeSuite al trasladarlas
 
+#### Scenario: Recuperación habitual sin intervención administrativa
+- **WHEN** una persona usa la misma cuenta Google y la identidad heredada se corresponde sin conflicto con sus datos autenticados
+- **THEN** la vinculación y recuperación de tableros se completan automáticamente sin que Pablitux autorice la cuenta, la prepare individualmente o importe sus tableros a mano
+
 #### Scenario: Suplantación de email
 - **WHEN** una sesión envía el email de otra persona en el cuerpo, parámetros o cabeceras de una petición de Tareas
 - **THEN** ese dato no vincula la cuenta ni concede acceso a tableros ajenos

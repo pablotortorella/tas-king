@@ -66,11 +66,23 @@ La versión integrada SHALL funcionar sin lista global de autorizados, solicitud
 
 ### Requirement: Host antiguo como entrada de compatibilidad
 
-El corte SHALL dejar preparado y activar un Worker de compatibilidad en el host antiguo, sin servir la app independiente. SHALL cubrir entradas conocidas con y sin extensión, enlaces de tarjeta, adjuntos y favicon, usando un destino fijo autorizado por ambiente. Las navegaciones antiguas sin equivalencia SHALL ofrecer continuidad hacia Tareas y nunca una página genérica de error de infraestructura. La API antigua SHALL terminar con una respuesta explícita de migración sin devolver datos de negocio ni reenviar operaciones a HomeSuite. OAuth antiguo SHALL reiniciar el acceso HomeSuite sin transportar `code`, `state`, tokens, cookies o parámetros arbitrarios. El puente SHALL continuar disponible sin fecha de retirada automática; su eliminación requiere verificar el uso remanente y una decisión explícita.
+El corte SHALL dejar preparado y activar un Worker de compatibilidad en el host antiguo, sin servir la app independiente. Las entradas humanas SHALL mostrar un aviso de mudanza firmado por **Pablitux**, que explique que Fun TasKing vive en HomeSuite, que deben usar su cuenta Google habitual para encontrar sus tableros y que pueden contactarlo por cualquier consulta. SHALL ofrecer un botón **Ir a HomeSuite** con destino fijo autorizado por ambiente, sin redirección automática externa ni temporizador. El aviso SHALL ser público, sin consultar datos personales ni pedir acceso en el origen. El recorrido normal SHALL ser automático y no exigir avisos individuales de Pablo, aprobación manual, alta previa de HomeSuite ni importación a cargo de la persona. SHALL cubrir entradas conocidas con y sin extensión, enlaces de tarjeta, adjuntos y favicon; los recursos SHALL mantener tratamiento adecuado a su tipo sin recibir el aviso HTML en lugar de sus bytes. La API antigua SHALL terminar con una respuesta explícita de migración sin devolver datos de negocio ni reenviar operaciones a HomeSuite. OAuth antiguo SHALL limpiar sus parámetros y mostrar el aviso sin transportar `code`, `state`, tokens, cookies o parámetros arbitrarios. El puente SHALL continuar disponible sin fecha de retirada automática; su eliminación requiere verificar el uso remanente y una decisión explícita.
 
 #### Scenario: Favorito antiguo
 - **WHEN** una persona abre la raíz, `/index.html`, `/landing` o una variante histórica equivalente en el host antiguo
-- **THEN** llega a `/tareas` en HomeSuite del ambiente correcto mediante un recorrido sin bucles ni dependencia de la app antigua
+- **THEN** ve el aviso firmado por Pablitux y permanece allí hasta pulsar **Ir a HomeSuite**, que conduce a `/tareas` del ambiente correcto
+
+#### Scenario: Continuar con la cuenta habitual
+- **WHEN** alguien pulsa el botón del aviso y entra con la cuenta Google que usaba en TasKing, aunque todavía no tenga cuenta HomeSuite
+- **THEN** HomeSuite crea o recupera su cuenta y Tareas recupera sus tableros automáticamente sin intervención individual de Pablitux ni otro asistente de migración
+
+#### Scenario: Sesión HomeSuite ya vigente
+- **WHEN** alguien con sesión HomeSuite válida visita el TasKing antiguo y pulsa el botón del aviso
+- **THEN** también ve el aviso antes del clic y después entra en Tareas con su sesión vigente, sin exigir repetir el login Google
+
+#### Scenario: Comunicación automática de la mudanza
+- **WHEN** una persona llega al origen después del corte sin que Pablo la haya contactado previamente
+- **THEN** el aviso explica la mudanza, incluye la firma Pablitux y la invitación a contactarlo por consultas, y el botón basta para iniciar su recorrido normal
 
 #### Scenario: Enlace antiguo a archivo
 - **WHEN** se abre `/uploads/:key` desde un favorito o una conversación anterior
@@ -86,7 +98,7 @@ El corte SHALL dejar preparado y activar un Worker de compatibilidad en el host 
 
 #### Scenario: Callback Google tardío
 - **WHEN** vuelve un callback OAuth iniciado en el origen antes del corte
-- **THEN** el origen ya no crea sesión ni datos y conduce a un acceso nuevo en HomeSuite sin reenviar ni registrar sus credenciales de callback
+- **THEN** el origen ya no crea sesión ni datos, limpia la URL sensible y muestra el aviso para continuar mediante el botón, sin reenviar ni registrar sus credenciales de callback
 
 #### Scenario: Destino de redirección manipulado
 - **WHEN** la URL antigua contiene un destino externo, cabeceras de host manipuladas, rutas codificadas o parámetros inesperados
@@ -94,7 +106,7 @@ El corte SHALL dejar preparado y activar un Worker de compatibilidad en el host 
 
 ### Requirement: Una sola versión operativa después del corte
 
-Después del corte, ningún dominio, alias o preview alcanzable del origen SHALL permitir operar sobre su copia anterior. El cierre SHALL abarcar assets servidos antes del Worker, API, autenticación, crons y caminos de despliegue/rollback que pudieran reactivar el origen. SHALL existir un bloqueo persistente de escrituras del origen además de la redirección; no se permitirá repartir tráfico entre una versión editable y el puente. El Worker de compatibilidad SHALL prescindir de acceso activo a D1/R2 y secretos de autenticación una vez retirados los caminos de negocio. Los recursos de recuperación SHALL permanecer separados de los activos.
+Después del corte, ningún dominio, alias o preview alcanzable del origen SHALL permitir operar sobre su copia anterior. El cierre SHALL abarcar assets servidos antes del Worker, API, autenticación, crons y caminos de despliegue/rollback que pudieran reactivar el origen. SHALL existir un bloqueo persistente de escrituras del origen además del aviso de mudanza; no se permitirá repartir tráfico entre una versión editable y el puente. El Worker de compatibilidad SHALL prescindir de acceso activo a D1/R2 y secretos de autenticación una vez retirados los caminos de negocio. Los recursos de recuperación SHALL permanecer separados de los activos.
 
 #### Scenario: Entrada por asset o alias
 - **WHEN** se pide un HTML, bundle o alias histórico después del corte
