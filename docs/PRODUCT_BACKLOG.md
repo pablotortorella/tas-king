@@ -75,6 +75,26 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 
 ## 🏠 Horizonte de producto: HomeSuite
 
+- **Migrar TasKing a la app de HomeSuite y retirar su autorización global**
+  (decisiones de Pablo, 2026-11-09). Propuesta en
+  [OpenSpec: migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
+  todavía sin implementación. Sólo migrar: conservar funciones y permisos por
+  tablero, independientes de los grupos de Cuentas Claras. Cualquier cuenta
+  HomeSuite puede entrar y disponer de su tablero personal; quienes ya usaban
+  TasKing recuperan sus tableros con la misma cuenta de Google, incluso si crean
+  su cuenta HomeSuite después del traslado. La app actual sigue funcionando
+  durante la preparación. Al completar el traslado, retirar la lista global de
+  autorizados, su gestión, las solicitudes asociadas y la configuración que deje
+  de usarse. Mantener la autorización necesaria en el origen hasta el corte.
+  Verificación: recuperación sin personal duplicado, permisos por tablero
+  conservados y acceso de una cuenta HomeSuite sin autorización global antigua.
+
+- **Navegación entre aplicaciones de la suite, tipo dock** (pedido de Pablo,
+  2026-11-09). Explorar una forma sencilla de moverse entre las aplicaciones de
+  HomeSuite. El dock es una idea de interacción, todavía sin diseño decidido.
+  Queda fuera del alcance de la migración de TasKing: no es requisito ni bloqueo
+  para incorporarlo a la app. Prioridad y alcance por definir con Pablo.
+
 **Estado:** visión y MVP documentados; landing pública en producción desde el
 2026-09-21 en `https://homesuite.info/`, con `www` redirigido al apex. La suite
 autenticada funciona en staging; el núcleo cotidiano de Cuentas Claras está en
