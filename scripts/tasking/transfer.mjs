@@ -3,7 +3,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp,readFile,writeFile,mkdir,rm } from 'node:fs/promises';
 import { resolve,join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir,homedir } from 'node:os';
+import { createRemoteDatabase } from './remote-db.mjs';
 import { fileURLToPath } from 'node:url';
 import { extractTransfer,loadTransfer,verifyTransfer,commitTransfer,abortTransfer,TABLES } from '../../apps/app/src/tasking/transfer.js';
 const exec=promisify(execFile),root=fileURLToPath(new URL('../../',import.meta.url));
@@ -20,7 +21,18 @@ const sqlValue=value=>value===null?'NULL':typeof value==='number'&&Number.isFini
 function sqlText(sql,values){let i=0;const result=sql.replace(/\?/g,()=>sqlValue(values[i++]));if(i!==values.length)throw new Error('Parámetros SQL inconsistentes.');return result;}
 async function cli(args){try{return (await exec('npx',['wrangler',...args],{cwd:root,maxBuffer:64*1024*1024})).stdout;}catch(error){const missing=/not found|does not exist|NoSuchKey|10007|404/i.test((error.stdout||'')+(error.stderr||''));const safe=new Error('Wrangler no pudo completar la operación. Verificar recursos y permisos del ambiente indicado.');safe.notFound=missing;throw safe;}}
 const sourceConfig='wrangler.jsonc',targetConfig='apps/app/wrangler.jsonc';
+async function cloudflareToken(){
+ if(process.env.CLOUDFLARE_API_TOKEN)return process.env.CLOUDFLARE_API_TOKEN;
+ const candidates=[process.env.XDG_CONFIG_HOME&&join(process.env.XDG_CONFIG_HOME,'.wrangler/config/default.toml'),join(homedir(),'.config/.wrangler/config/default.toml'),join(homedir(),'.wrangler/config/default.toml')].filter(Boolean);
+ for(const file of candidates){
+  let content;try{content=await readFile(file,'utf8');}catch(error){if(error.code==='ENOENT')continue;throw new Error('No se pudo leer la sesión local de Wrangler.');}
+  const value=/^oauth_token\s*=\s*("(?:[^"\\]|\\.)*")/m.exec(content)?.[1];
+  if(value){try{return JSON.parse(value);}catch{throw new Error('La sesión de Wrangler no tiene un formato válido.');}}
+ }
+ throw new Error('Falta una sesión de Wrangler o CLOUDFLARE_API_TOKEN.');
+}
 function db(config,name){
+ if(!local)return createRemoteDatabase({accountId:process.env.CLOUDFLARE_ACCOUNT_ID||'30e57650ec41085db3a006d596eaecc7',databaseName:name,tokenProvider:cloudflareToken});
  async function execute(statements){
   const file=join(scratch,`sql-${++n}.sql`);await writeFile(file,statements.join(';\n')+';\n',{mode:0o600});
   const output=await cli(['d1','execute',name,'--config',config,...(local?['--local','--persist-to',join(directory||scratch,'local-state')]:['--remote','--env',environment]),'--file',file,'--json']);
@@ -39,6 +51,7 @@ function bucket(name,config){return {
  },
  async put(key,bytes,metadata={}){const file=join(scratch,`object-${++n}`);await writeFile(file,new Uint8Array(bytes),{mode:0o600});try{await cli(['r2','object','put',name+'/'+key,'--config',config,...(local?['--persist-to',join(directory||scratch,'local-state')]:['--remote']),'--file',file,'--content-type',metadata.httpMetadata?.contentType||'application/octet-stream','--force']);}finally{await rm(file,{force:true});}},
 };}
+if(!local)await cli(['whoami']); // Refresh Wrangler OAuth before using the same credentials through the query API.
 const source=db(sourceConfig,local?'tas-king':environment==='staging'?'tas-king-staging':'tas-king');
 const target=db(targetConfig,local?'homesuite-app-local':environment==='staging'?'homesuite-app-db-staging':'homesuite-app-db');
 const sourceBucket=bucket(!local&&environment==='staging'?'tas-king-uploads-staging':'tas-king-uploads',sourceConfig);

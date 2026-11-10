@@ -103,6 +103,11 @@ Un lease que quede tras un fallo detiene el corte: verificar la petición y su e
 no borrarlo ni expirar leases por reloj para avanzar. El cron también queda detenido.
 Así no se pierde una subida ni un GET con efectos admitido antes del snapshot.
 
+El adaptador remoto usa la [API D1 query con parámetros y lotes](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/),
+con la sesión de Wrangler o `CLOUDFLARE_API_TOKEN`, sin poner SQL privado ni
+credenciales en argumentos/logs. `d1 execute --file` remoto es una importación y
+no devuelve filas SELECT; se conserva ese mecanismo sólo para simulación local.
+
 `extract` crea un manifiesto versionado de 14 tablas, cobertura de relaciones y
 hashes de bytes. Rechaza identidades ambiguas, personales duplicados y referencias
 inconsistentes. `load` guarda filas e indicadores de avance en lotes acotados;
