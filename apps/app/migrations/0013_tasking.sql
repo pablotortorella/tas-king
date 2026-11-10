@@ -228,7 +228,7 @@ END;
 
 CREATE UNIQUE INDEX tasking_one_personal_per_identity ON tasking_boards(owner_identity_id) WHERE is_personal = 1;
 
-CREATE TABLE tasking_verified_accounts (user_id TEXT PRIMARY KEY REFERENCES users(id), google_sub TEXT NOT NULL, verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE tasking_verified_accounts (user_id TEXT PRIMARY KEY REFERENCES users(id), google_sub TEXT NOT NULL, email_authority INTEGER NOT NULL DEFAULT 1 CHECK(email_authority IN (0,1)), verified_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE VIEW tasking_presentations AS SELECT i.identity_id, i.user_id, i.legacy_email, COALESCE(u.display_name,i.name) AS name, COALESCE(u.email,i.legacy_email) AS contact_email,
  CASE WHEN i.user_id IS NULL THEN i.avatar_emoji WHEN p.avatar_mode='emoji' THEN p.avatar_emoji ELSE NULL END AS avatar_emoji,
  CASE WHEN i.user_id IS NULL THEN i.avatar_color ELSE p.avatar_color END AS avatar_color,

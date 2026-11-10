@@ -64,7 +64,7 @@ it('no reclama por email una cuenta externa que Google no acredita como autorida
  await env.DB.prepare('INSERT INTO tasking_identities(identity_id,legacy_email,name,created_at) VALUES(?,?,?,1)').bind(id,email,'Pendiente').run();
  const user=await upsertGoogleUser(env.DB,{sub:crypto.randomUUID(),email,name:'Cuenta externa',emailAuthority:false});
  const session=await createSession(env.DB,{userId:user.id,secret:SECRET});
- const response=await req({cookie:'__Host-homesuite_session='+encodeURIComponent(session.token)},'/api/tareas/me');expect(response.status).toBe(409);expect((await response.json()).error).toContain('Pablitux');expect((await env.DB.prepare('SELECT user_id FROM tasking_identities WHERE identity_id=?').bind(id).first()).user_id).toBeNull();
+ const response=await req({cookie:'__Host-homesuite_session='+encodeURIComponent(session.token)},'/api/tareas/me');expect(response.status).toBe(409);expect((await response.json()).error).toContain('Pablitux');expect((await req({cookie:'__Host-homesuite_session='+encodeURIComponent(session.token)},'/tareas')).status).toBe(409);expect((await env.DB.prepare('SELECT user_id FROM tasking_identities WHERE identity_id=?').bind(id).first()).user_id).toBeNull();
 });
 it('el formulario de salida de TasKing revoca la sesión HomeSuite real',async()=>{
  const u=await person();const response=await req(u,'/tareas/salir');expect(response.status).toBe(200);const html=await response.text();const token=html.match(/name="_csrf" value="([^"]+)"/)[1];
@@ -85,4 +85,12 @@ it('admite el límite heredado de 20 MiB y limpia una subida parcial que luego e
  const invalid=new FormData();invalid.append('files',new File(['primero'],'primero.txt',{type:'text/plain'}));invalid.append('files',new File([new Uint8Array(20*1024*1024+1)],'demasiado.txt',{type:'text/plain'}));
  expect((await upload(invalid)).status).toBe(413);expect((await env.TASKING_BUCKET.list()).objects.map(o=>o.key).sort()).toEqual(before);
  expect((await env.DB.prepare('SELECT COUNT(*) AS n FROM tasking_attachments WHERE card_id=?').bind(card.id).first()).n).toBe(1);
+});
+it('una sesión previa revalida Google automáticamente y recupera Workspace sin pedir intervención',async()=>{
+ await active();const email=crypto.randomUUID()+'@familia.example',actor=await identityIdForEmail(email),board=crypto.randomUUID(),sub=crypto.randomUUID();
+ await env.DB.batch([env.DB.prepare('INSERT INTO tasking_identities(identity_id,legacy_email,name,created_at) VALUES(?,?,?,1)').bind(actor,email,'Cuenta previa'),env.DB.prepare("INSERT INTO tasking_boards(id,name,owner_identity_id,is_personal,created_at) VALUES(?,'Personal previo',?,1,1)").bind(board,actor),env.DB.prepare("INSERT INTO tasking_board_members(board_id,identity_id,role,created_at) VALUES(?,?,'owner',1)").bind(board,actor)]);
+ const user=await upsertGoogleUser(env.DB,{sub,email,name:'Perfil común'}),session=await createSession(env.DB,{userId:user.id,secret:SECRET}),u={cookie:'__Host-homesuite_session='+encodeURIComponent(session.token)};
+ const reauth=await req(u,'/tareas?card=mi-tarjeta');expect(reauth.status).toBe(303);expect(reauth.headers.get('Location')).toBe('/auth/google?returnTo=%2Ftareas%3Fcard%3Dmi-tarjeta');
+ await upsertGoogleUser(env.DB,{sub,email,name:'Perfil común',emailAuthority:true});
+ expect((await req(u,'/tareas?card=mi-tarjeta')).status).toBe(200);const data=await(await req(u,'/api/tareas/me')).json();expect(data.boards).toHaveLength(1);expect(data.boards[0].id).toBe(board);
 });

@@ -1,3 +1,4 @@
+import { escapeHtml } from '../ui-parts.js';
 import { TASKING_HISTORY } from './history.js';
 import { page } from '../route-kit.js';
 import { Hono } from 'hono';
@@ -78,7 +79,14 @@ export function registerTaskingRoutes(app){
   router.get('/tareas',async c=>{
     if(!await sessionFor(c))return login(c);
     if(!await taskingActive(c.env.DB))return c.html('<!doctype html><html lang="es"><meta charset="utf-8"><title>Fun TasKing</title><h1>Estamos preparando el traslado.</h1><p>Podés seguir usando <a href="'+(new URL(c.req.url).hostname==='app.homesuite.info'?'https://tas-king.pablotortorella.workers.dev':'https://tas-king-staging.pablotortorella.workers.dev')+'">Fun TasKing</a>.</p></html>',503);
-    const session=await sessionFor(c);const actor=await resolveIdentity(c.env.DB,session.user_id);await ensurePersonalBoard(c.env.DB,actor.identity_id);
+    const session=await sessionFor(c);let actor;
+    try{actor=await resolveIdentity(c.env.DB,session.user_id);}
+    catch(error){
+      if(error instanceof TaskingError&&error.code==='tasking_reauthentication_required')return login(c);
+      if(error instanceof TaskingError)return c.html(page('Recuperar tu TasKing','<h1>Recuperar tu TasKing</h1><p>'+escapeHtml(error.message)+'</p>',{favicon:'/tareas/favicon.v1.svg'}),error.status);
+      throw error;
+    }
+    await ensurePersonalBoard(c.env.DB,actor.identity_id);
     c.header('Cache-Control','private, no-store');return c.html(TASKING_DOCUMENT);
   });
   router.get('/tareas/salir',async c=>{

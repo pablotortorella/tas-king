@@ -19,7 +19,9 @@ se usa la misma cuenta Google: Gmail o correo con autoridad Workspace validada e
 el ID token. `email_verified` por sí solo no acredita correos externos. Un conflicto
 falla sin dar datos y ofrece contactar a Pablitux. El camino normal crea la cuenta
 HomeSuite y recupera los tableros automáticamente, aunque el alta sea posterior al
-traslado. No se migra la cookie antigua ni se crean usuarios OAuth ficticios.
+traslado. Una sesión previa sin prueba conservada vuelve automáticamente a Google
+con el retorno de tarjeta/archivo; se guardan ambos resultados de autoridad para
+que un correo externo no acreditado falle sin bucles de login. No se migra la cookie antigua ni se crean usuarios OAuth ficticios.
 
 El perfil común prevalece al mostrar nombres y avatares; las autorías pendientes
 conservan su presentación anterior. Se trasladan roles, avance del tip, paleta,

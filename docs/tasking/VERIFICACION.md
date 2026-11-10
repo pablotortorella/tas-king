@@ -11,7 +11,7 @@ Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**
 |---|---|
 | `npm test` | 235 pruebas, incluidas admisión/drenaje de peticiones y bloqueo del origen congelado |
 | `npm run test:homesuite-app` | 722 pruebas; instalación limpia y actualización con libro financiero poblado, unicidad y contratos de PWA |
-| `npm run test:homesuite-app:integration` | 388 pruebas D1/R2; identidad, perfil/salida, CSRF, permisos/revocación, copia/reintento/conciliación, límites reales de archivo |
+| `npm run test:homesuite-app:integration` | 389 pruebas D1/R2; identidad, perfil/salida, CSRF, permisos/revocación, copia/reintento/conciliación, límites reales de archivo |
 | `npm run test:homesuite-site` | 44 pruebas |
 | `npm run test:e2e` | 101 recorridos originales más un caso dirigido de mudanza aprobados (102 casos cubiertos) |
 | `npm run test:e2e:tasking` | 79 de 79 aprobados en corrida completa Chromium; incluye PWA instalada antes de entrar a Tareas y vuelta sin conexión |
@@ -36,7 +36,10 @@ Subidas: 20 MiB aceptados; 20 MiB + 1 rechazados sin conservar el archivo parcia
 anterior del mismo multipart. JSON sin `Content-Length` también queda acotado.
 Cookies antiguas no autentican HomeSuite; revocar sesión/membresía corta el acceso
 a archivos en la petición siguiente. Una cuenta externa sin autoridad Google no
-reclama una identidad pendiente por coincidencia de email.
+reclama una identidad pendiente por coincidencia de email. Una sesión HomeSuite
+previa sin prueba conservada vuelve a Google, conserva `?card` y recupera el
+personal importado cuando Google acredita Workspace; un resultado negativo
+muestra el contacto de Pablitux sin redirigir de nuevo.
 
 ## Ensayo operativo con datos sintéticos
 

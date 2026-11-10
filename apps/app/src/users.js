@@ -15,7 +15,7 @@ export async function upsertGoogleUser(db, { sub, email, name, picture, emailAut
     await db.prepare("UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
       .bind(normalizedEmail, existing.id).run();
     const profile = await updateGoogleProfile(db, existing.id, { name, picture });
-    if(emailAuthority) await db.prepare('INSERT INTO tasking_verified_accounts(user_id,google_sub) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET google_sub=excluded.google_sub,verified_at=CURRENT_TIMESTAMP').bind(existing.id,sub).run();
+    if(typeof emailAuthority==='boolean') await recordTaskingAuthority(db,existing.id,sub,emailAuthority);
     return { id: existing.id, email: normalizedEmail, display_name: profile.display_name };
   }
   const id = createPlatformId("user");
@@ -25,6 +25,12 @@ export async function upsertGoogleUser(db, { sub, email, name, picture, emailAut
     db.prepare(`INSERT INTO user_profiles (user_id, name_source, google_display_name, google_picture_url)
       VALUES (?, 'google', ?, ?)`).bind(id, googleName, googlePictureUrl(picture)),
   ]);
-  if(emailAuthority) await db.prepare('INSERT INTO tasking_verified_accounts(user_id,google_sub) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET google_sub=excluded.google_sub,verified_at=CURRENT_TIMESTAMP').bind(id,sub).run();
+  if(typeof emailAuthority==='boolean') await recordTaskingAuthority(db,id,sub,emailAuthority);
   return { id, email: normalizedEmail, display_name: visibleName };
+}
+
+// Both outcomes are recorded: an old session can refresh its Google proof once,
+// while a checked non-authoritative email must fail without an OAuth loop.
+async function recordTaskingAuthority(db,userId,sub,authority){
+  await db.prepare('INSERT INTO tasking_verified_accounts(user_id,google_sub,email_authority) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET google_sub=excluded.google_sub,email_authority=excluded.email_authority,verified_at=CURRENT_TIMESTAMP').bind(userId,sub,authority?1:0).run();
 }

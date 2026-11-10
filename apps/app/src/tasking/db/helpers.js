@@ -24,9 +24,11 @@ export async function resolveIdentity(db, userId) {
   if (!user) throw new TaskingError('Iniciá sesión con tu cuenta habitual.',401);
   const pending = await db.prepare('SELECT * FROM tasking_identities WHERE legacy_email=?').bind(normalizeEmail(user.email)).first();
   if (pending?.user_id && pending.user_id !== userId) throw new TaskingError('No pudimos recuperar tu cuenta. Contactá a Pablitux.');
-  // Existing accounts can be linked by an explicitly verified transfer mapping as well.
-  const authority = user.email.endsWith('@gmail.com') || user.google_sub.startsWith('local:') || await db.prepare('SELECT 1 AS ok FROM tasking_verified_accounts WHERE user_id=? AND google_sub=?').bind(userId,user.google_sub).first();
-  if (pending && !authority && pending.verified_sub !== user.google_sub) throw new TaskingError('No pudimos verificar tu cuenta anterior. Contactá a Pablitux.');
+  if(pending&&pending.verified_sub!==user.google_sub&&!user.email.endsWith('@gmail.com')&&!user.google_sub.startsWith('local:')){
+    const proof=await db.prepare('SELECT email_authority FROM tasking_verified_accounts WHERE user_id=? AND google_sub=?').bind(userId,user.google_sub).first();
+    if(!proof)throw new TaskingError('Volvé a entrar con Google para recuperar tus tableros.',401,'tasking_reauthentication_required');
+    if(!proof.email_authority)throw new TaskingError('No pudimos verificar tu cuenta anterior. Contactá a Pablitux.');
+  }
   const id = pending?.identity_id ?? await ensureUser(db,user.email);
   await db.prepare('UPDATE tasking_identities SET user_id=?,verified_sub=? WHERE identity_id=? AND (user_id IS NULL OR user_id=?) AND (verified_sub IS NULL OR verified_sub=?)').bind(userId,user.google_sub,id,userId,user.google_sub).run();
   const identity = await db.prepare('SELECT * FROM tasking_identities WHERE user_id=?').bind(userId).first();
