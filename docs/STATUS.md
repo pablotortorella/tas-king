@@ -24,13 +24,14 @@
   aclara que la sesión sigue abierta y se quitó el enlace «Continuar con Google» (sin conexión no puede funcionar). Como las tres páginas
   sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
   [backlog](PRODUCT_BACKLOG.md) (opción 2).
+- **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
 - **Aprendizaje:** la base local de `wrangler dev` sin `--persist-to` puede quedar con un esquema viejo y `/remanso` da 500 (falta la tabla de
   perfiles de `0007_shared_profiles`); se resolvió con una base nueva (`--persist-to .wrangler/pwa-local`) y las migraciones al día.
 - **Intento de staging fallido (2026-11-09, desde la sesión en la nube):** el token de Cloudflare se cargó como secreto de red del entorno en la nube; el proxy reemplaza todo `Authorization` hacia `api.cloudflare.com` y pisa la credencial temporal que Wrangler usa para subir los estáticos (`POST …/workers/assets/upload` → 401). Staging no cambió en ese intento; se publicó después desde la máquina de Pablo.
 - **Pruebas:** Vitest 711 unitarias y 352 de integración; E2E de la app 198 (189 + 9 nuevas); Remanso 37; sitio 44. Todo en verde en la corrida del grupo 7. En la sonda con service worker activo falló una vez `personas.spec.js` («dark … 44 px»), que no se reprodujo.
 - **Hallazgo:** con navigation preload, Chromium pedía dos veces `/auth/google` (dos cookies de estado OAuth); el acceso con Google podía fallar según el orden de llegada. No se observó la falla, pero sí el pedido doble. Quedó desactivado y lo cubre un E2E.
 - **Pendientes:**
-  - Verificación manual: iPhone (incluido el acceso con Google dentro de la app instalada), modo avión en Android y apagado con `PWA_SW=off` en staging.
+  - Verificación manual: iPhone (incluido el acceso con Google dentro de la app instalada).
   - Revisión de los íconos, de los textos sin conexión y del texto de privacidad (borrador).
   - Firefox y WebKit no probados (no están instalados).
   - CI no corre los E2E de la app (`test:e2e:homesuite-app` no está en `.github/workflows/test.yml`; hueco previo a este cambio), así que `pwa.spec.js` tampoco corre ahí.
