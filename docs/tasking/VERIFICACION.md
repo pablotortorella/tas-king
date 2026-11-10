@@ -65,6 +65,11 @@ como ventana ni RTO de producción: falta medir el volumen de staging.
 
 ## Incidencias y límites
 
+- CI detectó dos frases legítimas del tip y del historial:
+  «espacio para imprevistos» y «espacio de almacenamiento». Se permiten
+  esas frases concretas, con motivo y regresión, manteniendo prohibido el antiguo
+  nombre del grupo. El scanner sólo ve archivos versionados; por eso apareció en
+  CI después de incorporar las copias nuevas al commit.
 - La primera corrida de regresión de backup esperaba 12 triggers. La migración
   agrega el cerrojo; ahora compara todos los triggers respaldables, preserva la
   aserción de 12 de sincronización y comprueba el de congelación.

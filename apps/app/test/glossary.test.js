@@ -18,6 +18,8 @@ const EXCLUDED_PATHS = [
   ["docs/HOMESUITE_IDENTIDAD_Y_VISION.md", "documento de identidad y voz de marca, que usa «espacio» en sentido figurado («tu espacio», «un espacio para respirar»); el vocabulario del dominio lo fija el glosario"],
 ];
 const ALLOWED_PHRASES = [
+  ["espacio para imprevistos", "margen de tiempo del tip heredado de TasKing; no nombra un grupo"],
+  ["espacio de almacenamiento", "capacidad de archivos en las novedades históricas de TasKing; no nombra un grupo"],
   ["white-space", "propiedad CSS"],
   ["space-between", "valor CSS"], ["space-around", "valor CSS"], ["space-evenly", "valor CSS"],
   ["press(\"Space\")", "nombre de la tecla de espacio en Playwright"],
@@ -52,6 +54,8 @@ describe("lenguaje del dominio", () => {
     expect(findDiscardedTerms("space_id TEXT, FROM spaces")).toEqual(["space", "spaces"]);
     expect(findDiscardedTerms("renameSpace(createSpaceForUser)")).toEqual(["eSpace", "eSpace"]);
     expect(findDiscardedTerms("Crear espacio")).toEqual(["espacio"]);
+    expect(findDiscardedTerms("Dejá espacio para imprevistos")).toEqual([]);
+    expect(findDiscardedTerms("El espacio de almacenamiento")).toEqual([]);
     expect(findDiscardedTerms("/spaces/new")).toEqual(["spaces"]);
     expect(findDiscardedTerms("white-space: nowrap; justify-content: space-between")).toEqual([]);
     expect(findDiscardedTerms("namespace_id, whitespace, letter-spacing, Whitespace")).toEqual([]);
