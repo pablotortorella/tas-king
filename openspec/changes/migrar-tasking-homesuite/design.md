@@ -2,6 +2,8 @@
 
 Motivación y alcance en [proposal.md](proposal.md). Primera inspección sobre `3fe9cd6`; revisión de cierre del 2026-11-09 actualizada mediante rebase sobre `origin/main` `65a1b53`, que ya integra la PWA. Sólo se preparan artefactos; no se inspeccionaron datos privados ni recursos desplegados.
 
+Contexto operativo confirmado por Pablo el 2026-11-09: las personas actuales de TasKing son pocas, conocidas directamente y pertenecen a su círculo de amigos y familia. La transición se coordina personalmente con ellas: aviso, guardado de borradores, ventana de corte y comprobación de sus tableros. No hace falta una plataforma de migración masiva, despliegue gradual, autoservicio de reclamación ni un sistema adicional de verificación de identidad. Si aparece un vínculo ambiguo, se comprueba de forma dirigida con Pablo y la persona afectada. El tamaño del grupo permite simplificar la operación; se conservan los controles técnicos de integridad, permisos y una sola copia operativa.
+
 Hechos relevantes del código:
 
 - `src/index.js` compone Hono, rutas de dominio y autenticación propia. `src/db/helpers.js` crea el personal y consulta membresías por email. No existe vínculo persistido con Google `sub` en TasKing.
