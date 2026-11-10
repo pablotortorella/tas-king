@@ -2,10 +2,10 @@
 
 **Última actualización**: 2026-11-09
 
-## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
+## HomeSuite App instalable (PWA) — mergeada en `main` y en staging, sin publicar en producción — 2026-11-09
 
-- **Rama:** `ccr-a7efcef7-25zjqk`. **No integrada en `main` ni en producción.**
-- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `d82beeb`, sin conflictos ni comentarios.
+- **Rama:** `ccr-a7efcef7-25zjqk`, **mergeada** con el PR #142 (`65a1b53`, 2026-11-09, por orden de Pablo). **No está en producción** (app en `main 992580c`).
+- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `99f7962` (último commit), sin conflictos ni comentarios. Abiertos a partir de él: [#143](https://github.com/pablotortorella/tas-king/pull/143) (documentación) y [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad, a la espera de la revisión de Pablo).
 - **Staging (publicado 2026-11-09 por orden de Pablo, desde su máquina):** app `staging.homesuite.info`, versión `7daec2bc` (primera publicación), mensaje
   «PR #142 · SHA 6afbb87 · PWA instalable (rama, para revisión)». Sin migraciones; respaldo previo en
   `~/dev/tas-king-backups/homesuite-app/staging/20261109T203120Z`. La versión anterior fue `66804688` (`main 3fe9cd6`). El sitio no cambió.
