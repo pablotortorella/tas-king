@@ -344,8 +344,13 @@ describe("caracterización: lo que este cambio NO toca", () => {
     }
   });
 
-  it("apps/app/wrangler.jsonc no cambió (huella registrada el 2026-11-09)", () => {
-    const huella = createHash("sha256").update(readFileSync(new URL("../wrangler.jsonc", import.meta.url))).digest("hex");
-    expect(huella).toBe("5205324ac0a147addd04edd5e4c95b10bd33387d96feaa6ebb649275cb648a0b");
+  it("la configuración conserva el contrato de assets y despliegue de la PWA al agregar Tareas", () => {
+    const config = JSON.parse(readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8").replace(/\/\/[^\n]*/g, ""));
+    expect(config.minify).toBe(false);
+    expect(config.assets.directory).toBe("./public");
+    expect(config.assets.binding).toBe("ASSETS");
+    expect(config.assets.run_worker_first).toBeUndefined();
+    expect(config.env.production.name).toBe("homesuite-app");
+    expect(config.env.staging.name).toBe("homesuite-app-staging");
   });
 });

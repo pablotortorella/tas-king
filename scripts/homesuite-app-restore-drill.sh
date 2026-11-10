@@ -46,3 +46,9 @@ node -e '
 ' "$RESULT_FILE"
 
 echo "Restore drill correcto: integridad, foreign keys y tablas esenciales verificadas."
+
+# Si el respaldo ya cubre TasKing, verificar también el conjunto de archivos que corresponde al SQL.
+BACKUP_DIRECTORY="$(dirname "$SQL_FILE")"
+if [ -f "$BACKUP_DIRECTORY/tasking-files.json" ]; then
+  node --no-warnings scripts/tasking/backup-assets.mjs verify "${HOMESUITE_BACKUP_ENVIRONMENT:-production}" "$BACKUP_DIRECTORY"
+fi

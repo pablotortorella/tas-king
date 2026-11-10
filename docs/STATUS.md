@@ -2,6 +2,25 @@
 
 **Última actualización**: 2026-11-09
 
+## TasKing en HomeSuite — implementación local en revisión — 2026-11-09
+
+- Rama `feature/migrar-tasking-homesuite` sobre `65a1b53`; change
+  [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md).
+  **Sin desplegar ni trasladar datos remotos.** El TasKing actual sigue operativo.
+- Módulo `/tareas`, API propia, identidades pendientes/vinculadas y permisos por
+  tablero, perfil/sesión HomeSuite, esquema aditivo y almacenamiento propio.
+  Se conserva el personal importado y se recuperan tableros con la misma cuenta.
+- Preparados: traslado completo reanudable con conciliación D1/R2; respaldo de
+  archivos y restore local; drenaje y cerrojo de escrituras del origen; Worker
+  público de aviso firmado por Pablitux con botón a HomeSuite y favicon original.
+- Verificación local y límites: [evidencia](tasking/VERIFICACION.md).
+  [Runbook](tasking/MIGRACION-HOMESUITE.md) con recursos, recuperación y matriz
+  remota pendiente. Dock separado en backlog.
+- Staging compartido preservado: consultado en `9e4c4a4`/`1a2f3bfc` (revisión PWA).
+  Faltan coordinación de staging, dos cuentas Google reales, inventario remoto
+  completo, aceptación y aprobación explícita de la publicación final. No se
+  archiva el change ni se da por retirada la app original.
+
 ## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
 
 - **Rama:** `ccr-a7efcef7-25zjqk`. **No integrada en `main` ni en producción.**

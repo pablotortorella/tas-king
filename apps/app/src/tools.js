@@ -8,8 +8,7 @@ export const HERRAMIENTAS = Object.freeze([
   { id: "zen", nombre: "Jardín Zen", ruta: "/jardin-zen", resumen: "Arena, piedras y surcos para crear un momento de calma.", estado: "beta", acento: "tool-card-calm" },
 ]);
 
-// TasKing es un Worker aparte con un despliegue por ambiente; cada ambiente de la app lleva al suyo. La producción sólo se elige
-// desde el dominio de producción de la app: cualquier otro host (staging, local) lleva al TasKing de staging.
+// Orígenes heredados por ambiente, usados durante la preparación y por la comprobación del aviso de mudanza.
 export const TASKING_URL = Object.freeze({
   production: "https://tas-king.pablotortorella.workers.dev",
   staging: "https://tas-king-staging.pablotortorella.workers.dev",

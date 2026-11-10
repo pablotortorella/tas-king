@@ -32,5 +32,10 @@ EXPECTED_HASH="$(get_field sha256)"
 [[ "$EXPECTED_HASH" =~ ^[0-9a-f]{64}$ ]]
 test "$(sha256sum "$STATE_DIR/database.sql" | cut -d' ' -f1)" = "$EXPECTED_HASH"
 
+if [ -n "$(get_field tasking_files_sha256)" ]; then
+  node --no-warnings scripts/tasking/backup-assets.mjs download production "$STATE_DIR" "$PREFIX"
+  test "$(sha256sum "$STATE_DIR/tasking-files.json" | cut -d' ' -f1)" = "$(get_field tasking_files_sha256)"
+fi
+
 bash scripts/homesuite-app-restore-drill.sh "$STATE_DIR/database.sql" > /dev/null
 printf 'Backup verificado desde R2: %s (SHA-256 y restauración local correctos)\n' "$PREFIX"

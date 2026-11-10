@@ -1,3 +1,4 @@
+import { registerTaskingRoutes, taskingBodyLimit } from './tasking/index.js';
 import { Hono } from "hono";
 import { cookie, createGoogleAuthorization, decodeCookieValue, exchangeGoogleCode, getCookie, seal, unseal, validateGoogleIdToken, validReturnTo } from "./auth.js";
 import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
@@ -144,10 +145,17 @@ app.use("*", async (c, next) => {
   c.set("requestId", c.req.header("cf-ray") || crypto.randomUUID());
   await next();
   c.header("X-Request-Id", requestId(c));
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value);
+  const path = new URL(c.req.url).pathname;
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    let effective=value;
+    if(name === "Content-Security-Policy") {
+      if(path.startsWith("/tareas/adjuntos/")) effective="sandbox; default-src 'none'";
+      else if(path === "/tareas") effective=value.replace("img-src ", "img-src blob: ");
+    }
+    c.header(name,effective);
+  }
   // Se compara el hostname, no la URL: «?x=localhost» no debe apagar HSTS.
   if (!LOCAL_HOSTNAMES.has(new URL(c.req.url).hostname)) c.header("Strict-Transport-Security", HSTS);
-  const path = new URL(c.req.url).pathname;
   if (path.startsWith("/groups/") || path.startsWith("/api/") || ["/", "/cuentas-claras", "/tareas", "/perfil", "/remanso", "/jardin-zen"].includes(path)) c.header("Cache-Control", "private, no-store");
 });
 
@@ -183,7 +191,8 @@ app.use("*", async (c, next) => {
 app.use("*", async (c, next) => {
   if (isMutation(c)) {
     const contentLength = Number.parseInt(c.req.header("Content-Length") ?? "0", 10);
-    const limit = new URL(c.req.url).pathname.endsWith("/ledger/import/preview") ? MAX_IMPORT_BODY_BYTES : MAX_MUTATION_BODY_BYTES;
+    const bodyPath = new URL(c.req.url).pathname;
+    const limit = bodyPath.startsWith("/api/tareas/") ? taskingBodyLimit(bodyPath) : bodyPath.endsWith("/ledger/import/preview") ? MAX_IMPORT_BODY_BYTES : MAX_MUTATION_BODY_BYTES;
     if (Number.isFinite(contentLength) && contentLength > limit) {
       return c.json({ error: "La solicitud es demasiado grande.", requestId: requestId(c) }, 413);
     }
@@ -248,6 +257,7 @@ function localUser(c) {
   return c.req.query("as") || c.req.header("X-HomeSuite-Dev-Email") || c.env.DEV_LOCAL_EMAIL || null;
 }
 
+registerTaskingRoutes(app);
 registerProfileRoutes(app, { signedInUser, localUser, ensureLocalUser });
 registerRemansoRoutes(app, { page, html, signedInUser, localUser, ensureLocalUser, googleConfigured: (env) => Boolean(authConfig(env)) });
 registerJardinZenRoutes(app, { page });

@@ -78,7 +78,8 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 - **Migrar TasKing a la app de HomeSuite y retirar su autorización global**
   (decisiones de Pablo, 2026-11-09). Propuesta en
   [OpenSpec: migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
-  todavía sin implementación. Sólo migrar: conservar funciones y permisos por
+  con implementación local en revisión y corte/publicación pendientes
+  ([evidencia](tasking/VERIFICACION.md)). Sólo migrar: conservar funciones y permisos por
   tablero, independientes de los grupos de Cuentas Claras. Cualquier cuenta
   HomeSuite puede entrar y disponer de su tablero personal; quienes ya usaban
   TasKing recuperan sus tableros con la misma cuenta de Google, incluso si crean

@@ -3,7 +3,7 @@ import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "../profile-ui.js";
 import { readOwnProfile } from "../profiles.js";
 import { page, sessionSecret, signedInUser } from "../route-kit.js";
 import { ensureLocalUser } from "../groups.js";
-import { renderTools, taskingUrl } from "../tools.js";
+import { renderTools } from "../tools.js";
 import { escapeHtml } from "../ui-parts.js";
 
 const html = escapeHtml;
@@ -32,7 +32,6 @@ export function registerShellRoutes(app, { authConfig, localUser }) {
     return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Organizá, cuidá y disfrutá tu hogar.</h1><p>Elegí una herramienta para empezar.</p>${TOOLS}<section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
   });
 
-  app.get("/tareas", (c) => c.html(page("Fun TasKing", `<p class="eyebrow">Fun TasKing</p><h1>Lo que hay que hacer, a la vista.</h1><p>Fun TasKing ya está disponible mientras preparamos su lugar dentro de HomeSuite.</p><a class="button" href="${taskingUrl(new URL(c.req.url).hostname)}">Abrir Fun TasKing</a>`)));
 
   app.get("/perfil", async (c) => {
     const host = new URL(c.req.url).hostname;

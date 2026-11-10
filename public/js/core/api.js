@@ -22,6 +22,9 @@ export async function api(method, path, body) {
     let msg = res.statusText;
     let code;
     try { const j = await res.json(); if (j && j.error) msg = j.error; if (j && j.code) code = j.code; } catch (e) {}
+    if (code === "tasking_migrated" || code === "tasking_maintenance") {
+      window.dispatchEvent(new CustomEvent("tasking:moved", { detail: { migrated: code === "tasking_migrated" } }));
+    }
     if (code === "access_revoked") {
       // Puede llegar desde cualquier llamada (el poll de fondo incluido), no solo la
       // carga inicial — se navega ya mismo y no se resuelve esta promesa, para que

@@ -810,3 +810,5 @@ body.metrics-open #board, body.metrics-open .goals-board { margin-right: 340px; 
 .stale-item-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stale-item-meta { color: var(--muted); margin-top: 2px; font-size: 11px; }
 .stale-item-meta.overdue { color: var(--danger); font-weight: 600; }
+
+.tasking-move-notice{position:fixed;inset:auto 1rem 1rem;z-index:99999;padding:1rem;border:2px solid var(--accent);border-radius:.75rem;background:var(--card-bg);color:var(--text);box-shadow:0 4px 24px #0004}
