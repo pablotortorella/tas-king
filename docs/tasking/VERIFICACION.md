@@ -1,9 +1,9 @@
 # Evidencia de la migración de TasKing
 
-Actualización: 2026-11-10. Rama `feature/migrar-tasking-homesuite`, PR #145,
-worktree `/tmp/tasking-homesuite-proposal`. **Traslado activo en staging; producción
-intacta, sin integrar en `main` ni archivar.** Versiones, hashes, ubicación de copias
-y estado de CI: [registro vigente en STATUS](../STATUS.md#tasking-en-homesuite--traslado-activo-en-staging-en-revisión--2026-11-10).
+Actualización: 2026-11-10. [PR #145](https://github.com/pablotortorella/tas-king/pull/145)
+integrado en `main` y publicado en staging y producción. El change sigue abierto
+hasta completar la aceptación pendiente; **no está archivado**. Versiones, hashes,
+copias y CI: [STATUS](../STATUS.md#tasking-en-homesuite--publicado-en-producción--2026-11-10).
 [Runbook y recursos](MIGRACION-HOMESUITE.md).
 
 ## Comprobaciones locales
@@ -98,9 +98,9 @@ como ventana ni RTO de producción: corresponde al fixture local, no al volumen 
   8796. Se separaron puertos. La prueba de teclado de clasificación también falló
   en esa corrida; ambos casos pasaron después en ejecución dirigida aislada. No se tocó
   el comportamiento financiero para acomodar esta migración.
-- Pendientes de ensayo y consultados a Pablo: dos cuentas Google reales y
-  dispositivos físicos con PWA instalada, incluido iPhone/Safari. Las sesiones
-  firmadas y autoridades sintéticas de test no los sustituyen.
+- Pablo confirmó dos cuentas Google reales en staging. Siguen pendientes los
+  dispositivos físicos con PWA instalada, incluido iPhone/Safari, coordinados con
+  Claude Code en el Handoff. La emulación automatizada no acredita esos dispositivos.
 
 ## Ensayo remoto en staging — 2026-11-10
 
@@ -129,11 +129,55 @@ No se consultaron logs de usuarios para verificarlo.
 Pablo confirmó el 2026-11-10 que el recorrido funciona con su cuenta Google:
 entrada desde el aviso, tableros y salida/reingreso. Una consulta agregada confirmó
 la identidad vinculada y el personal importado conservado sin duplicados.
-CI completo aprobado sobre `a46dfcc`.
+CI completo aprobado sobre `b5383a4`. Pablo confirmó una segunda cuenta «OK en
+staging» y autorizó producción con el candidato validado. No atribuir a esa segunda
+confirmación pasos manuales específicos que no declaró. Invitación/revocación y
+permisos cruzados tienen además cobertura D1/R2 y dos contextos de navegador.
+El SHA final integrado, con árbol idéntico, fue publicado nuevamente en staging:
+coherencia 29/29, sin volver a cargar ni reemplazar datos del ambiente.
 
-Pendientes antes de producción: segunda cuenta Google para invitación, revocación
-y aislamiento; aceptación completa y revisión del SHA final integrado. Las pruebas
-físicas de PWA quedan coordinadas en el handoff para Claude Code.
-Validar los recursos y permisos de producción y completar su matriz operativa antes
-de pedir aprobación explícita de esa publicación. Producción y su infraestructura
-siguen intactas; el change permanece abierto y sin archivar.
+## Corte de producción — 2026-11-10
+
+Se respaldaron ambos extremos antes de migrar, restaurando SQL y adjuntos en
+entornos aislados. Se aplicaron las migraciones aditivas, publicó la app con Tareas
+cerrada y preparó el origen aún en `live`. Se deshabilitaron globalmente previews:
+dos versiones históricas devolvieron 404 antes del drenaje. Drenaje y congelación
+persistente precedieron al SQL final y snapshot; cero leases antes de copiar.
+
+Las 14 tablas, 12 tableros, 101 tarjetas y cinco archivos fueron conciliados antes
+de activar, con SHA-256 de cada archivo. Las 13 tablas financieras conservaron
+exactamente su huella. `activate` cerró el origen en `moved`, comprobó de nuevo el
+snapshot y activó sólo HomeSuite. La ventana hasta `active` duró 144 segundos.
+Versiones, lote, hashes y copias durables: [STATUS](../STATUS.md).
+
+El puente quedó al 100 %, sin bindings D1/R2/ASSETS, cron ni previews. Metadata y
+probes sintéticos comprobaron aviso público firmado, botón único, API 410,
+callback 302 local sin credenciales, favicon SVG idéntico y retorno a tarjeta/archivo
+a través del login. La API remota reporta observabilidad `null`, Logpush apagado y
+sin consumidores tail. No se consultaron logs de usuarios. SQL histórico y R2
+original permanecen conservados, sin acceso desde el puente.
+
+La primera coherencia inmediatamente posterior al deploy leyó la landing anterior
+durante propagación del sitio; se comprobó el HTML actualizado antes de repetir.
+El sitio y app pasaron **30/30** comprobaciones, incluidos enlaces sin staging.
+El backup posterior se recuperó desde R2 y restauró con SQL y los cinco archivos.
+
+Los cinco secretos heredados de cada puente se retiraron tras comprobar el inventario
+y que el aviso no los usa; metadata/probes posteriores confirman puentes sin secretos
+y sin reapertura de rutas. El backup diario de GitHub con su token real completó
+exportación, lectura de los cinco archivos nuevos y restauración desde R2. Se ensayó
+además la escritura/lectura de esos bytes en R2 exclusivamente local, hashes idénticos.
+
+Pendiente de aceptación: entrar/editar/descargar/salir con Google real en producción.
+Se solicitó el smoke real a Pablo. Las pruebas físicas PWA quedan en Handoff para
+Claude Code. No se archiva el change ni se declara aceptación completa a partir de
+los probes anónimos o de las confirmaciones de staging.
+
+Las tareas 6.10–6.11 permanecen abiertas para completar evidencia específica de
+caché caliente/volver atrás/adjunto previamente visitado y telemetría sintética
+completa/continuidad ante fallo del destino. Ya están comprobados `no-store`,
+expiración de cookies, retirada de assets y no persistencia de logs/trazas; no se
+presentan como el ensayo completo. Las tareas 7.2–7.3 conservan los escenarios
+manuales no declarados en las confirmaciones resumidas de staging, incluidos los
+de PWA física coordinados con Claude. La autorización de producción aplicó a la
+evidencia disponible, sin convertir esos límites en pruebas realizadas.

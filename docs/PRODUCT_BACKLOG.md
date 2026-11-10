@@ -78,17 +78,23 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 - **Migrar TasKing a la app de HomeSuite y retirar su autorización global**
   (decisiones de Pablo, 2026-11-09). Propuesta en
   [OpenSpec: migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
-  con implementación en revisión y traslado activo en staging; integración y producción pendientes
-  ([evidencia](tasking/VERIFICACION.md)). Sólo migrar: conservar funciones y permisos por
+  integrada en `main` y activa en staging y producción desde 2026-11-10
+  ([evidencia](tasking/VERIFICACION.md)). Corte completado: se conservaron funciones y permisos por
   tablero, independientes de los grupos de Cuentas Claras. Cualquier cuenta
   HomeSuite puede entrar y disponer de su tablero personal; quienes ya usaban
   TasKing recuperan sus tableros con la misma cuenta de Google, incluso si crean
-  su cuenta HomeSuite después del traslado. La app actual sigue funcionando
-  durante la preparación. Al completar el traslado, retirar la lista global de
-  autorizados, su gestión, las solicitudes asociadas y la configuración que deje
-  de usarse. Mantener la autorización necesaria en el origen hasta el corte.
-  Verificación: recuperación sin personal duplicado, permisos por tablero
-  conservados y acceso de una cuenta HomeSuite sin autorización global antigua.
+  su cuenta HomeSuite después del traslado. La autorización del origen se mantuvo
+  hasta el corte. La lista global, su gestión y solicitudes ya no tienen rutas ni
+  controles activos; los secretos independientes se retiraron de ambos puentes.
+  Staging confirmado con dos cuentas Google; recuperación sin personal duplicado
+  corroborada en la primera. Invitación, revocación y aislamiento cuentan con
+  cobertura automatizada; producción pasó 30/30
+  comprobaciones de coherencia y backups pre/post restaurados. **Seguimiento:**
+  falta el smoke de Google real en producción; los cinco secretos heredados de
+  cada puente ya fueron retirados. El change OpenSpec conserva criterios abiertos
+  y no se considera archivado. TasKing ya está incorporado al HomeSuite; ensayos
+  físicos de la PWA siguen en el trabajo PWA de Claude, fuera del cierre de esta
+  migración. El dock continúa como idea separada, sin diseño ni prioridad acordados.
 
 - **Navegación entre aplicaciones de la suite, tipo dock** (pedido de Pablo,
   2026-11-09). Explorar una forma sencilla de moverse entre las aplicaciones de
