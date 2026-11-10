@@ -69,6 +69,25 @@ Configurar y publicar con su propio `wrangler.jsonc`; verificar apex, redirecci�
 `www`, rutas, links y cabeceras. No publicar app para cambiar una landing ni enviar
 cookies autenticadas al sitio. Cambios de DNS preservan registros ajenos al alcance.
 
+## App instalable
+
+Cambio [pwa-instalable](../../openspec/changes/pwa-instalable/proposal.md); estado en [STATUS](../STATUS.md).
+El service worker (alcance `/`) guarda en el dispositivo solo una lista cerrada de estáticos públicos
+(`/app.css`, scripts de la app, `/manifest.webmanifest`, archivos de Jardín Zen y Remanso sin audio) y las
+páginas sin conexión. **Nunca** guarda nada autenticado: ni `/api`, ni `/auth`, ni HTML con datos de cuenta o
+de grupo. Las navegaciones siempre van a la red; la página sin conexión solo aparece si la red falla.
+
+Rutas nuevas: `/manifest.webmanifest`, `/sw.js`, `/pwa.js`, `/sin-conexion`, `/sin-conexion/jardin-zen` y
+`/sin-conexion/remanso`.
+
+- Apagado de emergencia: publicar con `PWA_SW=off` (`--var PWA_SW:off` en `wrangler deploy`). El service worker
+  queda sin manejador `fetch`, borra sus cachés y se desregistra. Sin la variable, vuelve el modo normal.
+- Íconos: `npm run pwa:iconos:homesuite-app`. Lista de precarga: `npm run pwa:precache:homesuite-app`; hay que
+  correrlo cuando cambia algún archivo de `apps/app/public/jardin-zen/` o `remanso/`, porque una prueba falla si la
+  lista no coincide con el disco.
+- Sin *navigation preload*: con él, Chromium pide dos veces `/auth/google` y el acceso con Google puede fallar.
+- TasKing queda fuera: vive en otro Worker y en otro origen.
+
 ## Límites
 
 La política de recuperación y ciclo de vida de datos debe demostrarse antes de

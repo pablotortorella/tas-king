@@ -1,6 +1,40 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-02
+**Última actualización**: 2026-11-09
+
+## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
+
+- **Rama:** `ccr-a7efcef7-25zjqk`. **No integrada en `main` ni en producción.**
+- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `d82beeb`, sin conflictos ni comentarios.
+- **Staging (publicado 2026-11-09 por orden de Pablo, desde su máquina):** app `staging.homesuite.info`, versión `7daec2bc` (primera publicación), mensaje
+  «PR #142 · SHA 6afbb87 · PWA instalable (rama, para revisión)». Sin migraciones; respaldo previo en
+  `~/dev/tas-king-backups/homesuite-app/staging/20261109T203120Z`. La versión anterior fue `66804688` (`main 3fe9cd6`). El sitio no cambió.
+  Smoke con `curl` de `/sw.js`, `/pwa.js`, `/manifest.webmanifest`, un ícono y las tres páginas `/sin-conexion*`: 200 en todas, `/sw.js` con
+  `no-cache`, manifiesto `application/manifest+json`, ícono `immutable` y HSTS en todas. Antes: `wrangler deploy --dry-run` sin advertencias y
+  `openspec validate pwa-instalable --strict` válido.
+- **Verificación en local y en staging (Pablo):** en Chrome de escritorio local, Manifest sin errores (solo avisos opcionales de capturas),
+  service worker activo con alcance `/` y caché con 18 entradas públicas; Jardín Zen y Remanso andan sin conexión (Remanso con el sintetizado:
+  los `.opus` pertenecen a `remanso-sonidos-naturales`, sin implementar). En staging instaló en escritorio y en Android, usó la app y entró con su
+  cuenta de Google. **Sin probar:** iPhone (queda para una persona con uno), modo avión en el celular y el apagado con `PWA_SW=off` (tarea 8.5).
+- **Ajuste posterior (publicado 2026-11-09):** en Android el acceso directo se llamaba «HS staging»; el `short_name` de staging y localhost
+  pasó a «HomeSuite staging» (`pwa.js`, prueba del manifiesto y `design.md`). Staging quedó en la versión `a2f18b62`
+  («PR #142 · SHA 0c566b7 · …», respaldo previo `20261109T204344Z`, sin migraciones); el manifiesto servido ya trae el nombre nuevo.
+  Los accesos directos ya creados no se renombran solos: hay que borrarlos y crearlos de nuevo.
+- **Ajuste por la prueba en modo avión (2026-11-09, sin publicar):** Remanso sin conexión se leía como una sesión cerrada. El aviso ahora
+  aclara que la sesión sigue abierta y se quitó el enlace «Continuar con Google» (sin conexión no puede funcionar). Como las tres páginas
+  sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
+  [backlog](PRODUCT_BACKLOG.md) (opción 2).
+- **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
+- **Aprendizaje:** la base local de `wrangler dev` sin `--persist-to` puede quedar con un esquema viejo y `/remanso` da 500 (falta la tabla de
+  perfiles de `0007_shared_profiles`); se resolvió con una base nueva (`--persist-to .wrangler/pwa-local`) y las migraciones al día.
+- **Intento de staging fallido (2026-11-09, desde la sesión en la nube):** el token de Cloudflare se cargó como secreto de red del entorno en la nube; el proxy reemplaza todo `Authorization` hacia `api.cloudflare.com` y pisa la credencial temporal que Wrangler usa para subir los estáticos (`POST …/workers/assets/upload` → 401). Staging no cambió en ese intento; se publicó después desde la máquina de Pablo.
+- **Pruebas:** Vitest 711 unitarias y 352 de integración; E2E de la app 198 (189 + 9 nuevas); Remanso 37; sitio 44. Todo en verde en la corrida del grupo 7. En la sonda con service worker activo falló una vez `personas.spec.js` («dark … 44 px»), que no se reprodujo.
+- **Hallazgo:** con navigation preload, Chromium pedía dos veces `/auth/google` (dos cookies de estado OAuth); el acceso con Google podía fallar según el orden de llegada. No se observó la falla, pero sí el pedido doble. Quedó desactivado y lo cubre un E2E.
+- **Pendientes:**
+  - Verificación manual: iPhone (incluido el acceso con Google dentro de la app instalada).
+  - Revisión de los íconos, de los textos sin conexión y del texto de privacidad (borrador).
+  - Firefox y WebKit no probados (no están instalados).
+  - CI no corre los E2E de la app (`test:e2e:homesuite-app` no está en `.github/workflows/test.yml`; hueco previo a este cambio), así que `pwa.spec.js` tampoco corre ahí.
 
 ## Jardín Zen v0.4 y HSTS de la app en producción — 2026-11-02
 

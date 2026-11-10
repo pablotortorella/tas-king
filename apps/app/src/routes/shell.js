@@ -11,7 +11,7 @@ const TOOLS = renderTools();
 
 // Comportamiento común del encabezado: si la foto del avatar no carga se muestra la inicial, y el menú se cierra con
 // Escape, al tocar afuera o al elegir una opción que sólo cambia de lugar dentro de la misma página.
-const SHELL_SCRIPT = `document.querySelectorAll('.avatar img').forEach((image) => { image.addEventListener('error', () => image.remove()); if (image.complete && !image.naturalWidth) image.remove(); });
+export const SHELL_SCRIPT = `document.querySelectorAll('.avatar img').forEach((image) => { image.addEventListener('error', () => image.remove()); if (image.complete && !image.naturalWidth) image.remove(); });
 const menu = document.querySelector('details.menu');
 if (menu) {
   const close = () => { menu.open = false; };

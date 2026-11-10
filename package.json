@@ -12,6 +12,8 @@
     "deploy:staging": "npm run verify-ready && npm run db:migrate:staging && wrangler deploy --env staging",
     "test": "vitest run",
     "test:homesuite-app": "vitest run --config apps/app/vitest.config.mjs",
+    "pwa:iconos:homesuite-app": "node scripts/homesuite-app-iconos.mjs",
+    "pwa:precache:homesuite-app": "node scripts/homesuite-app-pwa-precache.mjs",
     "test:homesuite-app:integration": "vitest run --config apps/app/vitest.integration.config.mjs",
     "test:e2e:homesuite-app": "playwright test --config apps/app/playwright.config.mjs",
     "test:e2e:homesuite-app:firefox": "playwright test --config apps/app/playwright.firefox.config.mjs",

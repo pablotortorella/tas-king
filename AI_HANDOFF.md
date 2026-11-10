@@ -2,7 +2,52 @@
 
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-## Última sesión — Jardín Zen, tarjetas 2×2 y orden del repositorio (2026-10-31)
+## Última sesión — HomeSuite App instalable (PWA), pendiente de staging (2026-11-09)
+
+Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS.md) y el change
+[`pwa-instalable`](openspec/changes/pwa-instalable/) (`tasks.md`: quedan los grupos 8 y 9.4–9.5).
+
+### Dónde estamos
+- **PR [#142](https://github.com/pablotortorella/tas-king/pull/142)**, rama `ccr-a7efcef7-25zjqk`, último commit de código `d82beeb`.
+  CI en verde, sin conflictos. **No integrado ni publicado** en ningún ambiente.
+- **Staging** sigue en `main 3fe9cd6` (versión `66804688`). La publicación desde la nube falló por el proxy (ver STATUS); nada cambió.
+- Fuera de alcance y documentado en el backlog: TasKing como PWA, notificaciones push (opción 3) y Cuentas Claras sin conexión (opción 4).
+
+### Pasos para publicar en staging (desde VS Code, terminal integrada)
+1. `git fetch origin && git checkout ccr-a7efcef7-25zjqk && git pull --ff-only`
+2. `npm ci` si cambió el lockfile o falta `node_modules`; `npx wrangler whoami` para confirmar la sesión de Cloudflare.
+3. Comprobar que nadie más esté usando staging: `npx wrangler deployments list --env staging --config apps/app/wrangler.jsonc`
+   (la última debe ser `main 3fe9cd6` u otra versión acordada).
+4. Publicar (respalda la D1 de staging en `~/dev/tas-king-backups/`, no hay migraciones):
+   `npm run deploy:homesuite-app:staging -- --message "PR #142 · SHA <sha corto> · PWA instalable (rama, para revisión)"`
+5. Smoke del mismo SHA, sin cuenta:
+   ```bash
+   for p in /sw.js /pwa.js /manifest.webmanifest /icons/homesuite-192.v1.png /sin-conexion /sin-conexion/jardin-zen /sin-conexion/remanso; do
+     curl -sI "https://staging.homesuite.info$p" | grep -iE "^HTTP|content-type|cache-control|strict-transport"; done
+   ```
+   Esperado: 200; `/sw.js` con `Cache-Control: no-cache`; manifiesto `application/manifest+json`; íconos `immutable`; HSTS en todos.
+6. Con cuenta real: entrar y salir en staging (requisito de [operación](docs/homesuite/OPERACION.md)).
+7. Verificación manual (`tasks.md` 8.2–8.6): instalar en Android/Chrome, iPhone/Safari (incluido **entrar con Google dentro de la
+   app instalada**; si falla, decidir la pregunta abierta 1 de `design.md` antes de producción) y escritorio; modo avión con
+   Jardín Zen y Remanso; apagado publicando con `--var PWA_SW:off` y volver a publicar normal; revisar íconos y textos sin conexión.
+8. Anotar SHA, versión y resultados en STATUS. Producción solo con orden explícita: primero la app, después el sitio (texto de
+   privacidad en borrador, revisarlo antes), y `npm run verify:coherence:production`.
+
+### Decisiones abiertas
+- **Cómo publica Claude sin tu consola:** propuesta pendiente. La opción recomendada es un workflow de GitHub Actions `Deploy staging`
+  (disparo manual, token como secreto del repo, producción detrás de aprobación). Requiere integrarlo primero en `main` con un PR propio.
+  La alternativa, una variable de entorno en la nube, deja el token en texto plano en el contenedor.
+- **Token de Cloudflare cargado hoy** como secreto de red del entorno en la nube «tas-king»: no sirve para publicar (choca con el
+  proxy). Revocarlo en Cloudflare y borrarlo de la configuración de ese entorno, salvo que se use para la opción del workflow
+  (allí se crea uno nuevo como secreto de GitHub).
+- Preguntas abiertas 1–8 de `openspec/changes/pwa-instalable/design.md` (ninguna bloquea staging).
+
+### Qué conviene saber
+- Los E2E de la app no corren en CI (`.github/workflows/test.yml`); `pwa.spec.js` se corre local con
+  `npm run test:e2e:homesuite-app` (si Playwright no encuentra Chromium: `E2E_CHROMIUM_PATH=<ruta>`).
+- Si cambia algo en `apps/app/public/`, regenerar la lista de precarga con `npm run pwa:precache:homesuite-app` (una prueba lo exige).
+
+## Sesión anterior — Jardín Zen, tarjetas 2×2 y orden del repositorio (2026-10-31)
 
 Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
 

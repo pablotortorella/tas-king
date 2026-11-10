@@ -89,8 +89,9 @@ export function shortDate(isoDate) {
 
 // Menú de la aplicación (sin JavaScript: un <details>). Lo común va siempre; las secciones del grupo las completa el servidor cuando la
 // URL es de un grupo (GROUP_MENU_MARKER).
-export function appMenu() {
-  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${GROUP_MENU_MARKER}<a href="/">Inicio</a><a href="/groups">Mis grupos</a>${ACCOUNT_MENU_MARKER}</nav></details>`;
+// `cuenta: false` omite las marcas de grupo y de cuenta (páginas públicas que no leen sesión, como las de «Sin conexión»).
+export function appMenu({ cuenta = true } = {}) {
+  return `<details class="menu"><summary aria-label="Abrir el menú"><span aria-hidden="true">☰</span><span class="menu-label">Menú</span></summary><nav aria-label="Menú">${cuenta ? GROUP_MENU_MARKER : ""}<a href="/">Inicio</a><a href="/groups">Mis grupos</a>${cuenta ? ACCOUNT_MENU_MARKER : ""}</nav></details>`;
 }
 
 export function tabbar(groupHref) {
@@ -99,9 +100,11 @@ export function tabbar(groupHref) {
 }
 
 // `styles`, `scripts` (del mismo origen) y `bodyClass` permiten que un producto, como Remanso, sume lo suyo; sin ellos la salida es la de siempre.
-export function renderPage(title, content, { wide = false, groupHref = null, styles = [], scripts = [], bodyClass = "" } = {}) {
+// `cuenta: false` no emite ninguna de las cuatro marcas de cuenta y grupo: el servidor no consulta la sesión y la página es igual para todas
+// las personas (las páginas «Sin conexión» que el service worker guarda en el dispositivo).
+export function renderPage(title, content, { wide = false, groupHref = null, styles = [], scripts = [], bodyClass = "", cuenta = true } = {}) {
   const extraStyles = styles.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join("");
   const extraScripts = scripts.map(src => `<script type="module" src="${escapeHtml(src)}"></script>`).join("");
   const shellClass = `shell${wide ? " wide" : ""}${groupHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="stylesheet" href="/app.css">${extraStyles}<script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script>${extraScripts}<body${bodyClass ? ` class="${escapeHtml(bodyClass)}"` : ""}><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a>${GROUP_MARKER}<div class="header-actions">${ACCOUNT_MARKER}${appMenu()}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="/icons/homesuite-favicon.v1.svg"><link rel="apple-touch-icon" sizes="180x180" href="/icons/homesuite-apple-touch-180.v1.png"><link rel="stylesheet" href="/app.css">${extraStyles}<script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><script src="/pwa.js" defer></script>${extraScripts}<body${bodyClass ? ` class="${escapeHtml(bodyClass)}"` : ""}><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a>${cuenta ? GROUP_MARKER : ""}<div class="header-actions">${cuenta ? ACCOUNT_MARKER : ""}${appMenu({ cuenta })}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
 }

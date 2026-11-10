@@ -30,11 +30,18 @@ export function renderJardinZen() {
 </section>`;
 }
 
+const ASSETS = Object.freeze({
+  wide: true,
+  bodyClass: "jardin-zen",
+  styles: ["/jardin-zen/jardin-zen.css"],
+  scripts: ["/jardin-zen/jardin-zen.js"],
+});
+
+// Copia pública de Jardín Zen para abrir sin conexión (/sin-conexion/jardin-zen): el mismo contenido, sin marcas de cuenta ni de grupo.
+// La precarga el service worker; no lee sesión ni usuario local.
+export const htmlJardinZenSinConexion = (page) => page("Jardín Zen", renderJardinZen(), { ...ASSETS, cuenta: false });
+
 export function registerJardinZenRoutes(app, { page }) {
-  app.get("/jardin-zen", (c) => c.html(page("Jardín Zen", renderJardinZen(), {
-    wide: true,
-    bodyClass: "jardin-zen",
-    styles: ["/jardin-zen/jardin-zen.css"],
-    scripts: ["/jardin-zen/jardin-zen.js"],
-  })));
+  app.get("/jardin-zen", (c) => c.html(page("Jardín Zen", renderJardinZen(), ASSETS)));
+  app.get("/sin-conexion/jardin-zen", (c) => c.html(htmlJardinZenSinConexion(page), 200, { "Cache-Control": "no-cache" }));
 }

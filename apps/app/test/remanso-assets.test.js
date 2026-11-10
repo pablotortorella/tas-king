@@ -43,4 +43,18 @@ describe("archivos estáticos de la app", () => {
     expect(block).toMatch(/^\s+Strict-Transport-Security: max-age=31536000; includeSubDomains\s*$/mu);
     expect(block).not.toMatch(/preload/u);
   });
+
+  it("public/ no contiene sw.js, pwa.js ni manifest.webmanifest (taparían la ruta del Worker)", async () => {
+    const offenders = (await files(publicDir)).map((file) => path.relative(publicDir, file)).filter((file) => /(^|\/)(sw\.js|pwa\.js|manifest\.webmanifest)$/u.test(file));
+    expect(offenders).toEqual([]);
+  });
+
+  it("_headers de /icons/*: nosniff, HSTS sin preload y caché inmutable de un año", async () => {
+    const headers = await readFile(path.join(publicDir, "_headers"), "utf8");
+    const block = headers.split(/^(?=\/)/mu).find((b) => b.startsWith("/icons/*"));
+    expect(block).toMatch(/^\s+X-Content-Type-Options: nosniff\s*$/mu);
+    expect(block).toMatch(/^\s+Strict-Transport-Security: max-age=31536000; includeSubDomains\s*$/mu);
+    expect(block).not.toMatch(/preload/u);
+    expect(block).toMatch(/^\s+Cache-Control: public, max-age=31536000, immutable\s*$/mu);
+  });
 });
