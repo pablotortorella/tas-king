@@ -40,6 +40,14 @@ El sistema SHALL recuperar el tablero personal y todas las membresías vigentes 
 - **WHEN** otra identidad de HomeSuite intenta reclamar un registro heredado ya vinculado
 - **THEN** se rechaza el vínculo, se informa el conflicto sin revelar tableros y se preserva la relación existente
 
+#### Scenario: Email externo sin prueba suficiente
+- **WHEN** el vínculo inicial depende de un email externo sobre el cual Google no es autoridad o de una correspondencia ambigua o reasignada
+- **THEN** `email_verified` por sí solo no reclama datos heredados; el vínculo queda pendiente de una comprobación adicional de continuidad de identidad, sin conceder tableros ni privilegios administrativos
+
+#### Scenario: Cuenta equivocada en el selector Google
+- **WHEN** alguien entra con una cuenta Google distinta de la que usaba en TasKing
+- **THEN** sólo ve datos de esa cuenta y dispone de una indicación para usar la cuenta habitual sin que se revele si otra dirección tiene tableros
+
 ### Requirement: Tablero personal único y persistente
 
 Cada persona que entra a TasKing SHALL disponer de un único tablero personal no eliminable. El sistema SHALL recuperar primero el existente y crear uno con las columnas predeterminadas actuales sólo si no existe, de forma atómica e idempotente ante concurrencia o reintentos. La importación incompleta o un conflicto SHALL impedir crear un sustituto que oculte un tablero previo.

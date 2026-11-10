@@ -16,6 +16,10 @@ La app SHALL servir TasKing en `/tareas` con assets y API propios del mismo orig
 - **WHEN** la persona vuelve al inicio y abre Cuentas Claras o su perfil
 - **THEN** conserva la sesión y cada pantalla usa su propio contrato sin recibir el payload heredado de TasKing en `/api/me`
 
+#### Scenario: Enlace compartido con login pendiente
+- **WHEN** una persona sin sesión llega desde un enlace antiguo válido `?card=…` y completa el acceso HomeSuite
+- **THEN** vuelve a `/tareas` con ese identificador y puede abrir la tarjeta si tiene permiso, sin perder el destino en OAuth ni revelar contenido antes del acceso
+
 #### Scenario: Salida efectiva
 - **WHEN** la persona usa Salir desde TasKing
 - **THEN** se revoca la sesión HomeSuite y las siguientes solicitudes privadas a Tareas requieren autenticarse
@@ -71,3 +75,31 @@ Todas las rutas privadas de TasKing SHALL comprobar la sesión de HomeSuite y el
 #### Scenario: Documento servido con CSP
 - **WHEN** el navegador carga TasKing integrado con las cabeceras reales de HomeSuite
 - **THEN** sus controles, temas, arrastre y estados visuales funcionan sin requerir scripts inline ni una relajación global de estilos
+
+#### Scenario: Datos heredados con contenido ejecutable
+- **WHEN** se muestran nombres, comentarios, etiquetas, actividad o metadatos importados con HTML o URLs peligrosas
+- **THEN** se tratan como contenido no confiable y no ejecutan scripts, crean manejadores ni generan enlaces ejecutables en el origen HomeSuite
+
+#### Scenario: Archivo con tipo o contenido peligroso
+- **WHEN** se sirve un adjunto con extensión engañosa, tipo activo o metadatos no confiables
+- **THEN** se entrega de forma segura con tipo controlado, `nosniff` y descarga o aislamiento apropiados, sin ejecutarse como documento activo con autoridad sobre HomeSuite
+
+#### Scenario: Abuso de creación o subida
+- **WHEN** una cuenta o sesión excede los límites operativos de mutaciones o tamaño y cantidad de archivos
+- **THEN** la operación falla antes de persistir efectos indebidos, con error observable y reintentable según corresponda, sin degradar los límites de otros productos
+
+### Requirement: Identidad visual y assets completos de TasKing
+
+El traslado SHALL incluir el favicon SVG vigente de TasKing sin redibujarlo ni cambiar su paleta y el inventario de assets necesarios para el comportamiento y la identidad existentes. Las páginas de Tareas SHALL referenciar su favicon del origen HomeSuite; los recursos SHALL tener rutas, tipos y política de caché correctos y no depender del Worker antiguo. La PWA SHALL seguir siendo una única instalación HomeSuite con su manifiesto e iconos de suite; incorporar TasKing SHALL NOT crear una instalación o un service worker paralelo ni guardar respuestas privadas en precarga.
+
+#### Scenario: Favicon trasladado
+- **WHEN** se abre `/tareas` en un navegador y se pide su favicon declarado
+- **THEN** se obtiene el mismo SVG de TasKing, con tipo de imagen correcto y sin depender de `/favicon.svg` en el host antiguo
+
+#### Scenario: Dependencias completas
+- **WHEN** se carga y usa Tareas después de retirar la aplicación del origen antiguo
+- **THEN** su documento, módulos, estilos, fuentes e imágenes necesarias responden desde destinos inventariados y no intentan cargar el bundle antiguo
+
+#### Scenario: App HomeSuite instalada y actualizada
+- **WHEN** una instalación HomeSuite anterior al traslado se actualiza y abre Tareas, cierra sesión y vuelve sin red
+- **THEN** conserva la identidad de instalación de la suite, muestra el favicon de TasKing al abrir su página y no ofrece una copia privada editable desde caché
