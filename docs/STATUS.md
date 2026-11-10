@@ -1,6 +1,6 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-09
+**Última actualización**: 2026-11-10
 
 ## HomeSuite App instalable (PWA) — mergeada en `main` y en staging, sin publicar en producción — 2026-11-09
 
@@ -25,8 +25,12 @@
   sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
   [backlog](PRODUCT_BACKLOG.md) (opción 2).
 - **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
-- **Prueba en iPhone: pendiente (Lucio, 2026-11-09).** Pablo le pasó la URL de staging (versión `1a2f3bfc`, SHA `9e4c4a4`). Es la pregunta abierta 1 de
-  [`design.md`](../openspec/changes/pwa-instalable/design.md) y **bloquea la publicación en producción** hasta decidir.
+- **Producción: llega con Tareas (decisión de Pablo, 2026-11-10).** Lucio no siguió con la prueba en iPhone. La PWA no se publica por separado:
+  va con la migración de TasKing a `/tareas` (PR #145, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA). **Va a producción sin
+  probar en iPhone.** Si iOS falla, se apaga con `--var PWA_SW:off`. Cuando Codex avise en `AI_HANDOFF.md` que Tareas está en producción, Claude
+  integra las ramas sueltas, extiende la PWA a `/tareas` y actualiza este bloque. El inventario de ramas está en el handoff.
+- **Prueba en iPhone: sin hacer (Lucio la empezó el 2026-11-09 y no siguió).** Se hizo sobre la URL de staging (versión `1a2f3bfc`, SHA `9e4c4a4`).
+  Es la pregunta abierta 1 de [`design.md`](../openspec/changes/pwa-instalable/design.md). El protocolo queda para cuando alguien con iPhone la haga.
   - *Pasos (Safari, no otro navegador):* 1) abrir `staging.homesuite.info`; 2) **entrar con Google en Safari antes de instalar** (iOS copia las
     cookies de Safari una sola vez, al agregar la app); 3) Compartir → Agregar a inicio y anotar nombre e ícono; 4) abrir desde el ícono, en modo
     app; 5) **dentro de la app, salir y volver a entrar con Google**; 6) usar Jardín Zen y Remanso (tacto y sonido); 7) modo avión: `/jardin-zen`

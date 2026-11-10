@@ -2,7 +2,32 @@
 
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-## Última sesión — HomeSuite App instalable (PWA): mergeada y en staging, a la espera de la prueba en iPhone (2026-11-09)
+## Última sesión — HomeSuite App instalable (PWA): mergeada y en staging; llega a producción con Tareas (2026-11-09 y 2026-11-10)
+
+### Plan vigente (2026-11-10, decisión de Pablo)
+- **Lucio no siguió con la prueba en iPhone.** La PWA no se publica sola en producción: llega con la migración de Tareas que hace Codex
+  (PR [#145](https://github.com/pablotortorella/tas-king/pull/145), borrador, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA).
+  O sea que **producción va a tener la PWA sin probar en iPhone**. Si aparece un problema en iOS, primero se apaga con `--var PWA_SW:off`.
+- **Disparador para Claude: el aviso de Codex en este archivo**, cuando Tareas ya esté en producción. Recién entonces:
+  1. **Integrar todo lo suelto en otras ramas**, una por vez y cada una con su PR. La lista está abajo, en «Ramas sueltas». Para cada rama:
+     rebase sobre `main`, pruebas, `git cherry` para descartar lo que ya esté absorbido, y merge solo con la orden de Pablo.
+  2. **Extender la PWA a `/tareas`** (lo básico, ver «Coordinación»).
+  3. **Dejar el estado documentado**: STATUS, este handoff y `tasks.md` de `pwa-instalable`, incluida la 8.3 (iPhone sin probar).
+- **Ramas sueltas al 2026-11-10** (las tres de agentes son solo locales, sin remoto ni PR, y están 13 commits atrás de `main` `65a1b53`):
+
+  | Rama | Worktree | Qué trae | Ojo |
+  |---|---|---|---|
+  | `docs/pwa-prueba-iphone` | `.claude/worktrees/pwa-instalable` | PR #143: este handoff, STATUS, protocolo de iPhone y backlog | Conflicto probable en `AI_HANDOFF.md` y `docs/STATUS.md` con lo que escriba Codex. |
+  | `docs/privacidad-copia-app` | — (solo remoto) | PR #144: texto de «Copia de la app» en `privacidad.html` | Necesita la revisión de Pablo. Choca con `feature/politica-y-aceptacion`, que reescribe la misma página. |
+  | `feature/politica-y-aceptacion` | `.claude/worktrees/agent-acb06759584eb05f5` | 10 commits: términos, privacidad, encargados, solicitudes de datos (`scripts/solicitudes-plazos.mjs`), pruebas legales | Es la más grande: 43 archivos. Se publica el sitio después de la app. |
+  | `feature/alertas-minimas` | `.claude/worktrees/agent-afb9c0c3899520b72` | 2 commits: workflows de salud y revisión semanal, `scripts/alertas-operativas.mjs`, `HOMESUITE_VIGILANCIA.md` | Toca `package.json` y `package-lock.json`. |
+  | `docs/respaldo-programado-confirmado` | `.claude/worktrees/agent-a9398184ea0f2105d` | 1 commit: confirma la corrida programada del respaldo diario (2026-11-03) | Puede estar desactualizada: revisar contra el estado real del respaldo. |
+  | `docs/dock-homesuite-backlog` | `/home/pablo/Dropbox/dev/tas-king` | Cambio de Pablo sin commitear en `docs/PRODUCT_BACKLOG.md` (19 líneas) | Es de Pablo: no tocarlo sin preguntar. |
+  | `ccr-a7efcef7-25zjqk` | — | La PWA, ya mergeada (#142) | Se puede borrar, local y remota. |
+
+  Mientras tanto, las tres ramas solo locales existen únicamente en esta máquina y en Dropbox. Conviene subirlas a `origin` cuando Pablo lo diga.
+
+## Sesión del 2026-11-09 — PWA mergeada y en staging, a la espera de la prueba en iPhone
 
 Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS.md) (incluye el protocolo de la prueba en iPhone) y el change
 [`pwa-instalable`](openspec/changes/pwa-instalable/) (`tasks.md`: quedan 8.2 y 8.4 parciales, 8.3, 8.6 y 9.4–9.5).
