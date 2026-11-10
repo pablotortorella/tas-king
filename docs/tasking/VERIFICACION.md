@@ -1,8 +1,9 @@
 # Evidencia de la migración de TasKing
 
-Fecha local: 2026-11-09. Rama `feature/migrar-tasking-homesuite`, worktree
-`/tmp/tasking-homesuite-proposal`, sobre `65a1b53` (PWA integrada).
-Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**.
+Actualización: 2026-11-10. Rama `feature/migrar-tasking-homesuite`, PR #145,
+worktree `/tmp/tasking-homesuite-proposal`. **Traslado activo en staging; producción
+intacta, sin integrar en `main` ni archivar.** Versiones, hashes, ubicación de copias
+y estado de CI: [registro vigente en STATUS](../STATUS.md#tasking-en-homesuite--traslado-activo-en-staging-en-revisión--2026-11-10).
 [Runbook y recursos](MIGRACION-HOMESUITE.md).
 
 ## Comprobaciones locales
@@ -10,7 +11,7 @@ Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**
 | Comando / ensayo | Resultado |
 |---|---|
 | `npm test` | 235 pruebas, incluidas admisión/drenaje de peticiones y bloqueo del origen congelado |
-| `npm run test:homesuite-app` | 722 pruebas; instalación limpia y actualización con libro financiero poblado, unicidad y contratos de PWA |
+| `npm run test:homesuite-app` | 734 pruebas (733 unitarias y una de arquitectura del puente); instalación limpia y actualización con libro financiero poblado, unicidad y contratos de PWA |
 | `npm run test:homesuite-app:integration` | 391 pruebas D1/R2; identidad, perfil/salida, CSRF, permisos/revocación, copia/reintento/conciliación, límites reales de archivo |
 | `npm run test:homesuite-site` | 44 pruebas |
 | `npm run test:e2e` | 101 recorridos originales más un caso dirigido de mudanza aprobados (102 casos cubiertos) |
@@ -68,7 +69,7 @@ SQL en otra SQLite y el archivo en otro R2 local (`restored-r2`). `cmp` confirm�
 bytes idénticos. La fase de recuperación tardó **5 segundos**; entre el inicio de carga y la
 activación transcurrieron **203 segundos** (timestamps persistidos del lote),
 incluidos verificación y segundo intento, por el arranque de Wrangler por lote. No usar ese tiempo
-como ventana ni RTO de producción: falta medir el volumen de staging.
+como ventana ni RTO de producción: corresponde al fixture local, no al volumen real.
 
 ## Incidencias y límites
 
@@ -97,18 +98,37 @@ como ventana ni RTO de producción: falta medir el volumen de staging.
   8796. Se separaron puertos. La prueba de teclado de clasificación también falló
   en esa corrida; ambos casos pasaron después en ejecución dirigida aislada. No se tocó
   el comportamiento financiero para acomodar esta migración.
-- No disponibles: dos sesiones Google reales, iPhone/Safari y dispositivo móvil
-  físico. Las sesiones firmadas y autoridades sintéticas de test no los sustituyen.
+- Pendientes de ensayo y consultados a Pablo: dos cuentas Google reales y
+  dispositivos físicos con PWA instalada, incluido iPhone/Safari. Las sesiones
+  firmadas y autoridades sintéticas de test no los sustituyen.
 
-## Preparación remota pendiente
+## Ensayo remoto en staging — 2026-11-10
 
-Consulta de sólo lectura: app de staging en `9e4c4a4`, versión `1a2f3bfc`, ocupada
-por revisión PWA. Origen de staging: versión `93d38468` (`69e220a`). Se preservaron.
-Existen buckets `tas-king-uploads`, `tas-king-uploads-staging` y
-`homesuite-app-backups`; no se crearon los nuevos. No se aplicaron migraciones remotas.
+Tras liberar Pablo el staging compartido se publicaron app, puente y sitio; los
+buckets y migraciones necesarios del ambiente quedaron preparados. El inventario
+inicial que preservó la revisión PWA es histórico y no representa el estado actual.
 
-Pendientes antes de producción: coordinar staging; revisar SHA final integrado;
-crear/verificar buckets y permiso del backup diario; ensayar Google con dos cuentas;
-completar matriz remota de aliases/previews/versions/crons; desplegar puente y sitio
-en el orden del runbook; obtener aprobación explícita de la publicación concreta.
-No se han retirado datos/infraestructura antiguos ni se da por cerrada la migración.
+El origen quedó `moved`, el destino `active` y cero peticiones en vuelo. Se copiaron
+y conciliaron 14 tablas, un tablero, 18 tarjetas y un archivo. Las 13 tablas
+financieras conservaron su hash pre/post. Se restauraron SQL y bytes R2 desde el
+backup y las copias finales quedaron en almacenamiento privado durable, fuera de
+Dropbox. Los hashes y versiones exactos viven en [STATUS](../STATUS.md).
+
+El CLI usa la API D1 con parámetros y batch para remoto: Wrangler 4.104 procesa
+`d1 execute --file` como importación y no devuelve filas SELECT. Se probó rollback
+transaccional real del batch. La suite unitaria incluye SELECT, parámetros en cuerpo,
+fallos por sentencia, resolución inequívoca y errores sin contenido privado.
+
+Comprobación remota del puente: 100 % de tráfico, sin D1/R2/ASSETS ni cron,
+previews deshabilitados y dos URLs históricas en 404. Persisten cinco secretos
+heredados. La API devuelve observabilidad `null`, Logpush deshabilitado y sin
+consumidores tail tras desactivar logs y trazas. Callback sintético manual:
+302 a `/#mudanza`, sin reenviar `code/state`. Coherencia: 29 comprobaciones aprobadas.
+No se consultaron logs de usuarios para verificarlo.
+
+Pendientes antes de producción: ensayo Google con dos cuentas reales y dispositivos
+físicos con PWA instalada (consultados a Pablo), aceptación del staging, cierre de CI
+para los últimos cambios CLI/configuración y revisión del SHA final integrado.
+Validar los recursos y permisos de producción y completar su matriz operativa antes
+de pedir aprobación explícita de esa publicación. Producción y su infraestructura
+siguen intactas; el change permanece abierto y sin archivar.

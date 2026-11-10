@@ -64,7 +64,7 @@
 
 ## 7. Verificación integrada y aceptación
 
-- [ ] 7.1 Ejecutar suites de TasKing y HomeSuite afectadas, integraciones D1/R2 y E2E del origen integrado con puertos/estado aislados; verificar CI de todas las unidades tocadas y registrar SHA, comandos, resultados y límites.
+- [x] 7.1 Ejecutar suites de TasKing y HomeSuite afectadas, integraciones D1/R2 y E2E del origen integrado con puertos/estado aislados; verificar CI de todas las unidades tocadas y registrar SHA, comandos, resultados y límites.
 - [ ] 7.2 Desplegar el SHA revisado a staging coordinado, usando sólo datos del ambiente; verificar con dos cuentas Google reales recuperación de tableros, invitación, revocación, aislamiento, adjuntos y login/logout, registrando evidencia conforme a operación.
 - [ ] 7.3 Preparar enlaces/catálogo de app/sitio y ampliar la comprobación de coherencia con ambos Workers; verificar en staging aviso firmado y botón desde entradas viejas, Google sin cuenta HomeSuite previa, sesión HomeSuite vigente, enlace de tarjeta, favicon, aliases/previews, pestaña antigua y PWA ya instalada, sin dos versiones operativas ni destinos de otro ambiente.
 - [ ] 7.4 Presentar artefacto y runbook revisables para la aprobación de publicación de Pablo; verificar que la aprobación corresponde al SHA, recursos y ventana concretos antes de tocar producción.

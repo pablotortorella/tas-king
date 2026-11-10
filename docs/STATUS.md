@@ -1,25 +1,33 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-09
+**Última actualización**: 2026-11-10
 
-## TasKing en HomeSuite — implementación local en revisión — 2026-11-09
+## TasKing en HomeSuite — traslado activo en staging, en revisión — 2026-11-10
 
-- Rama `feature/migrar-tasking-homesuite` sobre `65a1b53`; change
-  [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md).
-  **Sin desplegar ni trasladar datos remotos.** El TasKing actual sigue operativo.
-- Módulo `/tareas`, API propia, identidades pendientes/vinculadas y permisos por
-  tablero, perfil/sesión HomeSuite, esquema aditivo y almacenamiento propio.
-  Se conserva el personal importado y se recuperan tableros con la misma cuenta.
-- Preparados: traslado completo reanudable con conciliación D1/R2; respaldo de
-  archivos y restore local; drenaje y cerrojo de escrituras del origen; Worker
-  público de aviso firmado por Pablitux con botón a HomeSuite y favicon original.
-- Verificación local y límites: [evidencia](tasking/VERIFICACION.md).
-  [Runbook](tasking/MIGRACION-HOMESUITE.md) con recursos, recuperación y matriz
-  remota pendiente. Dock separado en backlog.
-- Staging compartido preservado: consultado en `9e4c4a4`/`1a2f3bfc` (revisión PWA).
-  Faltan coordinación de staging, dos cuentas Google reales, inventario remoto
-  completo, aceptación y aprobación explícita de la publicación final. No se
-  archiva el change ni se da por retirada la app original.
+- Rama `feature/migrar-tasking-homesuite`, [PR #145](https://github.com/pablotortorella/tas-king/pull/145);
+  change [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md).
+  **Sin integrar en `main`, sin archivar y con producción intacta.**
+- Staging: app `31cea077` (código `dc091d1`), puente origen `9f61e600`
+  (código/configuración `1acbe00`) y sitio `c9ea5302` (`6fe72f1`).
+  Origen `moved`, destino `active`, cero peticiones en vuelo: HomeSuite es el único escritor.
+- Lote conciliado: 14 tablas, 1 tablero, 18 tarjetas y 1 archivo. Manifiesto SHA-256
+  `7bc641c17e4d84313d0ef07de2931761d52d6ac6e2394ef88c57acff3f8bda00`.
+  Las 13 tablas financieras conservaron exactamente el hash pre/post
+  `dc4d19ab67f7cfaf2fd675f093c947e645a876c3e33a720f65c30fd50c00d226`.
+- Backup SQL y R2 restaurado y verificado. Copias durables privadas fuera de Dropbox:
+  `/home/pablo/dev/tas-king-backups/tasking-homesuite/staging/20261110T113829Z`.
+  CLI remoto corregido a API D1 con parámetros/batch; rollback transaccional real probado.
+- Puente al 100 %, sin D1/R2/ASSETS ni cron; previews deshabilitados y URLs antiguas
+  comprobadas en 404. Observabilidad remota `null`, Logpush deshabilitado y sin
+  consumidores tail; cinco secretos heredados aún presentes. Callback sintético manual
+  en 302 a `/#mudanza`, sin reenviar `code/state`. Coherencia de staging: 29 comprobaciones aprobadas.
+- Verificación y límites: [evidencia](tasking/VERIFICACION.md); recursos y recuperación:
+  [runbook](tasking/MIGRACION-HOMESUITE.md). CI completo en verde sobre `1acbe00`
+  ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42808930372)); incluye CLI remoto y configuración del puente.
+- Pendiente consultado a Pablo: ensayo con dos cuentas Google reales, que los tests
+  sintéticos no sustituyen. Las pruebas físicas de PWA quedan en el handoff para Claude Code. Faltan aceptación
+  y aprobación explícita de producción; no se da por retirada su app original.
+  Dock separado en backlog.
 
 ## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
 

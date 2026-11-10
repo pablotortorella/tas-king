@@ -86,7 +86,7 @@ no son excepciones aprobadas para productos nuevos. Antes de migrarlas: analizar
 compatibilidad, registrar decisión y probar transición sin interrumpir TasKing.
 
 
-## Módulo integrado y transición (sin publicación acreditada)
+## Módulo integrado y transición (staging activo; producción pendiente)
 
 Implementación en `apps/app/src/tasking/` y assets `apps/app/public/tareas/`;
 HTML fuera del directorio de assets para que pase por sesión y cabeceras.

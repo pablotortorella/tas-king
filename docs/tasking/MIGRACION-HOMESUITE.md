@@ -190,10 +190,14 @@ el comando del ensayo. Mantener la frecuencia y los objetivos de recuperación d
 | OAuth antiguo | Callback local limpia query y cookies `session`/`oauth_state`; no intercambia ni reenvía code/state |
 | Logs y trazas | Sólo versión, ambiente, clase de ruta, método y estado. Persistencia de logs y trazas desactivada en el puente para no registrar callbacks completos; métricas y `/healthz` mantienen el control operativo. Tail sólo con solicitudes sintéticas y filtro por encabezado único |
 
-La consulta remota inicial encontró los dos buckets originales y el de respaldos;
-los buckets nuevos no existían. El staging de app estaba ocupado por PR #142
-(SHA `9e4c4a4`, versión `1a2f3bfc`); se preservó. Esto es inventario parcial, **no**
-acreditación de aliases, permisos ni del puente publicado. Completar esa matriz
-antes de pedir aprobación de producción. Tras aceptar el corte, retirar la lista
-global/solicitudes y configuración independiente sobrante; conservar el Worker de
-aviso y los respaldos históricos, sin borrar infraestructura implícitamente.
+El inventario inicial preservó la revisión PWA que ocupaba staging. Después de que
+Pablo liberara el ambiente, el 2026-11-10 se prepararon sus recursos y se completó
+el traslado: origen `moved`, destino `active`, puente al 100 % y sitio publicado.
+La comprobación incluyó previews antiguos cerrados, cron vacío, ausencia de bindings
+de datos y logs/trazas deshabilitados. Versiones, hashes, copias durables y límites:
+[STATUS](../STATUS.md) y [verificación](VERIFICACION.md). Producción permanece intacta;
+los ensayos con cuentas Google reales y dispositivos físicos siguen pendientes.
+Completar la matriz del ambiente de producción antes de pedir su aprobación.
+Tras aceptar el corte correspondiente, retirar la lista global/solicitudes y
+configuración independiente sobrante; conservar el Worker de aviso y los respaldos
+históricos, sin borrar infraestructura implícitamente.
