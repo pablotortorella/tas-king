@@ -33,7 +33,7 @@ Descubrir una invitación no concede acceso al contenido privado.
 La raíz de la app es la entrada a la suite. Cada herramienta tiene su propia
 ruta; Cuentas Claras muestra su estado en `/cuentas-claras` después de elegirla.
 El sitio público de staging replica home y landings en otro Worker. El HTML lleva los
-enlaces de producción (`app.homesuite.info`, TasKing de producción) y el worker de
+enlaces de producción (`app.homesuite.info`, incluidas las tareas en `/tareas`) y el worker de
 staging los reescribe a los del staging, así que cada sitio conduce a la app de su propio
 ambiente. `npm run verify:coherence:<ambiente>` comprueba que sitio y app cuenten lo
 mismo; la lista de herramientas de la app vive en `apps/app/src/tools.js`. Consultar STATUS para
@@ -106,3 +106,10 @@ desde el menú general de la app. Cuentas Claras muestra el aviso «Muy pronto»
 entrar a su ruta tras el acceso con Google. La integración financiera y la
 migración de TasKing quedan para cortes posteriores. Consultar STATUS para el SHA
 y el estado de staging.
+
+
+El módulo TasKing en preparación conserva sus permisos por tablero: los grupos
+comunes no conceden acceso a tareas. Su identidad se vincula a la cuenta HomeSuite
+sin una segunda sesión. `/api/me` mantiene el contrato de plataforma; el producto
+usa `/api/tareas/me`. [Runbook](../tasking/MIGRACION-HOMESUITE.md) y
+[evidencia](../tasking/VERIFICACION.md) distinguen implementación de publicación.

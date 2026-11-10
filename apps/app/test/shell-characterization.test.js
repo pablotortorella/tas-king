@@ -12,7 +12,6 @@ const LOCAL_ENV = { DEV_LOCAL_MODE: "true" };
 const PAGES = [
   ["raíz sin sesión", "/", undefined],
   ["raíz en modo local", "/", LOCAL_ENV],
-  ["tareas", "/tareas", undefined],
   ["cuentas claras sin sesión", "/cuentas-claras", undefined],
   ["acceso sin configurar", "/auth/google", undefined],
 ];
@@ -26,7 +25,7 @@ describe("shell compartido de HomeSuite", () => {
 
   it("las rutas HTML conservan política, no-store y cabeceras de seguridad", async () => {
     // Sin sesión, /cuentas-claras no muestra una página: redirige al acceso (303).
-    for (const [path, status] of [["/", 200], ["/tareas", 200], ["/cuentas-claras", 303]]) {
+    for (const [path, status] of [["/", 200], ["/tareas", 303], ["/cuentas-claras", 303]]) {
       const response = await app.request(`${ORIGIN}${path}`);
       expect(response.status, path).toBe(status);
       expect(response.headers.get("Cache-Control"), path).toBe("private, no-store");
@@ -34,6 +33,12 @@ describe("shell compartido de HomeSuite", () => {
       expect(response.headers.get("X-Frame-Options"), path).toBe("DENY");
       expect(response.headers.get("X-Content-Type-Options"), path).toBe("nosniff");
     }
+  });
+
+  it("/tareas solicita el acceso HomeSuite y conserva el enlace de tarjeta", async () => {
+    const response=await app.request(`${ORIGIN}/tareas?card=card-123`);
+    expect(response.status).toBe(303);
+    expect(response.headers.get('Location')).toBe('/auth/google?returnTo=%2Ftareas%3Fcard%3Dcard-123');
   });
 
   it("/perfil sin sesión redirige al acceso con retorno a /perfil", async () => {

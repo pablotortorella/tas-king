@@ -163,3 +163,14 @@ import {
     if (document.hidden) { stopPolling(); stopWipPulse(); } else { startPolling(); startWipPulse(); }
   });
 })();
+
+window.addEventListener("tasking:moved", (event) => {
+  stopPolling();
+  if (document.getElementById("tasking-move-notice")) return;
+  const notice = document.createElement("aside");
+  notice.id = "tasking-move-notice"; notice.className = "tasking-move-notice"; notice.setAttribute("role", "alert");
+  const text = document.createElement("p");
+  text.textContent = event.detail.migrated ? "¡Nos mudamos a HomeSuite! Si tenés un borrador sin guardar, copialo antes de continuar. Usá la misma cuenta de Google para encontrar tus tableros. Cualquier consulta, contactame. Pablitux." : "Estamos preparando la mudanza. Conservá tu borrador y volvé en un momento. Pablitux.";
+  const link = document.createElement("a"); link.href = "/"; link.textContent = "Ver el aviso de mudanza";
+  notice.append(text, link); document.body.append(notice);
+});

@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tas-king",
+  "main": "src/tasking-move.js",
+  "compatibility_date": "2026-06-30",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": { "TASKING_DESTINATION": "production" },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": false, "invocation_logs": false },
+    "traces": { "enabled": false }
+  },
+  "triggers": { "crons": [] },
+  "env": {
+    "staging": {
+      "name": "tas-king-staging",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": { "TASKING_DESTINATION": "staging" },
+      "triggers": { "crons": [] },
+      "observability": { "enabled": true, "logs": { "enabled": false, "invocation_logs": false }, "traces": { "enabled": false } }
+    }
+  }
+}

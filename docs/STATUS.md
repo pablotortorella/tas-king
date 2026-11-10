@@ -1,6 +1,36 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-09
+**Última actualización**: 2026-11-10
+
+## TasKing en HomeSuite — traslado activo en staging, en revisión — 2026-11-10
+
+- Rama `feature/migrar-tasking-homesuite`, [PR #145](https://github.com/pablotortorella/tas-king/pull/145);
+  change [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md).
+  **Sin integrar en `main`, sin archivar y con producción intacta.**
+- Staging: app `31cea077` (código `dc091d1`), puente origen `9f61e600`
+  (código/configuración `1acbe00`) y sitio `c9ea5302` (`6fe72f1`).
+  Origen `moved`, destino `active`, cero peticiones en vuelo: HomeSuite es el único escritor.
+- Lote conciliado: 14 tablas, 1 tablero, 18 tarjetas y 1 archivo. Manifiesto SHA-256
+  `7bc641c17e4d84313d0ef07de2931761d52d6ac6e2394ef88c57acff3f8bda00`.
+  Las 13 tablas financieras conservaron exactamente el hash pre/post
+  `dc4d19ab67f7cfaf2fd675f093c947e645a876c3e33a720f65c30fd50c00d226`.
+- Backup SQL y R2 restaurado y verificado. Copias durables privadas fuera de Dropbox:
+  `/home/pablo/dev/tas-king-backups/tasking-homesuite/staging/20261110T113829Z`.
+  CLI remoto corregido a API D1 con parámetros/batch; rollback transaccional real probado.
+- Puente al 100 %, sin D1/R2/ASSETS ni cron; previews deshabilitados y URLs antiguas
+  comprobadas en 404. Observabilidad remota `null`, Logpush deshabilitado y sin
+  consumidores tail; cinco secretos heredados aún presentes. Callback sintético manual
+  en 302 a `/#mudanza`, sin reenviar `code/state`. Coherencia de staging: 29 comprobaciones aprobadas.
+- Verificación y límites: [evidencia](tasking/VERIFICACION.md); recursos y recuperación:
+  [runbook](tasking/MIGRACION-HOMESUITE.md). CI completo en verde sobre `a46dfcc`
+  ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42810776415)); incluye CLI remoto, puente y handoff.
+- **Validación real de Pablo (2026-11-10):** confirmó con su cuenta Google la entrada
+  desde el aviso, sus tableros de staging y salida/reingreso. La comprobación de
+  base confirma identidad vinculada, personal importado conservado y un solo personal.
+- Quedan la segunda cuenta Google (invitación/revocación/aislamiento), aceptación
+  completa, integración en main y aprobación de publicación. Las pruebas físicas de PWA
+  quedan en el handoff para Claude Code. Producción mantiene su app original.
+  Dock separado en backlog.
 
 ## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
 

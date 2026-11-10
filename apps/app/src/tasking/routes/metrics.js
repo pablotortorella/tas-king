@@ -1,0 +1,146 @@
+import { membership } from "../db/helpers.js";
+
+export function setupMetricsRoutes(app) {
+  app.get("/api/tareas/boards/:boardId/metrics", async c => {
+    const identity_id = c.get("identity_id");
+    const boardId = c.req.param("boardId");
+
+    if (!(await membership(c.env.DB, boardId, identity_id))) {
+      return c.json({ error: "Sin acceso a este tablero." }, 403);
+    }
+
+    const now = Date.now();
+    const todayStart = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").getTime();
+    const todayStr   = new Date().toISOString().slice(0, 10);
+    const weekStart  = now - 7  * 86400000;
+    const monthStart = now - 30 * 86400000;
+
+    const boardRow = await c.env.DB.prepare("SELECT due_soon_days FROM tasking_boards WHERE id = ?").bind(boardId).first();
+    const dueSoonDays = boardRow?.due_soon_days ?? 3;
+
+    // Subquery reutilizable: columnas de cierre (is_done = 1)
+    const doneSubq = "SELECT id FROM tasking_columns WHERE board_id = ? AND is_done = 1";
+
+    const [periodRow, leadRow, burnupRows, wipRows, staleRows, dueSoonRows] = await Promise.all([
+      // A — tarjetas completadas por período (hoy / semana / mes)
+      c.env.DB.prepare(`
+        SELECT
+          COUNT(DISTINCT CASE WHEN ts >= ? THEN card_id END) AS today,
+          COUNT(DISTINCT CASE WHEN ts >= ? THEN card_id END) AS thisWeek,
+          COUNT(DISTINCT CASE WHEN ts >= ? THEN card_id END) AS thisMonth
+        FROM tasking_audit_log
+        WHERE board_id = ? AND action IN ('card_moved','card_edited')
+          AND json_extract(details, '$.column.to') IN (${doneSubq})
+          AND ts >= ?
+      `).bind(todayStart, weekStart, monthStart, boardId, boardId, monthStart).first(),
+
+      // B — lead time: tiempo desde creación hasta primera llegada a cualquier columna done
+      c.env.DB.prepare(`
+        WITH first_done AS (
+          SELECT card_id, MIN(ts) AS done_ts
+          FROM tasking_audit_log
+          WHERE board_id = ? AND action IN ('card_moved','card_edited')
+            AND json_extract(details, '$.column.to') IN (${doneSubq})
+          GROUP BY card_id
+        ),
+        card_start AS (
+          SELECT card_id, ts AS start_ts FROM tasking_audit_log
+          WHERE board_id = ? AND action = 'card_created'
+          UNION ALL
+          SELECT id AS card_id, created_at AS start_ts FROM tasking_cards
+          WHERE board_id = ? AND id NOT IN (
+            SELECT card_id FROM tasking_audit_log WHERE action = 'card_created' AND board_id = ?
+          )
+        )
+        SELECT
+          ROUND(AVG((f.done_ts - s.start_ts) / 86400000.0), 1) AS avg_days,
+          ROUND(MIN((f.done_ts - s.start_ts) / 86400000.0), 1) AS min_days,
+          ROUND(MAX((f.done_ts - s.start_ts) / 86400000.0), 1) AS max_days,
+          COUNT(*) AS sample
+        FROM first_done f JOIN card_start s ON f.card_id = s.card_id
+        WHERE f.done_ts > s.start_ts
+      `).bind(boardId, boardId, boardId, boardId, boardId).first(),
+
+      // C — burn-up: tarjetas completadas por día (últimos 30 días)
+      c.env.DB.prepare(`
+        SELECT date(ts/1000, 'unixepoch') AS d, COUNT(DISTINCT card_id) AS count
+        FROM tasking_audit_log
+        WHERE board_id = ? AND action IN ('card_moved','card_edited')
+          AND json_extract(details, '$.column.to') IN (${doneSubq})
+          AND ts >= ?
+        GROUP BY d ORDER BY d
+      `).bind(boardId, boardId, monthStart).all(),
+
+      // D — WIP actual por columna
+      c.env.DB.prepare(`
+        SELECT col.name, COUNT(c.id) AS count
+        FROM tasking_columns col
+        LEFT JOIN tasking_cards c ON c.column_id = col.id AND c.board_id = col.board_id AND c.archived = 0
+        WHERE col.board_id = ?
+        GROUP BY col.id, col.name ORDER BY col.position
+      `).bind(boardId).all(),
+
+      // E — tarjetas más quietas (top 5, excluye columnas de cierre y tarjetas con fecha límite:
+      // esas ya están agendadas a propósito, solo se muestran -en "por vencer"- cuando se acercan)
+      c.env.DB.prepare(`
+        WITH done_cols AS (
+          ${doneSubq}
+        )
+        SELECT c.id, c.title, col.name AS column_name,
+          c.updated_at,
+          CAST(ROUND((? - c.updated_at) / 86400000.0, 0) AS INTEGER) AS days_stale
+        FROM tasking_cards c
+        JOIN tasking_columns col ON col.id = c.column_id AND col.board_id = c.board_id
+        WHERE c.board_id = ? AND c.archived = 0 AND c.due = ''
+          AND (
+            c.column_id NOT IN (SELECT id FROM done_cols)
+            OR NOT EXISTS (SELECT 1 FROM done_cols)
+          )
+          AND (
+            EXISTS (SELECT 1 FROM done_cols)
+            OR c.column_id != (SELECT id FROM tasking_columns WHERE board_id = ? ORDER BY position DESC LIMIT 1)
+          )
+        ORDER BY c.updated_at ASC LIMIT 5
+      `).bind(boardId, now, boardId, boardId).all(),
+
+      // F — tarjetas por vencer: fecha límite vencida o dentro del umbral configurado del
+      // tablero, sin importar hace cuánto se tocaron. Excluye columnas de cierre.
+      c.env.DB.prepare(`
+        SELECT c.id, c.title, col.name AS column_name, c.due,
+          CAST(ROUND(julianday(c.due) - julianday(?)) AS INTEGER) AS days_until_due
+        FROM tasking_cards c
+        JOIN tasking_columns col ON col.id = c.column_id AND col.board_id = c.board_id
+        WHERE c.board_id = ? AND c.archived = 0 AND c.due != ''
+          AND c.column_id NOT IN (${doneSubq})
+          AND julianday(c.due) - julianday(?) <= ?
+        ORDER BY days_until_due ASC LIMIT 5
+      `).bind(todayStr, boardId, boardId, todayStr, dueSoonDays).all(),
+    ]);
+
+    let cumulative = 0;
+    const burnup = (burnupRows.results || []).map(r => {
+      cumulative += r.count;
+      return { date: r.d, count: r.count, cumulative };
+    });
+
+    return c.json({
+      completedByPeriod: {
+        today:     periodRow?.today     ?? 0,
+        thisWeek:  periodRow?.thisWeek  ?? 0,
+        thisMonth: periodRow?.thisMonth ?? 0,
+      },
+      leadTimeDays: leadRow?.sample > 0
+        ? { avg: leadRow.avg_days, min: leadRow.min_days, max: leadRow.max_days, sample: leadRow.sample }
+        : null,
+      burnup,
+      wipByColumn:  (wipRows.results  || []).map(r => ({ name: r.name, count: r.count })),
+      staleCards:   (staleRows.results || []).map(r => ({
+        id: r.id, title: r.title, columnName: r.column_name, daysSinceUpdate: r.days_stale,
+      })),
+      dueSoonCards: (dueSoonRows.results || []).map(r => ({
+        id: r.id, title: r.title, columnName: r.column_name, due: r.due, daysUntilDue: r.days_until_due,
+      })),
+      dueSoonDays,
+    });
+  });
+}

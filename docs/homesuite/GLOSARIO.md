@@ -14,11 +14,16 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 | Titular | titular | `owner` | — | `memberships.role = 'owner'` |
 | Integrante | integrante | `member` | `/api/groups/:id/members` | `memberships` |
 | Invitación | invitación | `invitation` | `/invitations` | `invitations` |
+| Tablero de TasKing | tablero | `board` | `/api/tareas/boards` | `tasking_boards` |
+| Integrante del tablero | integrante | `boardMember` | `/api/tareas/boards/:id/members` | `tasking_board_members`, `identity_id`, `role` |
+| Identidad de TasKing, pendiente o vinculada | cuenta habitual | `identity` | resuelta desde sesión HomeSuite | `tasking_identities`, `user_id`, `verified_sub` |
+| Tarjeta | tarjeta | `card` | `/api/tareas/cards/:id` | `tasking_cards` |
 
 ## Reglas
 
 - **Grupo** es quiénes comparten y quién es titular. Es de la plataforma: lo usan
-  Cuentas Claras y, más adelante, Compras y Tareas. Lleva nombre, descripción,
+  Cuentas Claras y, más adelante, Compras. TasKing conserva permisos propios por
+  tablero; un grupo no concede acceso a sus tareas. Lleva nombre, descripción,
   emoji y color.
 - **Libro** es lo que Cuentas Claras guarda dentro de un grupo: movimientos,
   categorías y saldos. Hoy hay un libro por grupo, así que la interfaz habla de

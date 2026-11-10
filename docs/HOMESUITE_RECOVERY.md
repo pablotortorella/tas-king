@@ -133,3 +133,24 @@ Pendiente: confirmar que el cron programado corra solo en los próximos días.
 
 Pendientes operativos: comprobar la primera ejecución programada y alerta por
 fallos, acordar RPO/RTO y documentar exportación y eliminación de grupos.
+
+
+## Adjuntos de Tareas en el respaldo (implementación local, 2026-11-09)
+
+Al integrar TasKing, `homesuite-app-backup.sh` recopila únicamente los objetos de
+`TASKING_BUCKET` referidos por el export SQL. `tasking-files.json` declara clave,
+tamaño, MIME y SHA-256; el manifiesto raíz incluye su hash y se sube al final.
+El respaldo falla si falta un objeto o difiere su tamaño. La verificación desde R2
+recupera estos archivos y comprueba sus hashes antes de aceptar el restore drill.
+Los respaldos antiguos sin esta sección siguen verificándose como SQL histórico.
+Retención: los objetos nuevos viven bajo el mismo prefijo productivo de 90 días.
+
+Los scripts de restauración verifican SQL y archivos juntos. La copia a R2 del
+ensayo sólo permite estado local aislado; recuperar producción sigue siendo una
+operación de impacto con destino y aprobación explícitos. El rollback de un
+producto no debe retroceder los datos financieros de la D1 compartida.
+
+[Traslado y recursos](tasking/MIGRACION-HOMESUITE.md),
+[evidencia sintética y límites](tasking/VERIFICACION.md). Quedan pendientes la
+verificación del token diario leyendo el bucket nuevo, el ensayo remoto del lote
+y acordar/medir RPO/RTO con el volumen real; el ensayo de un archivo no los acredita.

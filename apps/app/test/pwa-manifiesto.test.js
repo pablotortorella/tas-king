@@ -1,3 +1,4 @@
+import { TASKING_DOCUMENT } from "../src/tasking/document.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -61,7 +62,7 @@ describe("íconos", () => {
   });
 
   it("el apple-touch-icon enlazado existe, mide 180x180 y es opaco", async () => {
-    const html = await (await app.request("https://app.homesuite.info/tareas")).text();
+    const html = await (await app.request("https://app.homesuite.info/")).text();
     const href = /<link rel="apple-touch-icon" sizes="180x180" href="([^"]+)">/u.exec(html)?.[1];
     expect(href).toBe("/icons/homesuite-apple-touch-180.v1.png");
     const png = leerPng(await readFile(path.join(publicDir, href)));
@@ -85,11 +86,20 @@ describe("íconos", () => {
 });
 
 describe("cabeza común de las páginas", () => {
-  it.each(["/", "/tareas", "/auth/google", "/sin-conexion", "/jardin-zen", "/remanso"])("%s enlaza manifiesto, favicon, apple-touch-icon y /pwa.js del mismo origen", async (ruta) => {
+  it.each(["/", "/auth/google", "/sin-conexion", "/jardin-zen", "/remanso"])("%s enlaza manifiesto, favicon, apple-touch-icon y /pwa.js del mismo origen", async (ruta) => {
     const html = await (await app.request(`https://app.homesuite.info${ruta}`)).text();
     expect(html).toContain('<link rel="manifest" href="/manifest.webmanifest">');
     expect(html).toContain('<link rel="icon" type="image/svg+xml" href="/icons/homesuite-favicon.v1.svg">');
     expect(html).toContain('<link rel="apple-touch-icon" sizes="180x180" href="/icons/homesuite-apple-touch-180.v1.png">');
     expect(html).toContain('<script src="/pwa.js" defer></script>');
   });
+});
+
+describe('Tareas integrada en la PWA',()=>{
+ it('mantiene el manifiesto e icono Apple de la suite y usa su propio favicon',()=>{
+  expect(TASKING_DOCUMENT).toContain('href="/manifest.webmanifest"');
+  expect(TASKING_DOCUMENT).toContain('href="/icons/homesuite-apple-touch-180.v1.png"');
+  expect(TASKING_DOCUMENT).toContain('href="/tareas/favicon.v1.svg"');
+  expect(TASKING_DOCUMENT).toContain('src="/pwa.js"');
+ });
 });

@@ -1,5 +1,15 @@
 # AI_HANDOFF
 
+<!-- BEGIN TASKING PWA HANDOFF -->
+## Para Claude Code: TasKing y PWA (2026-11-10)
+
+Pedido de Pablo: al cerrar la migración de TasKing, incorporarlo a las tareas PWA que estás desarrollando. La implementación está en [PR #145](https://github.com/pablotortorella/tas-king/pull/145), rama `feature/migrar-tasking-homesuite`; **todavía no está integrada en main**. Staging ya está migrado y activo; producción permanece intacta, pendiente de segunda cuenta Google y aprobación de publicación. Estado/versiones/evidencia en [STATUS](docs/STATUS.md) y [verificación](docs/tasking/VERIFICACION.md). Esta coordinación reemplaza la exclusión histórica de «TasKing como PWA» que figura más abajo.
+
+Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/attachments`, descarga protegida `/tareas/adjuntos/:key` y favoritos `?card`. Mantener un único manifiesto, SW e iconos de instalación HomeSuite, con corona como favicon de Tareas. El contrato actual no cachea HTML autenticado, API, datos ni adjuntos privados; evaluar por separado los assets públicos versionados.
+
+Ya hay pruebas de PWA instalada antes de entrar a Tareas y vuelta sin red. Pablo confirmó Google, tableros y salida/reingreso con su cuenta; identidad vinculada y personal sin duplicados corroborados. Resta la segunda cuenta para invitación/revocación/aislamiento y completar cambio de cuenta, deep links/descargas y dispositivos físicos. Antes de publicar otra rama PWA, integrar/rebasar una base que contenga PR #145: una versión anterior volvería a reemplazar `/tareas` por el puente viejo. Coordinar staging, que ahora usa esta migración. No dar producción por terminada a partir de esta nota.
+<!-- END TASKING PWA HANDOFF -->
+
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
 ## Última sesión — HomeSuite App instalable (PWA), pendiente de staging (2026-11-09)

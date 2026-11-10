@@ -49,8 +49,8 @@ export async function evaluarCoherencia({ entorno, sitio, appHome, sonda }) {
     verificar(tarjeta?.estado === esperado, `${tool.nombre}: estado en el sitio «${tarjeta?.estado}», en la app «${esperado}»`);
     const landing = sitio.landings[tool.ruta.slice(1)];
     verificar(tarjeta?.landing === tool.ruta && landing, `${tool.nombre}: la tarjeta lleva a ${tarjeta?.landing} y la landing ${tool.ruta} ${landing ? "existe" : "no existe"}`);
-    // La landing ofrece la entrada: TasKing a su Worker; las herramientas de la app, a su ruta en el ambiente.
-    const entrada = tool.id === "tasks" ? urls.tasking : `${urls.app}${tool.ruta}`;
+    // Todas las herramientas abren su ruta en la app de este ambiente.
+    const entrada = `${urls.app}${tool.ruta}`;
     verificar(landing?.includes(`href="${entrada}`), `${tool.nombre}: la landing ofrece la entrada ${entrada}`);
     verificar(appHome.includes(`href="${tool.ruta}"`), `${tool.nombre}: aparece en el inicio de la app (${tool.ruta})`);
   }
@@ -78,7 +78,7 @@ export async function evaluarCoherencia({ entorno, sitio, appHome, sonda }) {
   }
 
   const haciaTasKing = enlaces(paginas, /href="(https:\/\/tas-king[a-z-]*\.pablotortorella\.workers\.dev[^"]*)"/g);
-  verificar(haciaTasKing.length > 0, "el sitio enlaza a TasKing");
+  verificar(haciaTasKing.length === 0, "el sitio abre TasKing dentro de HomeSuite y no envía al Worker antiguo");
   for (const url of haciaTasKing) {
     verificar(url === urls.tasking, `enlace del sitio a TasKing ${url}${url === urls.tasking ? "" : ` (este ambiente espera ${urls.tasking})`}`);
     verificar(RESPUESTAS_VALIDAS.includes(await sonda(url)), `${url} responde`);
@@ -99,6 +99,10 @@ async function main(entorno) {
   const appHome = await leer(`${urls.app}/`);
   const sonda = async (url) => (await fetch(url, { redirect: "manual" })).status;
   const { resultados, fallas } = await evaluarCoherencia({ entorno, sitio, appHome, sonda });
+  const bridgeFailures=await evaluarPuenteTasking(entorno);
+  fallas.push(...bridgeFailures);
+  for(const detalle of bridgeFailures)resultados.push({ok:false,detalle});
+  resultados.push({ok:bridgeFailures.length===0,detalle:'TasKing antiguo: aviso firmado, enlace, favicon y API retirada'});
   for (const { ok, detalle } of resultados) console.log(`${ok ? "OK  " : "FALLA"} ${detalle}`);
   console.log(fallas.length ? `\n${fallas.length} comprobación(es) fallaron en ${entorno}.` : `\nSitio y app coherentes en ${entorno} (${resultados.length} comprobaciones).`);
   process.exitCode = fallas.length ? 1 : 0;
@@ -106,4 +110,21 @@ async function main(entorno) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.argv[2] ?? "").catch((error) => { console.error(error.message); process.exitCode = 1; });
+}
+
+// Tras el corte, el origen debe seguir respondiendo como aviso público y jamás como una segunda API.
+export async function evaluarPuenteTasking(entorno, pedir = fetch) {
+  const urls=urlsDelEntorno(entorno),fallas=[];
+  const check=(ok,detalle)=>{if(!ok)fallas.push(detalle);};
+  const notice=await pedir(urls.tasking+'/?card=coherence-check',{redirect:'manual'});
+  const html=await notice.text();
+  check(notice.status===200&&!notice.headers.get('Location'),'El origen debe mostrar el aviso sin navegación automática.');
+  check(html.includes('Pablitux')&&html.includes('contactame')&&html.includes('¡Nos mudamos!'),'Faltan firma, contacto o mensaje de mudanza.');
+  check(html.includes('href="'+urls.app+'/tareas?card=coherence-check"'),'El botón no conserva la tarjeta o apunta a otro ambiente.');
+  check(!/<script|http-equiv\s*=\s*["']?refresh/i.test(html),'El puente intenta navegar sin el clic.');
+  const api=await pedir(urls.tasking+'/api/me',{redirect:'manual'});
+  check(api.status===410&&!api.headers.get('Location'),'La API vieja permanece operativa o redirige métodos.');
+  const icon=await pedir(urls.tasking+'/favicon.svg',{redirect:'manual'});
+  check(icon.status===200&&icon.headers.get('Content-Type')?.includes('image/svg+xml')&&(await icon.text()).includes('<svg'),'El favicon antiguo no es una imagen SVG disponible.');
+  return fallas;
 }

@@ -56,7 +56,7 @@ describe("coherencia entre el sitio público y la app", () => {
 
   it("detecta el TasKing de otro ambiente", async () => {
     const sitio = await sitioDelRepositorio();
-    const landings = { ...sitio.landings, tareas: sitio.landings.tareas.replace("https://tas-king.pablotortorella.workers.dev", "https://tas-king-staging.pablotortorella.workers.dev") };
+    const landings = { ...sitio.landings, tareas: sitio.landings.tareas.replace("https://app.homesuite.info/tareas", "https://staging.homesuite.info/tareas") };
     expect((await evaluar({ sitio: { ...sitio, landings } })).fallas.join("\n")).toMatch(/TasKing/);
   });
 

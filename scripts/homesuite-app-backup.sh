@@ -62,12 +62,14 @@ fi
 
 test -s "$BOOKMARK_FILE"
 test -s "$SQL_FILE"
+node --no-warnings scripts/tasking/backup-assets.mjs collect "$ENVIRONMENT" "$DESTINATION"
 
 {
   printf 'environment=%s\n' "$ENVIRONMENT"
   printf 'database=%s\n' "$DATABASE"
   printf 'created_at=%s\n' "$TIMESTAMP"
   printf 'sha256=%s\n' "$(sha256sum "$SQL_FILE" | cut -d' ' -f1)"
+  printf 'tasking_files_sha256=%s\n' "$(sha256sum "$DESTINATION/tasking-files.json" | cut -d' ' -f1)"
 } > "$MANIFEST_FILE"
 
 if [ "$ENVIRONMENT" = production ]; then
@@ -77,6 +79,7 @@ if [ "$ENVIRONMENT" = production ]; then
   OBJECT_PREFIX="$BACKUP_BUCKET/production/$TIMESTAMP"
   npx wrangler r2 object put "$OBJECT_PREFIX/database.sql" --remote --file "$SQL_FILE" --content-type application/sql --force
   npx wrangler r2 object put "$OBJECT_PREFIX/bookmark.json" --remote --file "$BOOKMARK_FILE" --content-type application/json --force
+  node --no-warnings scripts/tasking/backup-assets.mjs upload "$ENVIRONMENT" "$DESTINATION" "production/$TIMESTAMP"
   # El manifiesto se sube último: indica que las tres piezas terminaron correctamente.
   npx wrangler r2 object put "$OBJECT_PREFIX/manifest.txt" --remote --file "$MANIFEST_FILE" --content-type text/plain --force
   printf 'Backup de HomeSuite completo en R2: %s\n' "$OBJECT_PREFIX"
