@@ -11,7 +11,7 @@ Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**
 |---|---|
 | `npm test` | 235 pruebas, incluidas admisión/drenaje de peticiones y bloqueo del origen congelado |
 | `npm run test:homesuite-app` | 722 pruebas; instalación limpia y actualización con libro financiero poblado, unicidad y contratos de PWA |
-| `npm run test:homesuite-app:integration` | 389 pruebas D1/R2; identidad, perfil/salida, CSRF, permisos/revocación, copia/reintento/conciliación, límites reales de archivo |
+| `npm run test:homesuite-app:integration` | 391 pruebas D1/R2; identidad, perfil/salida, CSRF, permisos/revocación, copia/reintento/conciliación, límites reales de archivo |
 | `npm run test:homesuite-site` | 44 pruebas |
 | `npm run test:e2e` | 101 recorridos originales más un caso dirigido de mudanza aprobados (102 casos cubiertos) |
 | `npm run test:e2e:tasking` | 79 de 79 aprobados en corrida completa Chromium; incluye PWA instalada antes de entrar a Tareas y vuelta sin conexión |
@@ -20,7 +20,7 @@ Implementación en revisión; **sin despliegue, traslado remoto ni aceptación**
 | `npm run test:homesuite-site:e2e` | 20 recorridos aprobados con el enlace a `/tareas` |
 | `npm run test:e2e:homesuite-app`, puerto 8799 / estado `tasking-platform-e2e` | 196 de 198 inicialmente; apagado PWA y teclado de clasificación aprobados en corrida dirigida aislada (198 casos cubiertos), ver abajo |
 | `npm run verify:tasking-assets` | 28 assets inventariados; SVG de corona idéntico al original y al del puente |
-| Builds `wrangler deploy --dry-run` app/puente staging | Correctos; app 685,31 KiB y puente 6,29 KiB; puente con una única variable de destino y sin bindings de datos |
+| Builds `wrangler deploy --dry-run` app/puente staging | Correctos; puente con una única variable de destino y sin bindings de datos |
 | `openspec validate migrar-tasking-homesuite --strict` | Válido; no archivado |
 
 D1/R2 son recursos emulados propios. Los E2E de Tareas usan puertos 8816/8817 y
@@ -55,7 +55,10 @@ Manifiesto SHA-256:
 Se ejecutó drenaje → congelación → extracción → carga → verificación → segunda
 carga del mismo lote → activación → marcado del origen. `abort` después de activar
 fue rechazado. La prueba D1/R2 nativa también interrumpe una copia, la reanuda y
-comprueba que bytes corruptos impiden activar. El fixture con cuenta HomeSuite
+comprueba que bytes corruptos impiden activar. Se verifican además un aborto concurrente con activación y el rechazo de un
+snapshot obsoleto después de reabrir/modificar el origen: nunca quedan dos
+escritores. El cerrojo final se toma antes de habilitar destino.
+El fixture con cuenta HomeSuite
 creada después recupera el personal importado y su ID.
 
 La versión instalada de Wrangler no acepta `--persist-to` en `d1 export --local`:

@@ -78,7 +78,7 @@ export function registerTaskingRoutes(app){
   router.use('/tareas/adjuntos/*',protect);
   router.get('/tareas',async c=>{
     if(!await sessionFor(c))return login(c);
-    if(!await taskingActive(c.env.DB))return c.html('<!doctype html><html lang="es"><meta charset="utf-8"><title>Fun TasKing</title><h1>Estamos preparando el traslado.</h1><p>Podés seguir usando <a href="'+(new URL(c.req.url).hostname==='app.homesuite.info'?'https://tas-king.pablotortorella.workers.dev':'https://tas-king-staging.pablotortorella.workers.dev')+'">Fun TasKing</a>.</p></html>',503);
+    if(!await taskingActive(c.env.DB))return c.html(page('Fun TasKing','<h1>Estamos preparando el traslado.</h1><p>Volvé en un momento. Si tenés cualquier consulta, contactá a Pablitux.</p>',{favicon:'/tareas/favicon.v1.svg'}),503);
     const session=await sessionFor(c);let actor;
     try{actor=await resolveIdentity(c.env.DB,session.user_id);}
     catch(error){

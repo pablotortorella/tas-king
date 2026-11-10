@@ -97,3 +97,25 @@ export async function activateTransfer(db,bucket,snapshot){
   await verifyTransfer(db,bucket,snapshot);
   await db.batch([db.prepare("UPDATE tasking_transfer_state SET phase='active',activated_at=CURRENT_TIMESTAMP WHERE id=1 AND phase='ready'").bind(),db.prepare("UPDATE tasking_transfer_batches SET status='active' WHERE id=?").bind(snapshot.batchId)]);
 }
+
+// Cross-database cutover: fence the origin before enabling the destination.
+// Abort can win before this fence, but can never reopen an origin marked moved.
+export async function commitTransfer(source,db,targetBucket,sourceBucket,snapshot){
+  await inspectSnapshot(snapshot);
+  const target=await db.prepare('SELECT phase,manifest_hash FROM tasking_transfer_state WHERE id=1').first();
+  if(!['ready','active'].includes(target.phase)||target.manifest_hash!==snapshot.manifestHash)bad('El lote no está conciliado.');
+  await source.prepare("UPDATE tasking_origin_control SET phase='moved' WHERE id=1 AND phase='frozen' AND NOT EXISTS(SELECT 1 FROM tasking_origin_leases)").run();
+  const origin=await source.prepare('SELECT phase FROM tasking_origin_control WHERE id=1').first();
+  if(origin?.phase!=='moved')bad('El origen debe estar congelado y drenado antes de activar.');
+  // Re-extract after the persistent fence: an aborted/reopened source may have
+  // changed since the original snapshot, even when the destination still matches.
+  const current=await extractTransfer(source,sourceBucket,{batchId:snapshot.batchId,environment:snapshot.environment});
+  if(current.manifestHash!==snapshot.manifestHash)bad('El origen cambió desde el snapshot. Mantenerlo cerrado y conciliar un lote actualizado antes de activar.');
+  await activateTransfer(db,targetBucket,snapshot);
+}
+export async function abortTransfer(source,db){
+  const target=await db.prepare('SELECT phase,activated_at FROM tasking_transfer_state WHERE id=1').first();
+  if(target.phase==='active'||target.activated_at)bad('HomeSuite ya recibió escrituras; no se puede reabrir la copia vieja.');
+  await source.prepare("UPDATE tasking_origin_control SET phase='live' WHERE id=1 AND phase<>'moved'").run();
+  if((await source.prepare('SELECT phase FROM tasking_origin_control WHERE id=1').first())?.phase!=='live')bad('El corte ya inició su activación. Mantener el origen cerrado y completar o reparar el destino.');
+}

@@ -120,7 +120,10 @@ npx wrangler deploy --config wrangler.tasking-move.jsonc --env staging
 npm run verify:coherence:staging
 ```
 
-`activate` repite la conciliación y habilita HomeSuite como único escritor. Publicar
+`activate` primero cierra irreversiblemente el origen (`moved`), vuelve a extraer
+y comprobar que el origen no cambió desde el snapshot y repite la conciliación
+del destino antes de habilitar HomeSuite como único escritor. Este cerrojo también
+impide que un `abort` concurrente abra una segunda copia editable. Publicar
 el puente al 100 %, sin reparto con la versión editable. Después, app primero y sitio
 después cuando corresponda; el catálogo del sitio ya debe enlazar `/tareas`.
 No publicar el catálogo antes de que el destino esté disponible. Registrar SHA,
@@ -128,15 +131,20 @@ versiones, lote/hash, duración y smoke real de entrar, editar, descargar y sali
 
 ## Recuperación sin dos escritores
 
-Antes de activar: `npm run tasking:transfer -- abort <ambiente> --directory <ruta>`
+Antes de iniciar el cerrojo de `activate`: `npm run tasking:transfer -- abort <ambiente> --directory <ruta>`
 reabre el origen y deja el destino cerrado. La copia parcial permanece para
 reanudar, sin activar ni borrar datos financieros. Si cambia el origen tras el
 aborto, el manifiesto anterior ya no es válido: reconciliar/descartar explícitamente
 **sólo el dominio de staging** con respaldo y destino confirmado antes de otro lote.
 La herramienta rechaza mezclar lotes.
 
-Después de activar: `abort` rechaza reabrir el origen, aunque no se haya observado
-una escritura todavía. Mantenerlo cerrado; reparar el código/datos de Tareas en
+Desde que `activate` marca el origen como `moved`, `abort` rechaza reabrirlo,
+aunque el destino aún no esté activo. Si una comprobación falla después de ese
+cerrojo, mantener ambos cerrados y completar o reparar la conciliación; reintentar
+el mismo lote sólo si sigue vigente. Una copia obsoleta requiere revisar el
+traslado de dominio en aislamiento, nunca sobrescribir finanzas ni reabrir ambas
+apps. Después de activar tampoco se permite reabrir el origen, aunque no se haya
+observado una escritura todavía. Mantenerlo cerrado; reparar el código/datos de Tareas en
 HomeSuite conservando las escrituras nuevas. No volver a cargar el snapshot de
 origen ni restaurar toda D1 sobre las finanzas actuales. Una recuperación de dominio
 requiere comparar en un entorno aislado y revisar el delta antes de aplicarlo.

@@ -5,7 +5,7 @@ import { mkdtemp,readFile,writeFile,mkdir,rm } from 'node:fs/promises';
 import { resolve,join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { extractTransfer,loadTransfer,verifyTransfer,activateTransfer,TABLES } from '../../apps/app/src/tasking/transfer.js';
+import { extractTransfer,loadTransfer,verifyTransfer,commitTransfer,abortTransfer,TABLES } from '../../apps/app/src/tasking/transfer.js';
 const exec=promisify(execFile),root=fileURLToPath(new URL('../../',import.meta.url));
 const [action,environment,...options]=process.argv.slice(2);
 if(!['staging','production'].includes(environment))throw new Error('Uso: transfer.mjs <status|drain|freeze|extract|load|verify|activate|abort|mark-moved|backup-files|restore-files> <staging|production> --directory <ruta privada fuera de Dropbox> [--local]');
@@ -62,12 +62,8 @@ try{
   }
   case 'load':await loadTransfer(target,targetBucket,sourceBucket,await manifest());console.log('Copia conciliada; destino listo pero sin admitir escrituras.');break;
   case 'verify':console.log(JSON.stringify(await verifyTransfer(target,targetBucket,await manifest())));break;
-  case 'activate':await activateTransfer(target,targetBucket,await manifest());console.log('Destino activo: HomeSuite es el único escritor. No reabrir el origen.');break;
-  case 'abort':{
-   const state=await target.prepare('SELECT phase,activated_at FROM tasking_transfer_state WHERE id=1').first();
-   if(state.phase==='active'||state.activated_at)throw new Error('HomeSuite ya recibió escrituras; no se puede reabrir la copia vieja.');
-   await source.prepare("UPDATE tasking_origin_control SET phase='live' WHERE id=1 AND phase<>'moved'").run();console.log('Aborto previo a activación: origen disponible. Destino continúa cerrado.');break;
-  }
+  case 'activate':await commitTransfer(source,target,targetBucket,sourceBucket,await manifest());console.log('Destino activo: HomeSuite es el único escritor. No reabrir el origen.');break;
+  case 'abort':await abortTransfer(source,target);console.log('Aborto previo al cerrojo de activación: origen disponible. Destino continúa cerrado.');break;
   case 'mark-moved':if((await target.prepare('SELECT phase FROM tasking_transfer_state WHERE id=1').first())?.phase!=='active')throw new Error('Primero activar el destino conciliado.');await source.prepare("UPDATE tasking_origin_control SET phase='moved' WHERE id=1 AND phase='frozen'").run();console.log('Origen marcado como trasladado. Mantener el Worker de aviso.');break;
   case 'backup-files':{
    const snapshot=await manifest();const folder=join(directory,'files');await mkdir(folder,{recursive:true,mode:0o700});

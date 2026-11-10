@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { applyD1Migrations } from 'cloudflare:test';
 import { describe,it,expect,beforeEach } from 'vitest';
-import { extractTransfer,loadTransfer,verifyTransfer,activateTransfer,TABLES } from '../src/tasking/transfer.js';
+import { extractTransfer,loadTransfer,verifyTransfer,activateTransfer,commitTransfer,abortTransfer,TABLES } from '../src/tasking/transfer.js';
 import { resolveIdentity,ensurePersonalBoard } from '../src/tasking/db/helpers.js';
 import { upsertGoogleUser } from '../src/users.js';
 
@@ -9,7 +9,7 @@ async function reset(){
  await env.TASKING_BUCKET.delete('transfer-file.txt');
  await env.LEGACY_TASKING_DB.prepare("UPDATE tasking_origin_control SET phase='live'").run();
  for(const stmt of env.TEST_LEGACY_SEED.replace(/--[^\n]*/g,'').split(';').map(s=>s.trim()).filter(Boolean))await env.LEGACY_TASKING_DB.prepare(stmt).run();
- await env.DB.prepare("UPDATE tasking_transfer_state SET phase='pending',batch_id=NULL,manifest_hash=NULL").run();
+ await env.DB.prepare("UPDATE tasking_transfer_state SET phase='pending',batch_id=NULL,manifest_hash=NULL,activated_at=NULL").run();
  await env.DB.batch([...TABLES.slice().reverse().map(t=>env.DB.prepare('DELETE FROM tasking_'+t)),env.DB.prepare('DELETE FROM tasking_transfer_objects'),env.DB.prepare('DELETE FROM tasking_transfer_batches')]);
  await env.SOURCE_TASKING_BUCKET.put('transfer-file.txt','contenido de ejemplo',{httpMetadata:{contentType:'text/plain'}});
  await env.LEGACY_TASKING_DB.prepare("INSERT INTO attachments(id,card_id,stored_name,original_name,mime,size,created_at) VALUES('att-transfer','card-seed','transfer-file.txt','ejemplo.txt','text/plain',20,1)").run();
@@ -30,7 +30,8 @@ describe('traslado íntegro y reanudable',()=>{
   await loadTransfer(env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot);
   expect(await verifyTransfer(env.DB,env.TASKING_BUCKET,snapshot)).toMatchObject({files:1});
   expect(await env.DB.prepare('SELECT * FROM ledger_entries ORDER BY id').all()).toMatchObject({results:finances.results});
-  await activateTransfer(env.DB,env.TASKING_BUCKET,snapshot);
+  await commitTransfer(env.LEGACY_TASKING_DB,env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot);
+  expect((await env.LEGACY_TASKING_DB.prepare("SELECT phase FROM tasking_origin_control").first()).phase).toBe("moved");
   const user=await upsertGoogleUser(env.DB,{sub:crypto.randomUUID(),email:'e2e-admin@test.local',name:'Perfil HomeSuite',emailAuthority:true});
   const actor=await resolveIdentity(env.DB,user.id);expect(actor.legacy_user_id).toBe('user-e2e');
   expect((await ensurePersonalBoard(env.DB,actor.identity_id)).id).toBe('board-e2e');
@@ -61,4 +62,21 @@ it('reanuda una fila idéntica guardada antes del journal y recupera una invitad
  expect((await env.DB.prepare('SELECT role FROM tasking_board_members WHERE board_id=? AND identity_id=?').bind('board-e2e',actor.identity_id).first()).role).toBe('member');
  const personal=await ensurePersonalBoard(env.DB,actor.identity_id);expect(personal.id).not.toBe('board-e2e');
  expect((await env.DB.prepare('SELECT COUNT(*) AS n FROM tasking_transfer_objects WHERE table_name=?').bind('identities').first()).n).toBe(2);
+});
+it('no activa un snapshot viejo tras reabrir y modificar el origen',async()=>{
+ const source=env.LEGACY_TASKING_DB,snapshot=await extractTransfer(source,env.SOURCE_TASKING_BUCKET,{environment:'test'});
+ await loadTransfer(env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot);await abortTransfer(source,env.DB);
+ await expect(commitTransfer(source,env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot)).rejects.toThrow('congelado');
+ await source.prepare("UPDATE cards SET title='Cambio posterior al aborto' WHERE id='card-seed'").run();
+ await source.prepare("UPDATE tasking_origin_control SET phase='frozen'").run();
+ await expect(commitTransfer(source,env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot)).rejects.toThrow('origen cambió');
+ expect((await env.DB.prepare('SELECT phase FROM tasking_transfer_state').first()).phase).toBe('ready');
+ await expect(abortTransfer(source,env.DB)).rejects.toThrow('inició su activación');
+});
+it('un aborto concurrente con la activación nunca deja dos escritores',async()=>{
+ const source=env.LEGACY_TASKING_DB,snapshot=await extractTransfer(source,env.SOURCE_TASKING_BUCKET,{environment:'test'});
+ await loadTransfer(env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot);
+ await Promise.allSettled([commitTransfer(source,env.DB,env.TASKING_BUCKET,env.SOURCE_TASKING_BUCKET,snapshot),abortTransfer(source,env.DB)]);
+ const origin=(await source.prepare('SELECT phase FROM tasking_origin_control').first()).phase,target=(await env.DB.prepare('SELECT phase FROM tasking_transfer_state').first()).phase;
+ expect([['moved','active'],['live','ready']]).toContainEqual([origin,target]);
 });
