@@ -3,6 +3,7 @@
   "name": "tas-king",
   "main": "src/index.js",
   "compatibility_date": "2025-01-01",
+  "preview_urls": false,
   "vars": { "TASKING_TRANSITION_CONTROL": "false", "TASKING_DESTINATION": "production" },
   // `run_worker_first` acotado a documentos: sin esto el Asset Worker responde
   // antes que el Worker y las cabeceras de seguridad (CSP, X-Frame-Options,
@@ -44,6 +45,7 @@
     },
     // Staging (NUEVO — Cloudflare staging)
     "staging": {
+      "preview_urls": false,
       "vars": { "TASKING_TRANSITION_CONTROL": "false", "TASKING_DESTINATION": "staging" },
       "d1_databases": [
         {

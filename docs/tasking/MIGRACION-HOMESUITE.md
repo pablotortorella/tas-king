@@ -71,7 +71,9 @@ segura, `nosniff`, CSP sandbox y `private, no-store`.
    `--var TASKING_DESTINATION:staging` (o `production` en el corte aprobado).
    Mantener los demás vars/secrets/bindings del origen. Confirmar en remoto que
    **todas** las rutas editables pasan por esa versión, incluidas aliases.
-   No empezar el drenaje con versiones viejas todavía recibiendo tráfico.
+   La configuración de preparación deshabilita globalmente Version URLs y
+   aliases (`preview_urls:false`); verificar setting y probes históricos antes
+   del drenaje. No empezar con versiones viejas todavía recibiendo tráfico.
 5. Publicar el SHA revisado de app en staging. No activar el destino aún.
    Ensayar los pasos del corte y el aborto con datos del ambiente. Probar con dos
    cuentas Google reales: usuario existente, alta HomeSuite posterior, invitación,
