@@ -173,11 +173,28 @@ Se solicitó el smoke real a Pablo. Las pruebas físicas PWA quedan en Handoff p
 Claude Code. No se archiva el change ni se declara aceptación completa a partir de
 los probes anónimos o de las confirmaciones de staging.
 
-Las tareas 6.10–6.11 permanecen abiertas para completar evidencia específica de
-caché caliente/volver atrás/adjunto previamente visitado y telemetría sintética
-completa/continuidad ante fallo del destino. Ya están comprobados `no-store`,
-expiración de cookies, retirada de assets y no persistencia de logs/trazas; no se
-presentan como el ensayo completo. Las tareas 7.2–7.3 conservan los escenarios
-manuales no declarados en las confirmaciones resumidas de staging, incluidos los
-de PWA física coordinados con Claude. La autorización de producción aplicó a la
-evidencia disponible, sin convertir esos límites en pruebas realizadas.
+## Continuidad y telemetría sintéticas posteriores al corte
+
+Chromium aislado sobre producción comprobó aviso inicial, recarga con caché
+caliente, expiración de cookies `session`/`oauth_state` sintéticas, navegación atrás
+y recarga de un adjunto previamente visitado. Su botón conserva la descarga
+protegida de HomeSuite. Al abortar en el navegador la navegación al destino,
+el aviso del origen siguió disponible y su API rechazó una mutación con 410.
+No se usaron cuentas ni archivos privados. Esto completa 6.10 junto con el ensayo
+previo de pestaña antigua con borrador y parada de polling; no acredita un archivo
+ya descargado (que no es revocable) ni un dispositivo físico.
+
+Se abrió un tail temporal con filtro de cabecera única, exclusivamente para dos
+peticiones propias sintéticas. Los mensajes de aplicación contenían sólo evento,
+versión, ambiente, clase de ruta, método y estado: callback `oauth` 302 y `api` 410,
+sin URL, query, credenciales o payload. El sobre de diagnóstico de Cloudflare sí
+incluye URL y metadatos de la petición sintética: por eso se mantienen deshabilitados
+logs/trazas persistentes, no se abre tail sin filtro y se cerró al terminar. No se
+observó tráfico de usuarios. La simulación local de fallo de red al navegar a HomeSuite y la metadata remota
+completan 6.11 sin reabrir el origen; no se provocó una caída del servicio remoto.
+
+Las tareas 7.2–7.3 conservan los escenarios manuales no declarados en las
+confirmaciones resumidas de staging, incluidos los de PWA física coordinados con
+Claude. La autorización de producción aplicó a la evidencia disponible, sin
+convertir esos límites en pruebas realizadas. Sigue solicitado el smoke real de
+producción y el change no se archiva.

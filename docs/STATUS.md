@@ -52,6 +52,10 @@
 - Backup diario ejecutado con su token real de CI y restauración D1/archivos aprobada
   ([ejecución 42923268069](https://github.com/pablotortorella/tas-king/actions/runs/42923268069)).
   Los cinco adjuntos también fueron restaurados a R2 local y leídos con hashes idénticos.
+- Chromium aislado: caché caliente, cookies antiguas, atrás, adjunto revisitado y
+  fallo de red simulado desde Chromium aprobados; aviso disponible y mutación antigua 410.
+  Tail temporal filtrado a dos peticiones sintéticas confirmó mensajes sin URL ni
+  payload. Se cerró al terminar; logs/trazas persistentes siguen deshabilitados.
 - Pendiente: smoke de entrar/editar/descargar/salir con Google real en producción
   (solicitado a Pablo). Pruebas físicas PWA a cargo de
   Claude Code mediante [Handoff](../AI_HANDOFF.md); dock separado en backlog.
