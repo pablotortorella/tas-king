@@ -59,8 +59,8 @@
 - [x] 6.7 Incorporar cerrojo persistente de escrituras del origen y protección de despliegue/rollback; verificar que una versión vieja o script de publicación no puede reabrir negocio después del corte y que archivos/crons tampoco eluden el cierre.
 - [x] 6.8 Comunicar mantenimiento/mudanza desde la propia interfaz al llegar al origen, sin avisos externos ni coordinación individual de Pablo; preparar manejo de `tasking_migrated` con parada de polling/reintentos y borradores preservados antes de pulsar el botón. Verificar con borrador, envío en curso, timeout y JS antiguo, sin confirmación falsa ni navegación forzada.
 - [x] 6.9 Inventariar hosts, aliases, previews/version URLs, crons, secretos/bindings, triggers de CI y cachés del origen; entregar una matriz sin caminos de escritura alcanzables ni reparto de tráfico con la app editable. Verificar cobertura remota al preparar publicación, sin asumirla de los archivos locales.
-- [ ] 6.10 Preparar invalidación/revalidación de cachés controlables y expiración de cookies propias sin borrar borradores ni datos ajenos; verificar caché caliente, volver atrás y adjunto previamente visitado, documentando que no se pueden revocar archivos ya descargados.
-- [ ] 6.11 Configurar observabilidad del puente con versión/ambiente/clase de ruta y resultado, sin URLs completas ni payloads privados; verificar logs/traces reales, respuesta de continuidad si el destino falla y que no se reactive la copia antigua para recuperarlo.
+- [x] 6.10 Preparar invalidación/revalidación de cachés controlables y expiración de cookies propias sin borrar borradores ni datos ajenos; verificar caché caliente, volver atrás y adjunto previamente visitado, documentando que no se pueden revocar archivos ya descargados.
+- [x] 6.11 Configurar observabilidad del puente con versión/ambiente/clase de ruta y resultado, sin URLs completas ni payloads privados; verificar logs/traces reales, respuesta de continuidad si el destino falla y que no se reactive la copia antigua para recuperarlo.
 
 ## 7. Verificación integrada y aceptación
 
