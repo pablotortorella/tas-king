@@ -20,7 +20,8 @@ validar cada promesa contra lo implementado antes de publicarlos.
 - Tableros con roles owner/member y personal no eliminable. En HomeSuite los
   permisos siguen siendo por tablero, independientes de grupos de Cuentas Claras.
   Cualquier cuenta HomeSuite puede usar TasKing. La allowlist y solicitudes
-  heredadas se mantienen sólo en el origen hasta completar el corte. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
+  heredadas ya no autorizan el acceso al producto integrado; el origen quedó
+  cerrado tras el corte. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
   conserva el detalle de revocación de TasKing.
 - Columnas de cierre múltiples: objetivos, métricas, urgencia y celebración deben
   considerar todas. Validar pertenencia de columna al tablero en cada escritura.
@@ -86,7 +87,7 @@ no son excepciones aprobadas para productos nuevos. Antes de migrarlas: analizar
 compatibilidad, registrar decisión y probar transición sin interrumpir TasKing.
 
 
-## Módulo integrado y transición (staging activo; producción pendiente)
+## Módulo integrado y transición (producción activa; smoke real pendiente)
 
 Implementación en `apps/app/src/tasking/` y assets `apps/app/public/tareas/`;
 HTML fuera del directorio de assets para que pase por sesión y cabeceras.
@@ -96,9 +97,15 @@ separado de respaldos. El vínculo conserva identidad interna aunque cambie el
 email de Google. Recupera el personal importado antes de crear uno nuevo.
 
 La fase `pending/loading/ready` mantiene cerrado el destino; sólo `active` admite
-uso normal. El origen sigue en `live` durante preparación. El cerrojo persistente,
-el drenaje y el Worker de aviso evitan dos escritores. La retirada definitiva de
-la lista global no se da por desplegada al escribir este código.
+uso normal. En producción el origen está `moved`, el destino `active` y no quedan
+leases. El corte trasladó 14 tablas, 12 tableros, 101 tarjetas y 5 archivos; los
+backups pre y post se restauraron correctamente. Producción pasó 30/30 verificaciones
+de coherencia. PR #145 está integrado en `main` (`74c614ca30697e397a11efa562fa26fb52f952ac`);
+versiones, manifiesto y evidencia detallada constan en [STATUS](../STATUS.md) y
+[verificación](../tasking/VERIFICACION.md). Falta el smoke de Google real en producción;
+las pruebas con dos cuentas en staging no lo reemplazan. Ambos puentes TasKing
+quedaron sin secretos heredados; la lista global y sus solicitudes no tienen rutas
+ni controles activos. Se conservaron las bases y buckets históricos.
 
 - `npm run test:e2e:tasking`: puertos 8816/8817 y estado descartable `.wrangler/tasking-e2e`.
 - `TASKING_BROWSER=firefox npm run test:e2e:tasking`: segundo motor.
