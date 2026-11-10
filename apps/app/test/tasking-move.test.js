@@ -16,3 +16,21 @@ it('la comprobación operativa verifica el aviso y detecta una segunda app activ
  expect(await evaluarPuenteTasking('production',(url,opts)=>Promise.resolve(moveResponse(new Request(url,opts),env)))).toEqual([]);
  const failures=await evaluarPuenteTasking('production',()=>Promise.resolve(new Response('<h1>App vieja</h1>')));expect(failures.length).toBeGreaterThan(0);
 });
+
+
+it('el puente de ambos ambientes no expone recursos ni persiste logs o trazas de callbacks', async () => {
+ const { readFile } = await import('node:fs/promises');
+ const config = JSON.parse(await readFile(new URL('../../../wrangler.tasking-move.jsonc', import.meta.url), 'utf8'));
+ for (const environment of [config, config.env.staging]) {
+  expect(environment.workers_dev).toBe(true);
+  expect(environment.preview_urls).toBe(false);
+  expect(environment.triggers.crons).toEqual([]);
+  expect(environment.d1_databases ?? []).toEqual([]);
+  expect(environment.r2_buckets ?? []).toEqual([]);
+  expect(environment.assets).toBeUndefined();
+  expect(environment.bindings ?? []).toEqual([]);
+  expect(environment.observability.logs.enabled).toBe(false);
+  expect(environment.observability.logs.invocation_logs).toBe(false);
+  expect(environment.observability.traces.enabled).toBe(false);
+ }
+});

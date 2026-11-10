@@ -188,7 +188,7 @@ el comando del ensayo. Mantener la frecuencia y los objetivos de recuperación d
 | Caché caliente, volver atrás | Respuestas nuevas `no-store`; assets retirados 410; revalidar CDN/aliases controlables y probar navegador |
 | Descargas previas | Redirigen a autorización HomeSuite; un archivo ya descargado no se puede revocar |
 | OAuth antiguo | Callback local limpia query y cookies `session`/`oauth_state`; no intercambia ni reenvía code/state |
-| Logs y trazas | Sólo versión, ambiente, clase de ruta, método y estado. Logs de invocación/traces desactivados para no registrar callbacks completos |
+| Logs y trazas | Sólo versión, ambiente, clase de ruta, método y estado. Persistencia de logs y trazas desactivada en el puente para no registrar callbacks completos; métricas y `/healthz` mantienen el control operativo. Tail sólo con solicitudes sintéticas y filtro por encabezado único |
 
 La consulta remota inicial encontró los dos buckets originales y el de respaldos;
 los buckets nuevos no existían. El staging de app estaba ocupado por PR #142

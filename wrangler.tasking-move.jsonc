@@ -8,7 +8,7 @@
   "vars": { "TASKING_DESTINATION": "production" },
   "observability": {
     "enabled": true,
-    "logs": { "enabled": true, "invocation_logs": false },
+    "logs": { "enabled": false, "invocation_logs": false },
     "traces": { "enabled": false }
   },
   "triggers": { "crons": [] },
@@ -19,7 +19,7 @@
       "preview_urls": false,
       "vars": { "TASKING_DESTINATION": "staging" },
       "triggers": { "crons": [] },
-      "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false }, "traces": { "enabled": false } }
+      "observability": { "enabled": true, "logs": { "enabled": false, "invocation_logs": false }, "traces": { "enabled": false } }
     }
   }
 }
