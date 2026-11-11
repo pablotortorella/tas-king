@@ -22,6 +22,17 @@ Change `politica-y-aceptacion` (primero de la serie de datos reales, decisión d
   pantalla de consentimiento de Google no se revisó). Tampoco se probó en un teléfono real (tarea 8.2).
 - **Excepción de Remanso:** su pantalla no lleva el pie con los textos legales (su inicio y su cierre se diseñaron para verse completos sin
   desplazarse y el pie no entra); los enlaces aparecen junto al botón de acceso. Si Pablo prefiere el pie, hay que relajar ese límite.
+- **Al rebasar (2026-11-11, Claude):**
+  - La migración pasó a `0014`: `0013_tasking.sql` ya está aplicada en producción.
+  - La cabeza común conserva lo de la PWA (manifiesto, íconos, `/pwa.js`, favicon por página) y suma la franja y el pie legales. Con
+    `cuenta: false`, las páginas sin conexión no los llevan, porque dependen de la sesión y del ambiente.
+  - La puerta exime el manifiesto y `/sin-conexion*`; si no, la instalación fallaría con una versión pendiente. `/sw.js` y `/pwa.js` ya
+    estaban cubiertos por la regla de estáticos.
+  - **Tareas queda detrás de la puerta** (`/tareas` y `/api/tareas/*`), pero su documento propio (`tasking/document.js`) no lleva el pie legal.
+  - **Los borradores de privacidad y términos dicen que Fun TasKing es una aplicación aparte.** Desde el 2026-11-10 es parte de HomeSuite
+    (tableros, tarjetas y adjuntos en R2 `homesuite-tasking-uploads`). Hay que actualizar esos textos y el registro de encargados antes de
+    aprobarlos. Lo decide Pablo y no se tocó.
+  - El texto «Copia de la app» del PR #144 se fusiona con estos borradores sin conflicto.
 - **Pendiente de Pablo:** leer y aprobar los textos, aceptar los DPA de Cloudflare y GitHub, crear la planilla de solicitudes, revisar los festivos
   y decidir lo marcado en `tasks.md`.
 
