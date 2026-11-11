@@ -1,8 +1,9 @@
 # Evidencia de la migración de TasKing
 
 Actualización: 2026-11-10. [PR #145](https://github.com/pablotortorella/tas-king/pull/145)
-integrado en `main` y publicado en staging y producción. El change sigue abierto
-hasta completar la aceptación pendiente; **no está archivado**. Versiones, hashes,
+integrado en `main` y publicado en staging y producción, con el recorrido real de
+producción aceptado por Pablo. El change conserva escenarios manuales pendientes;
+**no está archivado**. Versiones, hashes,
 copias y CI: [STATUS](../STATUS.md#tasking-en-homesuite--publicado-en-producción--2026-11-10).
 [Runbook y recursos](MIGRACION-HOMESUITE.md).
 
@@ -168,10 +169,14 @@ y sin reapertura de rutas. El backup diario de GitHub con su token real complet�
 exportación, lectura de los cinco archivos nuevos y restauración desde R2. Se ensayó
 además la escritura/lectura de esos bytes en R2 exclusivamente local, hashes idénticos.
 
-Pendiente de aceptación: entrar/editar/descargar/salir con Google real en producción.
-Se solicitó el smoke real a Pablo. Las pruebas físicas PWA quedan en Handoff para
-Claude Code. No se archiva el change ni se declara aceptación completa a partir de
-los probes anónimos o de las confirmaciones de staging.
+**Aceptación real de producción — 2026-11-10:** Pablo respondió «Sí, todo funciona»
+a la comprobación solicitada del aviso antiguo, botón Ir a HomeSuite, Google habitual,
+tableros, una edición, un adjunto y salida/reingreso. La confirmación corresponde a
+las versiones de producción registradas en STATUS y completa el smoke real de 8.2.
+No informó navegador ni dispositivo. Esta evidencia no acredita por sí sola pruebas
+manuales de otras cuentas, invitación/revocación ni una instalación PWA física.
+Las pruebas físicas PWA siguen en Handoff para Claude Code; el change no se archiva
+mientras conserve los escenarios manuales abiertos.
 
 ## Continuidad y telemetría sintéticas posteriores al corte
 
@@ -196,5 +201,5 @@ completan 6.11 sin reabrir el origen; no se provocó una caída del servicio rem
 Las tareas 7.2–7.3 conservan los escenarios manuales no declarados en las
 confirmaciones resumidas de staging, incluidos los de PWA física coordinados con
 Claude. La autorización de producción aplicó a la evidencia disponible, sin
-convertir esos límites en pruebas realizadas. Sigue solicitado el smoke real de
-producción y el change no se archiva.
+convertir esos límites en pruebas realizadas. El smoke real de producción está
+confirmado; el change conserva esas tareas abiertas y no se archiva.

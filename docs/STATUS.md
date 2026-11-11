@@ -56,9 +56,14 @@
   fallo de red simulado desde Chromium aprobados; aviso disponible y mutación antigua 410.
   Tail temporal filtrado a dos peticiones sintéticas confirmó mensajes sin URL ni
   payload. Se cerró al terminar; logs/trazas persistentes siguen deshabilitados.
-- Pendiente: smoke de entrar/editar/descargar/salir con Google real en producción
-  (solicitado a Pablo). Pruebas físicas PWA a cargo de
-  Claude Code mediante [Handoff](../AI_HANDOFF.md); dock separado en backlog.
+- **Aceptación real de producción (Pablo, 2026-11-10):** respondió «Sí, todo funciona»
+  al recorrido solicitado: aviso antiguo → Ir a HomeSuite → Google habitual →
+  tableros → una edición → un adjunto → salir y volver a entrar. Cierra el smoke
+  real del corte y la tarea 8.2. Navegador y dispositivo no informados; no atribuir
+  otros escenarios manuales a esta confirmación.
+- Quedan los escenarios manuales no declarados de 7.2–7.3 y las pruebas físicas PWA
+  coordinadas con Claude Code mediante [Handoff](../AI_HANDOFF.md). El change sigue
+  sin archivar; dock separado en backlog.
   [Runbook](tasking/MIGRACION-HOMESUITE.md) y [evidencia](tasking/VERIFICACION.md).
 
 ## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
