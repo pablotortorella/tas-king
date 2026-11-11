@@ -87,7 +87,7 @@ no son excepciones aprobadas para productos nuevos. Antes de migrarlas: analizar
 compatibilidad, registrar decisión y probar transición sin interrumpir TasKing.
 
 
-## Módulo integrado y transición (producción activa; smoke real pendiente)
+## Módulo integrado y transición (producción activa; recorrido real confirmado)
 
 Implementación en `apps/app/src/tasking/` y assets `apps/app/public/tareas/`;
 HTML fuera del directorio de assets para que pase por sesión y cabeceras.
@@ -102,8 +102,9 @@ leases. El corte trasladó 14 tablas, 12 tableros, 101 tarjetas y 5 archivos; lo
 backups pre y post se restauraron correctamente. Producción pasó 30/30 verificaciones
 de coherencia. PR #145 está integrado en `main` (`74c614ca30697e397a11efa562fa26fb52f952ac`);
 versiones, manifiesto y evidencia detallada constan en [STATUS](../STATUS.md) y
-[verificación](../tasking/VERIFICACION.md). Falta el smoke de Google real en producción;
-las pruebas con dos cuentas en staging no lo reemplazan. Ambos puentes TasKing
+[verificación](../tasking/VERIFICACION.md). Pablo confirmó en producción el aviso,
+Google, tableros, edición, adjunto y salida/reingreso el 2026-11-10. Los escenarios
+manuales adicionales y las pruebas físicas PWA siguen identificados. Ambos puentes TasKing
 quedaron sin secretos heredados; la lista global y sus solicitudes no tienen rutas
 ni controles activos. Se conservaron las bases y buckets históricos.
 

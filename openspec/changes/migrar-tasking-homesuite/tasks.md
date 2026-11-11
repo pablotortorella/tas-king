@@ -72,12 +72,12 @@
 ## 8. Traslado definitivo y retiro
 
 - [x] 8.1 Con aprobación de publicación aplicable, respaldar origen/destino y archivos, bloquear/drenar origen y trasladar la copia final; verificar manifiestos y finanzas conservadas antes de habilitar destino y registrar lote/versiones.
-- [ ] 8.2 Con origen cerrado y destino conciliado, activar puente al 100 % y HomeSuite como único escritor; verificar smoke real de entrada/salida, recuperación, edición, permisos, adjuntos, favicon y favoritos antiguos, además de `verify:coherence:production`. Si falla antes de nuevas escrituras, abortar de forma controlada; después, conservar los nuevos cambios y mantener el origen cerrado.
+- [x] 8.2 Con origen cerrado y destino conciliado, activar puente al 100 % y HomeSuite como único escritor; verificar smoke real de entrada/salida, recuperación, edición, permisos, adjuntos, favicon y favoritos antiguos, además de `verify:coherence:production`. Si falla antes de nuevas escrituras, abortar de forma controlada; después, conservar los nuevos cambios y mantener el origen cerrado.
 - [x] 8.3 Tras aceptación del traslado, retirar lista global, solicitudes, controles, endpoints y configuración independiente que ya no se use; verificar que una cuenta HomeSuite sin autorización antigua usa su personal mientras roles por tablero y administrativos siguen protegidos. Mantener respaldos según el runbook, sin eliminar infraestructura o datos históricos implícitamente.
 - [x] 8.4 Actualizar ficha, operación, estado y backlog distinguiendo implementado/integrado/desplegado/aceptado y manteniendo el dock fuera de alcance; verificar enlaces y registrar límites de preferencias locales y cualquier incidencia de identidad.
 - [ ] 8.5 Validar el change con `openspec validate migrar-tasking-homesuite --strict` y archivarlo sólo después de satisfacer escenarios y aceptación; verificar que no quedan tareas necesarias pendientes ni evidencia de recuperación faltante.
 
 Evidencia y brechas: [verificación local](../../../docs/tasking/VERIFICACION.md).
-La integración y publicación remotas están realizadas. Quedan la aceptación real de producción y los límites de PWA declarados en la evidencia; el change no se archiva.
+La integración, publicación y smoke real de producción están confirmados. Quedan los escenarios manuales de 7.2–7.3 y los límites de PWA declarados en la evidencia; el change no se archiva.
 
-Retiro 8.3 acreditado técnicamente: lista/solicitudes sin rutas activas y ambos puentes sin secretos ni datos; no equivale al smoke Google real pendiente de 8.2. Documentación 8.4 registra esos límites.
+Retiro 8.3 acreditado: lista/solicitudes sin rutas activas y ambos puentes sin secretos ni datos. Pablo confirmó el smoke real de 8.2 el 2026-11-10: aviso, Google, tableros, edición, adjunto y salida/reingreso; no se atribuyen otros pasos manuales a su respuesta. Documentación 8.4 registra esos límites.

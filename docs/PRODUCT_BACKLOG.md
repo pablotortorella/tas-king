@@ -90,7 +90,8 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
   corroborada en la primera. Invitación, revocación y aislamiento cuentan con
   cobertura automatizada; producción pasó 30/30
   comprobaciones de coherencia y backups pre/post restaurados. **Seguimiento:**
-  falta el smoke de Google real en producción; los cinco secretos heredados de
+  smoke real de producción confirmado por Pablo el 2026-11-10 (aviso, Google,
+  tableros, edición, adjunto y salida/reingreso); los cinco secretos heredados de
   cada puente ya fueron retirados. El change OpenSpec conserva criterios abiertos
   y no se considera archivado. TasKing ya está incorporado al HomeSuite; ensayos
   físicos de la PWA siguen en el trabajo PWA de Claude, fuera del cierre de esta
