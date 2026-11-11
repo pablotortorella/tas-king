@@ -137,14 +137,17 @@ export async function recordAcceptances(db, userId, versions, method) {
 export const legalGateEnabled = (env) => env?.LEGAL_GATE === "on";
 
 const STATIC_FILE = /^\/[\w.-]+\.(?:js|css|svg|png|ico|webp)$/u; // sólo archivos de la raíz que sirve el Worker (ver routes/assets.js)
-// Rutas que funcionan aunque haya una versión sin aceptar: aceptar, cerrar sesión (todo /auth/), el estado, los recursos estáticos y la
-// descarga de los datos propios. Los changes de baja de cuenta y de exportación agregan acá sus rutas (la baja de cuenta debe poder
+// Rutas que funcionan aunque haya una versión sin aceptar: aceptar, cerrar sesión (todo /auth/), el estado, los recursos estáticos, lo
+// que instala la app y la descarga de los datos propios. Los changes de baja de cuenta y de exportación agregan acá sus rutas (la baja de cuenta debe poder
 // completarse sin aceptar la versión nueva). Las páginas legales viven en el sitio público, no en esta aplicación.
 export const GATE_EXEMPT = Object.freeze([
   { methods: ["GET", "POST"], test: (path) => path === "/aceptar" },
   { methods: ["GET", "POST"], test: (path) => path.startsWith("/auth/") },
   { methods: ["GET", "HEAD"], test: (path) => path === "/healthz" },
   { methods: ["GET", "HEAD"], test: (path) => STATIC_FILE.test(path) },
+  // La instalación de la app (pwa-instalable): el service worker precarga estas páginas, iguales para todas las personas; si redirigieran
+  // a /aceptar la instalación fallaría y sin conexión quedaría la pantalla del navegador.
+  { methods: ["GET", "HEAD"], test: (path) => path === "/manifest.webmanifest" || path === "/sin-conexion" || path.startsWith("/sin-conexion/") },
   { methods: ["GET"], test: (path) => /^\/groups\/[^/]+\/ledger\/export\.(?:json|csv)$/u.test(path) },
 ]);
 

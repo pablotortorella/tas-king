@@ -5,7 +5,7 @@
 - [x] 1.2 Escribir la prueba que lee `apps/site/public/privacidad.html` y `terminos.html`, extrae la fecha de «Última actualización» y falla si difiere de la constante; verificar que falla al cambiar una sola de las dos
   - Hecho: `apps/app/test/legal-versions.test.js`. Si hay una versión próxima anunciada, la página debe mostrar la nueva. Falla al cambiar solo la página o solo la constante (comprobado a mano y con un caso en la prueba).
 - [x] 1.3 Escribir la migración nueva (la siguiente libre) con `legal_acceptances` (clave `(user_id, document, version)`, método `login` o `gate`); verificar actualizando desde el esquema anterior con datos
-  - Hecho: `apps/app/migrations/0013_legal_acceptances.sql` (aditiva, compatible con el código anterior) y `apps/app/test/legal-migration.test.js` (aplica 0001 a 0012 con datos, luego 0013, y comprueba que lo previo queda intacto y las restricciones).
+  - Hecho: `apps/app/migrations/0014_legal_acceptances.sql` (aditiva, compatible con el código anterior) y `apps/app/test/legal-migration.test.js` (aplica 0001 a 0012 con datos, luego 0013, y comprueba que lo previo queda intacto y las restricciones).
 
 ## 2. Aviso y enlaces en el acceso
 
@@ -25,6 +25,7 @@
 
 - [ ] 3.1 Implementar el middleware de la puerta con la lista de rutas exentas (aceptar, cerrar sesión, `/healthz`, estáticos, páginas legales, descarga de los datos propios y baja de cuenta) y `GET/POST /aceptar`; verificar con pruebas de integración la redirección, el 403 de las mutaciones, el cierre de sesión sin aceptar y que la baja de cuenta funciona con una versión pendiente
   - Hecho 2026-11-04 salvo un punto: puerta en `index.js`, rutas exentas en `GATE_EXEMPT` (`legal.js`), `GET/POST /aceptar`, pruebas de integración de la redirección, el 403 de las mutaciones y la API, el cierre de sesión sin aceptar y la descarga de datos. **Falta** verificar que la baja de cuenta funciona con una versión pendiente: esa ruta todavía no existe. El change `baja-de-cuenta-homesuite` debe sumar su ruta a `GATE_EXEMPT` y probarlo (requisito del spec «Baja con versión sin aceptar»).
+  - Rebase del 2026-11-11 sobre Tareas y la PWA: `GATE_EXEMPT` suma `/manifest.webmanifest` y `/sin-conexion*` (sin eso la instalación de la app falla con una versión pendiente); `/tareas` y `/api/tareas/*` quedan detrás de la puerta. La migración pasó a `0014_legal_acceptances.sql`.
 - [x] 3.2 Implementar la franja de aviso previo para `upcoming` y la exigencia desde `effectiveFrom`; verificar con pruebas con el reloj controlado
   - Hecho: `upcoming` en `LEGAL_DOCUMENTS`, franja `legal-band` solo con sesión y exigencia desde `effectiveFrom` (hora de Colombia); pruebas unitarias con reloj controlado y de integración.
 - [x] 3.3 Aceptar automáticamente las versiones vigentes en modo de desarrollo local y en los E2E con identidades de desarrollo, salvo en las pruebas de la puerta; verificar que los E2E existentes pasan sin cambios

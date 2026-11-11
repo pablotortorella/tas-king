@@ -114,6 +114,8 @@ describe("la puerta de nueva aceptación", () => {
     ["GET", "/aceptar"], ["POST", "/aceptar"], ["POST", "/auth/logout"], ["GET", "/auth/google"], ["GET", "/auth/callback"],
     ["GET", "/healthz"], ["GET", "/app.css"], ["GET", "/ledger-ui.js"], ["GET", "/shell.js"],
     ["GET", "/groups/casa/ledger/export.json"], ["GET", "/groups/casa/ledger/export.csv"],
+    ["GET", "/sw.js"], ["GET", "/pwa.js"], ["GET", "/manifest.webmanifest"], ["GET", "/sin-conexion"], ["GET", "/sin-conexion/jardin-zen"],
+    ["GET", "/sin-conexion/remanso"],
   ])("%s %s sigue disponible con una versión pendiente", (method, path) => {
     expect(isGateExempt(method, path)).toBe(true);
   });
@@ -122,6 +124,7 @@ describe("la puerta de nueva aceptación", () => {
     ["GET", "/"], ["GET", "/cuentas-claras"], ["GET", "/groups/casa"], ["POST", "/groups"], ["POST", "/groups/casa/participants"],
     ["GET", "/api/me"], ["PATCH", "/api/me/profile"], ["GET", "/perfil"], ["GET", "/remanso"], ["POST", "/groups/casa/ledger/export.json"],
     ["GET", "/groups/casa/ledger/export.json/otra"], ["GET", "/api/datos.json"],
+    ["GET", "/tareas"], ["GET", "/api/tareas/boards"], ["GET", "/sin-conexion-otra"], ["POST", "/manifest.webmanifest"],
   ])("%s %s queda detrás de la puerta", (method, path) => {
     expect(isGateExempt(method, path)).toBe(false);
   });

@@ -2,11 +2,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
-// Migración 0013 (tabla legal_acceptances): se aplica sobre el esquema anterior con datos sin tocarlos, es aditiva y sus restricciones
+// Migración 0014 (tabla legal_acceptances): se aplica sobre el esquema anterior con datos sin tocarlos, es aditiva y sus restricciones
 // rechazan lo que no debe guardarse. Usa SQLite real (node:sqlite) con las migraciones en el orden en que las aplica Wrangler.
 const DIRECTORY = new URL("../migrations/", import.meta.url);
 const files = readdirSync(DIRECTORY).filter((name) => name.endsWith(".sql")).sort();
-const MIGRATION = "0013_legal_acceptances.sql";
+const MIGRATION = "0014_legal_acceptances.sql";
 const read = (name) => readFileSync(new URL(name, DIRECTORY), "utf8");
 
 function databaseBefore() {
@@ -19,7 +19,7 @@ function databaseBefore() {
 describe("migración legal_acceptances", () => {
   it("es la siguiente migración libre y las anteriores no la conocen", () => {
     expect(files.indexOf(MIGRATION)).toBe(files.length - 1);
-    expect(files.at(-2)).toMatch(/^0012_/u);
+    expect(files.at(-2)).toMatch(/^0013_tasking/u);
   });
 
   it("actualiza desde el esquema anterior con datos y los deja intactos", () => {
