@@ -77,6 +77,11 @@ un worktree propio por tarea; anunciar rama, carpeta y zonas afectadas. Crear
 worktrees dentro de una ruta autorizada. No mover cambios sin commit suponiendo
 que crear otro worktree los copia: verificar dónde quedó cada archivo.
 
+Comandos para que Pablo ejecute: indicar siempre el directorio (tiene varias
+carpetas del proyecto) y darlos de a uno. Mostrarle el resultado antes de
+publicar. Merge, staging y producción son pasos distintos: cada uno espera su
+propia orden explícita.
+
 Actualizar referencias antes de elegir la base. Si no hay red, identificar la
 referencia local usada y su límite. El checkout principal se actualiza con
 `git pull --ff-only origin main` sólo si no pone en riesgo trabajo local.
