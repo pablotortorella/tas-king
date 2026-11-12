@@ -33,6 +33,7 @@ no crear propuestas que decidan por el usuario lo que aún falta explorar.
 |---|---|
 | Identidad, tono y copy de marca | [Identidad y visión](docs/HOMESUITE_IDENTIDAD_Y_VISION.md) |
 | Reglas de colaboración | [Método](docs/homesuite/METODO.md) |
+| Encontrar PR, rama o código de otra sesión | [Método: retomar trabajo](docs/homesuite/METODO.md#retomar-trabajo-de-otra-sesión) |
 | Criterios técnicos | [Arquitectura](docs/homesuite/ARQUITECTURA.md) |
 | Escenarios y aceptación | [Verificación](docs/homesuite/VERIFICACION.md) |
 | Publicación y recuperación | [Operación](docs/homesuite/OPERACION.md) |

@@ -23,6 +23,26 @@ activo; `changes/archive/` historia; el backlog conserva ideas. No escribir spec
 retroactivas de todo el sistema. Un fix acotado o documentación no necesita una
 propuesta de feature, pero sí problema, alcance y validación claros.
 
+## Retomar trabajo de otra sesión
+
+Antes de concluir que algo «no está» o rehacerlo, ubicarlo en este orden:
+
+1. **Handoff y STATUS**: buscar número de PR, rama o SHA mencionados.
+2. **PR por rama** (aunque la rama ya no exista): las sesiones de Claude Code en la
+   nube crean ramas `claude/<tema>-<sufijo>` o `ccr-<id>` y suelen borrarse al
+   integrar; el PR conserva el diff. Con `gh pr list --head <rama> --state all` o,
+   sin `gh`, la herramienta GitHub `list_pull_requests` con
+   `head: "pablotortorella:<rama>"` y `state: "all"`. Recuperar sus commits con
+   `git fetch origin pull/<n>/head:pr-<n>`.
+3. **Código vigente**: `git grep` de un identificador distintivo (función, texto de
+   un test). Los archivos se mueven entre refactors y un merge con squash cambia
+   el SHA, así que no basta con `git merge-base --is-ancestor`.
+4. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
+   `git blame` no ven cambios antiguos hasta correr `git fetch --unshallow`.
+
+Al cerrar una sesión que deja rama o PR, el handoff registra: número y URL del PR,
+rama, último SHA, estado (en rama / integrado / desplegado) y archivos principales.
+
 ## Unidad de trabajo y colaboración
 
 Una rama por cambio lógico, también para documentación. `main` es integración;
