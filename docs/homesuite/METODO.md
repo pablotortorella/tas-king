@@ -43,9 +43,31 @@ Antes de concluir que algo «no está» o rehacerlo, ubicarlo en este orden:
 5. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
    `git blame` no ven cambios antiguos hasta correr `git fetch --unshallow`.
 
-Al cerrar una sesión que deja trabajo sin integrar, el handoff registra el número
-de PR y su estado (abierto / integrado / desplegado); sin PR, el nombre de la rama.
-El PR es la referencia estable: rama, commits y archivos se obtienen desde él.
+### Qué va en el handoff
+
+Los PRs abiertos en GitHub son la lista de trabajo pendiente. El handoff guarda
+sólo lo que no vive en un PR: un despliegue o una prueba manual pendiente, una
+decisión que espera a Pablo, una rama sin PR. Cada asunto es un bloque corto con
+formato fijo:
+
+- **Qué:** PR #N o rama, y estado (abierto / integrado / desplegado).
+- **Falta:** el próximo paso concreto.
+- **Cuidado:** riesgos o qué no tocar.
+- **Fecha** de la última comprobación.
+
+Los intentos descartados se anotan en la descripción o los comentarios del PR,
+no en el handoff. Un estado afirmado lleva su evidencia: «desplegado» con el ID
+de versión, «verificado» con quién y cómo.
+
+### Al retomar y al cerrar
+
+- **Al retomar**, comprobar el estado antes de actuar (PR en GitHub,
+  `wrangler deployments list` para un despliegue) y decirle a Pablo en el primer
+  mensaje qué se tomó y qué se verificó; avisar si no coincide con el handoff.
+- **Cuando cambia un estado** (se integra, se despliega, se descarta), actualizar
+  o borrar ese bloque en el mismo momento, no al final de la sesión.
+- **Al cerrar**, el trabajo que queda sin integrar aparece como PR o como bloque.
+  Lo terminado sale del handoff: su registro está en STATUS y en el PR.
 
 ## Unidad de trabajo y colaboración
 
