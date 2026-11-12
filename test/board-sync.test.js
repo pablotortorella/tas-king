@@ -124,7 +124,10 @@ describe("sincronización de recursos relacionados", () => {
     const file = await env.BUCKET.get(`backups/${result.timestamp}.sql`);
     const dump = await file.text();
     const triggers = dump.match(/CREATE TRIGGER[\s\S]*?END;/g) || [];
-    expect(triggers).toHaveLength(12);
+    const expected = await env.DB.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger' AND tbl_name!='rate_limit_log'").first();
+    expect(triggers).toHaveLength(expected.n);
+    expect(triggers.filter(sql => sql.includes('_sync_'))).toHaveLength(12);
+    expect(triggers.some(sql => sql.includes('tasking_origin_freeze_cards_update'))).toBe(true);
     expect(dump.indexOf(triggers[0])).toBeGreaterThan(dump.lastIndexOf("INSERT INTO"));
     const statement = triggers.find(sql => sql.includes("comments_sync_insert"));
     await env.DB.prepare("DROP TRIGGER comments_sync_insert").run();

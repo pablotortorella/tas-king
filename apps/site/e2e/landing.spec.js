@@ -64,9 +64,9 @@ test("Fun TasKing tiene su landing y enlaza a la aplicación actual", async ({ p
   await expect(page).toHaveURL(/\/tareas$/);
   await expect(page.getByRole("heading", { level: 1, name: "Fun TasKing!" })).toBeVisible();
   const appLink = page.getByRole("link", { name: "Abrir Fun TasKing" });
-  await expect(appLink).toHaveAttribute("href", "https://tas-king.pablotortorella.workers.dev");
+  await expect(appLink).toHaveAttribute("href", "https://app.homesuite.info/tareas");
   await expect(appLink).not.toHaveAttribute("target", "_blank");
-  await expect(page.getByText("Por ahora, se abre en su dirección actual.")).toBeVisible();
+  await expect(page.getByText("Entrá con tu cuenta de Google de HomeSuite.")).toBeVisible();
 });
 
 for (const [slug, heading, nombre] of [

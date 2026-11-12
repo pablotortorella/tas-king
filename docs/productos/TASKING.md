@@ -17,9 +17,11 @@ validar cada promesa contra lo implementado antes de publicarlos.
   [ADR-017](../ADRs/ADR-017-frontend-modular-y-cabeceras.md) fija las capas y las
   excepciones técnicas de carga: el arranque de tema es un script clásico para
   evitar parpadeo; no es una excepción a la política de scripts externos.
-- Tableros con roles owner/member, tablero personal no eliminable y allowlist
-  global heredada. Esa incorporación no se generaliza a HomeSuite: allí se usan
-  grupos e invitaciones. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
+- Tableros con roles owner/member y personal no eliminable. En HomeSuite los
+  permisos siguen siendo por tablero, independientes de grupos de Cuentas Claras.
+  Cualquier cuenta HomeSuite puede usar TasKing. La allowlist y solicitudes
+  heredadas ya no autorizan el acceso al producto integrado; el origen quedó
+  cerrado tras el corte. [ADR-015](../ADRs/ADR-015-revocacion-acceso-sesion-cookie.md)
   conserva el detalle de revocación de TasKing.
 - Columnas de cierre múltiples: objetivos, métricas, urgencia y celebración deben
   considerar todas. Validar pertenencia de columna al tablero en cada escritura.
@@ -83,3 +85,39 @@ visibles sincronizar versión de `package.json`, `package-lock.json` y pie de UI
 Identidad relacional por email y `style-src` permisivo son condiciones heredadas;
 no son excepciones aprobadas para productos nuevos. Antes de migrarlas: analizar
 compatibilidad, registrar decisión y probar transición sin interrumpir TasKing.
+
+
+## Módulo integrado y transición (producción activa; recorrido real confirmado)
+
+Implementación en `apps/app/src/tasking/` y assets `apps/app/public/tareas/`;
+HTML fuera del directorio de assets para que pase por sesión y cabeceras.
+API `/api/tareas/*`, adjuntos privados `/tareas/adjuntos/:key`, sesión/perfil/salida
+comunes. No sustituye `/api/me`. Tablas `tasking_*` y binding `TASKING_BUCKET`
+separado de respaldos. El vínculo conserva identidad interna aunque cambie el
+email de Google. Recupera el personal importado antes de crear uno nuevo.
+
+La fase `pending/loading/ready` mantiene cerrado el destino; sólo `active` admite
+uso normal. En producción el origen está `moved`, el destino `active` y no quedan
+leases. El corte trasladó 14 tablas, 12 tableros, 101 tarjetas y 5 archivos; los
+backups pre y post se restauraron correctamente. Producción pasó 30/30 verificaciones
+de coherencia. PR #145 está integrado en `main` (`74c614ca30697e397a11efa562fa26fb52f952ac`);
+versiones, manifiesto y evidencia detallada constan en [STATUS](../STATUS.md) y
+[verificación](../tasking/VERIFICACION.md). Pablo confirmó en producción el aviso,
+Google, tableros, edición, adjunto y salida/reingreso el 2026-11-10. Los escenarios
+manuales adicionales y las pruebas físicas PWA siguen identificados. Ambos puentes TasKing
+quedaron sin secretos heredados; la lista global y sus solicitudes no tienen rutas
+ni controles activos. Se conservaron las bases y buckets históricos.
+
+- `npm run test:e2e:tasking`: puertos 8816/8817 y estado descartable `.wrangler/tasking-e2e`.
+- `TASKING_BROWSER=firefox npm run test:e2e:tasking`: segundo motor.
+- `npm run test:homesuite-app:integration`: D1/R2, contrato común, identidad y traslado.
+- `npm run verify:tasking-assets`: inventario y favicon original idéntico.
+- `npm run tasking:transfer -- <acción> <ambiente> --directory <carpeta privada>`.
+
+[Runbook de traslado y recuperación](../tasking/MIGRACION-HOMESUITE.md),
+[evidencia y límites](../tasking/VERIFICACION.md),
+[change](../../openspec/changes/migrar-tasking-homesuite/proposal.md).
+No generalizar la CSP heredada: el módulo usa estilos externos/CSSOM y no añade
+`unsafe-inline` a HomeSuite. Favicon de corona por página; un único manifiesto,
+SW e iconos de instalación HomeSuite. Historial de novedades y términos inertes
+bajo `/tareas/novedades` y `/tareas/terminos-anteriores`.

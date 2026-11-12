@@ -2,6 +2,70 @@
 
 **Última actualización**: 2026-11-10
 
+## TasKing en HomeSuite — publicado en producción — 2026-11-10
+
+- [PR #145](https://github.com/pablotortorella/tas-king/pull/145) integrado en `main`
+  `74c614ca30697e397a11efa562fa26fb52f952ac`, con árbol idéntico al candidato
+  `b5383a4` aprobado por Pablo. CI del candidato aprobado
+  ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42921399121)).
+  Change [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
+  sin archivar: quedan límites de aceptación declarados en [verificación](tasking/VERIFICACION.md).
+- Pablo confirmó dos cuentas Google en staging y autorizó explícitamente integrar
+  y migrar producción el 2026-11-10. La primera prueba incluyó entrada desde el
+  aviso, tableros y salida/reingreso; consulta agregada confirmó identidad vinculada,
+  personal importado conservado y un solo personal. La segunda fue confirmada como
+  «OK en staging»; no atribuirle pasos manuales adicionales no declarados.
+- SHA final publicado y validado en staging: app `4be48cd6-9ddc-4fe3-8e57-72a52cffebdd`,
+  puente `5bd7074e-238c-4a2a-928c-559e20dd35fd`, sitio `203b9118-0772-4f20-a50a-60e12a642629`;
+  coherencia 29/29. Lote staging: 14 tablas, 1 tablero, 18 tarjetas, 1 archivo;
+  SHA-256 `7bc641c17e4d84313d0ef07de2931761d52d6ac6e2394ef88c57acff3f8bda00`.
+  Copias privadas durables: `/home/pablo/dev/tas-king-backups/tasking-homesuite/staging/20261110T113829Z`.
+- Producción: app `f1e79b44-ce94-414e-8f51-6c7afa07aaca`, puente
+  `06338b44-3447-441f-94bd-2b4729621bd1`, sitio `d268396c-8666-4f06-afcd-5dea42e25cdf`.
+  Origen `moved`, destino `active`, cero peticiones en vuelo: HomeSuite es el único escritor.
+  D1 destino recibió `0013_tasking.sql` y origen `0016_tasking_transition.sql`.
+  R2 `homesuite-tasking-uploads` privado, sin r2.dev ni dominios públicos.
+- Lote producción `a9ab38df-3e28-470d-b0db-54d314b4453b`: 14 tablas, 8 identidades,
+  12 tableros, 101 tarjetas y 5 adjuntos (1.377.348 bytes), conciliados antes de activar.
+  Manifiesto SHA-256 `985b55cfae3d785f5041b6803002d38f525774903825f4739e3f18573ff573b2`.
+  Las 13 tablas financieras conservaron exactamente el SHA-256 pre/post
+  `49d865d5a7bb7c86ed1b53ec9b5dd4cb62a046bbf5d1ee6777b46f3e9378ceea`.
+  Ventana medida desde inicio de drenaje hasta destino activo: **144 segundos**,
+  23:21:47–23:24:11 UTC. El puente/sitio terminaron de publicarse después.
+- Backups privados de origen antes del corte, SQL final congelado, lote y cinco
+  archivos verificados: `/home/pablo/dev/tas-king-backups/tasking-homesuite/production/20261110`.
+  Backups HomeSuite en R2 `homesuite-app-backups/production/20261110T231924Z` (previo)
+  y `production/20261110T232449Z` (posterior); ambos recuperados de R2 y restaurados
+  con integridad SQL y archivos. D1/R2 históricos conservados.
+- Puente al 100 %, sin D1/R2/ASSETS ni cron, previews globales deshabilitados;
+  URLs históricas `8a85baf6`/`0d8891dc` en 404 y dirección habitual en 200 con aviso
+  firmado, un botón y sin navegación forzada. APIs antiguas 410; callback sintético
+  302 a `/#mudanza` sin reenviar `code/state`; favicon SVG correcto; tarjetas y
+  adjuntos anónimos piden Google con retorno conservado. Observabilidad remota `null`,
+  Logpush deshabilitado y sin consumidores tail; no se consultaron logs privados.
+- Coherencia producción **30/30**. La primera lectura inmediata del sitio conservó
+  el catálogo anterior durante propagación; tras comprobar el HTML servido con la
+  entrada nueva `/tareas`, pasó la corrida completa sin cambios de código.
+- Retirados por nombre los cinco secretos heredados de cada puente TasKing;
+  inventario final sin secretos, con únicamente `TASKING_DESTINATION`. Metadata
+  y probes repetidos tras el retiro, sin fallos. Los secretos de HomeSuite se conservaron.
+- Backup diario ejecutado con su token real de CI y restauración D1/archivos aprobada
+  ([ejecución 42923268069](https://github.com/pablotortorella/tas-king/actions/runs/42923268069)).
+  Los cinco adjuntos también fueron restaurados a R2 local y leídos con hashes idénticos.
+- Chromium aislado: caché caliente, cookies antiguas, atrás, adjunto revisitado y
+  fallo de red simulado desde Chromium aprobados; aviso disponible y mutación antigua 410.
+  Tail temporal filtrado a dos peticiones sintéticas confirmó mensajes sin URL ni
+  payload. Se cerró al terminar; logs/trazas persistentes siguen deshabilitados.
+- **Aceptación real de producción (Pablo, 2026-11-10):** respondió «Sí, todo funciona»
+  al recorrido solicitado: aviso antiguo → Ir a HomeSuite → Google habitual →
+  tableros → una edición → un adjunto → salir y volver a entrar. Cierra el smoke
+  real del corte y la tarea 8.2. Navegador y dispositivo no informados; no atribuir
+  otros escenarios manuales a esta confirmación.
+- Quedan los escenarios manuales no declarados de 7.2–7.3 y las pruebas físicas PWA
+  coordinadas con Claude Code mediante [Handoff](../AI_HANDOFF.md). El change sigue
+  sin archivar; dock separado en backlog.
+  [Runbook](tasking/MIGRACION-HOMESUITE.md) y [evidencia](tasking/VERIFICACION.md).
+
 ## HomeSuite App instalable (PWA) — mergeada en `main` y en staging, sin publicar en producción — 2026-11-09
 
 - **Rama:** `ccr-a7efcef7-25zjqk`, **mergeada** con el PR #142 (`65a1b53`, 2026-11-09, por orden de Pablo). **No está en producción** (app en `main 992580c`).

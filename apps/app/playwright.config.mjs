@@ -5,6 +5,7 @@ const port = process.env.E2E_PORT ?? "8791";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/tasking/**"],
   timeout: 30_000,
   fullyParallel: false,
   workers: 1,

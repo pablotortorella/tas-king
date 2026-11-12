@@ -1,3 +1,4 @@
+import { taskingTransition } from "./tasking-transition.js";
 import { Hono } from "hono";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createLoggingMiddleware, logger, getClientIP } from "./middleware/logging.js";
@@ -18,6 +19,7 @@ import { runBackup } from "./backup.js";
 import { purgeRateLimitLog } from "./middleware/rateLimit.js";
 
 const app = new Hono();
+app.use("*", taskingTransition);
 
 // ---------- Global Middleware ----------
 app.use(createCorsMiddleware());
@@ -91,6 +93,7 @@ export { app };
 export default {
   fetch: app.fetch.bind(app),
   async scheduled(event, env, ctx) {
+    if (env.TASKING_TRANSITION_CONTROL === "true" && (await env.DB.prepare("SELECT phase FROM tasking_origin_control WHERE id=1").first())?.phase !== "live") return;
     ctx.waitUntil((async () => {
       const purged = await purgeRateLimitLog(env.DB);
       console.log(`[purge] rate_limit_log: ${purged} filas eliminadas`);

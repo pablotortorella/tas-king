@@ -74,7 +74,7 @@ describe("homesuite-site", () => {
     expect(zen).toContain("Entrar a Jardín Zen");
     expect(home).toContain(`class="secondary-action" href="${APP_PRODUCCION}/remanso"`);
     expect(home).toContain("Probá Remanso");
-    expect(tareas).toContain(`href="${TASKING_PRODUCCION}"`);
+    expect(tareas).toContain(`href="${APP_PRODUCCION}/tareas"`);
     for (const html of [home, cuentas, remanso, tareas, zen]) {
       expect(html).not.toMatch(/staging/iu);
       expect(html).not.toContain("<!-- staging-app-entry -->");
@@ -87,7 +87,7 @@ describe("homesuite-site", () => {
     ["cuentas-claras", "/cuentas-claras", [`${APP_PRODUCCION}/cuentas-claras`]],
     ["remanso", "/remanso.html", [`${APP_PRODUCCION}/remanso`]],
     ["jardin-zen", "/jardin-zen.html", [`${APP_PRODUCCION}/jardin-zen`]],
-    ["tareas", "/tareas", [TASKING_PRODUCCION]],
+    ["tareas", "/tareas", [`${APP_PRODUCCION}/tareas`]],
   ])("en staging %s (%s) lleva a la app y a TasKing del propio staging; en producción no se reescribe nada", async (name, ruta, enlaces) => {
     const html = await readFile(new URL(`../public/${name}.html`, import.meta.url), "utf8");
     const staging = await worker.fetch(new Request(`https://site-staging.homesuite.info${ruta}`), { ...assetEnvironment(html), SITE_ENV: "staging" });
@@ -180,7 +180,7 @@ describe("homesuite-site", () => {
     expect(html).not.toMatch(/\sstyle=/i);
 
     if (available) {
-      expect(html).toContain('href="https://tas-king.pablotortorella.workers.dev"');
+      expect(html).toContain('href="https://app.homesuite.info/tareas"');
       expect(html).toContain("Abrir Fun TasKing");
     } else {
       expect(html).toContain("Esta herramienta está en versión beta.");

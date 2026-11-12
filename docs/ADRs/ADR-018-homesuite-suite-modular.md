@@ -41,8 +41,11 @@ aplicación autenticada que funciona como monolito modular evolutivo:
   único repositorio. Separar una unidad de despliegue no implica separar el repo.
 - La identidad migra de email como clave relacional a `user_id` interno más
   identidad externa Google `sub`.
-- La allowlist global no será el modelo de incorporación de HomeSuite: el acceso
-  se concederá mediante membresías e invitaciones por grupo.
+- La allowlist global no será el modelo de incorporación de HomeSuite. Cuentas
+  Claras usa grupos; TasKing conserva membresías e invitaciones por **tablero**.
+  Una cuenta HomeSuite dispone de su personal y de los tableros a los que fue
+  incorporada, independientemente de los grupos compartidos.
+  Aclaración de Pablo del 2026-11-09: [migrar-tasking-homesuite](../../openspec/changes/migrar-tasking-homesuite/proposal.md).
 - La cookie autenticada será exclusiva de `app.homesuite.info`, sin atributo
   `Domain`, idealmente `__Host-homesuite_session`.
 - El callback OAuth será canónico en `app.homesuite.info` y aceptará únicamente

@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "originalFaviconSha256": "9fda20b79bc7b2f8b655e189919a95ce1856bf1d7b867898862133a645f65481",
+  "assets": [
+    {
+      "path": "/tareas/css/app.css",
+      "bytes": 37245,
+      "sha256": "3909c6e290068cf9180272e0c2a0215a2e2e578d32445c4054197bd83bc9a876"
+    },
+    {
+      "path": "/tareas/css/runtime.css",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tareas/css/static.css",
+      "bytes": 7513,
+      "sha256": "4b4ecbae8e7b47818ec2abdd307934577101a428d8a43f0c089248e7164b4700"
+    },
+    {
+      "path": "/tareas/favicon.v1.svg",
+      "bytes": 580,
+      "sha256": "9fda20b79bc7b2f8b655e189919a95ce1856bf1d7b867898862133a645f65481"
+    },
+    {
+      "path": "/tareas/js/admin.js",
+      "bytes": 8343,
+      "sha256": "189a6984f61c9fe4a8df2eb3256367bda68d3a72cebaa226f95334994c5a565b"
+    },
+    {
+      "path": "/tareas/js/app.js",
+      "bytes": 7280,
+      "sha256": "908ab4bda7e10a867d756f5bdbcec3006b9dded87b9b97b8926d9fef9ae38822"
+    },
+    {
+      "path": "/tareas/js/archive.js",
+      "bytes": 3409,
+      "sha256": "51424e0da54033bf006c1753a7ea7b8bc390a024b907d5569b4683b222a597f4"
+    },
+    {
+      "path": "/tareas/js/board.js",
+      "bytes": 18006,
+      "sha256": "d94d2fe8f2b37c77da2ccf75dde4cb5a209fcdb0b09ace79508f94df99efeddb"
+    },
+    {
+      "path": "/tareas/js/boards.js",
+      "bytes": 18042,
+      "sha256": "f8745a52fc9a77042e3a5558f887779718ccd9666e07de43747c740156cabad3"
+    },
+    {
+      "path": "/tareas/js/card-modal.js",
+      "bytes": 41638,
+      "sha256": "6f5fae0ddd71ed44cd0b56a62e47fc90ded43979f1c68e528486c3d4de5e91f2"
+    },
+    {
+      "path": "/tareas/js/columns.js",
+      "bytes": 3238,
+      "sha256": "8d6583681e18c21ec8f2b915c255b3c4f006d7f38387a503f44000bb2875dadc"
+    },
+    {
+      "path": "/tareas/js/core/api.js",
+      "bytes": 1665,
+      "sha256": "d47987f1cadb7cfa9055392d181e83926d5a33c748b1f4a11c3c815ae7eb17a4"
+    },
+    {
+      "path": "/tareas/js/core/bus.js",
+      "bytes": 1904,
+      "sha256": "b5e0ff226ea5ecf6810b9ae3e6ffa62d14e048e8bb4d481390afcb33b415a2ef"
+    },
+    {
+      "path": "/tareas/js/core/dom.js",
+      "bytes": 3597,
+      "sha256": "5f9ae34ce61da457936225f9e757c33ba0532237652a25c15007f0c5471430c6"
+    },
+    {
+      "path": "/tareas/js/core/html.js",
+      "bytes": 1924,
+      "sha256": "3ad0af1b635de98130f2b982694a028480d5f753050b1a5f672576f2d8232654"
+    },
+    {
+      "path": "/tareas/js/core/state.js",
+      "bytes": 4909,
+      "sha256": "415045f1481e0ffacf6e0ad34737e45380a5ee72f386905b815562cf935c5e92"
+    },
+    {
+      "path": "/tareas/js/drag.js",
+      "bytes": 8045,
+      "sha256": "6f4adb4bfce25e8fefb145fa55d302fa34e3470bc174152bd27c463a1256e203"
+    },
+    {
+      "path": "/tareas/js/feedback.js",
+      "bytes": 8251,
+      "sha256": "31c841f13846fb19690ff6c8becdd5c9366064469042c114f4536cd7e72aeb39"
+    },
+    {
+      "path": "/tareas/js/goals.js",
+      "bytes": 14664,
+      "sha256": "5343bdb3851771e345b274795294e4e6e86baafe32bb90cdb5bb1729355d0fba"
+    },
+    {
+      "path": "/tareas/js/integrated-boot.js",
+      "bytes": 859,
+      "sha256": "66734cc6a6b6b1cb3c7876738e004a55502c6493cec9e65062055fb6d2fdd0bf"
+    },
+    {
+      "path": "/tareas/js/io.js",
+      "bytes": 8901,
+      "sha256": "427b6abbc5a7522f5f4ce3971b5fb6f191ce83dbe30c5702bcb0a62684afe332"
+    },
+    {
+      "path": "/tareas/js/keyboard.js",
+      "bytes": 4101,
+      "sha256": "9a194e46621a14874f9d190a8d7a4853d0f65393074ba470c3cdc0cf9085dddf"
+    },
+    {
+      "path": "/tareas/js/landing.js",
+      "bytes": 19997,
+      "sha256": "3da37959acb77ffb3a83960d20c0c31264345b8834a146b83662585231626ee0"
+    },
+    {
+      "path": "/tareas/js/polling.js",
+      "bytes": 2612,
+      "sha256": "b5b83405816adbd83fabdf6a428147e830c2774ae16daba2c0948488cf4e4eac"
+    },
+    {
+      "path": "/tareas/js/theme-boot.js",
+      "bytes": 702,
+      "sha256": "3fd1a6f54f264fc015bb1e73f37171b1558577786519e2052c3e5e584b09b90a"
+    },
+    {
+      "path": "/tareas/js/theme-public.js",
+      "bytes": 1012,
+      "sha256": "83b26f2781c34537f1466428a06afcd03b754f8acc75dfd20fd329a556f7b2be"
+    },
+    {
+      "path": "/tareas/js/theme.js",
+      "bytes": 1837,
+      "sha256": "800b21584b8db3dd3674fae0b6913350f348999e0402df58ac45e53ee796fe40"
+    },
+    {
+      "path": "/tareas/tips.js",
+      "bytes": 8708,
+      "sha256": "56625c4106f200eeca9e45c5bae0650e7c72cd40f44d442ed2dd248f92c943c8"
+    }
+  ]
+}

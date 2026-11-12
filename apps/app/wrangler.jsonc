@@ -20,6 +20,7 @@
     "database_id": "00000000-0000-0000-0000-000000000000",
     "migrations_dir": "./migrations"
   }],
+  "r2_buckets": [{ "binding": "TASKING_BUCKET", "bucket_name": "homesuite-tasking-uploads-local" }],
   "env": {
     "staging": {
       "name": "homesuite-app-staging",
@@ -48,6 +49,7 @@
           "simple": { "limit": 60, "period": 60 }
         }
       ],
+      "r2_buckets": [{ "binding": "TASKING_BUCKET", "bucket_name": "homesuite-tasking-uploads-staging" }],
       "d1_databases": [{
         "binding": "DB",
         "database_name": "homesuite-app-db-staging",
@@ -83,6 +85,7 @@
           "simple": { "limit": 60, "period": 60 }
         }
       ],
+      "r2_buckets": [{ "binding": "TASKING_BUCKET", "bucket_name": "homesuite-tasking-uploads" }],
       "d1_databases": [{
         "binding": "DB",
         "database_name": "homesuite-app-db",

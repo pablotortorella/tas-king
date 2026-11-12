@@ -8,8 +8,8 @@
     "check:env": "bash scripts/check-env.sh",
     "operator": "bash scripts/operator.sh",
     "dev": "wrangler dev",
-    "deploy": "npm run verify-ready && npm run db:backup:prod && npm run db:migrate:remote && wrangler deploy",
-    "deploy:staging": "npm run verify-ready && npm run db:migrate:staging && wrangler deploy --env staging",
+    "deploy": "npm run verify-ready && npm run db:backup:prod && npm run db:migrate:remote && node scripts/tasking-origin-guard.mjs production && wrangler deploy",
+    "deploy:staging": "npm run verify-ready && npm run db:migrate:staging && node scripts/tasking-origin-guard.mjs staging && wrangler deploy --env staging",
     "test": "vitest run",
     "test:homesuite-app": "vitest run --config apps/app/vitest.config.mjs",
     "pwa:iconos:homesuite-app": "node scripts/homesuite-app-iconos.mjs",
@@ -53,7 +53,12 @@
     "db:migrate:local": "wrangler d1 migrations apply tas-king --local",
     "db:migrate:staging": "wrangler d1 migrations apply tas-king-staging --remote --env staging",
     "db:migrate:remote": "wrangler d1 migrations apply tas-king --remote --env production",
-    "verify-ready": "npm run test:all && echo '✅ Tests passed' && (git status --porcelain | grep -E '^\\.dev\\.vars' && echo '❌ .dev.vars debe estar en .gitignore' && exit 1 || true) && (git diff --cached --name-only | grep -E '(dev\\.vars|secret)' && echo '❌ No commitear secrets' && exit 1 || true) && echo '✅ Listo para push'"
+    "verify-ready": "npm run test:all && echo '\u2705 Tests passed' && (git status --porcelain | grep -E '^\\.dev\\.vars' && echo '\u274c .dev.vars debe estar en .gitignore' && exit 1 || true) && (git diff --cached --name-only | grep -E '(dev\\.vars|secret)' && echo '\u274c No commitear secrets' && exit 1 || true) && echo '\u2705 Listo para push'",
+    "dev:e2e:tasking": "wrangler d1 migrations apply homesuite-app-local --local --persist-to .wrangler/tasking-e2e --config apps/app/wrangler.jsonc && wrangler d1 execute homesuite-app-local --local --persist-to .wrangler/tasking-e2e --config apps/app/wrangler.jsonc --file apps/app/seed/tasking-e2e.sql && wrangler dev --config apps/app/wrangler.jsonc --local --persist-to .wrangler/tasking-e2e --port 8816 --var DEV_LOCAL_MODE:true --var DEV_LOCAL_EMAIL:e2e-admin@test.local --var SESSION_SECRET:tasking-local-session-secret-longer-than-32",
+    "test:e2e:tasking": "playwright test --config apps/app/playwright.tasking.config.mjs",
+    "dev:e2e:tasking-move": "wrangler dev --config wrangler.tasking-move.jsonc --env staging --port 8817",
+    "tasking:transfer": "node --no-warnings scripts/tasking/transfer.mjs",
+    "verify:tasking-assets": "node scripts/tasking/assets.mjs"
   },
   "dependencies": {
     "hono": "^4.13.14",

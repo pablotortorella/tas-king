@@ -16,12 +16,14 @@ import { estado, getDoneColumnIds } from "./core/state.js";
 import { loadCards } from "./board.js";
 
 // ---------- Polling de cambios en tiempo real ----------
+let originMoving = false;
+window.addEventListener("tasking:moved", () => { originMoving = true; stopPolling(); });
 let pollTimer = null;
 let pollInFlight = false;
 const POLL_INTERVAL = 5000;
 
 export async function pollTick() {
-  if (!estado.currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
+  if (originMoving || !estado.currentBoardId || document.hidden || estado.pendingCardMutations || pollInFlight) return;
   // loadCards() hace board.innerHTML = "" y reconstruye todas las tarjetas: si corre
   // mientras hay un arrastre en curso, el nodo de la tarjeta arrastrada queda huérfano
   // (desprendido del DOM que se acaba de tirar) pero cardDrag lo sigue moviendo con el
@@ -50,6 +52,7 @@ export async function pollTick() {
 
 export function startPolling() {
   stopPolling();
+  if (originMoving) return;
   pollTimer = setInterval(pollTick, POLL_INTERVAL);
 }
 
