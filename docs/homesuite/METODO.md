@@ -34,14 +34,18 @@ Antes de concluir que algo «no está» o rehacerlo, ubicarlo en este orden:
    sin `gh`, la herramienta GitHub `list_pull_requests` con
    `head: "pablotortorella:<rama>"` y `state: "all"`. Recuperar sus commits con
    `git fetch origin pull/<n>/head:pr-<n>`.
-3. **Código vigente**: `git grep` de un identificador distintivo (función, texto de
+3. **Ramas sin PR**: `git fetch origin` y `git branch -r --no-merged origin/main`
+   listan ramas subidas que no llegaron a `main`, tengan PR o no. Una rama
+   integrada con squash también aparece: confirmar con el paso 2.
+4. **Código vigente**: `git grep` de un identificador distintivo (función, texto de
    un test). Los archivos se mueven entre refactors y un merge con squash cambia
    el SHA, así que no basta con `git merge-base --is-ancestor`.
-4. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
+5. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
    `git blame` no ven cambios antiguos hasta correr `git fetch --unshallow`.
 
-Al cerrar una sesión que deja rama o PR, el handoff registra: número y URL del PR,
-rama, último SHA, estado (en rama / integrado / desplegado) y archivos principales.
+Al cerrar una sesión que deja trabajo sin integrar, el handoff registra el número
+de PR y su estado (abierto / integrado / desplegado); sin PR, el nombre de la rama.
+El PR es la referencia estable: rama, commits y archivos se obtienen desde él.
 
 ## Unidad de trabajo y colaboración
 
