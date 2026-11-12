@@ -66,10 +66,10 @@
   sin archivar; dock separado en backlog.
   [Runbook](tasking/MIGRACION-HOMESUITE.md) y [evidencia](tasking/VERIFICACION.md).
 
-## HomeSuite App instalable (PWA) — en staging desde la rama, sin integrar — 2026-11-09
+## HomeSuite App instalable (PWA) — mergeada en `main` y en staging, sin publicar en producción — 2026-11-09
 
-- **Rama:** `ccr-a7efcef7-25zjqk`. **No integrada en `main` ni en producción.**
-- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `d82beeb`, sin conflictos ni comentarios.
+- **Rama:** `ccr-a7efcef7-25zjqk`, **mergeada** con el PR #142 (`65a1b53`, 2026-11-09, por orden de Pablo). **No está en producción** (app en `main 992580c`).
+- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `99f7962` (último commit), sin conflictos ni comentarios. Abiertos a partir de él: [#143](https://github.com/pablotortorella/tas-king/pull/143) (documentación) y [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad, a la espera de la revisión de Pablo).
 - **Staging (publicado 2026-11-09 por orden de Pablo, desde su máquina):** app `staging.homesuite.info`, versión `7daec2bc` (primera publicación), mensaje
   «PR #142 · SHA 6afbb87 · PWA instalable (rama, para revisión)». Sin migraciones; respaldo previo en
   `~/dev/tas-king-backups/homesuite-app/staging/20261109T203120Z`. La versión anterior fue `66804688` (`main 3fe9cd6`). El sitio no cambió.
@@ -79,7 +79,7 @@
 - **Verificación en local y en staging (Pablo):** en Chrome de escritorio local, Manifest sin errores (solo avisos opcionales de capturas),
   service worker activo con alcance `/` y caché con 18 entradas públicas; Jardín Zen y Remanso andan sin conexión (Remanso con el sintetizado:
   los `.opus` pertenecen a `remanso-sonidos-naturales`, sin implementar). En staging instaló en escritorio y en Android, usó la app y entró con su
-  cuenta de Google. **Sin probar:** iPhone (queda para una persona con uno), modo avión en el celular y el apagado con `PWA_SW=off` (tarea 8.5).
+  cuenta de Google. Modo avión en Android: probado (ver el ajuste del aviso de Remanso). **Sin probar:** iPhone (ver el bloque «Prueba en iPhone» más abajo) y el apagado en Android.
 - **Ajuste posterior (publicado 2026-11-09):** en Android el acceso directo se llamaba «HS staging»; el `short_name` de staging y localhost
   pasó a «HomeSuite staging» (`pwa.js`, prueba del manifiesto y `design.md`). Staging quedó en la versión `a2f18b62`
   («PR #142 · SHA 0c566b7 · …», respaldo previo `20261109T204344Z`, sin migraciones); el manifiesto servido ya trae el nombre nuevo.
@@ -89,6 +89,30 @@
   sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
   [backlog](PRODUCT_BACKLOG.md) (opción 2).
 - **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
+- **Producción: llega con Tareas (decisión de Pablo, 2026-11-10).** Lucio no siguió con la prueba en iPhone. La PWA no se publica por separado:
+  va con la migración de TasKing a `/tareas` (PR #145, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA). **Va a producción sin
+  probar en iPhone.** Si iOS falla, se apaga con `--var PWA_SW:off`. Cuando Codex avise en `AI_HANDOFF.md` que Tareas está en producción, Claude
+  integra las ramas sueltas, extiende la PWA a `/tareas` y actualiza este bloque. El inventario de ramas está en el handoff.
+- **Prueba en iPhone: sin hacer (Lucio la empezó el 2026-11-09 y no siguió).** Se hizo sobre la URL de staging (versión `1a2f3bfc`, SHA `9e4c4a4`).
+  Es la pregunta abierta 1 de [`design.md`](../openspec/changes/pwa-instalable/design.md). El protocolo queda para cuando alguien con iPhone la haga.
+  - *Pasos (Safari, no otro navegador):* 1) abrir `staging.homesuite.info`; 2) **entrar con Google en Safari antes de instalar** (iOS copia las
+    cookies de Safari una sola vez, al agregar la app); 3) Compartir → Agregar a inicio y anotar nombre e ícono; 4) abrir desde el ícono, en modo
+    app; 5) **dentro de la app, salir y volver a entrar con Google**; 6) usar Jardín Zen y Remanso (tacto y sonido); 7) modo avión: `/jardin-zen`
+    y `/remanso` abren y otra ruta dice «Sin conexión»; 8) Remanso con el interruptor de silencio en las dos posiciones (también cierra el ítem
+    «iPhone en modo silencio» del backlog).
+  - *Qué anotar:* modelo de iPhone, versión de iOS, resultado de cada paso, y en el 5 si el acceso termina dentro de la app o en Safari y el
+    mensaje exacto si hay error (con captura). Si Google rechaza la cuenta, puede ser la pantalla de consentimiento y no la PWA: verificarlo antes de
+    registrarlo como hallazgo.
+  - *Cómo se decide:*
+
+    | Resultado | Qué hacemos |
+    |---|---|
+    | El acceso se completa dentro de la app | Marcar 8.3; el iPhone no impide publicar en producción. |
+    | Falla dentro de la app, pero funciona si se entró antes en Safari | Decide Pablo: publicar con la limitación documentada («entrar desde Safari antes de agregar a inicio») o esperar. Registrar el hallazgo en el backlog. |
+    | No se puede entrar de ninguna forma dentro de la app | No publicar en producción hasta resolverlo; cambio propio (por ejemplo, un traspaso de sesión de un solo uso, ver `design.md`). |
+    | No instala, o el nombre o el ícono salen mal | Corregir en un cambio chico; no bloquea el acceso. |
+
+    Anotar el resultado aquí y en la tarea 8.3.
 - **Aprendizaje:** la base local de `wrangler dev` sin `--persist-to` puede quedar con un esquema viejo y `/remanso` da 500 (falta la tabla de
   perfiles de `0007_shared_profiles`); se resolvió con una base nueva (`--persist-to .wrangler/pwa-local`) y las migraciones al día.
 - **Intento de staging fallido (2026-11-09, desde la sesión en la nube):** el token de Cloudflare se cargó como secreto de red del entorno en la nube; el proxy reemplaza todo `Authorization` hacia `api.cloudflare.com` y pisa la credencial temporal que Wrangler usa para subir los estáticos (`POST …/workers/assets/upload` → 401). Staging no cambió en ese intento; se publicó después desde la máquina de Pablo.

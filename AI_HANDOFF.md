@@ -14,50 +14,91 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 
 **Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
 
-## Última sesión — HomeSuite App instalable (PWA), pendiente de staging (2026-11-09)
+## Última sesión — HomeSuite App instalable (PWA): mergeada y en staging; llega a producción con Tareas (2026-11-09 y 2026-11-10)
 
-Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS.md) y el change
-[`pwa-instalable`](openspec/changes/pwa-instalable/) (`tasks.md`: quedan los grupos 8 y 9.4–9.5).
+### Plan vigente (2026-11-10, decisión de Pablo)
+- **Lucio no siguió con la prueba en iPhone.** La PWA no se publica sola en producción: llega con la migración de Tareas que hace Codex
+  (PR [#145](https://github.com/pablotortorella/tas-king/pull/145), borrador, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA).
+  O sea que **producción va a tener la PWA sin probar en iPhone**. Si aparece un problema en iOS, primero se apaga con `--var PWA_SW:off`.
+- **Disparador para Claude: el aviso de Codex en este archivo**, cuando Tareas ya esté en producción. Recién entonces:
+  1. **Integrar todo lo suelto en otras ramas**, una por vez y cada una con su PR. La lista está abajo, en «Ramas sueltas». Para cada rama:
+     rebase sobre `main`, pruebas, `git cherry` para descartar lo que ya esté absorbido, y merge solo con la orden de Pablo.
+  2. **Extender la PWA a `/tareas`** (lo básico, ver «Coordinación»).
+  3. **Dejar el estado documentado**: STATUS, este handoff y `tasks.md` de `pwa-instalable`, incluida la 8.3 (iPhone sin probar).
+- **Ramas sueltas al 2026-11-10** (las tres de agentes son solo locales, sin remoto ni PR, y están 13 commits atrás de `main` `65a1b53`):
+
+  | Rama | Worktree | Qué trae | Ojo |
+  |---|---|---|---|
+  | `docs/pwa-prueba-iphone` | `.claude/worktrees/pwa-instalable` | PR #143: este handoff, STATUS, protocolo de iPhone y backlog | Conflicto probable en `AI_HANDOFF.md` y `docs/STATUS.md` con lo que escriba Codex. |
+  | `docs/privacidad-copia-app` | — (solo remoto) | PR #144: texto de «Copia de la app» en `privacidad.html` | Necesita la revisión de Pablo. Choca con `feature/politica-y-aceptacion`, que reescribe la misma página. |
+  | `feature/politica-y-aceptacion` | `.claude/worktrees/agent-acb06759584eb05f5` | 10 commits: términos, privacidad, encargados, solicitudes de datos (`scripts/solicitudes-plazos.mjs`), pruebas legales | Es la más grande: 43 archivos. Se publica el sitio después de la app. |
+  | `feature/alertas-minimas` | `.claude/worktrees/agent-afb9c0c3899520b72` | 2 commits: workflows de salud y revisión semanal, `scripts/alertas-operativas.mjs`, `HOMESUITE_VIGILANCIA.md` | Toca `package.json` y `package-lock.json`. |
+  | `docs/respaldo-programado-confirmado` | `.claude/worktrees/agent-a9398184ea0f2105d` | 1 commit: confirma la corrida programada del respaldo diario (2026-11-03) | Puede estar desactualizada: revisar contra el estado real del respaldo. |
+  | `docs/dock-homesuite-backlog` | `/home/pablo/Dropbox/dev/tas-king` | Cambio de Pablo sin commitear en `docs/PRODUCT_BACKLOG.md` (19 líneas) | Es de Pablo: no tocarlo sin preguntar. |
+  | `ccr-a7efcef7-25zjqk` | — | La PWA, ya mergeada (#142) | Se puede borrar, local y remota. |
+
+  Mientras tanto, las tres ramas solo locales existen únicamente en esta máquina y en Dropbox. Conviene subirlas a `origin` cuando Pablo lo diga.
+
+## Sesión del 2026-11-09 — PWA mergeada y en staging, a la espera de la prueba en iPhone
+
+Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS.md) (incluye el protocolo de la prueba en iPhone) y el change
+[`pwa-instalable`](openspec/changes/pwa-instalable/) (`tasks.md`: quedan 8.2 y 8.4 parciales, 8.3, 8.6 y 9.4–9.5).
 
 ### Dónde estamos
-- **PR [#142](https://github.com/pablotortorella/tas-king/pull/142)**, rama `ccr-a7efcef7-25zjqk`, último commit de código `d82beeb`.
-  CI en verde, sin conflictos. **No integrado ni publicado** en ningún ambiente.
-- **Staging** sigue en `main 3fe9cd6` (versión `66804688`). La publicación desde la nube falló por el proxy (ver STATUS); nada cambió.
-- Fuera de alcance y documentado en el backlog: TasKing como PWA, notificaciones push (opción 3) y Cuentas Claras sin conexión (opción 4).
+- **`main` `65a1b53`** (merge del PR #142, la PWA). **Producción sigue sin la PWA:** app en `main 992580c` (versión `2efcc20f`, 2026-11-03).
+- **Staging:** app `1a2f3bfc` (SHA `9e4c4a4`; service worker `9b254b72cf17`), con el nombre corto «HomeSuite staging» y el aviso nuevo de Remanso
+  sin conexión. El sitio de staging no cambió.
+- **Verificado por Pablo:** en escritorio (local y staging) y en Android: instalar, usar la app, entrar con Google, modo avión con Jardín Zen y
+  Remanso. **Apagado ensayado** en staging (`--var PWA_SW:off`, versión `4e8321b6`): el service worker y las cachés se borraron solos; después se
+  publicó la versión normal.
+- **Pendiente: iPhone.** Lucio tiene la URL de staging; el resultado decide si se publica (pregunta abierta 1 de `design.md`, **bloquea producción**).
+- **PRs abiertos:** [#143](https://github.com/pablotortorella/tas-king/pull/143) (esta documentación) y
+  [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad de «Copia de la app», **no mergear hasta que Pablo lo revise**).
+- **Worktrees:** el trabajo de la PWA se hizo en `.claude/worktrees/pwa-instalable`. En `/home/pablo/Dropbox/dev/tas-king` hay una rama de Pablo
+  (`docs/dock-homesuite-backlog`) con un cambio sin commitear en `docs/PRODUCT_BACKLOG.md`: no tocarlo.
 
-### Pasos para publicar en staging (desde VS Code, terminal integrada)
-1. `git fetch origin && git checkout ccr-a7efcef7-25zjqk && git pull --ff-only`
-2. `npm ci` si cambió el lockfile o falta `node_modules`; `npx wrangler whoami` para confirmar la sesión de Cloudflare.
-3. Comprobar que nadie más esté usando staging: `npx wrangler deployments list --env staging --config apps/app/wrangler.jsonc`
-   (la última debe ser `main 3fe9cd6` u otra versión acordada).
-4. Publicar (respalda la D1 de staging en `~/dev/tas-king-backups/`, no hay migraciones):
-   `npm run deploy:homesuite-app:staging -- --message "PR #142 · SHA <sha corto> · PWA instalable (rama, para revisión)"`
-5. Smoke del mismo SHA, sin cuenta:
-   ```bash
-   for p in /sw.js /pwa.js /manifest.webmanifest /icons/homesuite-192.v1.png /sin-conexion /sin-conexion/jardin-zen /sin-conexion/remanso; do
-     curl -sI "https://staging.homesuite.info$p" | grep -iE "^HTTP|content-type|cache-control|strict-transport"; done
-   ```
-   Esperado: 200; `/sw.js` con `Cache-Control: no-cache`; manifiesto `application/manifest+json`; íconos `immutable`; HSTS en todos.
-6. Con cuenta real: entrar y salir en staging (requisito de [operación](docs/homesuite/OPERACION.md)).
-7. Verificación manual (`tasks.md` 8.2–8.6): instalar en Android/Chrome, iPhone/Safari (incluido **entrar con Google dentro de la
-   app instalada**; si falla, decidir la pregunta abierta 1 de `design.md` antes de producción) y escritorio; modo avión con
-   Jardín Zen y Remanso; apagado publicando con `--var PWA_SW:off` y volver a publicar normal; revisar íconos y textos sin conexión.
-8. Anotar SHA, versión y resultados en STATUS. Producción solo con orden explícita: primero la app, después el sitio (texto de
-   privacidad en borrador, revisarlo antes), y `npm run verify:coherence:production`.
+### Para retomar (orden sugerido)
+1. **Resultado de Lucio en iPhone** (pasos, qué anotar y criterio en STATUS, bloque «Prueba en iPhone»). Anotarlo en STATUS y en la tarea 8.3.
+2. **Producción de la app, solo con orden explícita de Pablo** (también para mergear): worktree limpio de `main`, CI verde, `wrangler deployments list
+   --env production`, `wrangler deploy --dry-run --env production`, mensaje de versión con SHA, y después `npm run verify:coherence:production` más el
+   smoke de `/sw.js`, `/manifest.webmanifest` (debe decir «HomeSuite», sin «staging») y `/sin-conexion*`. **Primero la app y después el sitio.**
+3. **Sitio con el texto de privacidad:** cuando Pablo revise el PR #144, mergear (con su orden) y publicar el sitio.
+4. **Revocar el token de Cloudflare** cargado como secreto de red en el entorno en la nube «tas-king» y borrarlo de la configuración de ese entorno
+   (no sirvió: el proxy pisa el `Authorization` y la subida de estáticos da 401).
+5. **Decisión abierta: cómo publica Claude sin la consola de Pablo.** La opción recomendada es un workflow de GitHub Actions `Deploy staging` (disparo
+   manual, token como secreto del repositorio, producción detrás de aprobación); requiere su propio PR.
+6. **Backlog nuevo:** «Remanso sin conexión con el nivel de la cuenta» (opción 2, para decidir después) y el estándar de pruebas por escenarios
+   (ver abajo). Preguntas abiertas 4 a 8 de `design.md`: ninguna bloquea.
 
-### Decisiones abiertas
-- **Cómo publica Claude sin tu consola:** propuesta pendiente. La opción recomendada es un workflow de GitHub Actions `Deploy staging`
-  (disparo manual, token como secreto del repo, producción detrás de aprobación). Requiere integrarlo primero en `main` con un PR propio.
-  La alternativa, una variable de entorno en la nube, deja el token en texto plano en el contenedor.
-- **Token de Cloudflare cargado hoy** como secreto de red del entorno en la nube «tas-king»: no sirve para publicar (choca con el
-  proxy). Revocarlo en Cloudflare y borrarlo de la configuración de ese entorno, salvo que se use para la opción del workflow
-  (allí se crea uno nuevo como secreto de GitHub).
-- Preguntas abiertas 1–8 de `openspec/changes/pwa-instalable/design.md` (ninguna bloquea staging).
+### Coordinación con la migración de TasKing (Codex, `feature/migrar-tasking-homesuite`)
+- La rama de Codex (worktree `/tmp/tasking-homesuite-proposal`) **ya parte de `main` `65a1b53`, con la PWA**: no hay una versión «pre PWA» de
+  `main` ni de staging. Solo producción sigue sin la PWA hasta que Pablo dé la orden.
+- **Staging compartido:** Lucio prueba la PWA en iPhone sobre la versión `1a2f3bfc`. No publicar otra versión en staging hasta que esa prueba
+  termine o Pablo lo coordine; mirar `wrangler deployments list --env staging` antes de publicar (lección del 2026-10-27 en APRENDIZAJES).
+- **Archivos que tocan los dos trabajos:** `apps/app/src/ui-parts.js` (la cabeza común lleva manifiesto, íconos y `/pwa.js`; las páginas de
+  `/tareas` deberían usarla para que la app se pueda instalar desde ahí), `apps/app/src/index.js` (rutas de la PWA), `apps/app/public/_headers`
+  (regla de `/icons/*`). Pruebas que van a avisar: `remanso-assets.test.js` (sin HTML en `public/`), `pwa-precarga.test.js` (la lista de
+  precarga debe coincidir con el disco; regenerar con `npm run pwa:precache:homesuite-app` si cambia `public/jardin-zen` o `public/remanso`),
+  los snapshots de `shell-characterization.test.js` y `e2e/pwa.spec.js` (la caché no puede contener datos privados).
+- **Después de integrar Tareas, Claude extiende la PWA a `/tareas` (lo básico):** página sin conexión propia de Tareas (hoy cae en la genérica),
+  `/tareas` en el recorrido del E2E que comprueba que la caché no guarde datos privados, revisión de instalación y actualización con Tareas
+  servido, y prueba manual en Android, escritorio e iPhone. Nada de Tareas sin conexión (fuera de alcance). Codex deja el aviso de integración en
+  este archivo.
 
 ### Qué conviene saber
-- Los E2E de la app no corren en CI (`.github/workflows/test.yml`); `pwa.spec.js` se corre local con
-  `npm run test:e2e:homesuite-app` (si Playwright no encuentra Chromium: `E2E_CHROMIUM_PATH=<ruta>`).
-- Si cambia algo en `apps/app/public/`, regenerar la lista de precarga con `npm run pwa:precache:homesuite-app` (una prueba lo exige).
+- **Fuera de alcance, documentado en el backlog:** TasKing como PWA, notificaciones push (opción 3) y Cuentas Claras sin conexión (opción 4).
+- **El estándar de pruebas por escenarios nunca se implementó.** `openspec/changes/estandar-pruebas-escenarios/` tiene solo `proposal.md` y `design.md`
+  (2026-10-23, pensado para TasKing): no existe `e2e/escenarios/`, ni el script de trazabilidad, ni ids de escenario; ninguna spec del piloto existe.
+  Rige la política escrita de [VERIFICACION](docs/homesuite/VERIFICACION.md). Pablo quiere extenderlo a toda la suite: explorar antes de proponer.
+- **Base local vieja:** `npm run dev:homesuite-app` sin `--persist-to` puede dejar un esquema viejo y `/remanso` da 500 (falta la tabla de perfiles).
+  Usar una base nueva: `wrangler d1 migrations apply homesuite-app-local --local --persist-to .wrangler/<nombre> --config apps/app/wrangler.jsonc` y
+  `wrangler dev … --persist-to .wrangler/<nombre>`.
+- **Mensajes y apagado:** `npm run deploy:homesuite-app:staging -- --message "…" [--var PWA_SW:off]`; el script respalda la D1, migra y despliega.
+  Volver a publicar sin `--var` restablece la PWA.
+- Los E2E de la app no corren en CI; `pwa.spec.js` se corre local con `E2E_STATE=<nombre> npx playwright test --config apps/app/playwright.config.mjs
+  apps/app/e2e/pwa.spec.js` (si falta Chromium: `E2E_CHROMIUM_PATH=<ruta>`). Si cambia algo en `apps/app/public/`, regenerar la precarga con
+  `npm run pwa:precache:homesuite-app` (una prueba lo exige).
+- Cada paso a staging, merge y producción necesita la orden explícita de Pablo; los comandos que se le pasan llevan siempre el directorio.
 
 ## Sesión anterior — Jardín Zen, tarjetas 2×2 y orden del repositorio (2026-10-31)
 
