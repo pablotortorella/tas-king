@@ -23,6 +23,52 @@ activo; `changes/archive/` historia; el backlog conserva ideas. No escribir spec
 retroactivas de todo el sistema. Un fix acotado o documentación no necesita una
 propuesta de feature, pero sí problema, alcance y validación claros.
 
+## Retomar trabajo de otra sesión
+
+Antes de concluir que algo «no está» o rehacerlo, ubicarlo en este orden:
+
+1. **Handoff y STATUS**: buscar número de PR, rama o SHA mencionados.
+2. **PR por rama** (aunque la rama ya no exista): las sesiones de Claude Code en la
+   nube crean ramas `claude/<tema>-<sufijo>` o `ccr-<id>` y suelen borrarse al
+   integrar; el PR conserva el diff. Con `gh pr list --head <rama> --state all` o,
+   sin `gh`, la herramienta GitHub `list_pull_requests` con
+   `head: "pablotortorella:<rama>"` y `state: "all"`. Recuperar sus commits con
+   `git fetch origin pull/<n>/head:pr-<n>`.
+3. **Ramas sin PR**: `git fetch origin` y `git branch -r --no-merged origin/main`
+   listan ramas subidas que no llegaron a `main`, tengan PR o no. Una rama
+   integrada con squash también aparece: confirmar con el paso 2.
+4. **Código vigente**: `git grep` de un identificador distintivo (función, texto de
+   un test). Los archivos se mueven entre refactors y un merge con squash cambia
+   el SHA, así que no basta con `git merge-base --is-ancestor`.
+5. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
+   `git blame` no ven cambios antiguos hasta correr `git fetch --unshallow`.
+
+### Qué va en el handoff
+
+Los PRs abiertos en GitHub son la lista de trabajo pendiente. El handoff guarda
+sólo lo que no vive en un PR: un despliegue o una prueba manual pendiente, una
+decisión que espera a Pablo, una rama sin PR. Cada asunto es un bloque corto con
+formato fijo:
+
+- **Qué:** PR #N o rama, y estado (abierto / integrado / desplegado).
+- **Falta:** el próximo paso concreto.
+- **Cuidado:** riesgos o qué no tocar.
+- **Fecha** de la última comprobación.
+
+Los intentos descartados se anotan en la descripción o los comentarios del PR,
+no en el handoff. Un estado afirmado lleva su evidencia: «desplegado» con el ID
+de versión, «verificado» con quién y cómo.
+
+### Al retomar y al cerrar
+
+- **Al retomar**, comprobar el estado antes de actuar (PR en GitHub,
+  `wrangler deployments list` para un despliegue) y decirle a Pablo en el primer
+  mensaje qué se tomó y qué se verificó; avisar si no coincide con el handoff.
+- **Cuando cambia un estado** (se integra, se despliega, se descarta), actualizar
+  o borrar ese bloque en el mismo momento, no al final de la sesión.
+- **Al cerrar**, el trabajo que queda sin integrar aparece como PR o como bloque.
+  Lo terminado sale del handoff: su registro está en STATUS y en el PR.
+
 ## Unidad de trabajo y colaboración
 
 Una rama por cambio lógico, también para documentación. `main` es integración;
@@ -30,6 +76,11 @@ no desarrollar ni confirmar cambios directamente allí. Con tareas concurrentes,
 un worktree propio por tarea; anunciar rama, carpeta y zonas afectadas. Crear
 worktrees dentro de una ruta autorizada. No mover cambios sin commit suponiendo
 que crear otro worktree los copia: verificar dónde quedó cada archivo.
+
+Comandos para que Pablo ejecute: indicar siempre el directorio (tiene varias
+carpetas del proyecto) y darlos de a uno. Mostrarle el resultado antes de
+publicar. Merge, staging y producción son pasos distintos: cada uno espera su
+propia orden explícita.
 
 Actualizar referencias antes de elegir la base. Si no hay red, identificar la
 referencia local usada y su límite. El checkout principal se actualiza con

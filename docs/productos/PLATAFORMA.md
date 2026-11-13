@@ -86,6 +86,8 @@ Rutas nuevas: `/manifest.webmanifest`, `/sw.js`, `/pwa.js`, `/sin-conexion`, `/s
   correrlo cuando cambia algún archivo de `apps/app/public/jardin-zen/` o `remanso/`, porque una prueba falla si la
   lista no coincide con el disco.
 - Sin *navigation preload*: con él, Chromium pide dos veces `/auth/google` y el acceso con Google puede fallar.
+- El CI no corre los E2E de la app (`test:e2e:homesuite-app` no está en `.github/workflows/test.yml`; comprobado
+  2026-11-12), así que `pwa.spec.js` y el resto de esa suite se corren a mano antes de integrar cambios de la app.
 - TasKing queda fuera: vive en otro Worker y en otro origen.
 
 ## Límites

@@ -1,0 +1,768 @@
+# AI_HANDOFF — historial
+
+Contenido de `AI_HANDOFF.md` hasta el 2026-11-12, sin cambios. **No se lee al inicio de sesión** y
+puede estar desactualizado: no acredita estado de ramas, PRs ni despliegues. Lo vigente está en
+[AI_HANDOFF](AI_HANDOFF.md), [STATUS](docs/STATUS.md) y los PRs abiertos. Se conserva para buscar
+contexto con `git grep` (el clon de la nube no trae toda la historia de git).
+
+---
+
+<!-- BEGIN TASKING PWA HANDOFF -->
+## Para Claude Code: TasKing y PWA (actualizado 2026-11-10)
+
+Pedido de Pablo: incorporar TasKing a las tareas PWA que desarrollas. PR #145 ya está integrado en `main` (`74c614ca30697e397a11efa562fa26fb52f952ac`); CI verde y árbol idéntico a `b5383a4`. **Antes de publicar otra rama PWA, parte de una base que incluya este commit**, porque una versión anterior puede volver a servir `/tareas` desde el puente de mudanza.
+
+Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/attachments`, descarga protegida `/tareas/adjuntos/:key` y favoritos `?card`. Mantener un único manifiesto, SW e iconos de instalación HomeSuite, con favicon de corona por página de Tareas. No cachear HTML autenticado, API, datos ni adjuntos privados. La PWA de HomeSuite sigue bajo tu responsabilidad; el dock continúa separado y fuera de este trabajo.
+
+**Estado publicado:** staging app `4be48cd6`, puente `5bd7074e`, sitio `203b9118`; coherencia 29/29. Producción app `f1e79b44-ce94-414e-8f51-6c7afa07aaca`, puente `06338b44-3447-441f-94bd-2b4729621bd1`, sitio `d268396c-8666-4f06-afcd-5dea42e25cdf`; corte `source=moved`, `destination=active`, cero leases. Se trasladaron 14 tablas, 12 tableros, 101 tarjetas y 5 archivos (manifiesto `985b55cfae3d785f5041b6803002d38f525774903825f4739e3f18573ff573b2`); los backups de producción pre y post se restauraron correctamente. Coherencia de producción: 30/30. Pablo autorizó y se ejecutó esta publicación. **Smoke real de producción confirmado por Pablo el 2026-11-10:** aviso antiguo → Ir a HomeSuite → Google habitual → tableros → edición → adjunto → salir/reingresar; respondió «Sí, todo funciona». No informó navegador ni dispositivo. Los cinco secretos heredados fueron retirados de cada puente TasKing tras comprobar su inventario y ausencia de uso; ambos puentes quedan sin secretos.
+
+**Pruebas PWA y límites:** los E2E cubren PWA instalada antes de entrar a Tareas y retorno sin red (Chromium 79/79; Firefox 77 aprobados y 2 omisiones por emulación). Siguen pendientes ensayos físicos de instalación/actualización en Android/iPhone, Google dentro de la app instalada, cambio de cuenta, deep links/descargas y logout/revocación en dispositivos reales. Pablo confirmó dos cuentas Google en staging; la segunda fue «OK en staging». Invitación, revocación y aislamiento tienen cobertura automatizada; no atribuirles un ensayo manual específico: el smoke real confirmado en producción cubre sólo el recorrido descrito arriba. Ver [STATUS](docs/STATUS.md) y [verificación](docs/tasking/VERIFICACION.md). El change OpenSpec sigue abierto para criterios operativos restantes; no asumir que está archivado.
+<!-- END TASKING PWA HANDOFF -->
+
+**Actualización documental (2026-10-24):** [base común](docs/homesuite/README.md) y [STATUS](docs/STATUS.md). Este archivo conserva contexto histórico fechado; no define políticas ni acredita vigencia de ramas o despliegues.
+
+## Última sesión — HomeSuite App instalable (PWA): mergeada y en staging; llega a producción con Tareas (2026-11-09 y 2026-11-10)
+
+### Plan vigente (2026-11-10, decisión de Pablo)
+- **Lucio no siguió con la prueba en iPhone.** La PWA no se publica sola en producción: llega con la migración de Tareas que hace Codex
+  (PR [#145](https://github.com/pablotortorella/tas-king/pull/145), borrador, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA).
+  O sea que **producción va a tener la PWA sin probar en iPhone**. Si aparece un problema en iOS, primero se apaga con `--var PWA_SW:off`.
+- **Disparador para Claude: el aviso de Codex en este archivo**, cuando Tareas ya esté en producción. Recién entonces:
+  1. **Integrar todo lo suelto en otras ramas**, una por vez y cada una con su PR. La lista está abajo, en «Ramas sueltas». Para cada rama:
+     rebase sobre `main`, pruebas, `git cherry` para descartar lo que ya esté absorbido, y merge solo con la orden de Pablo.
+  2. **Extender la PWA a `/tareas`** (lo básico, ver «Coordinación»).
+  3. **Dejar el estado documentado**: STATUS, este handoff y `tasks.md` de `pwa-instalable`, incluida la 8.3 (iPhone sin probar).
+- **Ramas sueltas al 2026-11-10** (las tres de agentes son solo locales, sin remoto ni PR, y están 13 commits atrás de `main` `65a1b53`):
+
+  | Rama | Worktree | Qué trae | Ojo |
+  |---|---|---|---|
+  | `docs/pwa-prueba-iphone` | `.claude/worktrees/pwa-instalable` | PR #143: este handoff, STATUS, protocolo de iPhone y backlog | Conflicto probable en `AI_HANDOFF.md` y `docs/STATUS.md` con lo que escriba Codex. |
+  | `docs/privacidad-copia-app` | — (solo remoto) | PR #144: texto de «Copia de la app» en `privacidad.html` | Necesita la revisión de Pablo. Choca con `feature/politica-y-aceptacion`, que reescribe la misma página. |
+  | `feature/politica-y-aceptacion` | `.claude/worktrees/agent-acb06759584eb05f5` | 10 commits: términos, privacidad, encargados, solicitudes de datos (`scripts/solicitudes-plazos.mjs`), pruebas legales | Es la más grande: 43 archivos. Se publica el sitio después de la app. |
+  | `feature/alertas-minimas` | `.claude/worktrees/agent-afb9c0c3899520b72` | 2 commits: workflows de salud y revisión semanal, `scripts/alertas-operativas.mjs`, `HOMESUITE_VIGILANCIA.md` | Toca `package.json` y `package-lock.json`. |
+  | `docs/respaldo-programado-confirmado` | `.claude/worktrees/agent-a9398184ea0f2105d` | 1 commit: confirma la corrida programada del respaldo diario (2026-11-03) | Puede estar desactualizada: revisar contra el estado real del respaldo. |
+  | `docs/dock-homesuite-backlog` | `/home/pablo/Dropbox/dev/tas-king` | Cambio de Pablo sin commitear en `docs/PRODUCT_BACKLOG.md` (19 líneas) | Es de Pablo: no tocarlo sin preguntar. |
+  | `ccr-a7efcef7-25zjqk` | — | La PWA, ya mergeada (#142) | Se puede borrar, local y remota. |
+
+  Mientras tanto, las tres ramas solo locales existen únicamente en esta máquina y en Dropbox. Conviene subirlas a `origin` cuando Pablo lo diga.
+
+## Sesión del 2026-11-09 — PWA mergeada y en staging, a la espera de la prueba en iPhone
+
+Para retomar: leer este bloque, el bloque del 2026-11-09 en [STATUS](docs/STATUS.md) (incluye el protocolo de la prueba en iPhone) y el change
+[`pwa-instalable`](openspec/changes/pwa-instalable/) (`tasks.md`: quedan 8.2 y 8.4 parciales, 8.3, 8.6 y 9.4–9.5).
+
+### Dónde estamos
+- **`main` `65a1b53`** (merge del PR #142, la PWA). **Producción sigue sin la PWA:** app en `main 992580c` (versión `2efcc20f`, 2026-11-03).
+- **Staging:** app `1a2f3bfc` (SHA `9e4c4a4`; service worker `9b254b72cf17`), con el nombre corto «HomeSuite staging» y el aviso nuevo de Remanso
+  sin conexión. El sitio de staging no cambió.
+- **Verificado por Pablo:** en escritorio (local y staging) y en Android: instalar, usar la app, entrar con Google, modo avión con Jardín Zen y
+  Remanso. **Apagado ensayado** en staging (`--var PWA_SW:off`, versión `4e8321b6`): el service worker y las cachés se borraron solos; después se
+  publicó la versión normal.
+- **Pendiente: iPhone.** Lucio tiene la URL de staging; el resultado decide si se publica (pregunta abierta 1 de `design.md`, **bloquea producción**).
+- **PRs abiertos:** [#143](https://github.com/pablotortorella/tas-king/pull/143) (esta documentación) y
+  [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad de «Copia de la app», **no mergear hasta que Pablo lo revise**).
+- **Worktrees:** el trabajo de la PWA se hizo en `.claude/worktrees/pwa-instalable`. En `/home/pablo/Dropbox/dev/tas-king` hay una rama de Pablo
+  (`docs/dock-homesuite-backlog`) con un cambio sin commitear en `docs/PRODUCT_BACKLOG.md`: no tocarlo.
+
+### Para retomar (orden sugerido)
+1. **Resultado de Lucio en iPhone** (pasos, qué anotar y criterio en STATUS, bloque «Prueba en iPhone»). Anotarlo en STATUS y en la tarea 8.3.
+2. **Producción de la app, solo con orden explícita de Pablo** (también para mergear): worktree limpio de `main`, CI verde, `wrangler deployments list
+   --env production`, `wrangler deploy --dry-run --env production`, mensaje de versión con SHA, y después `npm run verify:coherence:production` más el
+   smoke de `/sw.js`, `/manifest.webmanifest` (debe decir «HomeSuite», sin «staging») y `/sin-conexion*`. **Primero la app y después el sitio.**
+3. **Sitio con el texto de privacidad:** cuando Pablo revise el PR #144, mergear (con su orden) y publicar el sitio.
+4. **Revocar el token de Cloudflare** cargado como secreto de red en el entorno en la nube «tas-king» y borrarlo de la configuración de ese entorno
+   (no sirvió: el proxy pisa el `Authorization` y la subida de estáticos da 401).
+5. **Decisión abierta: cómo publica Claude sin la consola de Pablo.** La opción recomendada es un workflow de GitHub Actions `Deploy staging` (disparo
+   manual, token como secreto del repositorio, producción detrás de aprobación); requiere su propio PR.
+6. **Backlog nuevo:** «Remanso sin conexión con el nivel de la cuenta» (opción 2, para decidir después) y el estándar de pruebas por escenarios
+   (ver abajo). Preguntas abiertas 4 a 8 de `design.md`: ninguna bloquea.
+
+### Coordinación con la migración de TasKing (Codex, `feature/migrar-tasking-homesuite`)
+- La rama de Codex (worktree `/tmp/tasking-homesuite-proposal`) **ya parte de `main` `65a1b53`, con la PWA**: no hay una versión «pre PWA» de
+  `main` ni de staging. Solo producción sigue sin la PWA hasta que Pablo dé la orden.
+- **Staging compartido:** Lucio prueba la PWA en iPhone sobre la versión `1a2f3bfc`. No publicar otra versión en staging hasta que esa prueba
+  termine o Pablo lo coordine; mirar `wrangler deployments list --env staging` antes de publicar (lección del 2026-10-27 en APRENDIZAJES).
+- **Archivos que tocan los dos trabajos:** `apps/app/src/ui-parts.js` (la cabeza común lleva manifiesto, íconos y `/pwa.js`; las páginas de
+  `/tareas` deberían usarla para que la app se pueda instalar desde ahí), `apps/app/src/index.js` (rutas de la PWA), `apps/app/public/_headers`
+  (regla de `/icons/*`). Pruebas que van a avisar: `remanso-assets.test.js` (sin HTML en `public/`), `pwa-precarga.test.js` (la lista de
+  precarga debe coincidir con el disco; regenerar con `npm run pwa:precache:homesuite-app` si cambia `public/jardin-zen` o `public/remanso`),
+  los snapshots de `shell-characterization.test.js` y `e2e/pwa.spec.js` (la caché no puede contener datos privados).
+- **Después de integrar Tareas, Claude extiende la PWA a `/tareas` (lo básico):** página sin conexión propia de Tareas (hoy cae en la genérica),
+  `/tareas` en el recorrido del E2E que comprueba que la caché no guarde datos privados, revisión de instalación y actualización con Tareas
+  servido, y prueba manual en Android, escritorio e iPhone. Nada de Tareas sin conexión (fuera de alcance). Codex deja el aviso de integración en
+  este archivo.
+
+### Qué conviene saber
+- **Fuera de alcance, documentado en el backlog:** TasKing como PWA, notificaciones push (opción 3) y Cuentas Claras sin conexión (opción 4).
+- **El estándar de pruebas por escenarios nunca se implementó.** `openspec/changes/estandar-pruebas-escenarios/` tiene solo `proposal.md` y `design.md`
+  (2026-10-23, pensado para TasKing): no existe `e2e/escenarios/`, ni el script de trazabilidad, ni ids de escenario; ninguna spec del piloto existe.
+  Rige la política escrita de [VERIFICACION](docs/homesuite/VERIFICACION.md). Pablo quiere extenderlo a toda la suite: explorar antes de proponer.
+- **Base local vieja:** `npm run dev:homesuite-app` sin `--persist-to` puede dejar un esquema viejo y `/remanso` da 500 (falta la tabla de perfiles).
+  Usar una base nueva: `wrangler d1 migrations apply homesuite-app-local --local --persist-to .wrangler/<nombre> --config apps/app/wrangler.jsonc` y
+  `wrangler dev … --persist-to .wrangler/<nombre>`.
+- **Mensajes y apagado:** `npm run deploy:homesuite-app:staging -- --message "…" [--var PWA_SW:off]`; el script respalda la D1, migra y despliega.
+  Volver a publicar sin `--var` restablece la PWA.
+- Los E2E de la app no corren en CI; `pwa.spec.js` se corre local con `E2E_STATE=<nombre> npx playwright test --config apps/app/playwright.config.mjs
+  apps/app/e2e/pwa.spec.js` (si falta Chromium: `E2E_CHROMIUM_PATH=<ruta>`). Si cambia algo en `apps/app/public/`, regenerar la precarga con
+  `npm run pwa:precache:homesuite-app` (una prueba lo exige).
+- Cada paso a staging, merge y producción necesita la orden explícita de Pablo; los comandos que se le pasan llevan siempre el directorio.
+
+## Sesión anterior — Jardín Zen, tarjetas 2×2 y orden del repositorio (2026-10-31)
+
+Para retomar: leer la sección más reciente de [STATUS](docs/STATUS.md), el [backlog](docs/PRODUCT_BACKLOG.md) y este bloque.
+
+### Dónde estamos
+- **`main` `69e220a`**, sin PRs abiertos y con **un solo worktree** (`/home/pablo/Dropbox/dev/tas-king`, en `main`). Se borraron 22 worktrees y todas
+  las ramas viejas (locales y remotas); cada una se verificó con `git cherry` contra `main` y los PRs cerrados conservan sus commits en `refs/pull/N/head`.
+- **Producción** (publicada hoy por orden de Pablo, desde `main` `5185d5d`): app `app.homesuite.info` `2f225b89` y sitio `homesuite.info`
+  `a1f89eb3`. Lleva Jardín Zen beta v0.2 (`/jardin-zen`), tarjetas en 2×2, buscar categoría, forma de pago y la migración
+  `0012_payment_method.sql`. `npm run verify:coherence:production` pasó (29). Antes de migrar había 2 usuarios, 2 grupos y 1 movimiento.
+- **Staging:** app `fdafbca7` y sitio `1b67cd8e` (`main` `5b0559c`), con el mismo código que producción.
+- **En `main` pero sin publicar en ningún ambiente:** la revisión de seguridad (PR #128): cookies malformadas, HSTS por hostname,
+  doble decodificación de parámetros en TasKing, `hono` 4.13.14 y respaldos fuera de Dropbox. Staging y producción no la tienen.
+- **Hecho hoy:** PRs #119, #123 a #129 y #83/#85 mergeados; #64, #69, #71, #75, #76 y #81 cerrados porque su contenido ya estaba en `main` o quedó viejo.
+
+### Para mañana (orden sugerido)
+1. **Pablo:** recorrido con una cuenta real de Google en producción (entrar y salir) y Jardín Zen en un celular real (WebGL 2, tacto, audio). Nada de esto se probó; avisar el resultado para anotarlo en STATUS.
+2. **Publicar la revisión de seguridad** (#128): primero staging y, con orden explícita, producción. Alcanza con redesplegar la app; revisar si también hay que redesplegar el Worker legacy de TasKing (`admin.js` y `boards.js` cambiaron). `deploy:homesuite-app:production` ya no debería fallar en el respaldo (#123), pero no se probó de punta a punta.
+3. **Respaldo diario:** el secreto `HOMESUITE_PROD_BACKUP_API_TOKEN` sigue fallando en el runner (falló el 30 y el 31/10). Pasos en el bloque del 2026-10-28, más abajo. Después, rotar el secreto de Google y revisar la pantalla de consentimiento.
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta), alertas mínimas y el recorrido con dos cuentas reales.
+5. **Jardín Zen v0.4** (mango invertido, giro suave, rastrillo visible u oculto): propuesto en `openspec/changes/jardin-zen-rastrillo-v04/`, sin código. Partir de `main` y no pisar el encuadre de cámara (`fitDist`) del motor actual.
+6. Remanso: sonidos reales y prueba en iPhone con alguien que tenga uno. Consola de administración de la persona dueña (backlog).
+7. Dos filas de «Alta prioridad» del backlog ya no están al día si se las lee junto a «Completado»: revisarlas al tocar el backlog.
+
+### Qué pasó que conviene saber
+- El script de deploy de producción se cortó en el respaldo previo: el restore drill fallaba con `no such table: main.splitwise_import_batches`. Eso ocurrió **antes** de migrar y de desplegar. Se corrió el respaldo con el arreglo de #123 (quedó en R2, `production/20261031T193343Z`) y la migración y el deploy se hicieron por separado. #123 se mergeó después.
+- Las dos E2E que el PR #124 daba por «rojas y preexistentes» pasan; la suite completa da 177/177 en la app y 20/20 en el sitio. Se corrió con una base propia (`E2E_STATE=<nombre>`).
+- El E2E de Jardín Zen corre sin WebGL, así que solo cubre la alternativa 2.5D: el motor 3D y la cámara se validan a mano.
+- El clasificador de permisos bloqueó un merge que no estaba pedido de forma explícita; se hizo cuando Pablo lo ordenó. Con staging, mergear y producción conviene esperar una orden clara de cada paso.
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio en un worktree de `main`, CI verde, `wrangler deployments list`, ensayo `--dry-run`, mensaje de versión con SHA, y después `verify:coherence:<ambiente>`. Para el sitio: `wrangler deploy --env "" --config apps/site/wrangler.jsonc`.
+- **Comandos para Pablo: indicar siempre el directorio** y dárselos de a uno. Lenguaje sin género y voseo; mostrarle el resultado antes de publicar.
+- Un cambio lógico por rama; PR con merge commit. El registro en STATUS va en un PR de documentación aparte.
+- No usar el término que el glosario descartó (`glossary.test.js` revisa todos los documentos): «grupo» es la palabra del dominio.
+
+### Carpetas
+- Un solo checkout: `/home/pablo/Dropbox/dev/tas-king`, en `main`. Para trabajar, crear un worktree nuevo con `git worktree add ../tas-king-<tema> -b <rama> origin/main` y quitarlo al terminar.
+
+## Sesión anterior — HomeSuite en producción (2026-10-28)
+
+Histórico: de esta lista ya se hizo el orden de carpetas y PRs viejos (ítem 7), y la app y el sitio ya se volvieron a publicar el 2026-10-31. Siguen abiertos el respaldo diario, Google Cloud y los puntos 3 a 6.
+
+### Dónde estamos
+- **Producción:** app `app.homesuite.info` en la versión `979dc093` (`main` `3d32ae5`) y sitio `homesuite.info` en `f4f37db4`
+  (`main` `74d6ebd`). La base de producción está vacía. `npm run verify:coherence:production` pasó (23 comprobaciones).
+- **Staging:** app `0b36bf6e` y sitio `21c07a27`, ambos de `main` `3d32ae5`.
+- **Hoy se hizo (PRs #108 a #119):** ajustes de pantalla y sonido de Remanso (el inicio ya entra en 390 × 720 también con la
+  fuente del CI), identidad de la suite (textos, acentos por producto, Compras retirado de todo), enlaces del sitio por
+  ambiente, verificación de coherencia sitio ↔ app, arreglo de «Cerrar sesión» (faltaba el token CSRF), y el primer deploy
+  de la app y del sitio a producción, cada uno con respaldo previo y verificación.
+
+### Para mañana (orden sugerido)
+1. **Respaldo diario.** El secreto de GitHub `HOMESUITE_PROD_BACKUP_API_TOKEN` falla en el runner (`Authentication error
+   [10000]`) aunque el token nuevo (`homesuite-token`, de cuenta) responde desde la terminal. Recargarlo con el valor ya
+   verificado, **desde `/home/pablo/Dropbox/dev/tas-king`**, una línea por vez: `read -rsp "Pegá el token y Enter: " CF_TOKEN; echo`,
+   comprobar el D1 con `curl` (debe decir `"success":true`), `printf %s "$CF_TOKEN" | gh secret set HOMESUITE_PROD_BACKUP_API_TOKEN`,
+   `unset CF_TOKEN` y `gh workflow run homesuite-production-backup.yml --ref main`. Recién con un run en `success`, revocar el token
+   viejo (de usuario, todas las cuentas) y el `Cloudflare Agent Token`; después corregir `HOMESUITE_RECOVERY.md`.
+2. **Google Cloud:** que la URI `https://app.homesuite.info/auth/callback` esté autorizada, estado de la pantalla de consentimiento, y rotar
+   el secreto de Google (estuvo un rato en GitHub bajo otro nombre).
+3. **Alertas mínimas** y el **recorrido con dos cuentas reales en producción** (incluye probar «Cerrar sesión» ahí).
+4. **Antes de datos reales:** exportación y eliminación de grupos (prioridad alta en el backlog).
+5. **Remanso:** sonidos reales (prioridad alta), prueba en iPhone con alguien que tenga uno (`audioSession` implementado, sin verificar) y
+   revisión de Pablo de la frase sobre versiones beta en los términos.
+6. **Consola de administración** de la persona dueña (nuevo en el backlog, prioridad por confirmar).
+7. **Orden:** carpetas de trabajo viejas (`git worktree list` muestra unas 18, varias de ramas ya integradas) y PRs abiertos viejos (#64, #69, #71, #75, #76, #81, #83, #85).
+
+### Reglas que rigieron
+- **Producción sólo con orden explícita de Pablo; app primero y sitio después.** Antes de publicar: árbol limpio, `main` al día, CI verde,
+  `wrangler deployments list` y migraciones; mensaje de versión con SHA; después `verify:coherence:<ambiente>`. El primer intento de
+  deploy productivo lo bloqueó el clasificador de permisos de Claude Code y se repitió tras la orden explícita.
+- **Comandos para Pablo: indicar siempre el directorio** (tiene muchas carpetas del proyecto) y dárselos de a uno.
+- Un cambio lógico por rama; PR con merge commit; el registro en STATUS va en un PR de documentación aparte.
+- Cuatro credenciales distintas: token de Cloudflare de respaldo (GitHub), `GOOGLE_CLIENT_SECRET` y `SESSION_SECRET` (secretos del Worker de
+  producción) y el login de `wrangler` (su computadora).
+
+### Carpetas
+- Trabajo de esta sesión: `/home/pablo/Dropbox/dev/tas-king/.worktrees/remanso` (en `main` o en la rama del PR de turno). Checkout
+  principal: `/home/pablo/Dropbox/dev/tas-king`.
+
+## Sesión anterior - HomeSuite listo para integrar diseño (2026-10-23)
+
+### Empezar por aquí
+
+- La base que reúne el código más reciente y toda la funcionalidad de HomeSuite es
+  `integration/homesuite-design-base`. Fue actualizada con `main` v2.3.2 en
+  `9e8a8c1`. Crear el trabajo visual desde esta rama, no desde
+  `local/homesuite-full-preview` ni desde un PR funcional intermedio.
+- El sitio público ya tiene el arte nuevo. El PR #74 se integró en `main` como
+  `62b459e` y la versión Cloudflare
+  `fb7807ef-d328-4d98-b9eb-683e28748e6a` está al 100 % en producción.
+- El núcleo funcional todavía está en una cadena de PRs abiertos. El orden de
+  integración es #68 -> #71 -> #75 -> #76 -> #81. Todos están limpios respecto
+  de su base inmediata; no saltar directamente al último PR.
+- La rama consolidada es para desarrollar y revisar el diseño en paralelo. No es
+  una autorización para llevar Cuentas Claras a producción: faltan integrar la
+  cadena, volver a desplegar staging y cerrar las condiciones de recuperación y
+  ciclo de vida de datos.
+
+### Qué contiene la base visual
+
+- OAuth Google y sesión real; espacios privados, invitaciones, rechazo,
+  aceptación, roles y auditoría.
+- Libros, participantes, gastos, ingresos, transferencias, reparto igual o
+  exacto, saldos por moneda, cronología, detalle, corrección inmutable, anulación
+  y exportación JSON/CSV.
+- Importación CSV de Splitwise con previsualización, mapeo de participantes,
+  decisiones por fila, idempotencia, conciliación e incidentes explicados.
+- Monedas vigentes de Sudamérica, MXN y las monedas previas; URLs estables para
+  grupos; acceso local más claro para una segunda cuenta; búsqueda monetaria por
+  fragmentos que ignora separadores de miles.
+- Arte nuevo en la landing y favicon de HomeSuite.
+
+### Guía para el trabajo de diseño
+
+- Sitio público: `apps/site/public/`. Aplicación autenticada:
+  `apps/app/src/ledger-ui.js`, `apps/app/src/splitwise-ui.js` y las vistas de
+  `apps/app/src/index.js`.
+- Conservar nombres de campos, acciones POST, tokens CSRF, rutas con slug,
+  estados vacío/carga/error, permisos owner/member y comportamiento móvil. El
+  rediseño puede cambiar estructura visual y estilos, pero esos contratos están
+  cubiertos por pruebas.
+- No versionar el enlace temporal `Abrir demo local` hacia `127.0.0.1`; sólo
+  existió en `local/homesuite-full-preview` para recorrer ambos Workers.
+- Antes de integrar el diseño, actualizar la rama contra
+  `integration/homesuite-design-base`, ejecutar las suites generales y de
+  HomeSuite, y revisar visualmente escritorio y 390 px.
+
+## Sesión paralela — rediseño y propuestas de Cuentas Claras (2026-10-23)
+
+Sesión de diseño: sin código de producto. Detalle y tabla de estados en `docs/STATUS.md`
+(sección «Cuentas Claras: rediseño visual y propuestas OpenSpec»).
+
+- **Rediseño visual**: 10 pantallas en claro y oscuro, guardadas en el repo en
+  `docs/diseno/cuentas-claras/` (fuentes, índice del lienzo, tokens, 26 capturas PNG y un
+  README con cómo retomar y regenerar las capturas). Original en Claude Design:
+  https://claude.ai/artifact/D5oHdq49zM2V8R2zNQyfei (versión 18, con pasada de verificación; ver el README de la carpeta). Se renderizó y revisó en
+  Chromium; no se probó en teléfono real.
+- **OpenSpec**: cuatro changes en borrador en la rama `docs/propuestas-cuentas-claras`
+  (integrada en `main` por el PR #84): `libro-y-saldos-cuentas-claras`,
+  `importacion-splitwise-inicial`, `busqueda-movimientos-unificada` y
+  `colaboracion-y-exportacion-del-libro`. Validan con `--strict`.
+- **Se saltó `/opsx:explore`**, que `CLAUDE.md` marca como obligatorio, porque Pablo pidió
+  pasar directo a la propuesta. Por eso los changes son borradores que deciden por defecto
+  varias cuestiones; están listadas en las **Open Questions** de cada `design.md`.
+- **Al retomar**: (0) leer `docs/diseno/cuentas-claras/README.md`; (1) hacer `explore` con
+  los cuatro changes a la vista, empezando por el modelo de `entry_effects`; (2) corregir
+  en el lienzo lo que contradice la propuesta («pagó X» sin rotular en importados, opción
+  «saldos anteriores» activa); (3) recién entonces `propose` definitivo.
+- **Dependencia**: nada de esto puede aplicarse hasta cerrar el grupo 3 de
+  `plataforma-homesuite-minima` (creación de espacios, membresías e invitaciones).
+- La sesión recibió acceso de escritura a `pablotortorella/tas-king` para empujar la rama;
+  no se tocó `main`.
+- Esta sesión se hizo en paralelo a la integración visual de arriba: el rediseño de Cuentas Claras aún no
+  se cruzó con `integration/homesuite-design-base` ni con la importación Splitwise ya implementada (#76).
+  Antes de aplicar los changes, comparar contra ese código (ver Open Questions de cada `design.md`).
+
+## Snapshot de contexto — 2026-10-23
+**FUN TasKing!** está en producción como v2.3.2. **HomeSuite** tiene el sitio
+público en producción y la aplicación autenticada en staging; el siguiente corte
+de producto es Cuentas Claras.
+
+**TasKing actual**: v2.3.2 - **Tests**: 230 unitarios + 101 E2E.
+**HomeSuite funcional**: rama `integration/homesuite-design-base`; todavía no
+integrada completa en `main` ni habilitada en producción.
+
+**Features completos**: Deep-link, Polling real-time, Celebración con confeti, Historial (#1),
+Etiquetas (#2) con gestión desde ⚙️, Checklists (#3), Protección adjuntos (#4), JWT Google (#5),
+Modo oscuro (#6), Panel ¿Cómo vamos? / Métricas (#7 + #8), Objetivos (#8), Columnas de cierre
+múltiples (🏁 toggle isDone), Columnas customizables (crear/renombrar/eliminar/reordenar),
+Import/Export JSON+CSV completos (labels + checklists + assignee), Modal tarjeta 2 columnas,
+CSP + Security headers, i18n landing, Panel admin, IO menu, Temas de color (#10),
+Fix arrastre sin selección de texto en Chrome.
+
+**Próximo**: aplicar el sistema visual en la rama consolidada, sin alterar los
+contratos funcionales; después integrar la cadena de PRs y validar el resultado
+completo en staging.
+
+## Objetivo siguiente sesión
+
+1. Crear la rama del rediseño desde `integration/homesuite-design-base`.
+2. Aplicar el sistema visual a landing, shell autenticado, espacios, invitaciones,
+   libro, movimientos e importación.
+3. Ejecutar pruebas y recorrido visual completo en escritorio y móvil.
+4. Integrar los PRs funcionales en orden y resolver el destino final del PR de
+   diseño contra el `main` resultante.
+
+Ver `docs/STATUS.md` para estado detallado de cada feature.
+Consultar el método común para cómo trabajar y la ficha de TasKing para sus estándares de UI.
+
+## Stack
+- **Runtime**: Cloudflare Workers
+- **Framework API**: Hono (JS)
+- **Base de datos**: Cloudflare D1 (SQLite) — migraciones en `migrations/`
+- **Almacenamiento de archivos**: Cloudflare R2 (`tas-king-uploads`)
+- **Frontend**: HTML/CSS/JS vanilla sin build; TasKing está modularizado bajo
+  `public/js/` y HomeSuite vive en `apps/site` y `apps/app`
+- **Auth**: OAuth 2.0 con Google, implementado dentro del Worker. Cookie de sesión firmada con HMAC
+- **Dev local**: `wrangler dev` con D1/R2 emulados. Usuario simulado vía `DEV_USER_EMAIL` en `.dev.vars`
+
+## Decisiones tomadas
+- **Sin framework ni build step de frontend**: TasKing usa módulos nativos y
+  HomeSuite HTML/CSS/JS servido por Workers. La simplicidad operativa sigue
+  siendo deliberada, pero el frontend ya no vive en un único archivo.
+- **Sin Cloudflare Access**: se intentó pero no funciona en subdominios `*.workers.dev`. Se
+  implementó OAuth de Google directamente en el Worker.
+- **Emails permitidos en D1**: la lista de acceso pasó del Secret `ALLOWED_EMAILS` a la tabla
+  `allowed_emails`, para poder gestionarla desde la UI. El Secret se mantiene como fallback.
+- **Admins configurables vía Secret `ADMIN_EMAILS`**: quienes forkeen el repo definen sus propios
+  admins; no hay emails hardcodeados en el código.
+- **Import agrega, no reemplaza**: la importación de tarjetas nunca pisa datos existentes.
+- **Roles owner/member**: no hay "solo lectura". El tablero personal tiene `is_personal=1` y no
+  se puede borrar.
+- **Backfill de datos históricos**: la migración `0002` hardcodea `pablotortorella@gmail.com`
+  para los datos previos al multiusuario — esto es específico de esta instancia.
+
+## Archivos importantes
+- `src/index.js`: setup del Worker (~80 líneas) — importa routes y middlewares
+- `src/routes/`: auth, boards, cards, checklists, labels, uploads, admin, users
+- `public/index.html` + `public/js/`: frontend modular de TasKing
+- `apps/site/`: landing y páginas públicas de HomeSuite
+- `apps/app/`: Worker autenticado y UI funcional de Cuentas Claras
+- `migrations/`: esquema D1 incremental (0001 init → 0010 goals)
+- `wrangler.jsonc`: configuración de Workers, D1 y R2
+- `.dev.vars`: variables locales (no commiteado — ver README para el formato)
+- `docs/STATUS.md`: **[IMPORTANTE]** estado de cada feature (qué está hecho, qué falta, tests)
+- `memory/roadmap.md`: backlog priorizado con razones
+- `memory/SESSION.md`: contexto de la última sesión
+- `e2e/`: suites Playwright (attachments, checklists, critical-flows, history)
+- `test/fixtures/seed.sql`: estado inicial de la DB para E2E
+
+## Proceso vigente
+
+Las instrucciones de sesión se mantienen en el [método común](docs/homesuite/METODO.md). Comandos actuales en las fichas de producto; las secciones siguientes son referencias históricas.
+
+## Comandos vigentes
+
+Consultar las fichas de [TasKing](docs/productos/TASKING.md) y [plataforma](docs/productos/PLATAFORMA.md). Las tablas históricas siguientes no redefinen el estado registrado en STATUS.
+
+## Estado de features del backlog
+
+| Item | Estado | Notas |
+|---|---|---|
+| #0 🔗 Deep-link | ✅ Tests E2E | `checkDeepLink()` + GET `/api/cards/:id`. 4 casos cubiertos. |
+| ⚡ Polling real-time | ✅ Manual | `/api/boards/:id/version` + cliente cada 5s. |
+| 🎉 Celebración | ✅ Manual | Confeti + animación. Sin test E2E (difícil). |
+| #1 📜 Historial | ✅ Tests E2E | `audit_log`, 8 eventos, panel modal + admin. Drag & drop registrado. |
+| #2 🏷️ Etiquetas | ✅ Tests E2E | `labels`+`card_labels`, filtro 1-9, paleta 10 colores. |
+| #3 ✅ Checklists | ✅ Tests E2E | `checklists`+`checklist_items`, modo borrador, badge ☑ N/M. |
+| #4 🔐 Adjuntos | ✅ Tests E2E | 2-layer validation: sesión + membresía + MIME + tamaño + cantidad. |
+| #5 🛡️ JWT Google | ✅ Unitarios | Firma RSA + claims. Detecta tampering. |
+| #8 🎯 Objetivos | ✅ Tests (PR #9) | `goals`+`card_goals`, panel lateral + ⛶ Ampliar, filtro/lente, progreso por columna. Pendiente revisar en staging. |
+| ⇅ Menú IO | ✅ | Dropdown Datos: exportar CSV / copiar JSON / importar. |
+| 🌐 i18n landing | ✅ | ES/EN/PT/ZH inline en landing.html. |
+| #6 🌙 Modo oscuro | ✅ Tests E2E | Toggle 🌙/☀️ en header, `data-theme` + `color-scheme`, localStorage, prefers-color-scheme, sin flash. |
+| #7 📊 Lead time | ❌ | Métricas personales de productividad. |
+| CSP + security headers | ✅ | CSP, HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy en `middleware/cors.js`. Rate limiting por endpoint en `middleware/rateLimit.js`. Pendiente: audit/hardening. |
+
+## Pendientes
+- [x] #0 🔗 Deep-link a una tarjeta
+- [x] ⚡ Polling de cambios en tiempo real
+- [x] 🎉 Celebración al terminar
+- [x] #1 📜 Historial de actividad
+- [x] #2 🏷️ Etiquetas de colores + filtro
+- [x] #3 ✅ Checklists / subtareas
+- [x] #4 🔐 Proteger adjuntos
+- [x] #5 🛡️ Validar JWT de Google
+- [x] #8 🎯 Gestión de objetivos (MVP) — PR #9, pendiente revisar en staging + merge
+- [ ] Seguridad: CSP headers, rate limiting granular
+- [ ] UX: Tab/Enter en toda la interfaz, onboarding nuevos usuarios
+- [x] #6 🌙 Modo oscuro/claro
+- [ ] #7 📊 Lead time y tasa de completitud
+- [ ] Búsqueda avanzada (full-text en título + detalles)
+
+## Reglas vigentes
+
+Consultar [la base común](docs/homesuite/README.md) y las particularidades del producto.
+
+## Último handoff (2026-09-07, Deploy v2.1.1 + fix tarjeta duplicada al arrastrar (v2.1.2) — Sonnet 5)
+
+### ✅ v2.1.2: fix de tarjeta duplicada momentáneamente al arrastrar
+Reportado por el usuario justo después de verificar en prod el fix de v2.1.1 (abajo). Causa
+raíz: el polling de fondo (cada 5s) puede caer a mitad de un arrastre — `loadCards()` tira y
+reconstruye todo el DOM del tablero mientras `cardDrag` sigue activo, dejando el nodo de la
+tarjeta arrastrada huérfano; el siguiente `pointermove` lo reinserta duplicado junto al nuevo
+nodo ya renderizado. Se autocorregía en el siguiente poll (de ahí el "un instante").
+- Fix de dos capas en `public/index.html` (mismo patrón que el fix de selección de texto):
+  `pollTick()` (antes un callback anónimo de `setInterval`, ahora nombrado y expuesto como
+  `window.pollTick` para tests) se salta el tick si `cardDrag.active`; y `rebuildOrderFromDom()`
+  deduplica por id como red de seguridad.
+- **Test E2E nuevo** `e2e/drag-no-duplicate.spec.js`: usa el hook `window.pollTick` para forzar
+  el tick a mitad de un arrastre real (Pointer Events). Confirmado que reproduce el bug
+  revirtiendo el fix temporalmente antes de aplicarlo — clave: el assert lee el conteo de
+  tarjetas dentro del mismo `page.evaluate`, no vía `expect(...).toHaveCount()` con reintentos
+  (que esperaría hasta 5s, el mismo intervalo del poll real, y dejaría que el bug se
+  autocorrigiera solo antes de fallar).
+- Revisado por el usuario en local y en staging antes de mergear/deployar.
+- **121 unit + 45 E2E ✅** → deployado a producción como **v2.1.2** (Version ID
+  `38cdfa2a-b046-4681-86f5-152c5d227fcd`) con release notes en `/releases`.
+
+### ✅ Deploy de v2.1.1 (fix mergeado el 12/07, pendiente de deploy hasta hoy)
+El fix de "arrastrar tarjeta selecciona texto en Chrome" (PR #31 + #32, ver `docs/STATUS.md`)
+estaba en `main` desde hace casi dos meses pero nunca se había deployado a producción —
+`AI_HANDOFF.md` decía "producción actualizada" de forma desactualizada. Detectado porque el
+usuario seguía viendo el bug en producción real; confirmado comparando el HTML servido en prod
+contra `main` (faltaba la clase `dragging-active`).
+- `npm run test:all` ✅ (121 unit + 44 E2E) → `npm run deploy` (backup prod + `wrangler deploy` +
+  migraciones remotas, sin migraciones pendientes) → verificado manualmente por el usuario en
+  Chrome real, resuelto.
+- Nota de entorno: la sesión de `wrangler` (OAuth) había expirado sin poder refrescarse sola;
+  hubo que correr `npx wrangler login` de nuevo desde una terminal interactiva.
+
+---
+
+## Handoff anterior (2026-07-01, UX teclado + import completo + documentación — Sonnet 4.6)
+
+### ✅ Import JSON completo
+El endpoint `POST /api/boards/:boardId/import` ahora restaura la totalidad de los datos exportados:
+- **Responsable** (`assignee_email`): se asigna solo si el email es miembro del tablero destino.
+- **Etiquetas**: busca por nombre (case-insensitive) en el tablero; reutiliza las existentes, crea las nuevas hasta el límite de 10.
+- **Checklists** con todos sus ítems (texto, checked/unchecked, posición).
+- Adjuntos: se ignoran sin error (los archivos binarios no viajan en el JSON).
+- La vista previa de importación muestra cuántas tarjetas traen cada tipo de dato.
+- **8 nuevos tests** en `test/import.test.js` → 101 unit ✅
+
+### ✅ Modal de tarjeta en dos columnas
+Layout CSS Grid `@media (min-width: 700px)` sin cambios de JS:
+- **Izquierda**: título, campo-fila (columna + responsable), detalles, checklists, comentarios, historial.
+- **Derecha**: objetivos (arriba por su componente estratégica), etiquetas, fecha límite, adjuntos.
+- Mobile: sigue siendo una sola columna, sin cambios.
+
+### ✅ Gestión de etiquetas en ⚙️ Configuración
+Nueva tab "🏷️ Etiquetas" en el modal de settings del tablero. Permite editar nombre/color o borrar etiquetas existentes, y crear nuevas. Usa los endpoints PUT/DELETE de `src/routes/labels.js` (ya existían pero no tenían UI).
+
+### ✅ UX de teclado — ESC y orden de tabs Admin
+- ESC cierra el panel de Objetivos y el de Métricas (sumados a la cadena de cierre existente).
+- Tabs del panel Admin reordenados: Actividad del tablero → 📊 Estadísticas → Usuarios → 🔔 Solicitudes.
+- El resto de los handlers de Enter/Ctrl+Enter ya estaban implementados desde sesiones anteriores.
+
+### ✅ Columnas de cierre múltiples (sesión anterior, completado)
+- Botón 🏁 por columna (owners) marca/desmarca como `is_done=1`. Marcador ✅ en nombre.
+- `is_done` desacoplado de la posición: mover una columna no cambia su estado.
+- Confeti, métricas, staleCards e isUrgent/isOverdue usan todas las columnas `is_done=1`.
+
+### ✅ Documentación de estándares (esta sesión)
+- **ADR-014** (`docs/ADRs/ADR-014-keyboard-ux-standards.md`): criterios de teclado (Enter / Ctrl+Enter / ESC), tabla de estado de implementación, alternativas descartadas.
+- **WORKFLOW.md** ampliado: nueva sección "Estándares de UI y consistencia" con checklist obligatorio para cualquier feature con interfaz — tipografía, teclado e import/export en sync.
+
+### Estado final
+- **101 unit + 29 E2E ✅ todos pasan**
+- **main = staging = producción ✅**
+- Notas de versión v2.0 y v2.1 publicadas en `/releases`
+
+---
+
+## Handoff anterior (2026-06-30, Panel Métricas + Columnas customizables — Sonnet 4.6)
+
+### ✅ Columnas customizables — MVP completo
+- **Migración** `migrations/0011_columns.sql`: tabla `columns` con PK compuesta `(board_id, id)`,
+  índice `idx_columns_board`, e inserción automática de las 5 columnas por defecto en todos los
+  tableros existentes con los IDs legacy (`por_conversar`, `pendiente`, `en_progreso`, `por_revisar`, `terminado`).
+- **`src/db/columns.js`** (módulo nuevo, sin dependencias circulares):
+  `DEFAULT_COLUMNS`, `columnToJSON`, `createDefaultColumns`, `getDoneColumnId`.
+  Todos los demás módulos importan desde acá.
+- **`src/routes/columns.js`**: REST completo con 4 endpoints:
+  - `GET /api/boards/:boardId/columns` — lista columnas del tablero
+  - `POST /api/boards/:boardId/columns` — crear columna (owner only, máx 10, nombre máx 50 chars)
+  - `PATCH /api/boards/:boardId/columns/:columnId` — renombrar o marcar como `isDone`
+  - `DELETE /api/boards/:boardId/columns/:columnId` — eliminar (owner only, sin tarjetas activas, no puede ser la última; transfiere flag `isDone` si era la columna de cierre)
+- **`src/db/queries.js`**: `getBoard()` ahora lee las columnas de la DB (antes hardcodeadas).
+  Devuelve `{ version, columns, cards }`.
+- **`src/routes/goals.js`**: usa `getDoneColumnId()` en lugar de la constante `"terminado"`.
+- **`src/routes/boards.js`**: al crear un tablero nuevo llama `createDefaultColumns()`; al borrar un tablero borra sus columnas.
+- **`public/index.html`**:
+  - `COLUMNS` ahora es dinámico (se llena desde `state.columns` al cargar el tablero).
+  - Cada columna muestra botones **✏** (renombrar) y **✕** (eliminar) junto al contador de tarjetas.
+  - Widget **`+ Columna`** al final del board (solo owner) con input inline + confirm/cancel.
+  - Delegación de eventos en `#board` para renombrar (reemplaza `.col-name-text` por `<input>`)
+    y eliminar (confirm nativo + DELETE API).
+  - `getDoneColumnId()` derivado de `COLUMNS` (no más constante hardcodeada `"terminado"`).
+- **Tests**: 10 unitarios (`test/columns.test.js`) + 4 E2E seriales (`e2e/columns.spec.js`).
+  **Total post-sesión: 69 unit + 22 E2E ✅ todos pasan**.
+
+### 🌿 Rama / PR
+- Rama: `claude/board-column-customization-jfqgmd` — **pusheada, PR por abrir**.
+- **No hay PR abierto todavía** — el usuario debe abrirlo (ver pasos abajo).
+
+### ⏭️ PARA RETOMAR: revisar columnas en staging y mergear
+
+**Paso 0 — Mergear PR #9 (Objetivos) primero** (si aún no está mergeado):
+```bash
+# Revisar el PR #9 en GitHub y hacer merge desde la UI, o:
+git fetch origin main
+# Una vez mergeado, continuar con el paso 1.
+```
+
+**Paso 1 — Abrir PR para la rama de columnas** (desde GitHub UI o con `gh`):
+```
+Base: main
+Branch: claude/board-column-customization-jfqgmd
+Título: Columnas customizables: crear, renombrar y eliminar
+```
+
+**Paso 2 — Revisar en staging**:
+```bash
+git checkout claude/board-column-customization-jfqgmd
+npm install
+npx wrangler login            # si no estás logueado
+npm run deploy:staging        # deploya + aplica migraciones en D1 staging
+# → https://tas-king-staging.<subdominio>.workers.dev
+```
+- **Qué probar**: abrir un tablero → botones ✏ y ✕ en cada columna → renombrar → crear columna nueva → eliminar columna vacía → verificar que el confeti sigue disparando al mover tarjeta a la columna "done" → verificar que el progreso de objetivos sigue funcionando.
+
+**Paso 3 — Deploy a producción** (después de aprobación explícita):
+```bash
+npm run deploy                # incluye test:all + backup previo automático
+npm run db:migrate:remote     # aplica 0010_goals.sql + 0011_columns.sql en D1 prod
+```
+
+### ⚠️ Nota de entorno (E2E en remoto)
+El browser de Playwright instalado localmente puede diferir del disponible en el entorno remoto.
+Si los E2E fallan con "Executable doesn't exist", usar:
+```bash
+PW_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm run test:e2e
+```
+Localmente con `npx playwright install` no hace falta esta variable.
+
+---
+
+## Handoff anterior (2026-06-30, Gestión de objetivos #8 — Opus 4.8)
+
+### ✅ Objetivos (gestión por metas) — MVP completo
+- **Decisión Opción A**: objetivos DENTRO de cada tablero (un tablero = un proyecto). No hay tablero de estrategia separado. Ver `docs/ADRs.md` → **ADR-013** (alternativas B/C/D + criterios de migración).
+- **DB**: migración `0010_goals.sql` (tablas `goals` + `card_goals`, índices + CASCADE).
+- **Backend**: `src/routes/goals.js` (CRUD + vincular/desvincular + progreso). Constante `DONE_COLUMN` en `src/constants.js`. `getBoard()` y `cardJSONById()` exponen `card.goals`.
+- **Frontend** (`public/index.html`):
+  - Acceso único **🎯 Objetivos** → **panel lateral** (drawer izquierda). Dentro, **⛶ Ampliar** → vista a pantalla completa con "📋 Volver al tablero".
+  - **Filtro/lente**: seleccionar un objetivo en el panel resalta sus tarjetas (`card-goal-match`) y atenúa el resto (`card-dimmed`).
+  - Sección "🎯 Objetivos" en el modal de tarjeta + badge 🎯 en el Kanban.
+  - Render compartido: `renderGoalsList` / `buildGoalCard` / `refreshGoalsUI`.
+- **Tests**: 11 unit (`test/goals.test.js`) + 2 E2E (`e2e/goals.spec.js`). **Total: 59 unit + 18 E2E ✅**
+
+### 🌿 Rama / PR
+- Rama: `claude/goal-management-features-71ddci`.
+- **PR #9** abierto hacia `main`: https://github.com/pablotortorella/tas-king/pull/9 (dispara CI Tests). **Sin merge** — esperando revisión en staging.
+
+### ⏭️ PARA RETOMAR: ver #8 en staging (cuando estés frente a la compu)
+```bash
+git fetch origin claude/goal-management-features-71ddci
+git checkout claude/goal-management-features-71ddci
+npm install
+npx wrangler login            # una vez, si no estás logueado en Cloudflare
+npm run deploy:staging        # corre tests, deploya y migra la D1 de staging
+# → https://tas-king-staging.<tu-subdominio>.workers.dev
+```
+- **Pre-requisito** (si nunca deployaste staging): cargar los secrets en ese entorno:
+  ```bash
+  npx wrangler secret put SESSION_SECRET --env staging
+  npx wrangler secret put GOOGLE_CLIENT_ID --env staging
+  npx wrangler secret put GOOGLE_CLIENT_SECRET --env staging
+  npx wrangler secret put ADMIN_EMAILS --env staging
+  ```
+- Staging usa D1 `tas-king-staging` + R2 `tas-king-uploads-staging` (datos separados de prod).
+- **Qué probar**: 🎯 Objetivos → crear un objetivo, vincular una tarjeta, moverla a "Terminado" (ver progreso 100%), ⛶ Ampliar, y la lente (seleccionar objetivo resalta/atenúa tarjetas).
+- Si staging OK → mergear PR #9 y luego `npm run deploy` (con aprobación explícita, según CLAUDE.md).
+
+### ⚠️ Nota de entorno (solo CI / ejecución remota)
+- En el entorno remoto el browser de Playwright fijado (1228) no está instalado; los E2E se corren con `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium`. **Localmente NO hace falta** (usás `npx playwright install`). `playwright.config.mjs` respeta esa variable opcional sin afectar CI.
+
+### Extensiones futuras de la temática (detalle en ADR-013)
+1. Fecha objetivo + semáforo 🟢🟡🔴. 2. Key results numéricos (mini-OKR). 3. Burn-up con `audit_log`. 4. Métricas #7 por objetivo. 5. Reordenar/archivar objetivos. 6. Opción B (cross-board) si la estrategia cruza tableros.
+
+---
+
+## Anterior handoff (2026-06-26, Infraestructura ops + Disaster Recovery — Claude Sonnet 4.6)
+
+### ✅ Scripts de operación idempotentes (commit c1b6a30)
+- `.dev.vars.example`: plantilla commiteada para onboarding
+- `scripts/setup-local.sh`, `check-env.sh`, `db-reset-local.sh`, `seed-local.sh`, `e2e-reset.sh`, `operator.sh`
+- `npm run check:env` incorporado al checklist de inicio en CLAUDE.md y QUICK_START.md
+- `npm run operator`: menú interactivo con briefing de riesgos/ganancias antes de cada acción
+- `dev:e2e` separado en `e2e:setup` + `e2e:server`
+
+### ✅ Disaster Recovery (commit 50c7cce)
+- `src/backup.js`: genera dump SQL de D1, sube a R2, pushea a GitHub vía PAT
+- `src/index.js`: handler `scheduled` para Cron Trigger cada 8h; `export { app }` para tests
+- `wrangler.jsonc`: cron `"0 */8 * * *"` en env production
+- `scripts/db-backup-prod.sh`: backup manual local con `wrangler d1 export --remote`
+- `scripts/db-restore.sh`: restaura .sql en local/staging/prod con confirmaciones escalonadas
+- `npm run deploy` ahora incluye backup previo automático
+- `docs/DISASTER_RECOVERY.md`: runbook (4 escenarios, setup, RPO 8h / RTO 30min)
+
+### ⚠️ Pendiente para activar backup off-platform
+```bash
+# 1. Crear repo privado tas-king-backups en GitHub
+# 2. Crear PAT fine-grained con contents:write solo sobre ese repo
+npx wrangler secret put GITHUB_BACKUP_TOKEN --env production
+npx wrangler secret put GITHUB_BACKUP_REPO --env production
+# Valor: pablotortorella/tas-king-backups
+```
+Sin estos secrets, el backup a R2 funciona igual. El push a GitHub queda deshabilitado silenciosamente.
+
+### Estado tests
+- 48 unitarios (Vitest) ✅
+- 16 E2E (Playwright) ✅
+
+---
+
+## Anterior handoff (2026-06-25, Tests E2E completos + fix reorder bug — Claude Sonnet 4.6)
+
+### ✅ Infraestructura de tests E2E con seed data
+- `test/fixtures/seed.sql`: limpia toda la DB y re-inserta estado conocido (usuario admin E2E, tablero, etiqueta, tarjeta base)
+- `test/global-setup.mjs`: corre seed antes de cada suite vía `wrangler d1 execute`
+- `playwright.config.mjs`: registra globalSetup
+
+### ✅ 3 nuevas suites E2E
+- `e2e/checklists.spec.js`: 4 tests (crear, renombrar, borrador, badge verde)
+- `e2e/attachments.spec.js`: 2 tests (badge 📎, persistencia al reabrir)
+- `e2e/history.spec.js`: 4 tests (creación, modal, drag & drop, edición)
+
+### ✅ Fix: reorder con muchos cards (bug D1 en producción y local)
+- Endpoint `POST /api/boards/:boardId/reorder` usaba `IN (?, ?, ...)` con spread de todos los IDs
+- Con tableros grandes → "too many SQL variables" en D1 local (offset 245)
+- Fix: `WHERE board_id = ?` (sin IN) + batch UPDATE chunked a 40 cards por batch
+
+### ✅ Fix: simulación drag & drop en Playwright
+- `page.dragTo()` / `page.dragAndDrop()` no disparan bien los HTML5 drag events del frontend
+- Solución: `page.evaluate()` que agrega `.dragging`, mueve nodo DOM y dispara `drop`
+- `waitForResponse(/reorder)` garantiza que `card_moved` esté logeado antes de abrir el historial
+
+### ✅ Fix selectors de adjuntos en tests
+- Clase real: `.attachment` (no `.draft-attachment`)
+- Badge correcto: `📎` (no `≡` que es para card.details)
+
+### Deploy
+- Todo en main ✅ — commit `9cbfc2f`
+- **Pendiente de deploy a staging/producción** (sin cambios de usuario visible, tests internos)
+
+### Estado tests
+- 48 unitarios (Vitest) ✅
+- 16 E2E (Playwright) ✅
+
+---
+
+## Anterior handoff (2026-06-24, Refactor modular + optimización doc — Claude Haiku 4.5)
+
+**ESTA SESIÓN — Refactoring completo + optimización de documentación (MERGED A MAIN)**
+
+### ✅ Refactor: Estructura modular limpia
+- **Problema**: `src/index.js` tenía 1267 líneas, monolítico, difícil de navegar
+- **Solución**: extraído en estructura temática (~100-150 líneas c/u)
+  - `src/constants.js`: constantes globales
+  - `src/middleware/`: cors, logging, rateLimit, auth
+  - `src/routes/`: auth, users, boards, cards, uploads, admin
+  - `src/db/`: queries, helpers
+- **Resultado**: `src/index.js` ahora ~80 líneas (solo setup)
+- **Tests**: ✅ 38 unitarios + 5 E2E — todos pasan
+- **Estándar**: Documentado en CLAUDE.md
+- **Commits**: `6bb784f`, `2d1999b`, `34b2c2b`
+
+### ✅ Optimización: Documentación sin duplicación
+- **Problema**: 5 archivos a leer = ~5000 tokens innecesarios
+- **Solución**:
+  - **QUICK_START.md** (NEW): único archivo de lectura al inicio
+  - **memory/SESSION.md** (NEW): contexto persistente entre sesiones
+  - **CLAUDE.md** (REFACTOR): simplificado, sin duplicación
+- **Resultado**: 90% menos contexto inicial (~500 vs 5000 tokens)
+- **Beneficio**: Más espacio para trabajo real
+
+### ✅ Merge a main
+- Todos los cambios en main (commit `34b2c2b`)
+- Tests pasan en main: ✅ 38 unitarios + 5 E2E
+- GitHub actualizado
+- **Estado**: 🚀 Listo para Feature #2 Etiquetas
+
+---
+
+## Anterior handoff (2026-06-24, Sesión de seguridad + historial — Claude Haiku 4.5)
+
+**ESTA SESIÓN — Dos features de seguridad + mejora de historial**
+
+### ✅ #4 Protección de adjuntos (Opción A) — 2-layer validation
+- **GET `/uploads/:key`** requiere autenticación (401) + membresía del tablero (403)
+- **POST `/api/cards/:id/attachments`** valida MIME types, tamaño (20 MB), cantidad (10)
+- Tests: 3 casos de seguridad
+- v1.5 deployado
+
+### ✅ #5 Validar JWT de Google — Hardening de OAuth
+- **verifyGoogleJWT()**: valida firma RSA con `crypto.subtle.verify()`
+- **getGooglePublicKeys()**: cachea keys de Google por 24h
+- **Claims validados**: exp, iss, aud, email_verified
+- Token inválido → 403 con error específico
+- Tests: 6 casos de validación (firma, exp, iss, aud, email_verified, caching)
+- **ADR-011** registrado: decisión de arquitectura con problema/solución/alternativas
+- v1.6 deployado (`e7e42ae8`)
+
+### ✅ #1 Historial — Mostrar creación como primer evento
+- GET `/api/cards/:id/history` sintetiza evento de creación si no hay historial
+- Frontend muestra: "Creó la tarjeta en [columna]" con fecha original
+- Compatibilidad: tarjetas antiguas usan `card.created_at` como timestamp
+- Reemplaza "Sin historial aún." — siempre hay al menos un evento
+- v1.7 deployado (`3b81ba74`)
+
+**Actualizado**:
+- docs/STATUS.md: #1 y #4 y #5 marcados 100% completo
+- docs/backlog.txt: #8 "Mejoras adjuntos" expandido (BAJA prioridad, detalles técnicos)
+- docs/ADRs.md: ADR-011 nuevo sobre JWT validation
+
+**Anteriormente en sesiones previas**:
+- ✅ v1.4: Historial de actividad (#1) — tabla audit_log, eventos registrados, panel en modal + admin
+- ✅ v1.3: Panel admin + Polling real-time + Celebración (confeti + animación)
+- ✅ v1.2: Atajos, footer, responsive header
+- ✅ v1.1: Perfiles, avatares, comentarios con autor
+
+---
+
+## Último handoff anterior (2026-06-23 — antes de fundaciones)
+
+**Sesión: Historial de actividad (#1 del backlog)**
+
+Implementado el historial completo, de punta a punta:
+
+- **Migración** `migrations/0005_audit_log.sql`: tabla `audit_log` con índices por `board_id` y `card_id`. Aplicada en local y en producción.
+- **Backend** `src/index.js`:
+  - Helper `logEvent(db, boardId, cardId, action, email, details)` reutilizable
+  - 8 eventos registrados: `card_created`, `card_edited`, `card_moved`, `card_deleted`, `card_archived`, `card_restored`, `comment_added`, `attachment_added`
+  - `card_edited` guarda diff exacto por campo (title, column, details, due, assignee)
+  - `card_moved` se emite cuando solo cambia la columna (drag & drop o UI)
+  - GET `/api/cards/:id/history` — historial de tarjeta (últimos 100 eventos)
+  - GET `/api/boards/:boardId/activity` — actividad del tablero (hasta 500, con `?user=`, `?from=`, `?to=`)
+- **Frontend** `public/index.html`:
+  - Sección "📜 Historial" en modal de tarjeta: avatar + nombre + acción en español + tiempo relativo
+  - Se oculta para tarjetas nuevas, carga al abrir existentes
+  - `actionLabel(action, details)` convierte cada evento a texto descriptivo en español
+  - `relativeTime(ts)` formatea: "ahora / hace N min / hace Nh / fecha"
+  - Nueva pestaña "Actividad del tablero" en panel Admin (junto a "Usuarios")
+  - Filtros: por miembro del tablero + rango de fechas + botón Limpiar
+- **Tests**: 22/22 pasando (17 unitarios + 5 E2E). Tests E2E del historial pendientes (no automatizados aún).
+- **Deploy**: migración y código deployados en producción (`c240a917`).
+
+**Próximo**: #2 Etiquetas + filtro (tablas `labels` y `card_labels`, UI en modal, filtro en header, página AYUDA F1).
+
+## Handoffs anteriores
+**Sesión 2026-06-23 (Claude Sonnet 4.6)**:
+- Se subió la carpeta `docs/` al repo (contexto compartido entre IAs y humanos)
+- Se habilitaron dos nuevos usuarios en producción: `florenciatortorella@gmail.com` y
+  `leonardo.agudelo@kleer.la` (vía Secret `ALLOWED_EMAILS`)
+- Se implementó el **panel de administración** completo:
+  - Migración `0004_admin.sql`: tabla `allowed_emails` + columna `is_admin` en `users`
+  - Backend: endpoints `/api/admin/users`, `/api/admin/allowed` (GET/POST/DELETE),
+    `/api/admin/set-admin`; middleware `requireAdmin`; helpers `isEmailAllowed` y
+    `seedAdminIfNeeded`
+  - Frontend: botón "⚙ Admin" en header (solo para admins), modal con lista de usuarios,
+    agregar/eliminar, checkbox de promoción a admin
+  - Deploy a producción + seed de los 5 emails existentes en `allowed_emails`
+  - Secret `ADMIN_EMAILS=pablotortorella@gmail.com` cargado en producción
+- Se actualizó el README con instrucciones completas de setup (OAuth, secrets, primer admin)
+- Se creó este archivo `AI_HANDOFF.md`

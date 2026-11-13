@@ -9,8 +9,9 @@
    o [Remanso](docs/productos/REMANSO.md).
 3. [Estado fechado](docs/STATUS.md), [backlog](docs/PRODUCT_BACKLOG.md) y change OpenSpec afectado.
 
-No se copian aquí versiones desplegadas ni cantidades de tests. El
-[handoff](AI_HANDOFF.md) conserva contexto fechado; contrastarlo con STATUS y Git.
+No se copian aquí versiones desplegadas ni cantidades de tests. Trabajo pendiente:
+los PRs abiertos en GitHub y el [handoff](AI_HANDOFF.md), que guarda sólo lo que no
+vive en un PR; verificar cada estado antes de actuar.
 
 ## Preparar la tarea
 
@@ -33,6 +34,7 @@ no crear propuestas que decidan por el usuario lo que aún falta explorar.
 |---|---|
 | Identidad, tono y copy de marca | [Identidad y visión](docs/HOMESUITE_IDENTIDAD_Y_VISION.md) |
 | Reglas de colaboración | [Método](docs/homesuite/METODO.md) |
+| Encontrar PR, rama o código de otra sesión | [Método: retomar trabajo](docs/homesuite/METODO.md#retomar-trabajo-de-otra-sesión) |
 | Criterios técnicos | [Arquitectura](docs/homesuite/ARQUITECTURA.md) |
 | Escenarios y aceptación | [Verificación](docs/homesuite/VERIFICACION.md) |
 | Publicación y recuperación | [Operación](docs/homesuite/OPERACION.md) |
