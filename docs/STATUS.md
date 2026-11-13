@@ -1,6 +1,25 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-10
+**Última actualización**: 2026-11-13
+
+## Integración de las ramas sueltas después de Tareas — en PRs — 2026-11-11 (actualizado 2026-11-13)
+
+Pedido de Pablo: cuando Tareas estuviera en producción, integrar todo lo que quedó suelto en otras ramas y dejar documentado el estado.
+Claude rebasó cada rama sobre `main` `ba84a10`, que ya tiene Tareas y la PWA. Al 2026-11-13 solo se mergeó #143; los demás esperan cada uno la orden de Pablo.
+
+| PR | Rama | Qué trae | Orden y notas |
+|---|---|---|---|
+| [#143](https://github.com/pablotortorella/tas-king/pull/143) | `docs/pwa-prueba-iphone` | Documentación de la PWA: protocolo de iPhone, handoff y backlog | **Mergeado el 2026-11-12** (`44c1359`). Este bloque y el de la PWA quedaron en un PR aparte. |
+| [#152](https://github.com/pablotortorella/tas-king/pull/152) | `claude/mobile-drag-drop-firefox-ecevnu` | Handoff corto (solo lo que no vive en un PR) y cómo retomar trabajo de otra sesión | De otra sesión. Reemplaza `AI_HANDOFF.md`, así que lo que hay que hacer con estas ramas vive en él y en este bloque. |
+| [#149](https://github.com/pablotortorella/tas-king/pull/149) | `docs/respaldo-programado-confirmado` | El respaldo diario programado corrió solo y con éxito del 2026-11-03 al 2026-11-10 | Solo documentación. |
+| [#150](https://github.com/pablotortorella/tas-king/pull/150) | `feature/alertas-minimas` | Avisos por issue de GitHub: fallo del respaldo, `/healthz`, antigüedad del respaldo y revisión semanal | Va después de #149, porque está apilada sobre esa rama. Al mergear empiezan a correr los workflows programados. |
+| [#151](https://github.com/pablotortorella/tas-king/pull/151) | `feature/politica-y-aceptacion` | Textos legales en borrador, aviso y registro de aceptación, puerta (`LEGAL_GATE`), solicitudes de datos y encargados | Lleva la migración `0014`. E2E locales en verde: app 214, Remanso 39, Tareas 79. Los textos esperan la revisión de Pablo y hablan de Fun TasKing como si fuera una aplicación aparte. |
+| [#144](https://github.com/pablotortorella/tas-king/pull/144) | `docs/privacidad-copia-app` | Texto «Copia de la app» en la política | Espera la revisión de Pablo. Se fusiona sin conflicto con los borradores legales. |
+
+- Varios PRs agregan su bloque al principio de este archivo, así que cada merge puede pedir un rebase del siguiente. Es solo documentación.
+- **Ramas que se pueden borrar:** `ccr-a7efcef7-25zjqk`, local y remota (#142, ya mergeada), y las ramas remotas de Codex que ya están mergeadas
+  (`feature/migrar-tasking-homesuite`, `docs/tasking-*`). Los worktrees `agent-*` se pueden quitar cuando se mergeen sus PRs.
+- No se tocó la rama de Pablo `docs/dock-homesuite-backlog`, que tiene un cambio sin commitear en `docs/PRODUCT_BACKLOG.md`.
 
 ## TasKing en HomeSuite — publicado en producción — 2026-11-10
 
@@ -66,9 +85,12 @@
   sin archivar; dock separado en backlog.
   [Runbook](tasking/MIGRACION-HOMESUITE.md) y [evidencia](tasking/VERIFICACION.md).
 
-## HomeSuite App instalable (PWA) — mergeada en `main` y en staging, sin publicar en producción — 2026-11-09
+## HomeSuite App instalable (PWA) — en producción desde 2026-11-10 (con Tareas) — 2026-11-09
 
-- **Rama:** `ccr-a7efcef7-25zjqk`, **mergeada** con el PR #142 (`65a1b53`, 2026-11-09, por orden de Pablo). **No está en producción** (app en `main 992580c`).
+- **Rama:** `ccr-a7efcef7-25zjqk`, **mergeada** con el PR #142 (`65a1b53`, 2026-11-09, por orden de Pablo). **Producción:** llegó con la migración de Tareas que publicó Codex el 2026-11-10 (app `f1e79b44`). El service worker es `9b254b72cf17`, el mismo
+  que se probó en staging. Smoke de Claude del 2026-11-11 sobre `app.homesuite.info`: `/sw.js` con `no-cache`, manifiesto con `short_name` «HomeSuite»,
+  ícono `immutable`, las tres páginas `/sin-conexion*` y `/tareas/favicon.v1.svg`, todo en 200. Tareas usa el manifiesto y `/pwa.js` de la suite;
+  sin conexión muestra la página genérica; la caché no guarda `/tareas`, `/api/tareas` ni adjuntos (E2E de Codex).
 - **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `99f7962` (último commit), sin conflictos ni comentarios. Abiertos a partir de él: [#143](https://github.com/pablotortorella/tas-king/pull/143) (documentación) y [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad, a la espera de la revisión de Pablo).
 - **Staging (publicado 2026-11-09 por orden de Pablo, desde su máquina):** app `staging.homesuite.info`, versión `7daec2bc` (primera publicación), mensaje
   «PR #142 · SHA 6afbb87 · PWA instalable (rama, para revisión)». Sin migraciones; respaldo previo en
@@ -89,12 +111,9 @@
   sin conexión ya no dependen del ambiente, `versionPwa()` no recibe parámetros. Mostrar el nivel de la cuenta sin conexión quedó en el
   [backlog](PRODUCT_BACKLOG.md) (opción 2).
 - **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
-- **Producción: llega con Tareas (decisión de Pablo, 2026-11-10).** Lucio no siguió con la prueba en iPhone. La PWA no se publica por separado:
-  va con la migración de TasKing a `/tareas` (PR #145, rama `feature/migrar-tasking-homesuite`, que ya contiene la PWA). **Va a producción sin
-  probar en iPhone.** Si iOS falla, se apaga con `--var PWA_SW:off`. Cuando Codex avise en `AI_HANDOFF.md` que Tareas está en producción, Claude
-  integra las ramas sueltas, extiende la PWA a `/tareas` y actualiza este bloque. El inventario de ramas está en el handoff.
-- **Prueba en iPhone: sin hacer (Lucio la empezó el 2026-11-09 y no siguió).** Se hizo sobre la URL de staging (versión `1a2f3bfc`, SHA `9e4c4a4`).
-  Es la pregunta abierta 1 de [`design.md`](../openspec/changes/pwa-instalable/design.md). El protocolo queda para cuando alguien con iPhone la haga.
+- **Prueba en iPhone: sin hacer.** Lucio no la hizo. Pablo decidió el 2026-11-10 publicar igual, junto con Tareas. Es la pregunta abierta 1 de
+  [`design.md`](../openspec/changes/pwa-instalable/design.md). Si iOS falla, se apaga con `--var PWA_SW:off`. El protocolo sigue valiendo, ahora
+  sobre `app.homesuite.info`.
   - *Pasos (Safari, no otro navegador):* 1) abrir `staging.homesuite.info`; 2) **entrar con Google en Safari antes de instalar** (iOS copia las
     cookies de Safari una sola vez, al agregar la app); 3) Compartir → Agregar a inicio y anotar nombre e ícono; 4) abrir desde el ícono, en modo
     app; 5) **dentro de la app, salir y volver a entrar con Google**; 6) usar Jardín Zen y Remanso (tacto y sonido); 7) modo avión: `/jardin-zen`
