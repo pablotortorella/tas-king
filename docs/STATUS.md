@@ -40,6 +40,46 @@ correr al mergear; hasta entonces los caminos se ensayaron únicamente con prueb
   `openspec validate alertas-minimas-homesuite --strict` válido. No se corrieron E2E ni la integración D1 (no tocan este cambio).
   Los avisos no se dan por aceptados hasta tener la evidencia del checklist.
 
+## Política y aceptación de los textos legales: en PR, sin integrar ni publicar — 2026-11-11 (implementado el 2026-11-04)
+
+Change `politica-y-aceptacion` (primero de la serie de datos reales, decisión de Pablo del 2026-11-02), rama `feature/politica-y-aceptacion`, rebasada el 2026-11-11 sobre `main` (después de Tareas y la PWA; ver «Al rebasar» abajo).
+**Nada se publicó**: ni staging ni producción, ni migración remota.
+
+- **Código:** migración `0014_legal_acceptances.sql` (era `0013`; se renumeró porque `0013_tasking.sql` llegó antes a producción) (tabla nueva y aditiva), `apps/app/src/legal.js` y `legal-ui.js`, aviso de aceptación con
+  los dos enlaces y la declaración de 18 años junto a «Continuar con Google» (inicio y Remanso), pie «Privacidad · Términos y condiciones»,
+  registro de la aceptación al iniciar sesión (versión mostrada al empezar, en la cookie firmada de estado), pantalla `/aceptar` y puerta de
+  nueva aceptación (`LEGAL_GATE=on`; apagada en producción hasta publicar los textos), advertencia de datos sensibles junto a los campos de texto libre.
+- **Textos legales:** borradores en `apps/site/public/privacidad.html` y `terminos.html` (fecha 2026-11-04), cada bloque nuevo marcado con un
+  comentario «BORRADOR PENDIENTE DE REVISIÓN DE PABLO». **No están aprobados ni son asesoramiento legal.** Documentos nuevos:
+  [solicitudes de datos](HOMESUITE_SOLICITUDES_DATOS.md) y [encargados](HOMESUITE_ENCARGADOS.md); calculadora `scripts/solicitudes-plazos.mjs`.
+- **Orden de publicación (cuando Pablo apruebe):** migración, sitio con los textos nuevos, app con la puerta apagada y, después de comprobar los
+  textos publicados, `LEGAL_GATE=on`. Ver el design del change, Migration Plan.
+- **Dos cuentas de producción existentes:** al encender la puerta pasarán por `/aceptar` en su primera visita (nunca vieron el aviso). **No verificado
+  en producción**: es lo que dicen el diseño y las pruebas de integración.
+- **El inicio de sesión real con Google sigue siendo una prueba manual** (las pruebas de integración simulan a Google con una firma local; la
+  pantalla de consentimiento de Google no se revisó). Tampoco se probó en un teléfono real (tarea 8.2).
+- **Excepción de Remanso:** su pantalla no lleva el pie con los textos legales (su inicio y su cierre se diseñaron para verse completos sin
+  desplazarse y el pie no entra); los enlaces aparecen junto al botón de acceso. Si Pablo prefiere el pie, hay que relajar ese límite.
+- **Al rebasar (2026-11-11, Claude):**
+  - La migración pasó a `0014`: `0013_tasking.sql` ya está aplicada en producción.
+  - La cabeza común conserva lo de la PWA (manifiesto, íconos, `/pwa.js`, favicon por página) y suma la franja y el pie legales. Con
+    `cuenta: false`, las páginas sin conexión no los llevan, porque dependen de la sesión y del ambiente.
+  - La puerta exime el manifiesto y `/sin-conexion*`; si no, la instalación fallaría con una versión pendiente. `/sw.js` y `/pwa.js` ya
+    estaban cubiertos por la regla de estáticos.
+  - **Tareas queda detrás de la puerta** (`/tareas` y `/api/tareas/*`). Su pie enlaza los términos y la política de toda la suite.
+- **Textos unificados para toda la suite (2026-11-13, pedido de Pablo):**
+  - Los dos borradores pasan a la versión `2026-11-13` (también en `legal.js`) y cubren Cuentas Claras, Fun TasKing (Tareas), Remanso y
+    Jardín Zen. Cada herramienta tiene su sección.
+  - Los términos absorben lo vigente de los anteriores de Fun TasKing: exportar los tableros, no usarlos para información crítica, y la
+    licencia GNU GPL v3 con su código en GitHub. La parte de «sin garantías» se reemplaza por la sección «Responsabilidad» de HomeSuite.
+  - La política dice qué guarda Tareas: tableros, historial, integrantes, adjuntos en R2 privado, invitaciones por email, lo que ve quien
+    administra y el almacenamiento local. También incluye el texto «Copia de la app» del PR #144.
+  - El pie de Tareas enlaza los textos del sitio del ambiente. `/tareas/terminos-anteriores` queda solo como archivo.
+  - **Decisión de Pablo pendiente:** hasta cuándo se conserva la copia congelada del Fun TasKing original (D1 `tas-king` y R2
+    `tas-king-uploads`). La política dice «la vamos a eliminar cuando dejemos de necesitarla».
+- **Pendiente de Pablo:** leer y aprobar los textos, aceptar los DPA de Cloudflare y GitHub, crear la planilla de solicitudes, revisar los festivos
+  y decidir lo marcado en `tasks.md`.
+
 ## TasKing en HomeSuite — publicado en producción — 2026-11-10
 
 - [PR #145](https://github.com/pablotortorella/tas-king/pull/145) integrado en `main`

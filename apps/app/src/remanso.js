@@ -1,6 +1,7 @@
 import { AMBIENTS, DURATIONS } from "../public/remanso/remanso-engine.js";
 import { DEFAULT_GONG, GONG_IDS } from "../public/remanso/remanso-gongs.js";
 import { readOwnProfile } from "./profiles.js";
+import { renderSignInNotice, signInHref } from "./legal-ui.js";
 
 // Volumen inicial del fondo (0–100; el motor lo eleva al cuadrado). Era 55, el del paquete; con él el fondo quedaba muy bajo
 // frente al gong, así que sube un 30 % sobre el control (2026-10-27).
@@ -25,7 +26,7 @@ export const REMANSO_ACCESO = Object.freeze({
   }),
 });
 
-const LOGIN_URL = "/auth/google?returnTo=%2Fremanso";
+const LOGIN_URL = signInHref("/remanso");
 const REMANSO_ASSETS = Object.freeze({
   styles: ["/remanso/remanso.css"],
   scripts: ["/remanso/remanso.js"],
@@ -43,7 +44,7 @@ const ICONS = Object.freeze({
 
 const MOODS = Object.freeze(["En calma", "Igual", "Con inquietud"]);
 
-export function renderRemanso({ html, nombre = null, loginDisponible = true }) {
+export function renderRemanso({ html, nombre = null, loginDisponible = true, hostname = "app.homesuite.info" }) {
   const nivel = nombre ? "cuenta" : "libre";
   const { libre } = REMANSO_ACCESO;
   const inicial = REMANSO_ACCESO[nivel].inicial;
@@ -61,7 +62,7 @@ export function renderRemanso({ html, nombre = null, loginDisponible = true }) {
   ].filter(Boolean).join(" ");
 
   const avisoEnlace = loginDisponible
-    ? `<a id="rem-aviso-enlace" class="button" href="${LOGIN_URL}">Continuar con Google</a>`
+    ? `${renderSignInNotice(hostname)}<a id="rem-aviso-enlace" class="button" href="${LOGIN_URL}">Continuar con Google</a>`
     : "";
   const animos = MOODS.map((mood) => `<button type="button" class="rem-chip rem-animo" data-animo="${html(mood)}" aria-pressed="false">${html(mood)}</button>`).join("");
 
@@ -170,6 +171,7 @@ export function registerRemansoRoutes(app, { page, html, googleConfigured, ...de
       html,
       nombre: profile?.displayName ?? null,
       loginDisponible: googleConfigured(c.env),
+      hostname: new URL(c.req.url).hostname,
     });
     return c.html(page("Remanso", content, REMANSO_ASSETS));
   });

@@ -99,7 +99,7 @@ test.describe("sin cuenta", () => {
     await page.locator('[data-m="20"]').click({ force: true });
     await expect(page.locator("#rem-aviso")).toBeVisible();
     await expect(page.locator("#rem-aviso-texto")).toContainText("cuenta de HomeSuite");
-    await expect(page.getByRole("link", { name: "Continuar con Google" }).first()).toHaveAttribute("href", "/auth/google?returnTo=%2Fremanso");
+    await expect(page.getByRole("link", { name: "Continuar con Google" }).first()).toHaveAttribute("href", "/auth/google?returnTo=%2Fremanso&acepta=1");
     await expect(page.locator('[data-m="5"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator('[data-m="20"]')).toHaveAttribute("aria-pressed", "false");
 
@@ -450,4 +450,33 @@ for (const [label, size] of [["teléfono", { width: 390, height: 720 }], ["escri
       });
     });
   }
+}
+
+// Aviso de aceptación de los textos legales junto a «Continuar con Google» (change politica-y-aceptacion): visible con la opción bloqueada,
+// con los dos enlaces de al menos 44 px, sin desborde y legible en claro y oscuro. Remanso no lleva el pie de la app (no entra sin desplazar).
+for (const scheme of ["light", "dark"]) {
+  test(`el aviso de aceptación del acceso se lee, mide 44 px y no desborda · ${scheme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/remanso");
+    await page.locator('[data-m="20"]').click({ force: true });
+    const notice = page.locator("#rem-aviso .legal-notice");
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText("Al continuar aceptás los Términos y condiciones y la Política de privacidad, y confirmás que tenés 18 años o más.");
+    await expect(page.locator(".legal-footer")).toHaveCount(0);
+    for (const height of await notice.locator("a").evaluateAll((links) => links.map((link) => link.getBoundingClientRect().height))) expect(height).toBeGreaterThanOrEqual(43.5);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    const low = await page.evaluate(() => {
+      const channel = (v) => { const u = v / 255; return u <= 0.03928 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4; };
+      const parse = (value) => { const m = value.match(/rgba?\(([^)]+)\)/u); const [r, g, b, a = 1] = m[1].split(/[ ,/]+/u).filter(Boolean).map(Number); return { r, g, b, a }; };
+      const lum = ({ r, g, b }) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+      const backgroundOf = (node) => { for (let el = node; el; el = el.parentElement) { const bg = parse(getComputedStyle(el).backgroundColor); if (bg.a > 0.99) return bg; } return { r: 255, g: 255, b: 255, a: 1 }; };
+      return [...document.querySelectorAll("#rem-aviso .legal-notice, #rem-aviso .legal-notice a")].map((node) => {
+        const [hi, lo] = [lum(parse(getComputedStyle(node).color)), lum(backgroundOf(node))].sort((x, y) => y - x);
+        return { text: node.textContent.slice(0, 30), ratio: (hi + 0.05) / (lo + 0.05) };
+      }).filter((item) => item.ratio < 4.5);
+    });
+    expect(low).toEqual([]);
+  });
 }

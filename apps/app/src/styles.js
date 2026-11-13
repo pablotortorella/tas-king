@@ -1,4 +1,5 @@
 import { AVATAR_COLORS } from "./profiles.js";
+import { LEGAL_CSS } from "./legal-ui.js";
 import { themeCss } from "./theme.js";
 
 // La CSP de la app (style-src 'self') prohíbe estilos en línea: todo el aspecto vive aquí, con colores
@@ -249,6 +250,6 @@ ${AVATAR_CSS}
 
 export function appCss() {
   const widths = Array.from({ length: 51 }, (_, i) => `.w${i}{width:${i}%}`).join("");
-  return `${themeCss()}${BASE}${BOOK}${FORMS}${SHELL}${widths}`;
+  return `${themeCss()}${BASE}${BOOK}${FORMS}${SHELL}${LEGAL_CSS}${widths}`;
 }
 

@@ -21,6 +21,14 @@
     <a class="header-link" href="/#herramientas">Todas las herramientas <span aria-hidden="true">↗</span></a>
   </header>
 
+  <!--
+    BORRADOR PENDIENTE DE REVISIÓN DE PABLO (change politica-y-aceptacion, tareas 4.1 a 4.7).
+    Los bloques marcados con «BORRADOR» más abajo son texto legal propuesto: no es asesoramiento legal y no se publica
+    hasta que Pablo lo lea y lo apruebe (idealmente también una persona abogada especialista en datos). Al publicar:
+    quitar estos comentarios y, si cambia la fecha de «Última actualización», actualizar también la de terminos.html, la
+    frase «entra en vigor el ...» de la sección «Cambios en esta política» y la constante de apps/app/src/legal.js
+    (una prueba falla si no coinciden).
+  -->
   <main class="legal-page" id="contenido">
     <nav class="breadcrumbs" aria-label="Ubicación">
       <a href="/">HomeSuite</a><span aria-hidden="true">›</span><span aria-current="page">Privacidad</span>
@@ -28,19 +36,26 @@
     <div class="legal-heading">
       <p class="eyebrow">Información de HomeSuite</p>
       <h1>Política de privacidad</h1>
-      <p class="legal-updated">Última actualización: 27 de octubre de 2026</p>
-      <p>Explicamos qué datos usamos para ofrecer HomeSuite, Cuentas Claras y Remanso. Esta política cubre el sitio público y la aplicación de HomeSuite. Fun TasKing conserva su propia aplicación y condiciones mientras funcione en su dirección independiente.</p>
+      <p class="legal-updated">Última actualización: 13 de noviembre de 2026</p>
+      <p>Explicamos qué datos usamos para ofrecer HomeSuite y todas sus herramientas: Cuentas Claras, Fun TasKing (Tareas), Remanso y Jardín Zen. Esta política cubre el sitio público y la aplicación de HomeSuite. Desde el 10 de noviembre de 2026 Fun TasKing es parte de HomeSuite y queda cubierta por esta política.</p>
     </div>
 
     <div class="legal-layout">
       <nav class="legal-toc" aria-label="En esta política">
         <a href="#responsable">Responsable y contacto</a>
+        <a href="#finalidades">Finalidades y autorización</a>
         <a href="#datos">Datos que tratamos</a>
+        <a href="#facultativo">Datos sensibles y edad mínima</a>
         <a href="#cuentas-claras">Cuentas Claras</a>
+        <a href="#tareas">Fun TasKing (Tareas)</a>
         <a href="#remanso">Remanso</a>
+        <a href="#jardin-zen">Jardín Zen</a>
         <a href="#cookies">Cookies y almacenamiento</a>
         <a href="#compartir">Con quién se comparten</a>
-        <a href="#conservacion">Conservación y derechos</a>
+        <a href="#derechos">Derechos, plazos y procedimiento</a>
+        <a href="#conservacion">Conservación y vigencia</a>
+        <a href="#sin-cuenta">Personas sin cuenta</a>
+        <a href="#cambios">Cambios en esta política</a>
       </nav>
       <div class="legal-content">
         <section id="responsable">
@@ -48,10 +63,26 @@
           <p>El responsable del tratamiento es <strong>Pablo Tortorella</strong>, domiciliado en <strong>Rionegro, Antioquia, Colombia</strong>. Dirección de contacto: <strong>Calle 47 # 76-02, Local 1022, Parque Comercial Río del Este, Rionegro, Antioquia, Colombia</strong>. Teléfono: <a href="tel:+573042070566">(+57) 304 207 0566</a>. Para consultas sobre privacidad, acceso, corrección o eliminación de datos, escribinos a <a href="mailto:pablotortorella@gmail.com">pablotortorella@gmail.com</a>. Pablo Tortorella atiende las solicitudes de datos personales en ese correo.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.1): finalidades y autorización. -->
+        <section id="finalidades">
+          <h2>Finalidades y autorización</h2>
+          <p>Tratamos tus datos para crear y mantener tu cuenta, operar los grupos de Cuentas Claras y los tableros de Fun TasKing, proteger el servicio y atender tus solicitudes. No los usamos para otras finalidades.</p>
+          <p>Al iniciar sesión aceptás el tratamiento descrito en esta política para esas finalidades. Lo aceptás al continuar con Google desde una pantalla que muestra el aviso con los enlaces a esta política y a los <a href="/terminos">Términos y condiciones</a>; el silencio nunca vale como aceptación. Guardamos qué versión de cada texto aceptaste y cuándo, sin dirección IP ni datos del navegador, como prueba de tu autorización. Cuando cambia alguno de los textos, te pedimos aceptar la versión nueva antes de seguir usando la aplicación.</p>
+          <p>Podés revocar tu autorización y pedir la supresión de tus datos con el procedimiento de <a href="#derechos">Derechos, plazos y procedimiento</a>. La revocación tiene los límites que allí se describen: si un dato forma parte del historial compartido de otras personas o debemos conservarlo por una obligación legal, te explicaremos qué se suprime y qué permanece.</p>
+        </section>
+
         <section id="datos">
           <h2>Datos que tratamos en la suite</h2>
           <p>Al entrar con Google recibimos un identificador estable de tu cuenta, email verificado, nombre y, si Google la ofrece, la URL de tu foto. Usamos esos datos para crear tu cuenta, iniciar sesión y mostrar tu perfil. Podés elegir un nombre visible, emoji y color; la foto se muestra desde Google, sin copiar el archivo a HomeSuite. El acceso solicita únicamente <code>openid</code>, <code>email</code> y <code>profile</code>; no pedimos acceso a Gmail, Drive ni a tus contactos.</p>
           <p>Para operar y proteger el servicio tratamos identificadores de sesión, dirección IP y datos técnicos de las solicitudes. Registramos errores y eventos de seguridad sin guardar en esos logs cookies, tokens, emails ni el contenido de los movimientos. No incorporamos rastreadores publicitarios ni vendemos datos personales.</p>
+          <p>Guardamos además la versión de los Términos y de esta política que aceptaste y la fecha de la aceptación, identificadas con el código interno de tu cuenta.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.2): carácter facultativo, datos sensibles y edad mínima. -->
+        <section id="facultativo">
+          <h2>Datos sensibles y edad mínima</h2>
+          <p>HomeSuite no te pide datos sensibles, es decir, los que afectan tu intimidad o cuyo uso indebido puede generar discriminación (por ejemplo, salud, religión, origen étnico, afiliaciones políticas o sindicales, vida sexual o datos biométricos). No los escribas en nombres, descripciones ni notas. Si lo hacés, tu respuesta es voluntaria y podés pedir su supresión. Los importes y los nombres de las personas que pagaron o participaron en un gasto no son datos sensibles por sí solos.</p>
+          <p>Para usar HomeSuite tenés que ser mayor de 18 años. Al continuar con Google confirmás que lo sos; no verificamos la edad. No tratamos intencionalmente datos de menores de edad: si creés que una cuenta pertenece a una persona menor, escribinos y la suprimimos.</p>
         </section>
 
         <section id="cuentas-claras">
@@ -60,9 +91,25 @@
           <p>Al importar un archivo, procesamos sus filas en la aplicación y guardamos una vista previa temporal para que la revises. Los datos que confirmás pasan al historial del grupo; también se conservan referencias y filas de origen necesarias para revisar la importación. No uses la importación para incluir datos de personas sin una base legítima para compartirlos con los integrantes del grupo.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (2026-11-13): sección nueva por la integración de Fun TasKing (PR #145).
+             Decisión pendiente: hasta cuándo se conserva la copia congelada del Fun TasKing original (último párrafo). -->
+        <section id="tareas">
+          <h2>Fun TasKing (Tareas)</h2>
+          <p>Si usás Fun TasKing, guardamos tus tableros y lo que contienen: columnas, tarjetas, etiquetas, objetivos, listas, comentarios, fechas y el historial de cambios de cada tablero (quién hizo qué y cuándo). También guardamos quiénes son los integrantes del tablero y su rol. Cada persona tiene un tablero personal.</p>
+          <p>Los <strong>adjuntos</strong> que subís a una tarjeta se guardan en un almacenamiento privado: sólo los pueden abrir los integrantes del tablero con su sesión, y nunca quedan en la copia de la app de tu navegador. Al eliminar una tarjeta o un tablero se eliminan también sus adjuntos.</p>
+          <p>Para invitar a alguien a un tablero, la persona dueña aporta su email. Los integrantes del tablero ven su contenido, incluidos los nombres, avatares y comentarios de los demás; un grupo de Cuentas Claras no da acceso a ningún tablero, ni un tablero a un grupo. Para administrar el servicio, las personas con rol de administración de Fun TasKing (hoy, Pablo Tortorella) pueden ver la lista de cuentas (email y nombre) y totales de uso, en general y por persona (cuántos tableros, tarjetas, comentarios y adjuntos), pero no el contenido de los tableros.</p>
+          <p>Si usabas Fun TasKing en su dirección anterior, el 10 de noviembre de 2026 trasladamos tus tableros, tarjetas y adjuntos a HomeSuite; quedan vinculados a tu cuenta de HomeSuite cuando entrás con la misma cuenta de Google. La copia original quedó congelada en la misma cuenta de Cloudflare, sin uso ni acceso desde la aplicación, como respaldo del traslado; la vamos a eliminar cuando dejemos de necesitarla.</p>
+        </section>
+
         <section id="remanso">
           <h2>Remanso</h2>
           <p>Las sesiones cortas se pueden usar sin cuenta. El audio se genera en tu dispositivo. Hoy no enviamos ni guardamos en el servidor tu estado de ánimo, el historial de sesiones ni el sonido que escuchás. La elección del gong se recuerda sólo en el almacenamiento de ese navegador; podés borrarla limpiando los datos del sitio. Si entrás con cuenta, Remanso usa tu perfil de HomeSuite para mostrar tu nombre y ofrecer las opciones de ese nivel.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (2026-11-13): sección nueva; Jardín Zen está publicado desde el 2026-10-31. -->
+        <section id="jardin-zen">
+          <h2>Jardín Zen</h2>
+          <p>Jardín Zen se usa sin cuenta y no envía al servidor lo que dibujás. Sólo recuerda en tu navegador si preferís ver el rastrillo; podés borrarlo limpiando los datos del sitio.</p>
         </section>
 
         <section id="cookies">
@@ -71,25 +118,60 @@
             <li><strong>Acceso con Google:</strong> una cookie temporal verifica el retorno del proveedor y vence a los diez minutos.</li>
             <li><strong>Sesión de HomeSuite:</strong> una cookie segura, exclusiva de la aplicación y no accesible a JavaScript mantiene la sesión hasta catorce días, salvo cierre o revocación anterior.</li>
             <li><strong>Último grupo:</strong> una cookie recuerda sólo el identificador del último grupo abierto, hasta un año. El servidor vuelve a comprobar tu membresía antes de abrirlo.</li>
-            <li><strong>Preferencias locales:</strong> Remanso recuerda el gong elegido en el navegador; algunas vistas pueden recordar opciones de interfaz de la misma forma.</li>
+            <li><strong>Preferencias locales:</strong> Remanso recuerda el gong elegido y Jardín Zen si mostrar el rastrillo. Fun TasKing recuerda el último tablero abierto, el tema, el idioma y cuándo te mostró sus avisos del día. Todo eso queda en el navegador y no viaja al servidor.</li>
             <!-- Borrador pwa-instalable: revisión de Pablo pendiente -->
-            <li><strong>Copia de la app:</strong> si usás la aplicación de HomeSuite, tu navegador guarda una copia de archivos públicos (estilos, scripts, íconos y páginas sin conexión) para abrirla más rápido y usar Jardín Zen y Remanso sin conexión. Esa copia no incluye datos de tu cuenta ni de tus grupos, y se borra al borrar los datos del sitio en tu navegador.</li>
+            <li><strong>Copia de la app:</strong> si usás la aplicación de HomeSuite, tu navegador guarda una copia de archivos públicos (estilos, scripts, íconos y páginas sin conexión) para que Jardín Zen y Remanso se puedan abrir sin conexión. Esa copia no incluye datos de tu cuenta, de tus grupos ni de tus tableros, y se borra al borrar los datos del sitio en tu navegador.</li>
           </ul>
           <p>El sitio público no necesita una cuenta para navegar. El proveedor de infraestructura puede usar medidas técnicas propias para proteger y entregar las páginas.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.3): encargados y transmisión internacional.
+             No afirma una ubicación garantizada de los datos (la ubicación de D1 y R2 no está verificada).
+             Depende de que Pablo acepte y registre los contratos de tratamiento de datos (docs/HOMESUITE_ENCARGADOS.md, tarea 6.2). -->
         <section id="compartir">
           <h2>Con quién se comparten</h2>
-          <p>Usamos Cloudflare para alojar la aplicación y sus datos, y Google para el acceso con tu cuenta. Cuando se muestra tu foto de Google, el navegador puede solicitarla directamente a Google. En Cuentas Claras, los datos del grupo se muestran a sus integrantes autorizados. No compartimos los movimientos de un grupo con otro.</p>
-          <p>Estos proveedores pueden tratar datos en otros países conforme a sus servicios y condiciones. También podemos comunicar información si una obligación legal válida lo exige.</p>
+          <p>Para operar HomeSuite usamos proveedores que tratan datos por nuestra cuenta, bajo contratos de tratamiento de datos (encargados del tratamiento):</p>
+          <ul>
+            <li><strong>Cloudflare</strong>: alojamiento de la aplicación y del sitio, base de datos, almacenamiento de los adjuntos de Fun TasKing y copias de seguridad.</li>
+            <li><strong>GitHub</strong>: ejecución transitoria de las copias de seguridad diarias; durante esa ejecución la copia pasa por un servidor temporal de GitHub.</li>
+          </ul>
+          <p>Esos proveedores pueden procesar los datos en Estados Unidos y en otros países donde operan sus servicios. Es una transmisión internacional a encargados: Estados Unidos figura entre los países con nivel adecuado de protección según la Superintendencia de Industria y Comercio. No podemos garantizar en qué país exacto se almacena o procesa cada dato.</p>
+          <p><strong>Google</strong> es el proveedor de identidad: recibe a la persona que inicia sesión y trata sus datos bajo su propia política, no por nuestra cuenta. Cuando se muestra tu foto de Google, el navegador puede solicitarla directamente a Google. En Cuentas Claras, los datos del grupo se muestran a sus integrantes autorizados, y en Fun TasKing los de cada tablero a sus integrantes. No compartimos los movimientos de un grupo con otro ni el contenido de un tablero con otro. También podemos comunicar información si una obligación legal válida lo exige.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.4): derechos, plazos y procedimiento. -->
+        <section id="derechos">
+          <h2>Derechos, plazos y procedimiento</h2>
+          <p>Como titular de tus datos podés: conocerlos, actualizarlos y rectificarlos; pedir prueba de la autorización que diste; ser informado del uso que se les dio; revocar la autorización o pedir la supresión cuando no se respeten los principios, derechos y garantías de la ley; y acceder gratis a tus datos.</p>
+          <p><strong>Quién atiende.</strong> Pablo Tortorella, en <a href="mailto:pablotortorella@gmail.com">pablotortorella@gmail.com</a>. Si tenés cuenta, te respondemos al correo de tu cuenta; podemos pedirte información razonable para verificar tu identidad.</p>
+          <ul>
+            <li><strong>Consultas</strong> (conocer tus datos o cómo se usan): las respondemos en un máximo de <strong>10 días hábiles</strong> desde que recibimos la solicitud. Si no podemos, te avisamos los motivos y la nueva fecha, que no pasará de <strong>5 días hábiles</strong> más.</li>
+            <li><strong>Reclamos</strong> (corrección, actualización o supresión de datos, o revocación de la autorización): los resolvemos en un máximo de <strong>15 días hábiles</strong> desde el día siguiente a su recepción. Si no podemos, te avisamos los motivos y la nueva fecha, que no pasará de <strong>8 días hábiles</strong> más.</li>
+          </ul>
+          <p>El reclamo debe incluir tu identificación, la descripción de los hechos, una dirección para responderte y los documentos que quieras aportar. Si falta algo, te lo pedimos dentro de los <strong>5 días</strong> siguientes a recibirlo; si pasan dos meses sin que lo completes, entendemos que desististe. Dentro de los 2 días hábiles siguientes a recibir un reclamo completo, lo registramos con la leyenda «reclamo en trámite» hasta resolverlo. Si recibimos un reclamo que no nos corresponde, lo trasladamos o te avisamos en 2 días hábiles. El acceso a tus datos es gratuito.</p>
+          <p>Si después de agotar este trámite considerás que no se respetaron tus derechos, podés presentar una queja ante la <strong>Superintendencia de Industria y Comercio</strong>, autoridad de protección de datos personales de Colombia.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.5): copias de seguridad y vigencia de la base de datos.
+             La frase «los datos que suprimimos ... no se vuelven a incorporar» es un compromiso operativo: hoy se cumple a mano
+             y los changes eliminacion-de-grupos y baja-de-cuenta-homesuite deben automatizarlo. Pablo decide si se publica antes. -->
         <section id="conservacion">
-          <h2>Conservación, seguridad y tus derechos</h2>
-          <p>Las sesiones vencen a los catorce días; las sesiones vencidas o revocadas se depuran después. Las invitaciones pendientes vencen a los treinta días y su estado puede conservarse para auditoría. Los datos y revisiones de Cuentas Claras se conservan mientras exista el grupo o sean necesarios para explicar su historial. Las copias de seguridad de producción se eliminan a los noventa días según la regla de retención del almacenamiento; una eliminación en el servicio puede persistir en esas copias hasta su vencimiento.</p>
-          <p>Usamos HTTPS, controles de acceso por grupo y secretos separados por entorno. Ningún sistema es infalible. Podés conocer, actualizar y rectificar tus datos, pedir información sobre su uso, solicitar su supresión o revocar tu autorización cuando corresponda. La eliminación autónoma de un grupo o cuenta todavía no está disponible en la interfaz.</p>
-          <p>Para ejercer estos derechos, escribí a <a href="mailto:pablotortorella@gmail.com">pablotortorella@gmail.com</a> indicando tu solicitud y un medio para responderte. Podemos pedirte información razonable para verificar tu identidad. Responderemos conforme a los plazos de la legislación colombiana; si un dato pertenece también al historial compartido de otras personas, explicaremos el alcance de la respuesta.</p>
-          <p>Esta política entra en vigor el 27 de octubre de 2026 y se aplica durante el tiempo en que tratemos los datos para las finalidades descritas. Si cambia el tratamiento, actualizaremos esta página y su fecha y comunicaremos los cambios sustanciales cuando corresponda.</p>
+          <h2>Conservación, copias de seguridad y vigencia</h2>
+          <p>Las sesiones vencen a los catorce días; las sesiones vencidas o revocadas se depuran después. Las invitaciones pendientes vencen a los treinta días y su estado puede conservarse para auditoría. Los datos y revisiones de Cuentas Claras se conservan mientras exista el grupo o sean necesarios para explicar su historial. Los tableros de Fun TasKing, su historial y sus adjuntos se conservan mientras exista el tablero; las tarjetas archivadas siguen en el tablero hasta que alguien las elimine.</p>
+          <p><strong>Vigencia de la base de datos.</strong> Conservamos tus datos mientras exista tu cuenta o el grupo o tablero del que formás parte. Las copias de seguridad de producción, que incluyen los adjuntos de Fun TasKing, vencen a los noventa días, así que un dato suprimido puede permanecer en ellas hasta ese plazo. Los datos que suprimimos por una solicitud no se vuelven a incorporar a la aplicación: si hubiera que restaurar una copia, antes de usarla se aplica de nuevo cada supresión.</p>
+          <p>Usamos HTTPS, controles de acceso por grupo y por tablero y secretos separados por entorno. Ningún sistema es infalible. La eliminación autónoma de un grupo o cuenta todavía no está disponible en la interfaz; mientras tanto, pedila por correo con el procedimiento de <a href="#derechos">Derechos, plazos y procedimiento</a>.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.6): personas que figuran en un grupo sin tener cuenta. -->
+        <section id="sin-cuenta">
+          <h2>Personas sin cuenta</h2>
+          <p>Si alguien te registró en un grupo de Cuentas Claras sin que tengas cuenta, esa persona aportó tu nombre. Si alguien te invitó a un tablero de Fun TasKing y todavía no entraste, guardamos tu email para que la invitación te espere. Podés escribirnos a <a href="mailto:pablotortorella@gmail.com">pablotortorella@gmail.com</a> para conocer, corregir o pedir la supresión de ese dato, con los plazos y el procedimiento de <a href="#derechos">Derechos, plazos y procedimiento</a>. Si el dato también forma parte del historial compartido de otras personas, te explicaremos el alcance de la respuesta.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.7): cambios sustanciales. -->
+        <section id="cambios">
+          <h2>Cambios en esta política</h2>
+          <p>Esta versión entra en vigor el 13 de noviembre de 2026 y se aplica durante el tiempo en que tratemos los datos para las finalidades descritas. Si el tratamiento cambia de forma sustancial, te lo comunicamos antes de que se aplique, con un aviso en la aplicación, y te pedimos aceptar la versión nueva. Cada cambio actualiza la fecha de «Última actualización» de esta página.</p>
         </section>
       </div>
     </div>

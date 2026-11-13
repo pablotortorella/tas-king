@@ -13,6 +13,12 @@ export const ACCOUNT_MENU_MARKER = "<!--account-menu-->";
 // Marcas que el servidor completa con el grupo de la URL (nombre con avatar en el encabezado y, para la persona titular, «Administrar grupo»).
 export const GROUP_MARKER = "<!--group-->";
 export const GROUP_MENU_MARKER = "<!--group-menu-->";
+// Advertencia junto a los campos de texto libre (nombres, descripciones y notas): HomeSuite no pide datos sensibles (Ley 1581, art. 5).
+export const SENSITIVE_HINT = '<span class="hint sensitive-hint">No escribas datos sensibles (salud, religión, afiliaciones).</span>';
+// Marcas de los textos legales: franja de versión próxima (encima del contenido) y pie con los enlaces a términos y privacidad. Dependen del
+// ambiente (producción o staging), así que el servidor las completa al responder (ver index.js).
+export const LEGAL_BAND_MARKER = "<!--legal-band-->";
+export const LEGAL_FOOTER_MARKER = "<!--legal-footer-->";
 
 export function escapeHtml(value) {
   return String(value).replace(/[&<>"']/gu, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -100,11 +106,12 @@ export function tabbar(groupHref) {
 }
 
 // `styles`, `scripts` (del mismo origen) y `bodyClass` permiten que un producto, como Remanso, sume lo suyo; sin ellos la salida es la de siempre.
-// `cuenta: false` no emite ninguna de las cuatro marcas de cuenta y grupo: el servidor no consulta la sesión y la página es igual para todas
-// las personas (las páginas «Sin conexión» que el service worker guarda en el dispositivo).
+// `cuenta: false` no emite ninguna de las cuatro marcas de cuenta y grupo ni las dos legales (franja y pie dependen de la sesión y del
+// ambiente): el servidor no consulta la sesión y la página es igual para todas las personas (las páginas «Sin conexión» que el service
+// worker guarda en el dispositivo).
 export function renderPage(title, content, { wide = false, groupHref = null, styles = [], scripts = [], bodyClass = "", favicon = "/icons/homesuite-favicon.v1.svg", cuenta = true } = {}) {
   const extraStyles = styles.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join("");
   const extraScripts = scripts.map(src => `<script type="module" src="${escapeHtml(src)}"></script>`).join("");
   const shellClass = `shell${wide ? " wide" : ""}${groupHref ? " has-tabbar" : ""}`;
-  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="${escapeHtml(favicon)}"><link rel="apple-touch-icon" sizes="180x180" href="/icons/homesuite-apple-touch-180.v1.png"><link rel="stylesheet" href="/app.css">${extraStyles}<script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><script src="/pwa.js" defer></script>${extraScripts}<body${bodyClass ? ` class="${escapeHtml(bodyClass)}"` : ""}><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a>${cuenta ? GROUP_MARKER : ""}<div class="header-actions">${cuenta ? ACCOUNT_MARKER : ""}${appMenu({ cuenta })}</div></header><main id="contenido" class="${shellClass}">${content}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="${LIGHT.bg}" media="(prefers-color-scheme: light)"><meta name="theme-color" content="${DARK.bg}" media="(prefers-color-scheme: dark)"><title>${escapeHtml(title)} · HomeSuite</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="${escapeHtml(favicon)}"><link rel="apple-touch-icon" sizes="180x180" href="/icons/homesuite-apple-touch-180.v1.png"><link rel="stylesheet" href="/app.css">${extraStyles}<script type="module" src="/ledger-ui.js"></script><script src="/shell.js" defer></script><script src="/pwa.js" defer></script>${extraScripts}<body${bodyClass ? ` class="${escapeHtml(bodyClass)}"` : ""}><a class="skip" href="#contenido">Saltar al contenido</a><header class="topbar${wide ? "" : " narrow"}"><a class="brand" href="/">${LOGO}<span>HomeSuite</span></a>${cuenta ? GROUP_MARKER : ""}<div class="header-actions">${cuenta ? ACCOUNT_MARKER : ""}${appMenu({ cuenta })}</div></header>${cuenta ? LEGAL_BAND_MARKER : ""}<main id="contenido" class="${shellClass}">${content}${cuenta ? LEGAL_FOOTER_MARKER : ""}</main>${groupHref ? tabbar(groupHref) : ""}</body></html>`;
 }

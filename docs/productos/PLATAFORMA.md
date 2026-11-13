@@ -97,6 +97,18 @@ operar con información irreemplazable. Estado actual y dependencias de integrac
 no se copian aquí: consultar STATUS y el change correspondiente. Esta ficha no
 habilita publicar producción ni convierte condiciones pendientes en excepciones.
 
+## Textos legales y aceptación
+
+La política de privacidad y los términos viven en `apps/site/public/privacidad.html` y `terminos.html`; su **versión** es la fecha de
+«Última actualización» y la constante de `apps/app/src/legal.js` debe coincidir (una prueba lo exige). Toda pantalla de la app con
+«Continuar con Google» muestra el aviso de aceptación con ambos enlaces y la declaración de 18 años; el pie de la app los enlaza. Al volver
+de Google se registra en `legal_acceptances` la versión que la persona vio al empezar; si cambia una versión, `/aceptar` la pide antes de
+seguir (la puerta se enciende con `LEGAL_GATE=on` y se despliega apagada). Cerrar sesión, la descarga de los datos propios y los recursos
+estáticos funcionan siempre; la baja de cuenta debe sumarse a las rutas exentas (`GATE_EXEMPT`). Las solicitudes de datos por correo se
+atienden con [su procedimiento](../HOMESUITE_SOLICITUDES_DATOS.md) y los proveedores que tratan datos figuran en
+[encargados](../HOMESUITE_ENCARGADOS.md). Los textos legales son propuestas que revisa Pablo: no se publican por haberse escrito. Specs en
+`openspec/changes/politica-y-aceptacion/`.
+
 ## Perfil compartido
 
 Acuerdos de nombre, avatar y apodo por grupo en la
