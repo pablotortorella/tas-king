@@ -8,8 +8,8 @@ import { PRODUCTION_APP_HOST } from "./tools.js";
 // completo en hora de Colombia). Mientras exista, la página publicada ya muestra el texto nuevo, toda pantalla autenticada muestra la
 // franja de aviso y la puerta sólo exige la versión nueva desde `effectiveFrom`. Al regir, se pasa `upcoming.version` a `version`.
 export const LEGAL_DOCUMENTS = Object.freeze({
-  terms: Object.freeze({ version: "2026-11-04", path: "/terminos", title: "Términos y condiciones" }),
-  privacy: Object.freeze({ version: "2026-11-04", path: "/privacidad", title: "Política de privacidad" }),
+  terms: Object.freeze({ version: "2026-11-13", path: "/terminos", title: "Términos y condiciones" }),
+  privacy: Object.freeze({ version: "2026-11-13", path: "/privacidad", title: "Política de privacidad" }),
 });
 
 export const LEGAL_KEYS = Object.freeze(["terms", "privacy"]);

@@ -89,6 +89,37 @@ describe("términos y condiciones", () => {
   });
 });
 
+// Un solo texto para toda la suite: desde el 2026-11-10 Tareas (antes Fun TasKing) es parte de HomeSuite y ya no tiene condiciones propias.
+describe("un texto para toda la suite", () => {
+  it.each(["privacidad", "terminos"])("%s cubre Tareas y Jardín Zen con su propia sección", async (name) => {
+    const html = await page(name);
+    for (const id of ["tareas", "jardin-zen"]) {
+      expect(html, `sección #${id}`).toContain(`<section id="${id}">`);
+      expect(html, `índice de #${id}`).toContain(`href="#${id}"`);
+    }
+  });
+
+  it.each(["privacidad", "terminos"])("%s ya no trata a Fun TasKing como una aplicación aparte", async (name) => {
+    const text = plain(await page(name));
+    expect(text).not.toMatch(/aplicación independiente|propias condiciones|dirección independiente/u);
+  });
+
+  it("la política dice qué guarda Tareas, quién lo ve y qué pasó con la copia de Fun TasKing", async () => {
+    const text = plain(await page("privacidad"));
+    expect(text).toMatch(/tableros/u);
+    expect(text).toMatch(/adjuntos/u);
+    expect(text).toMatch(/integrantes del tablero/u);
+    expect(text).toMatch(/10 de noviembre de 2026/u);
+  });
+
+  it("los términos absorben lo vigente de los de Fun TasKing: exportar, sin usos críticos y la licencia GPL v3", async () => {
+    const text = plain(await page("terminos"));
+    expect(text).toMatch(/export/u);
+    expect(text).toMatch(/información crítica/u);
+    expect(text).toMatch(/GNU General Public License v3/u);
+  });
+});
+
 describe("fecha de «Última actualización»", () => {
   it.each(["privacidad", "terminos"])("%s tiene una fecha legible", async (name) => {
     expect(updatedDate(await page(name))).toMatch(/^\d{4}-\d{2}-\d{2}$/u);
