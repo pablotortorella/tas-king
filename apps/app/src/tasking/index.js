@@ -7,7 +7,7 @@ import { ensureLocalUser } from '../groups.js';
 import { inspectCsrfRequest, createCsrfToken } from '../csrf.js';
 import { checkRateLimit } from '../rate-limit.js';
 import { ensurePersonalBoard, resolveIdentity, TaskingError } from './db/helpers.js';
-import { TASKING_DOCUMENT } from './document.js';
+import { taskingDocument } from './document.js';
 import { setupBoardRoutes } from './routes/boards.js';
 import { setupCardRoutes } from './routes/cards.js';
 import { setupColumnRoutes } from './routes/columns.js';
@@ -87,7 +87,7 @@ export function registerTaskingRoutes(app){
       throw error;
     }
     await ensurePersonalBoard(c.env.DB,actor.identity_id);
-    c.header('Cache-Control','private, no-store');return c.html(TASKING_DOCUMENT);
+    c.header('Cache-Control','private, no-store');return c.html(taskingDocument(new URL(c.req.url).hostname));
   });
   router.get('/tareas/salir',async c=>{
     const session=await signedInUser(c);if(!session)return c.redirect('/',303);

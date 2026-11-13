@@ -28,11 +28,17 @@ Change `politica-y-aceptacion` (primero de la serie de datos reales, decisión d
     `cuenta: false`, las páginas sin conexión no los llevan, porque dependen de la sesión y del ambiente.
   - La puerta exime el manifiesto y `/sin-conexion*`; si no, la instalación fallaría con una versión pendiente. `/sw.js` y `/pwa.js` ya
     estaban cubiertos por la regla de estáticos.
-  - **Tareas queda detrás de la puerta** (`/tareas` y `/api/tareas/*`), pero su documento propio (`tasking/document.js`) no lleva el pie legal.
-  - **Los borradores de privacidad y términos dicen que Fun TasKing es una aplicación aparte.** Desde el 2026-11-10 es parte de HomeSuite
-    (tableros, tarjetas y adjuntos en R2 `homesuite-tasking-uploads`). Hay que actualizar esos textos y el registro de encargados antes de
-    aprobarlos. Lo decide Pablo y no se tocó.
-  - El texto «Copia de la app» del PR #144 se fusiona con estos borradores sin conflicto.
+  - **Tareas queda detrás de la puerta** (`/tareas` y `/api/tareas/*`). Su pie enlaza los términos y la política de toda la suite.
+- **Textos unificados para toda la suite (2026-11-13, pedido de Pablo):**
+  - Los dos borradores pasan a la versión `2026-11-13` (también en `legal.js`) y cubren Cuentas Claras, Fun TasKing (Tareas), Remanso y
+    Jardín Zen. Cada herramienta tiene su sección.
+  - Los términos absorben lo vigente de los anteriores de Fun TasKing: exportar los tableros, no usarlos para información crítica, y la
+    licencia GNU GPL v3 con su código en GitHub. La parte de «sin garantías» se reemplaza por la sección «Responsabilidad» de HomeSuite.
+  - La política dice qué guarda Tareas: tableros, historial, integrantes, adjuntos en R2 privado, invitaciones por email, lo que ve quien
+    administra y el almacenamiento local. También incluye el texto «Copia de la app» del PR #144.
+  - El pie de Tareas enlaza los textos del sitio del ambiente. `/tareas/terminos-anteriores` queda solo como archivo.
+  - **Decisión de Pablo pendiente:** hasta cuándo se conserva la copia congelada del Fun TasKing original (D1 `tas-king` y R2
+    `tas-king-uploads`). La política dice «la vamos a eliminar cuando dejemos de necesitarla».
 - **Pendiente de Pablo:** leer y aprobar los textos, aceptar los DPA de Cloudflare y GitHub, crear la planilla de solicitudes, revisar los festivos
   y decidir lo marcado en `tasks.md`.
 

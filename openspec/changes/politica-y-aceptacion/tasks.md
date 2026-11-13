@@ -55,6 +55,8 @@ Cada tarea redacta el texto propuesto en un commit aparte del código; ninguno s
   - BORRADOR redactado el 2026-11-04 (comentario «BORRADOR PENDIENTE DE REVISIÓN DE PABLO» en el HTML); **no aprobado**, ver 4.10.
 - [x] 4.9 Agregar la prueba del sitio que falla si `privacidad.html` carece de alguna de las secciones mínimas (responsable, finalidades, derechos, procedimiento, plazos, vigencia, mención de la SIC) o si `terminos.html` omite los 18 años; verificar con `npm run test:homesuite-site`
   - Hecho: `apps/site/test/legal.test.js`; `npm run test:homesuite-site` pasa.
+- [x] 4.11 (2026-11-13, pedido de Pablo) Unificar los textos para toda la suite después de la integración de Fun TasKing (#145): secciones «Fun TasKing (Tareas)» y «Jardín Zen» en los dos textos, términos anteriores de Fun TasKing absorbidos (exportar, sin usos críticos, GPL v3), «Copia de la app» del #144, versión `2026-11-13` y pie de Tareas con los enlaces del ambiente (`taskingDocument`)
+  - Pruebas: `apps/site/test/legal.test.js` («un texto para toda la suite») y `apps/app/test/legal.test.js` (pie de Tareas por ambiente). Pendiente de Pablo: hasta cuándo se conserva la copia congelada del Fun TasKing original.
 - [ ] 4.10 Pablo revisa los textos, decide si los lee una persona abogada, y registra la aprobación en el PR antes de integrar el cambio de las páginas
   - **Espera a Pablo.** Lista de los bloques de borrador: cada comentario «BORRADOR PENDIENTE DE REVISIÓN DE PABLO» en `apps/site/public/privacidad.html` (tareas 4.1 a 4.7) y `terminos.html` (4.8). Al aprobar: quitar esos comentarios, y si cambia la fecha de «Última actualización», actualizar las dos páginas, la frase «entra en vigor el …» y la constante de `apps/app/src/legal.js`.
 

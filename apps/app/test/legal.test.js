@@ -4,6 +4,7 @@ import {
   requiredVersions, sanitizeVersions, siteUrl, SITE_URL, upcomingNotices, useLegalDocuments,
 } from "../src/legal.js";
 import { renderAcceptPage, renderLegalBand, renderLegalFooter, renderSignInNotice, signInHref } from "../src/legal-ui.js";
+import { taskingDocument } from "../src/tasking/document.js";
 
 // Versiones de los textos legales, enlaces por ambiente, franja de versión próxima y puerta (design.md, D1, D4, D5 y D6).
 afterEach(() => useLegalDocuments(null));
@@ -14,6 +15,13 @@ const day = (iso, hour = 12) => Date.parse(`${iso}T${String(hour).padStart(2, "0
 describe("enlaces a los textos legales por ambiente", () => {
   it("la aplicación de producción lleva al sitio de producción", () => {
     expect(legalLinks("app.homesuite.info")).toEqual({ terms: "https://homesuite.info/terminos", privacy: "https://homesuite.info/privacidad" });
+  });
+
+  it.each([["app.homesuite.info", SITE_URL.production], ["staging.homesuite.info", SITE_URL.staging]])("el pie de Tareas en %s enlaza los textos de toda la suite", (host, base) => {
+    const footer = /<footer class="app-footer">[\s\S]*?<\/footer>/u.exec(taskingDocument(host))[0];
+    expect(footer).toContain(`href="${base}/terminos"`);
+    expect(footer).toContain(`href="${base}/privacidad"`);
+    expect(footer).not.toContain("terminos-anteriores");
   });
 
   it.each(["staging.homesuite.info", "localhost", "127.0.0.1", "app.test"])("%s lleva al sitio de staging", (host) => {
@@ -93,7 +101,9 @@ describe("qué está pendiente de aceptar", () => {
   });
 
   it("solo valen las versiones que el sistema publicó", () => {
-    expect(sanitizeVersions({ terms: "2026-11-04", privacy: "1999-01-01", otro: "2026-11-04" })).toEqual({ terms: "2026-11-04" });
+    expect(sanitizeVersions({ terms: "2026-11-13", privacy: "1999-01-01", otro: "2026-11-13" })).toEqual({ terms: "2026-11-13" });
+    // El borrador del 2026-11-04 nunca se publicó: el del 2026-11-13 lo reemplazó antes de integrarse.
+    expect(sanitizeVersions({ terms: "2026-11-04" })).toEqual({});
     expect(sanitizeVersions({ terms: "no", privacy: 5 }, undefined, required)).toEqual(required);
     expect(sanitizeVersions(null)).toEqual({});
     const documents = docs({}, { upcoming: { version: "2027-01-15", effectiveFrom: "2027-01-15" } });
