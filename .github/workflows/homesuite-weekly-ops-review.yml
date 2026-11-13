@@ -1,0 +1,29 @@
+name: HomeSuite weekly ops review
+
+# Cita semanal (no es una alerta): abre un issue con la lista de comprobación de docs/HOMESUITE_VIGILANCIA.md.
+# slow_book_open y los 5xx se revisan acá y no generan avisos individuales. Solo usa GITHUB_TOKEN.
+on:
+  schedule:
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/alertas-operativas.mjs
+          sparse-checkout-cone-mode: false
+      - name: Open the weekly review issue
+        run: node scripts/alertas-operativas.mjs revision-semanal

@@ -25,7 +25,7 @@
 | Historial | revisiones y eventos | Inmutable y retenido junto al libro para explicar cada cambio. |
 | Idempotencia | claves, hash y respuesta confirmada | Se conserva mientras pueda repetirse la operación correspondiente; no se purga hasta fijar la ventana de reintentos de la API. |
 | Operación | request ID y logs estructurados | Según la retención configurada en Workers Observability. Nunca incluye cookies, tokens, email ni cuerpos. |
-| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción: copia en R2 privado con expiración a los 90 días, restore drill de la base vacía y primera ejecución automatizada acreditados (2026-10-27). Falta observar la primera ejecución programada y alertas. |
+| Backup | bookmark, SQL y manifiesto | Staging: artefacto local previo a cada migración. Producción: copia en R2 privado con expiración a los 90 días, restore drill de la base vacía y primera ejecución automatizada acreditados (2026-10-27). La ejecución programada corrió sola (2026-11-03, corrida 41638511964). Alertas de respaldo fallido y desactualizado: implementadas en una rama, sin integrar ni verificar (ver [vigilancia](HOMESUITE_VIGILANCIA.md)). |
 
 ## Exportación y eliminación
 
@@ -58,7 +58,7 @@ No abrir producción a usuarios ni registrar finanzas reales hasta comprobar:
 - exportación y eliminación administrada del producto;
 - rotación de credenciales que hayan quedado expuestas durante la preparación;
 - recursos, OAuth, secretos, dominio y D1 exclusivos de producción;
-- monitoreo, alertas y revisión de logs sin datos sensibles;
+- monitoreo, alertas y revisión de logs sin datos sensibles (avisos mínimos en GitHub y Cloudflare, revisión semanal y límites en [vigilancia](HOMESUITE_VIGILANCIA.md); implementado en una rama, sin integrar, sin aceptar y con las notificaciones de Cloudflare sin configurar);
 - recorrido manual con dos cuentas reales y pruebas de autorización completas.
 
 La aprobación para staging no implica aprobación para producción.

@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '17 5 * * *'
   workflow_dispatch:
+    inputs:
+      simulate:
+        description: 'Ensayo del aviso: hace fallar el respaldo antes de usar secretos y abre un issue "[Simulacro]".'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,6 +22,11 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: 30e57650ec41085db3a006d596eaecc7
       CLOUDFLARE_API_TOKEN: ${{ secrets.HOMESUITE_PROD_BACKUP_API_TOKEN }}
     steps:
+      - name: Simulated failure (only when requested by hand)
+        if: ${{ inputs.simulate }}
+        run: |
+          echo "Falla simulada para ensayar el aviso."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -34,3 +44,25 @@ jobs:
           prefix="$(sed -n 's|^Backup de HomeSuite completo en R2: homesuite-app-backups/\(production/[0-9]*T[0-9]*Z\)$|\1|p' "$log" | tail -n 1)"
           test -n "$prefix"
           npm run db:verify-backup:homesuite-app -- "$prefix"
+
+  # Aviso de falla: abre (o comenta, sin duplicar) un issue asignado al operador con el enlace a la corrida. No usa secretos de
+  # Cloudflare ni logs: el repositorio es público. Guía: docs/HOMESUITE_VIGILANCIA.md
+  notify-failure:
+    needs: backup
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SIMULATE: ${{ inputs.simulate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/alertas-operativas.mjs
+          sparse-checkout-cone-mode: false
+      - name: Open or update the failure issue
+        run: node scripts/alertas-operativas.mjs respaldo-fallido
