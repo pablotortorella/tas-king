@@ -299,7 +299,7 @@ do_deploy_skip_tests() {
     "Útil cuando los tests fallan por razones de infraestructura (flakiness, browser no disponible) y ya sabés que el código está bien. Ahorra 2-3 minutos de CI."
   confirm "¿Deployar a staging SIN tests? [s/N]" || { echo -e "\n  ${DIM}Cancelado.${NC}"; pause; return; }
   confirm "¿Confirmás que omitir tests es intencional? [s/N]" || { echo -e "\n  ${DIM}Cancelado.${NC}"; pause; return; }
-  run "wrangler deploy --env staging && npm run db:migrate:staging"
+  run "node scripts/wrangler-deploy.mjs --env staging && npm run db:migrate:staging"
   pause
 }
 

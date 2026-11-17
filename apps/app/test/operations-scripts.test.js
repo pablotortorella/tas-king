@@ -11,7 +11,7 @@ describe("operación recuperable", () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
     const deploy = pkg.scripts["deploy:homesuite-app:staging"];
     expect(deploy.indexOf("db:backup:homesuite-app:staging")).toBeLessThan(deploy.indexOf("db:migrate:homesuite-app:staging"));
-    expect(deploy.indexOf("db:migrate:homesuite-app:staging")).toBeLessThan(deploy.indexOf("wrangler deploy"));
+    expect(deploy.indexOf("db:migrate:homesuite-app:staging")).toBeLessThan(deploy.indexOf("node scripts/wrangler-deploy.mjs"));
   });
 
   it("el restore drill sólo usa una base local aislada y verifica integridad y claves foráneas", () => {

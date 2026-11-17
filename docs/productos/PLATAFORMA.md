@@ -80,7 +80,7 @@ de grupo. Las navegaciones siempre van a la red; la página sin conexión solo a
 Rutas nuevas: `/manifest.webmanifest`, `/sw.js`, `/pwa.js`, `/sin-conexion`, `/sin-conexion/jardin-zen` y
 `/sin-conexion/remanso`.
 
-- Apagado de emergencia: publicar con `PWA_SW=off` (`--var PWA_SW:off` en `wrangler deploy`). El service worker
+- Apagado de emergencia: publicar con `PWA_SW=off` (`--var PWA_SW:off` en `node scripts/wrangler-deploy.mjs`). El service worker
   queda sin manejador `fetch`, borra sus cachés y se desregistra. Sin la variable, vuelve el modo normal.
 - Íconos: `npm run pwa:iconos:homesuite-app`. Lista de precarga: `npm run pwa:precache:homesuite-app`; hay que
   correrlo cuando cambia algún archivo de `apps/app/public/jardin-zen/` o `remanso/`, porque una prueba falla si la
