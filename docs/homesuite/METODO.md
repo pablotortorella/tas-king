@@ -43,6 +43,22 @@ Antes de concluir que algo «no está» o rehacerlo, ubicarlo en este orden:
 5. **Historia**: el clon de la nube es superficial (~50 commits); `git log -S` y
    `git blame` no ven cambios antiguos hasta correr `git fetch --unshallow`.
 
+### Qué va en STATUS
+
+STATUS registra sólo lo que ninguna otra fuente sabe: **cada publicación y cada
+verificación**. El estado de un PR (abierto, en revisión, mergeado) vive en GitHub
+y no se escribe en STATUS, en el handoff, en el backlog ni en las fichas. Un PR no
+anota su propio estado («en PR», «espera la orden», «sin integrar»): esa frase se
+vuelve falsa en el momento del merge y nadie vuelve a escribirla.
+
+- **Publicación:** quien publica la registra en la misma sesión: fecha, entorno,
+  unidad, SHA de git de `main`, ID de versión de Cloudflare, migraciones y
+  resultado del smoke.
+- **Verificación:** qué se comprobó, quién, cómo y en qué ambiente o dispositivo.
+- **Lo que está en `main` sin publicar no se escribe: se calcula** con el SHA de la
+  última publicación de esa unidad registrada en STATUS:
+  `git log --oneline <SHA publicado>..origin/main`.
+
 ### Qué va en el handoff
 
 Los PRs abiertos en GitHub son la lista de trabajo pendiente. El handoff guarda
@@ -50,7 +66,7 @@ sólo lo que no vive en un PR: un despliegue o una prueba manual pendiente, una
 decisión que espera a Pablo, una rama sin PR. Cada asunto es un bloque corto con
 formato fijo:
 
-- **Qué:** PR #N o rama, y estado (abierto / integrado / desplegado).
+- **Qué:** PR #N o rama; su estado se mira en GitHub, no se copia.
 - **Falta:** el próximo paso concreto.
 - **Cuidado:** riesgos o qué no tocar.
 - **Fecha** de la última comprobación.
@@ -129,6 +145,6 @@ del producto, del test y del entorno con evidencia; no ocultarlo con reintentos.
 
 Distinguir implementado en rama, integrado, desplegado y aceptado. Documentación
 sola se valida por enlaces, coherencia y diff; no requiere desplegar la aplicación.
-Actualizar el handoff cuando se solicita o existe una entrega explícita de trabajo,
+Actualizar el handoff cuando cambia un estado ([al retomar y al cerrar](#al-retomar-y-al-cerrar)),
 sin duplicar el historial de STATUS. Archivar OpenSpec cuando se verificó el cambio,
 no sólo porque se generaron los archivos.

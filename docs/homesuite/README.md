@@ -38,8 +38,9 @@ real, se señala la discrepancia antes de resolverla.
    evolución; las especificaciones fijan comportamiento funcional.
 3. Las fichas de producto añaden detalles propios. Sólo pueden apartarse de una
    regla común mediante una excepción explícita y revisada.
-4. Runbooks contienen comandos; STATUS registra hechos fechados y estados de
-   implementación; backlog registra pendientes; handoff facilita retomar. Ninguno
+4. Runbooks contienen comandos; STATUS registra publicaciones y verificaciones
+   fechadas ([qué va en STATUS](METODO.md#qué-va-en-status)); el estado de los PRs
+   vive en GitHub; backlog registra pendientes; handoff facilita retomar. Ninguno
    redefine políticas ni convierte una intención en una capacidad implementada.
 
 Ante contradicciones, comprobar código, pruebas y evidencia fechada, registrar la
