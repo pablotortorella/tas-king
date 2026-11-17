@@ -4,7 +4,7 @@ Actualización: 2026-11-10. [PR #145](https://github.com/pablotortorella/tas-kin
 integrado en `main` y publicado en staging y producción, con el recorrido real de
 producción aceptado por Pablo. El change conserva escenarios manuales pendientes;
 **no está archivado**. Versiones, hashes,
-copias y CI: [STATUS](../STATUS.md#tasking-en-homesuite--publicado-en-producción--2026-11-10).
+copias y CI: [STATUS](../STATUS_HISTORIAL.md#tasking-en-homesuite--publicado-en-producción--2026-11-10).
 [Runbook y recursos](MIGRACION-HOMESUITE.md).
 
 ## Comprobaciones locales
