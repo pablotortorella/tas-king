@@ -88,7 +88,9 @@ Rutas nuevas: `/manifest.webmanifest`, `/sw.js`, `/pwa.js`, `/sin-conexion`, `/s
 - Sin *navigation preload*: con él, Chromium pide dos veces `/auth/google` y el acceso con Google puede fallar.
 - El CI no corre los E2E de la app (`test:e2e:homesuite-app` no está en `.github/workflows/test.yml`; comprobado
   2026-11-12), así que `pwa.spec.js` y el resto de esa suite se corren a mano antes de integrar cambios de la app.
-- TasKing queda fuera: vive en otro Worker y en otro origen.
+- Tareas (`/tareas`, desde el 2026-11-10) usa el mismo manifiesto, los mismos íconos de instalación y el mismo `/pwa.js`, con
+  favicon propio. Sin conexión muestra la página genérica `/sin-conexion`. La caché nunca guarda `/tareas`, `/api/tareas/*` ni
+  `/tareas/adjuntos/*` (`e2e/tasking/migration-ui.spec.js`). No hay Tareas sin conexión.
 
 ## Límites
 

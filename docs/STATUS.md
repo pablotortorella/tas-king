@@ -2,17 +2,18 @@
 
 **Última actualización**: 2026-11-13
 
-## Integración de las ramas sueltas después de Tareas — en PRs — 2026-11-11 (actualizado 2026-11-13)
+## Integración de las ramas sueltas después de Tareas — cuatro mergeadas, quedan los textos legales — 2026-11-11 (actualizado 2026-11-13)
 
 Pedido de Pablo: cuando Tareas estuviera en producción, integrar todo lo que quedó suelto en otras ramas y dejar documentado el estado.
-Claude rebasó cada rama sobre `main` `ba84a10`, que ya tiene Tareas y la PWA. Al 2026-11-13 solo se mergeó #143; los demás esperan cada uno la orden de Pablo.
+Claude rebasó cada rama sobre `main` `ba84a10`, que ya tiene Tareas y la PWA. El 2026-11-13, con la orden de Pablo, se mergearon #153, #152, #149 y #150 (`main` `06c619f`). Quedan #151 y #144, que esperan su revisión de los textos.
 
 | PR | Rama | Qué trae | Orden y notas |
 |---|---|---|---|
 | [#143](https://github.com/pablotortorella/tas-king/pull/143) | `docs/pwa-prueba-iphone` | Documentación de la PWA: protocolo de iPhone, handoff y backlog | **Mergeado el 2026-11-12** (`44c1359`). Este bloque y el de la PWA quedaron en un PR aparte. |
-| [#152](https://github.com/pablotortorella/tas-king/pull/152) | `claude/mobile-drag-drop-firefox-ecevnu` | Handoff corto (solo lo que no vive en un PR) y cómo retomar trabajo de otra sesión | De otra sesión. Reemplaza `AI_HANDOFF.md`, así que lo que hay que hacer con estas ramas vive en él y en este bloque. |
-| [#149](https://github.com/pablotortorella/tas-king/pull/149) | `docs/respaldo-programado-confirmado` | El respaldo diario programado corrió solo y con éxito del 2026-11-03 al 2026-11-10 | Solo documentación. |
-| [#150](https://github.com/pablotortorella/tas-king/pull/150) | `feature/alertas-minimas` | Avisos por issue de GitHub: fallo del respaldo, `/healthz`, antigüedad del respaldo y revisión semanal | Va después de #149, porque está apilada sobre esa rama. Al mergear empiezan a correr los workflows programados. |
+| [#153](https://github.com/pablotortorella/tas-king/pull/153) | `docs/estado-pwa-produccion` | Este bloque y el de la PWA en producción | **Mergeado el 2026-11-13.** |
+| [#152](https://github.com/pablotortorella/tas-king/pull/152) | `claude/mobile-drag-drop-firefox-ecevnu` | Handoff corto (solo lo que no vive en un PR) y cómo retomar trabajo de otra sesión | **Mergeado el 2026-11-13.** Reemplazó `AI_HANDOFF.md` por la versión corta (historia en `AI_HANDOFF_HISTORIAL.md`). |
+| [#149](https://github.com/pablotortorella/tas-king/pull/149) | `docs/respaldo-programado-confirmado` | El respaldo diario programado corrió solo y con éxito del 2026-11-03 al 2026-11-10 | **Mergeado el 2026-11-13.** |
+| [#150](https://github.com/pablotortorella/tas-king/pull/150) | `feature/alertas-minimas` | Avisos por issue de GitHub: fallo del respaldo, `/healthz`, antigüedad del respaldo y revisión semanal | **Mergeado el 2026-11-13.** Los workflows programados corren desde `main`; falta el checklist de vigilancia. |
 | [#151](https://github.com/pablotortorella/tas-king/pull/151) | `feature/politica-y-aceptacion` | Textos legales en borrador, aviso y registro de aceptación, puerta (`LEGAL_GATE`), solicitudes de datos y encargados | Lleva la migración `0014`. E2E locales en verde: app 214, Remanso 39, Tareas 79. Los textos esperan la revisión de Pablo y hablan de Fun TasKing como si fuera una aplicación aparte. |
 | [#144](https://github.com/pablotortorella/tas-king/pull/144) | `docs/privacidad-copia-app` | Texto «Copia de la app» en la política | Espera la revisión de Pablo. Se fusiona sin conflicto con los borradores legales. |
 
@@ -21,11 +22,11 @@ Claude rebasó cada rama sobre `main` `ba84a10`, que ya tiene Tareas y la PWA. A
   (`feature/migrar-tasking-homesuite`, `docs/tasking-*`). Los worktrees `agent-*` se pueden quitar cuando se mergeen sus PRs.
 - No se tocó la rama de Pablo `docs/dock-homesuite-backlog`, que tiene un cambio sin commitear en `docs/PRODUCT_BACKLOG.md`.
 
-## Alertas mínimas de operación — en PR, sin integrar ni verificar — 2026-11-11 (implementadas el 2026-11-03)
+## Alertas mínimas de operación — en `main` desde 2026-11-13, sin verificar (implementadas el 2026-11-03)
 
-**Estado: implementado el 2026-11-03 en la rama `feature/alertas-minimas` y rebasado sobre `main` el 2026-11-11
-(después de la migración de Tareas); sin integrar ni aceptar.** Change `alertas-minimas-homesuite`. Los workflows programados solo corren desde `main`: empiezan a
-correr al mergear; hasta entonces los caminos se ensayaron únicamente con pruebas unitarias y un `gh` simulado. Guía y checklist: [vigilancia](HOMESUITE_VIGILANCIA.md).
+**Estado: implementado el 2026-11-03 en la rama `feature/alertas-minimas` e integrado en `main` el 2026-11-13 (PR #150, por orden de Pablo); sin aceptar.** Change `alertas-minimas-homesuite`. GitHub registró los
+workflows (`HomeSuite production health`, `HomeSuite backup freshness`, `HomeSuite weekly ops review`, activos); los caminos de aviso solo se
+ensayaron con pruebas unitarias y un `gh` simulado, hasta que se complete el checklist. Guía y checklist: [vigilancia](HOMESUITE_VIGILANCIA.md).
 
 - **Qué trae:** job `notify-failure` en el respaldo diario, `homesuite-production-health.yml` (`/healthz` cada 30 minutos con tres
   intentos), `homesuite-backup-freshness.yml` (respaldo exitoso de menos de 26 horas, diario 20:00 UTC) y

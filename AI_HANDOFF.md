@@ -22,34 +22,39 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 ## Abiertos
 
 ### Integrar las ramas sueltas
-- **Qué:** plan de Pablo del 2026-11-10, que se activa con Tareas en producción (ya
-  ocurrió). PRs abiertos [#144](https://github.com/pablotortorella/tas-king/pull/144),
-  [#149](https://github.com/pablotortorella/tas-king/pull/149),
-  [#150](https://github.com/pablotortorella/tas-king/pull/150) y
-  [#151](https://github.com/pablotortorella/tas-king/pull/151).
-- **Falta:** de a uno: actualizar contra `main`, pruebas, `git cherry` para descartar
-  lo ya absorbido y merge sólo con la orden de Pablo.
-- **Cuidado:** #144 y #151 reescriben la misma página de privacidad y ambos esperan
-  la revisión de Pablo. #150 toca `package.json` y `package-lock.json`. #149 puede
-  estar desactualizado: contrastarlo con el estado real del respaldo. La rama
-  `docs/dock-homesuite-backlog` tiene un cambio de Pablo sin commitear en su
+- **Qué:** plan de Pablo del 2026-11-10. El 2026-11-13, con su orden («hagamos en ese
+  orden»), se mergearon #153 (STATUS), #152 (este handoff), #149 (respaldo) y #150
+  (alertas). Quedan abiertos [#151](https://github.com/pablotortorella/tas-king/pull/151)
+  (textos legales y aceptación) y [#144](https://github.com/pablotortorella/tas-king/pull/144)
+  («Copia de la app»).
+- **Falta:** que Pablo revise los textos de #151 y #144. Antes de aprobar #151 hay que
+  decidir cómo nombrar a Tareas: los borradores todavía dicen que Fun TasKing es una
+  aplicación aparte. Después mergear #151, luego #144, y publicar con orden explícita
+  (migración `0014`, sitio, app con `LEGAL_GATE` apagada en producción).
+- **Cuidado:** los dos se fusionaban sin conflicto con `main` `06c619f` (2026-11-13). El
+  CI tiene E2E de Tareas inestables (`checklists.spec.js` y
+  `card-mutation-performance.spec.js`): fallaron en #150 y #152 y pasaron al reintentar.
+  La rama `docs/dock-homesuite-backlog` tiene un cambio de Pablo sin commitear en su
   máquina: no tocarla sin preguntar.
-- **Fecha:** 2026-11-12 (lista de PRs abiertos comprobada en GitHub).
+- **Fecha:** 2026-11-13.
 
-### Extender la PWA a `/tareas`
-- **Qué:** pedido de Pablo (bloque de Codex, arriba). Sin rama ni PR.
-- **Falta (alcance básico acordado):** página sin conexión propia de Tareas (hoy cae
-  en la genérica); `/tareas` en el E2E que comprueba que la caché no guarde datos
-  privados; revisar instalación y actualización con Tareas servido; prueba manual en
-  Android, escritorio e iPhone. Nada de Tareas sin conexión. Actualizar la ficha de
-  [plataforma](docs/productos/PLATAFORMA.md#app-instalable), que todavía dice que
-  TasKing queda fuera.
-- **Cuidado:** partir de una base que incluya el PR #145. No cachear HTML
-  autenticado, API, datos ni adjuntos privados. Archivos compartidos con Tareas:
-  `apps/app/src/ui-parts.js`, `apps/app/src/index.js`, `apps/app/public/_headers`;
-  pruebas que avisan: `pwa-precarga.test.js`, `shell-characterization.test.js` y
-  `e2e/pwa.spec.js`.
-- **Fecha:** 2026-11-12.
+### Alertas mínimas: checklist de vigilancia
+- **Qué:** con #150 en `main`, desde el 2026-11-13 corren los workflows programados
+  (salud cada 30 minutos, antigüedad del respaldo y revisión semanal).
+- **Falta (Pablo):** el checklist de [vigilancia](docs/HOMESUITE_VIGILANCIA.md):
+  - la etiqueta `alerta-operativa`;
+  - los ensayos `simulate`;
+  - que lleguen los avisos por correo y en la app;
+  - las notificaciones de Cloudflare.
+- **Cuidado:** hasta completar el checklist, los avisos no se dan por aceptados.
+- **Fecha:** 2026-11-13.
+
+### PWA en `/tareas`: página sin conexión propia (opcional)
+- **Qué:** lo básico ya lo hizo Codex con #145 (ver [plataforma](docs/productos/PLATAFORMA.md#app-instalable)).
+- **Falta:** solo si Pablo la quiere, una página «Sin conexión» propia de Tareas (hoy
+  cae en la genérica). Las pruebas manuales van con «Pruebas físicas», abajo.
+- **Cuidado:** no cachear HTML autenticado, API, datos ni adjuntos privados.
+- **Fecha:** 2026-11-13.
 
 ### Pruebas físicas de la PWA
 - **Qué:** la PWA está en producción sin probar en iPhone; el apagado en Android
