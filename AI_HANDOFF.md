@@ -21,22 +21,33 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 
 ## Abiertos
 
-### Integrar las ramas sueltas
-- **Qué:** plan de Pablo del 2026-11-10. El 2026-11-13, con su orden («hagamos en ese
-  orden»), se mergearon #153 (STATUS), #152 (este handoff), #149 (respaldo) y #150
-  (alertas). Quedan abiertos [#151](https://github.com/pablotortorella/tas-king/pull/151)
-  (textos legales y aceptación) y [#144](https://github.com/pablotortorella/tas-king/pull/144)
-  («Copia de la app»).
-- **Falta:** que Pablo revise los textos de #151 y #144. Antes de aprobar #151 hay que
-  decidir cómo nombrar a Tareas: los borradores todavía dicen que Fun TasKing es una
-  aplicación aparte. Después mergear #151, luego #144, y publicar con orden explícita
-  (migración `0014`, sitio, app con `LEGAL_GATE` apagada en producción).
-- **Cuidado:** los dos se fusionaban sin conflicto con `main` `06c619f` (2026-11-13). El
-  CI tiene E2E de Tareas inestables (`checklists.spec.js` y
-  `card-mutation-performance.spec.js`): fallaron en #150 y #152 y pasaron al reintentar.
-  La rama `docs/dock-homesuite-backlog` tiene un cambio de Pablo sin commitear en su
-  máquina: no tocarla sin preguntar.
-- **Fecha:** 2026-11-13.
+### Textos legales: aprobar y publicar
+- **Qué:** change `politica-y-aceptacion` ([#151](https://github.com/pablotortorella/tas-king/pull/151)):
+  aviso de aceptación, registro en `legal_acceptances`, puerta `LEGAL_GATE` y textos
+  unificados de toda la suite (versión 2026-11-13). Nada se publicó.
+- **Falta (Pablo):**
+  - revisar los textos y quitar las marcas «BORRADOR PENDIENTE DE REVISIÓN DE PABLO»
+    (11 en `privacidad.html` y 5 en `terminos.html`);
+  - aceptar los DPA de Cloudflare y GitHub, crear la planilla de solicitudes y revisar
+    los festivos;
+  - las decisiones abiertas de [`tasks.md`](openspec/changes/politica-y-aceptacion/tasks.md).
+
+  Después, publicar con orden explícita, en el orden del
+  [plan de migración](openspec/changes/politica-y-aceptacion/design.md#migration-plan):
+  migración `0014`, sitio, app con `LEGAL_GATE` apagada y, después de comprobar los
+  textos publicados, encender la puerta.
+- **Cuidado:**
+  - El sitio de `main` trae los borradores: publicarlo por otro motivo publica también
+    los textos.
+  - La próxima publicación de la app aplica la migración `0014` y muestra el aviso de
+    aceptación aunque la puerta esté apagada.
+  - Al encender la puerta, las dos cuentas de producción pasan por `/aceptar`.
+  - No se probaron el inicio real con Google ni un teléfono real (tarea 8.2).
+  - Remanso no lleva el pie legal: es una excepción de diseño y los enlaces van junto
+    al botón de acceso.
+  - En CI, los E2E de Tareas `checklists.spec.js` y `card-mutation-performance.spec.js`
+    son inestables.
+- **Fecha:** 2026-11-17.
 
 ### Alertas mínimas: checklist de vigilancia
 - **Qué:** con #150 en `main`, desde el 2026-11-13 corren los workflows programados
@@ -60,7 +71,7 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 - **Qué:** la PWA está en producción sin probar en iPhone; el apagado en Android
   tampoco se probó.
 - **Falta:** que alguien con iPhone siga el protocolo del bloque PWA del
-  2026-11-09 en [STATUS](docs/STATUS.md) y anotar el resultado en la tarea 8.3 de
+  2026-11-09 en el [historial de STATUS](docs/STATUS_HISTORIAL.md) y anotar el resultado en la tarea 8.3 de
   [`pwa-instalable`](openspec/changes/pwa-instalable/tasks.md).
 - **Cuidado:** si iOS falla, se apaga publicando con `--var PWA_SW:off`.
 - **Fecha:** 2026-11-10 (decisión de Pablo).
