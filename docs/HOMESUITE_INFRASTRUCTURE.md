@@ -505,7 +505,7 @@ Worker actual de TasKing por conveniencia.
 Para un redeploy exclusivo del sitio público desde un `main` limpio:
 
 ```bash
-npx wrangler deploy --config apps/site/wrangler.jsonc
+node scripts/wrangler-deploy.mjs --config apps/site/wrangler.jsonc
 ```
 
 No usar `npm run deploy` para la landing: ese script pertenece a TasKing y

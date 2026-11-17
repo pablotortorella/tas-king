@@ -123,7 +123,7 @@ El origen ya congelado muestra el aviso; sus APIs dan `410 tasking_migrated`.
 ```bash
 npm run tasking:transfer -- activate staging --directory "$TASKING_TRANSFER_DIRECTORY"
 npm run tasking:transfer -- mark-moved staging --directory "$TASKING_TRANSFER_DIRECTORY"
-npx wrangler deploy --config wrangler.tasking-move.jsonc --env staging
+node scripts/wrangler-deploy.mjs --config wrangler.tasking-move.jsonc --env staging
 npm run verify:coherence:staging
 ```
 

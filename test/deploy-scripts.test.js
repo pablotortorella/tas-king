@@ -29,7 +29,7 @@ describe("orden de los scripts de despliegue", () => {
 
       it("migra antes de subir el Worker", () => {
         const iMigrar = indiceDe(script, migrar);
-        const iDesplegar = indiceDe(script, /wrangler deploy/);
+        const iDesplegar = indiceDe(script, /^node scripts\/wrangler-deploy\.mjs\b/);
         expect(iMigrar, "no encuentro el paso de migración").toBeGreaterThanOrEqual(0);
         expect(iDesplegar, "no encuentro el paso de deploy").toBeGreaterThanOrEqual(0);
         expect(iMigrar, `${nombre} debe migrar antes de desplegar`).toBeLessThan(iDesplegar);
@@ -40,6 +40,25 @@ describe("orden de los scripts de despliegue", () => {
       });
     });
   }
+
+  it("ningún script llama a `wrangler deploy` directo: todos pasan por el envoltorio que guarda el SHA", () => {
+    for (const [nombre, script] of Object.entries(pkg.scripts)) {
+      expect(script, `${nombre} no debe usar wrangler deploy literal`).not.toMatch(/wrangler deploy/);
+    }
+  });
+
+  it("todo script que publica usa node scripts/wrangler-deploy.mjs", () => {
+    const publican = Object.entries(pkg.scripts).filter(([nombre]) => nombre.startsWith("deploy"));
+    expect(publican.map(([nombre]) => nombre).sort()).toEqual([
+      "deploy",
+      "deploy:homesuite-app:production",
+      "deploy:homesuite-app:staging",
+      "deploy:staging",
+    ]);
+    for (const [nombre, script] of publican) {
+      expect(indiceDe(script, /^node scripts\/wrangler-deploy\.mjs\b/), `${nombre} debe usar el envoltorio`).toBeGreaterThanOrEqual(0);
+    }
+  });
 
   it("producción respalda la base antes de migrarla", () => {
     const s = pkg.scripts.deploy;

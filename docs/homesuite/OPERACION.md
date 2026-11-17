@@ -44,6 +44,9 @@ retirarlo del código. No asumir que borrarlo del último commit elimina la expo
    ambiente publicado (un formulario sin su token sólo falla al enviarlo) y, tras
    publicar app y sitio, `npm run verify:coherence:<ambiente>`, que en producción
    además falla si algún enlace visible apunta a staging.
+   Los scripts de publicación ponen el SHA en el mensaje de versión
+   (`scripts/wrangler-deploy.mjs`); el SHA publicado se lee con
+   `npx wrangler deployments list` (con el `--config`/`--env` de la unidad).
 
 Sitio público y app se publican independientemente. Un cambio sólo documental no
 requiere despliegue. Los scripts deben hacer cumplir lo automatizable; los controles
