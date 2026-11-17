@@ -38,8 +38,8 @@ retirarlo del código. No asumir que borrarlo del último commit elimina la expo
    revisable. Una autorización previa explícita conserva su alcance. La app y el sitio
    se publican por separado: **primero la app y después el sitio** (la portada enlaza a la
    app), y luego se corre `npm run verify:coherence:production`.
-6. Registrar versión y unidad publicadas, entorno, migraciones y resultado del
-   smoke posterior. Comprobar el recorrido afectado, errores y configuración servida.
+6. Registrar en STATUS la unidad publicada, el entorno, el SHA de git de `main`, el
+   ID de versión, las migraciones y el resultado del smoke posterior. Comprobar el recorrido afectado, errores y configuración servida.
    El smoke de una app con cuentas incluye **entrar y salir con una cuenta real** del
    ambiente publicado (un formulario sin su token sólo falla al enviarlo) y, tras
    publicar app y sitio, `npm run verify:coherence:<ambiente>`, que en producción
@@ -95,7 +95,8 @@ que no llevan registros, emails ni nombres de grupos. Estado de implementación 
 
 ## Registro de operación
 
-STATUS conserva hechos fechados y estado de integración/publicación. Las novedades
+STATUS conserva publicaciones y verificaciones fechadas; el estado de integración
+se mira en GitHub y en git ([qué va en STATUS](METODO.md#qué-va-en-status)). Las novedades
 públicas describen cambios relevantes para usuarios y mantienen versión consistente
 con manifiestos y UI cuando corresponda. El handoff enlaza fuentes y pendientes,
 sin redefinir reglas ni prometer pruebas no realizadas.

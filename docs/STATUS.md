@@ -1,6 +1,12 @@
 # Estado de Implementación — FUN TasKing! v2.3.2
 
-**Última actualización**: 2026-11-13
+**Última actualización**: 2026-11-17
+
+> **Desde el 2026-11-17 este archivo registra sólo publicaciones y verificaciones**
+> ([qué va en STATUS](homesuite/METODO.md#qué-va-en-status)). El estado de los PRs
+> se mira en GitHub; lo que está en `main` sin publicar se calcula con
+> `git log --oneline <SHA publicado>..origin/main`. Los bloques anteriores pueden
+> decir «en PR» o «espera la orden» sobre algo ya mergeado: no se mantienen.
 
 ## Integración de las ramas sueltas después de Tareas — cuatro mergeadas, quedan los textos legales — 2026-11-11 (actualizado 2026-11-13)
 
