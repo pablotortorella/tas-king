@@ -117,7 +117,7 @@ ensayaron con pruebas unitarias y un `gh` simulado, hasta que se complete el che
   que se probó en staging. Smoke de Claude del 2026-11-11 sobre `app.homesuite.info`: `/sw.js` con `no-cache`, manifiesto con `short_name` «HomeSuite»,
   ícono `immutable`, las tres páginas `/sin-conexion*` y `/tareas/favicon.v1.svg`, todo en 200. Tareas usa el manifiesto y `/pwa.js` de la suite;
   sin conexión muestra la página genérica; la caché no guarda `/tareas`, `/api/tareas` ni adjuntos (E2E de Codex).
-- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `99f7962` (último commit), sin conflictos ni comentarios. Abiertos a partir de él: [#143](https://github.com/pablotortorella/tas-king/pull/143) (documentación) y [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad, a la espera de la revisión de Pablo).
+- **PR:** [#142](https://github.com/pablotortorella/tas-king/pull/142), CI en verde sobre `99f7962` (último commit), sin conflictos ni comentarios. A partir de él se abrieron [#143](https://github.com/pablotortorella/tas-king/pull/143) (documentación) y [#144](https://github.com/pablotortorella/tas-king/pull/144) (texto de privacidad, a la espera de la revisión de Pablo).
 - **Staging (publicado 2026-11-09 por orden de Pablo, desde su máquina):** app `staging.homesuite.info`, versión `7daec2bc` (primera publicación), mensaje
   «PR #142 · SHA 6afbb87 · PWA instalable (rama, para revisión)». Sin migraciones; respaldo previo en
   `~/dev/tas-king-backups/homesuite-app/staging/20261109T203120Z`. La versión anterior fue `66804688` (`main 3fe9cd6`). El sitio no cambió.

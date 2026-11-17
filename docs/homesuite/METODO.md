@@ -145,6 +145,6 @@ del producto, del test y del entorno con evidencia; no ocultarlo con reintentos.
 
 Distinguir implementado en rama, integrado, desplegado y aceptado. Documentación
 sola se valida por enlaces, coherencia y diff; no requiere desplegar la aplicación.
-Actualizar el handoff cuando se solicita o existe una entrega explícita de trabajo,
+Actualizar el handoff cuando cambia un estado ([al retomar y al cerrar](#al-retomar-y-al-cerrar)),
 sin duplicar el historial de STATUS. Archivar OpenSpec cuando se verificó el cambio,
 no sólo porque se generaron los archivos.
