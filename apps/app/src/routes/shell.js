@@ -3,6 +3,7 @@ import { PROFILE_CLIENT_SCRIPT, renderProfileForm } from "../profile-ui.js";
 import { readOwnProfile } from "../profiles.js";
 import { page, sessionSecret, signedInUser } from "../route-kit.js";
 import { ensureLocalUser } from "../groups.js";
+import { renderSignInNotice, signInHref } from "../legal-ui.js";
 import { renderTools } from "../tools.js";
 import { escapeHtml } from "../ui-parts.js";
 
@@ -28,7 +29,7 @@ export function registerShellRoutes(app, { authConfig, localUser }) {
       const profile = await readOwnProfile(c.env.DB, session.user_id);
       return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Hola, ${html(profile.displayName)}.</h1><p>Elegí una herramienta para empezar.</p>${TOOLS}`));
     }
-    const action = authConfig(c.env) ? '<a class="button" href="/auth/google?returnTo=%2F">Continuar con Google</a>' : '<p class="notice">El acceso de este ambiente todavía no está configurado.</p>';
+    const action = authConfig(c.env) ? `${renderSignInNotice(new URL(c.req.url).hostname)}<a class="button" href="${signInHref("/")}">Continuar con Google</a>` : '<p class="notice">El acceso de este ambiente todavía no está configurado.</p>';
     return c.html(page("Inicio", `<p class="eyebrow">HomeSuite</p><h1>Organizá, cuidá y disfrutá tu hogar.</h1><p>Elegí una herramienta para empezar.</p>${TOOLS}<section class="card"><h2>Tu cuenta</h2><p>Entrá con Google para guardar tu perfil y continuar en la suite.</p>${action}</section>`));
   });
 

@@ -55,8 +55,12 @@ describe("GET /remanso sin sesión", () => {
     // el cierre no vende: la invitación a crear cuenta sólo aparece al elegir una opción con cuenta
     expect(html).not.toContain("rem-invitacion");
     expect(html).not.toContain("meditar más tiempo");
-    expect(html).toContain('data-login="/auth/google?returnTo=%2Fremanso"');
-    expect(html).toContain('href="/auth/google?returnTo=%2Fremanso"');
+    expect(html).toContain('data-login="/auth/google?returnTo=%2Fremanso&amp;acepta=1"');
+    expect(html).toContain('href="/auth/google?returnTo=%2Fremanso&amp;acepta=1"');
+    // el aviso de aceptación acompaña al botón de Google, con los dos enlaces al sitio
+    expect(html).toContain("Al continuar aceptás los");
+    expect(html).toContain('href="https://site-staging.homesuite.info/terminos"');
+    expect(html).toContain('href="https://site-staging.homesuite.info/privacidad"');
     expect(html).toContain('href="/remanso/remanso.css"');
     expect(html).toContain('<script type="module" src="/remanso/remanso.js"></script>');
     expect(html).toContain('<body class="remanso">');

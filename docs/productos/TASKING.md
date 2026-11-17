@@ -120,4 +120,6 @@ ni controles activos. Se conservaron las bases y buckets históricos.
 No generalizar la CSP heredada: el módulo usa estilos externos/CSSOM y no añade
 `unsafe-inline` a HomeSuite. Favicon de corona por página; un único manifiesto,
 SW e iconos de instalación HomeSuite. Historial de novedades y términos inertes
-bajo `/tareas/novedades` y `/tareas/terminos-anteriores`.
+bajo `/tareas/novedades` y `/tareas/terminos-anteriores` (solo archivo: desde el
+change `politica-y-aceptacion` el pie de Tareas enlaza los términos y la política de
+toda la suite en el sitio del ambiente, con `taskingDocument(hostname)`).

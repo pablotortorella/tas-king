@@ -21,6 +21,12 @@
     <a class="header-link" href="/#herramientas">Todas las herramientas <span aria-hidden="true">↗</span></a>
   </header>
 
+  <!--
+    BORRADOR PENDIENTE DE REVISIÓN DE PABLO (change politica-y-aceptacion, tarea 4.8).
+    Texto legal propuesto, sin asesoramiento legal: no se publica hasta que Pablo lo lea y lo apruebe. Al publicar, quitar
+    estos comentarios; si cambia la fecha de «Última actualización», actualizar también privacidad.html y la constante de
+    apps/app/src/legal.js (una prueba falla si no coinciden).
+  -->
   <main class="legal-page" id="contenido">
     <nav class="breadcrumbs" aria-label="Ubicación">
       <a href="/">HomeSuite</a><span aria-hidden="true">›</span><span aria-current="page">Términos y condiciones</span>
@@ -28,8 +34,8 @@
     <div class="legal-heading">
       <p class="eyebrow">Información de HomeSuite</p>
       <h1>Términos y condiciones</h1>
-      <p class="legal-updated">Última actualización: 27 de octubre de 2026</p>
-      <p>Estas condiciones regulan el uso del sitio y la aplicación HomeSuite, incluidas Cuentas Claras y Remanso. Fun TasKing funciona por ahora en una aplicación independiente y conserva sus propias condiciones.</p>
+      <p class="legal-updated">Última actualización: 13 de noviembre de 2026</p>
+      <p>Estas condiciones regulan el uso del sitio y la aplicación HomeSuite y de todas sus herramientas: Cuentas Claras, Fun TasKing (Tareas), Remanso y Jardín Zen. Desde el 10 de noviembre de 2026 Fun TasKing es parte de HomeSuite, y estas condiciones reemplazan los términos propios que tenía; aquellos se conservan sólo como archivo histórico.</p>
     </div>
 
     <div class="legal-layout">
@@ -37,21 +43,26 @@
         <a href="#operador">Operador y alcance</a>
         <a href="#cuenta">Cuenta y uso</a>
         <a href="#cuentas-claras">Cuentas Claras</a>
+        <a href="#tareas">Fun TasKing (Tareas)</a>
         <a href="#remanso">Remanso</a>
+        <a href="#jardin-zen">Jardín Zen</a>
         <a href="#disponibilidad">Disponibilidad y cambios</a>
         <a href="#responsabilidad">Responsabilidad</a>
+        <a href="#licencia">Código abierto</a>
         <a href="#contacto">Contacto</a>
       </nav>
       <div class="legal-content">
         <section id="operador">
           <h2>Operador y alcance</h2>
-          <p>HomeSuite es operado por <strong>Pablo Tortorella</strong>, establecido en <strong>Colombia</strong>. Al usar una herramienta de HomeSuite aceptás estas condiciones y la <a href="/privacidad">política de privacidad</a>. Las herramientas marcadas «Versión Beta» (hoy, Cuentas Claras y Remanso) funcionan, pero pueden cambiar o tener errores mientras las seguimos mejorando. Las funciones que se anuncian como «en preparación» no forman parte de una prestación disponible ni tienen una fecha prometida.</p>
+          <p>HomeSuite es operado por <strong>Pablo Tortorella</strong>, establecido en <strong>Colombia</strong>. Al usar una herramienta de HomeSuite aceptás estas condiciones y la <a href="/privacidad">política de privacidad</a>. Al continuar con Google lo confirmás expresamente y declarás que tenés 18 años o más. Las herramientas marcadas «Versión Beta» (hoy, Cuentas Claras, Remanso y Jardín Zen) funcionan, pero pueden cambiar o tener errores mientras las seguimos mejorando. Las funciones que se anuncian como «en preparación» no forman parte de una prestación disponible ni tienen una fecha prometida.</p>
         </section>
 
         <section id="cuenta">
           <h2>Cuenta y uso responsable</h2>
+          <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (tarea 4.8): edad mínima. La edad es una declaración; no se verifica. -->
+          <p>Para usar HomeSuite tenés que ser mayor de 18 años. Al continuar con Google declarás que lo sos; no verificamos la edad, y si resulta que una cuenta pertenece a una persona menor podemos suprimirla.</p>
           <p>Algunas funciones requieren entrar con Google. Sos responsable de mantener segura tu cuenta de Google y de las acciones realizadas desde tu sesión. Podés cerrar sesión desde la aplicación. No uses HomeSuite para infringir derechos de otras personas, introducir información ilícita, intentar acceder a grupos ajenos ni interferir con el servicio.</p>
-          <p>Si invitás a alguien o cargás datos sobre otras personas, asegurate de estar autorizado a compartir esa información con los integrantes del grupo. Cada integrante puede ver lo que su rol le permite dentro del grupo; quien invita debe tener presente ese alcance antes de registrar datos sensibles.</p>
+          <p>Si invitás a alguien o cargás datos sobre otras personas, asegurate de estar autorizado a compartir esa información con los integrantes del grupo o del tablero. Cada integrante puede ver lo que su rol le permite dentro del grupo o del tablero; quien invita debe tener presente ese alcance antes de registrar datos sensibles.</p>
         </section>
 
         <section id="cuentas-claras">
@@ -60,20 +71,41 @@
           <p>Podés importar información de otros servicios si tenés derecho a hacerlo. Confirmar una importación incorpora movimientos al grupo y conserva el historial de cambios necesario para explicar lo ocurrido. Las personas con acceso al grupo pueden ver esa información según sus permisos. La exportación completa y eliminación autónoma de grupos aún no se ofrecen desde la interfaz; para consultas o solicitudes, usá el contacto indicado abajo.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (2026-11-13): sección nueva por la integración de Fun TasKing; absorbe del
+             texto anterior de Fun TasKing la recomendación de exportar y la advertencia sobre información crítica. -->
+        <section id="tareas">
+          <h2>Fun TasKing (Tareas)</h2>
+          <p>Fun TasKing ayuda a organizar tareas en tableros con columnas, tarjetas, etiquetas, objetivos, listas, comentarios y adjuntos, por tu cuenta o con otras personas. Cada persona tiene un tablero personal; quien crea un tablero es su dueña y puede invitar integrantes por email, quitarlos y eliminar el tablero con todo su contenido y sus adjuntos. Los integrantes del tablero ven y editan lo que hay en él.</p>
+          <p>Hacemos copias de seguridad diarias, pero te recomendamos exportar periódicamente los tableros que te importen (la aplicación permite exportarlos). Fun TasKing no está pensado para guardar información crítica, confidencial o regulada, ni para procesos en los que perder o no poder consultar un dato cause un daño: si lo usás para algo así, tené tu propia copia.</p>
+          <p>Si usabas Fun TasKing en su dirección anterior, tus tableros se trasladaron a HomeSuite el 10 de noviembre de 2026 y la dirección anterior sólo lleva a HomeSuite. Seguís entrando con la misma cuenta de Google.</p>
+        </section>
+
         <section id="remanso">
           <h2>Remanso</h2>
           <p>Remanso ofrece pausas con audio generado en el dispositivo. Es una herramienta de bienestar general y no reemplaza atención médica, psicológica ni de emergencia. Elegí un volumen cómodo y usala sólo cuando puedas prestar atención a tu entorno. El audio puede interrumpirse por ajustes del dispositivo, del navegador o al bloquear la pantalla.</p>
           <p>Hay sesiones cortas sin cuenta y opciones adicionales para quienes inician sesión. La elección de gong se guarda en ese navegador y puede perderse al borrar sus datos.</p>
         </section>
 
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (2026-11-13): sección nueva; Jardín Zen está publicado desde el 2026-10-31. -->
+        <section id="jardin-zen">
+          <h2>Jardín Zen</h2>
+          <p>Jardín Zen es un jardín de arena para rastrillar y mover piedras, sin objetivos ni puntajes. Se usa sin cuenta y funciona en el navegador; lo que dibujás no se guarda en el servidor. Es un momento de calma, no una herramienta de salud. Si tu dispositivo no muestra la versión en 3D, se ve una versión simplificada.</p>
+        </section>
+
         <section id="disponibilidad">
           <h2>Disponibilidad y cambios</h2>
-          <p>Podemos corregir errores, cambiar o retirar funciones y realizar tareas de mantenimiento. Procuraremos comunicar cambios importantes que afecten el uso o los datos, pero no prometemos disponibilidad continua. Si actualizamos estos términos, publicaremos la nueva fecha aquí. El uso posterior a una modificación comunicada queda sujeto a la versión vigente, en la medida permitida por la ley aplicable.</p>
+          <p>Podemos corregir errores, cambiar o retirar funciones y realizar tareas de mantenimiento. Procuraremos comunicar cambios importantes que afecten el uso o los datos, pero no prometemos disponibilidad continua. Si actualizamos estos términos, publicaremos la nueva fecha aquí. Los cambios sustanciales te los avisamos en la aplicación antes de que se apliquen y, cuando rijan, te pedimos aceptar la versión nueva para seguir usándola. El uso posterior a una modificación comunicada queda sujeto a la versión vigente, en la medida permitida por la ley aplicable.</p>
         </section>
 
         <section id="responsabilidad">
           <h2>Responsabilidad</h2>
-          <p>Hacemos esfuerzos razonables para proteger y mantener el servicio. No podemos garantizar que esté libre de interrupciones o errores. Nada de estos términos limita derechos que la ley aplicable no permita excluir. En particular, la exactitud de los registros de Cuentas Claras depende de la información introducida por las personas que usan cada grupo.</p>
+          <p>Hacemos esfuerzos razonables para proteger y mantener el servicio. No podemos garantizar que esté libre de interrupciones o errores. Nada de estos términos limita derechos que la ley aplicable no permita excluir. En particular, la exactitud de los registros de Cuentas Claras y de los tableros de Fun TasKing depende de la información que cargan las personas que usan cada grupo o tablero.</p>
+        </section>
+
+        <!-- BORRADOR PENDIENTE DE REVISIÓN DE PABLO (2026-11-13): viene de los términos anteriores de Fun TasKing (sección 6). -->
+        <section id="licencia">
+          <h2>Código abierto</h2>
+          <p>El código de HomeSuite es software libre, distribuido bajo la licencia <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License v3</a>, y está disponible en <a href="https://github.com/pablotortorella/tas-king">GitHub</a>. La licencia se refiere al código: no da acceso a los datos de nadie ni cambia lo que dicen estas condiciones sobre el servicio. La desarrolla Pablo Tortorella, en equipo con Claude (Anthropic).</p>
         </section>
 
         <section id="contacto">

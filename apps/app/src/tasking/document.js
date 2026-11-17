@@ -1,4 +1,6 @@
 // Documento de TasKing conservado, adaptado al namespace y a la CSP de HomeSuite.
+import { legalLinks } from "../legal.js";
+
 export const TASKING_DOCUMENT = `<!DOCTYPE html>
 <html data-tasking-integrated="true" lang="es">
 <head><link rel="apple-touch-icon" sizes="180x180" href="/icons/homesuite-apple-touch-180.v1.png"><link rel="manifest" href="/manifest.webmanifest"><script src="/pwa.js" defer></script>
@@ -144,10 +146,11 @@ export const TASKING_DOCUMENT = `<!DOCTYPE html>
   <a href="/tareas/novedades" target="_blank" rel="noopener" title="Ver novedades de esta versión">v2.3.2</a>
   <span class="dot">·</span>
   <a href="/tareas/novedades" target="_blank" rel="noopener">Novedades</a>
-  <a href="/tareas/terminos-anteriores" target="_blank" rel="noopener">Términos</a>
+  <a href="__LEGAL_TERMS__" target="_blank" rel="noopener">Términos</a>
+  <a href="__LEGAL_PRIVACY__" target="_blank" rel="noopener">Privacidad</a>
   <a href="https://github.com/pablotortorella/tas-king" target="_blank" rel="noopener">GitHub</a>
   <span class="dot">·</span>
-  <span class="credit">Por Pablo Tortorella, en equipo con Claude · <a href="/tareas/terminos-anteriores" target="_blank" rel="noopener">GNU GPL v3</a></span>
+  <span class="credit">Por Pablo Tortorella, en equipo con Claude · <a href="__LEGAL_TERMS__#licencia" target="_blank" rel="noopener">GNU GPL v3</a></span>
 </footer>
 
 <!-- Modal de tarjeta -->
@@ -512,3 +515,10 @@ export const TASKING_DOCUMENT = `<!DOCTYPE html>
 </body>
 </html>
 `;
+
+// El pie enlaza los textos legales de toda la suite en el sitio del ambiente (los términos propios de Fun TasKing quedan como archivo
+// en /tareas/terminos-anteriores).
+export function taskingDocument(hostname) {
+  const links = legalLinks(hostname);
+  return TASKING_DOCUMENT.replaceAll("__LEGAL_TERMS__", links.terms).replaceAll("__LEGAL_PRIVACY__", links.privacy);
+}
