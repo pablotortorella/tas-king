@@ -32,6 +32,27 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
     los festivos;
   - las decisiones abiertas de [`tasks.md`](openspec/changes/politica-y-aceptacion/tasks.md).
 
+  Archivos a revisar, en este orden:
+  1. [`apps/site/public/privacidad.html`](apps/site/public/privacidad.html): 10 bloques
+     marcados (finalidades, datos sensibles y edad, Fun TasKing, Jardín Zen, encargados
+     y transmisión internacional, derechos y plazos, copias de seguridad, personas sin
+     cuenta en un grupo, cambios sustanciales).
+  2. [`apps/site/public/terminos.html`](apps/site/public/terminos.html): 4 bloques
+     (edad mínima, Fun TasKing, Jardín Zen, lo heredado de los términos de Fun TasKing).
+  3. [`apps/app/src/legal-ui.js`](apps/app/src/legal-ui.js): el aviso junto a
+     «Continuar con Google» y la pantalla `/aceptar`.
+  4. [`docs/HOMESUITE_ENCARGADOS.md`](docs/HOMESUITE_ENCARGADOS.md): DPA de Cloudflare
+     (v6.4) y GitHub, aceptar y anotar la fecha y la versión (tarea 6.2).
+  5. [`docs/HOMESUITE_SOLICITUDES_DATOS.md`](docs/HOMESUITE_SOLICITUDES_DATOS.md): las
+     columnas de la planilla privada, crearla y probarla con un caso ficticio (tarea 5.3).
+  6. [`scripts/festivos-colombia.json`](scripts/festivos-colombia.json): los feriados
+     con los que se calculan los plazos en días hábiles.
+
+  Cada bloque aprobado pierde su comentario «BORRADOR». **Desvío del plan:** la tarea
+  4.10 pedía registrar la aprobación en el PR antes de integrar, pero #151 se mergeó
+  el 2026-11-17 por orden de Pablo con los textos todavía en borrador. La aprobación
+  se anota en la tarea 4.10, que además pregunta si los lee una persona abogada.
+
   Después, publicar con orden explícita, en el orden del
   [plan de migración](openspec/changes/politica-y-aceptacion/design.md#migration-plan):
   migración `0014`, sitio, app con `LEGAL_GATE` apagada y, después de comprobar los
@@ -47,6 +68,29 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
     al botón de acceso.
   - En CI, los E2E de Tareas `checklists.spec.js` y `card-mutation-performance.spec.js`
     son inestables.
+- **Fecha:** 2026-11-17.
+
+### Cerrar los cambios de OpenSpec
+- **Qué:** diagnóstico del 2026-11-17. Los changes con avance no se cierran porque
+  faltan verificaciones manuales y el archivo, no código. Hay otros ocho propuestos
+  sin ninguna tarea hecha.
+- **Falta (decidir con Pablo, de a uno):**
+  - `pwa-instalable`: pasar las tareas 6.6 y 9.4, que dependen de Remanso con sonidos
+    naturales, a `remanso-sonidos-naturales`. Hacer las pruebas físicas (8.2 a 8.4 y
+    8.6, ver «Pruebas físicas de la PWA») y archivar.
+  - `migrar-tasking-homesuite`: decidir si los límites declarados en
+    [verificación](docs/tasking/VERIFICACION.md) alcanzan para cerrar 7.2, 7.3 y 8.5,
+    y archivar.
+  - `importacion-como-movimientos`: su código está en `main` desde el 2026-10-25 y,
+    según el tablero, en producción (inferido, no verificado). Falta 7.1, contar los
+    lotes viejos en staging y producción. La 7.2, retirar las tablas antiguas, va en
+    una publicación posterior.
+  - `perfil-compartido-homesuite` (7/20, sin cambios desde el 2026-10-26): decidir si
+    se retoma o si se cierra el primer corte y lo que falta pasa a un change nuevo.
+  - `alertas-minimas-homesuite`: en `main` con 2 de 17 tareas marcadas. Marcar las
+    hechas y dejar abierto solo el checklist de vigilancia.
+- **Cuidado:** criterio propuesto, sin decidir: no abrir un change nuevo hasta cerrar
+  uno de los abiertos.
 - **Fecha:** 2026-11-17.
 
 ### Alertas mínimas: checklist de vigilancia
