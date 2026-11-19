@@ -31,7 +31,7 @@
 - [x] 3.3 Aceptar automáticamente las versiones vigentes en modo de desarrollo local y en los E2E con identidades de desarrollo, salvo en las pruebas de la puerta; verificar que los E2E existentes pasan sin cambios
   - Hecho: `/api/local/session` acepta las versiones vigentes (`sin_aceptar=1` lo evita, solo para probar la puerta). `dev:e2e:homesuite-app` y `dev:homesuite-app` corren con `LEGAL_GATE:on`; los E2E existentes pasan sin cambios.
 - [x] 3.4 Dejar la puerta apagable por una variable de entorno para el despliegue y verificar el comportamiento apagado y encendido
-  - Hecho: `LEGAL_GATE=on` la enciende; sin la variable queda apagada. `wrangler.jsonc`: staging `on`, producción `off` (se enciende después de publicar los textos).
+  - Hecho: `LEGAL_GATE=on` la enciende; sin la variable queda apagada. `wrangler.jsonc`: staging `on`, producción `off` (se enciende después de publicar los textos). Publicado el 2026-11-19 por orden de Pablo: migración `0014` en staging y producción, sitio y app con la puerta apagada (`78e15d0`), y después la puerta encendida en producción.
 
 ## 4. Textos legales (texto legal que revisa Pablo)
 
