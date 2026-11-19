@@ -28,7 +28,7 @@ describe("política de privacidad", () => {
     const text = plain(await page("privacidad"));
     expect(text).toContain("Pablo Tortorella");
     expect(text).toContain("Rionegro, Antioquia");
-    expect(text).toContain("pablotortorella@gmail.com");
+    expect(text).toContain("pablotortorella+homesuite@gmail.com");
     expect(text).toMatch(/\(\+57\) 304 207 0566/u);
   });
 

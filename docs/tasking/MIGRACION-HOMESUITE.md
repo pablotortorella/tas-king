@@ -200,4 +200,5 @@ logs/trazas deshabilitados. Versiones, hashes, copias durables y aceptación pen
 Tras aceptar el corte correspondiente, retirar los secretos independientes sobrantes;
 la lista global y solicitudes no tienen endpoints ni controles activos en HomeSuite.
 Conservar el Worker de aviso y respaldos históricos, sin borrar infraestructura
-implícitamente. Las pruebas físicas PWA están coordinadas con Claude Code en Handoff.
+implícitamente. La eliminación de la copia congelada original es un ítem propio del
+[backlog](../PRODUCT_BACKLOG.md) y obliga a actualizar la política de privacidad. Las pruebas físicas PWA están coordinadas con Claude Code en Handoff.

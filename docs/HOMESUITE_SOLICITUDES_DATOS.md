@@ -4,7 +4,7 @@
 
 **Fecha:** 2026-11-04
 
-Esta página dice cómo se atiende, registra y mide una solicitud de datos personales que llega por correo a `pablotortorella@gmail.com`. La regla funcional vive en el spec `atencion-de-solicitudes-de-datos` del change [politica-y-aceptacion](../openspec/changes/politica-y-aceptacion/design.md) (D9); la referencia normativa, en [HOMESUITE_NORMATIVA_DATOS.md](HOMESUITE_NORMATIVA_DATOS.md) (Ley 1581 de 2012, arts. 8, 14, 15 y 16, y Decreto 1074 de 2015). Los textos que ve la persona están en la [política de privacidad](../apps/site/public/privacidad.html).
+Esta página dice cómo se atiende, registra y mide una solicitud de datos personales que llega por correo a `pablotortorella+homesuite@gmail.com`. La regla funcional vive en el spec `atencion-de-solicitudes-de-datos` del change [politica-y-aceptacion](../openspec/changes/politica-y-aceptacion/design.md) (D9); la referencia normativa, en [HOMESUITE_NORMATIVA_DATOS.md](HOMESUITE_NORMATIVA_DATOS.md) (Ley 1581 de 2012, arts. 8, 14, 15 y 16, y Decreto 1074 de 2015). Los textos que ve la persona están en la [política de privacidad](../apps/site/public/privacidad.html).
 
 Opera las solicitudes únicamente Pablo.
 

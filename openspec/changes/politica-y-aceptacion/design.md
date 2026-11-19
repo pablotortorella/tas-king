@@ -61,7 +61,7 @@ Cloudflare (alojamiento, base de datos, copias en R2) y GitHub (ejecución trans
 
 ### D9. Atender solicitudes: registro y medición
 
-Solicitudes por correo a `pablotortorella@gmail.com`. Tipos y plazos (días hábiles; Ley 1581, arts. 14 y 15):
+Solicitudes por correo a `pablotortorella+homesuite@gmail.com`. Tipos y plazos (días hábiles; Ley 1581, arts. 14 y 15):
 
 | Tipo | Plazo | Prórroga | Otros |
 |---|---|---|---|
