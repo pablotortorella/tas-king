@@ -21,54 +21,43 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 
 ## Abiertos
 
-### Textos legales: aprobar y publicar
-- **Qué:** change `politica-y-aceptacion` ([#151](https://github.com/pablotortorella/tas-king/pull/151)):
-  aviso de aceptación, registro en `legal_acceptances`, puerta `LEGAL_GATE` y textos
-  unificados de toda la suite (versión 2026-11-13). Nada se publicó.
+### Textos legales: publicados, faltan verificaciones y tareas de Pablo
+- **Qué:** change `politica-y-aceptacion`. Pablo aprobó los textos el 2026-11-19
+  (#159, versión `2026-11-19`, correo `pablotortorella+homesuite@gmail.com`).
+  Ese mismo día se publicó todo con su orden: migración `0014`, sitio, app y
+  puerta `LEGAL_GATE` encendida (#160). Versiones en [STATUS](docs/STATUS.md).
 - **Falta (Pablo):**
-  - revisar los textos y quitar las marcas «BORRADOR PENDIENTE DE REVISIÓN DE PABLO»
-    (11 en `privacidad.html` y 5 en `terminos.html`);
-  - aceptar los DPA de Cloudflare y GitHub, crear la planilla de solicitudes y revisar
-    los festivos;
+  - entrar a `app.homesuite.info` con cada una de las dos cuentas, pasar por
+    `/aceptar` y confirmar que todo sigue funcionando (no verificado: nadie entró con
+    Google después de publicar; tarea 8.2, también en un teléfono);
+  - aceptar los DPA de Cloudflare y GitHub, anotar fecha y versión en
+    [encargados](docs/HOMESUITE_ENCARGADOS.md) (tarea 6.2);
+  - crear la planilla privada de [solicitudes](docs/HOMESUITE_SOLICITUDES_DATOS.md)
+    y probarla con un caso ficticio (tarea 5.3);
+  - revisar [`scripts/festivos-colombia.json`](scripts/festivos-colombia.json);
   - las decisiones abiertas de [`tasks.md`](openspec/changes/politica-y-aceptacion/tasks.md).
-
-  Archivos a revisar, en este orden:
-  1. [`apps/site/public/privacidad.html`](apps/site/public/privacidad.html): 10 bloques
-     marcados (finalidades, datos sensibles y edad, Fun TasKing, Jardín Zen, encargados
-     y transmisión internacional, derechos y plazos, copias de seguridad, personas sin
-     cuenta en un grupo, cambios sustanciales).
-  2. [`apps/site/public/terminos.html`](apps/site/public/terminos.html): 4 bloques
-     (edad mínima, Fun TasKing, Jardín Zen, lo heredado de los términos de Fun TasKing).
-  3. [`apps/app/src/legal-ui.js`](apps/app/src/legal-ui.js): el aviso junto a
-     «Continuar con Google» y la pantalla `/aceptar`.
-  4. [`docs/HOMESUITE_ENCARGADOS.md`](docs/HOMESUITE_ENCARGADOS.md): DPA de Cloudflare
-     (v6.4) y GitHub, aceptar y anotar la fecha y la versión (tarea 6.2).
-  5. [`docs/HOMESUITE_SOLICITUDES_DATOS.md`](docs/HOMESUITE_SOLICITUDES_DATOS.md): las
-     columnas de la planilla privada, crearla y probarla con un caso ficticio (tarea 5.3).
-  6. [`scripts/festivos-colombia.json`](scripts/festivos-colombia.json): los feriados
-     con los que se calculan los plazos en días hábiles.
-
-  Cada bloque aprobado pierde su comentario «BORRADOR». **Desvío del plan:** la tarea
-  4.10 pedía registrar la aprobación en el PR antes de integrar, pero #151 se mergeó
-  el 2026-11-17 por orden de Pablo con los textos todavía en borrador. La aprobación
-  se anota en la tarea 4.10, que además pregunta si los lee una persona abogada.
-
-  Después, publicar con orden explícita, en el orden del
-  [plan de migración](openspec/changes/politica-y-aceptacion/design.md#migration-plan):
-  migración `0014`, sitio, app con `LEGAL_GATE` apagada y, después de comprobar los
-  textos publicados, encender la puerta.
+- **Quedaron en el backlog:**
+  - aceptación con casilla y aviso de cambios fuera de la app (prioridad 1);
+  - eliminar la copia congelada del Fun TasKing original, actualizando la
+    política en el mismo PR;
+  - analizar si el respaldo permite cumplir la promesa de volver a aplicar las
+    supresiones.
 - **Cuidado:**
-  - El sitio de `main` trae los borradores: publicarlo por otro motivo publica también
-    los textos.
-  - La próxima publicación de la app aplica la migración `0014` y muestra el aviso de
-    aceptación aunque la puerta esté apagada.
-  - Al encender la puerta, las dos cuentas de producción pasan por `/aceptar`.
-  - No se probaron el inicio real con Google ni un teléfono real (tarea 8.2).
-  - Remanso no lleva el pie legal: es una excepción de diseño y los enlaces van junto
-    al botón de acceso.
+  - Si algo falla con la puerta, se apaga con `"LEGAL_GATE": "off"` en
+    `apps/app/wrangler.jsonc` (producción) y publicando la app.
+  - `HOMESUITE_SOLICITUDES_DATOS.md`, línea 84: las respuestas siguen saliendo de
+    `pablotortorella@gmail.com`. Para responder desde la dirección +homesuite hace
+    falta configurarla como alias en Gmail.
   - En CI, los E2E de Tareas `checklists.spec.js` y `card-mutation-performance.spec.js`
     son inestables.
-- **Fecha:** 2026-11-17.
+- **Fecha:** 2026-11-19.
+
+### Correo electrónico: elegir proveedor
+- **Qué:** prioridad 3 del [backlog](docs/PRODUCT_BACKLOG.md). Pablo dejó la
+  decisión para más adelante y se inclina por un plan gratuito.
+- **Falta (Pablo):** leer el [análisis de Brevo y Resend](docs/HOMESUITE_CORREO_PROVEEDORES.md)
+  y elegir. La recomendación es Resend.
+- **Fecha:** 2026-11-19.
 
 ### Cerrar los cambios de OpenSpec
 - **Qué:** diagnóstico del 2026-11-17. Los changes con avance no se cierran porque
