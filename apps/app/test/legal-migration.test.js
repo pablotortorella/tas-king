@@ -17,9 +17,9 @@ function databaseBefore() {
 }
 
 describe("migración legal_acceptances", () => {
-  it("es la siguiente migración libre y las anteriores no la conocen", () => {
-    expect(files.indexOf(MIGRATION)).toBe(files.length - 1);
-    expect(files.at(-2)).toMatch(/^0013_tasking/u);
+  it("sigue a la de Tareas y las anteriores no la conocen", () => {
+    expect(files).toContain(MIGRATION);
+    expect(files[files.indexOf(MIGRATION) - 1]).toMatch(/^0013_tasking/u);
   });
 
   it("actualiza desde el esquema anterior con datos y los deja intactos", () => {
