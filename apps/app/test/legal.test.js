@@ -101,10 +101,13 @@ describe("qué está pendiente de aceptar", () => {
   });
 
   it("solo valen las versiones que el sistema publicó", () => {
-    expect(sanitizeVersions({ terms: "2026-11-19", privacy: "1999-01-01", otro: "2026-11-19" })).toEqual({ terms: "2026-11-19" });
-    // Los borradores del 2026-11-04 y del 2026-11-13 nunca se publicaron: la versión aprobada del 2026-11-19 los reemplazó.
+    expect(sanitizeVersions({ terms: "2026-11-20", privacy: "1999-01-01", otro: "2026-11-20" })).toEqual({ terms: "2026-11-20" });
+    expect(sanitizeVersions({ privacy: "2026-11-19" })).toEqual({ privacy: "2026-11-19" });
+    // Los borradores del 2026-11-04 y del 2026-11-13 nunca se publicaron. Los términos del 2026-11-19 sí se publicaron, pero los
+    // reemplazó la versión del 2026-11-20 (coautoría de Codex): quien aceptó la anterior vuelve a pasar por /aceptar.
     expect(sanitizeVersions({ terms: "2026-11-04" })).toEqual({});
     expect(sanitizeVersions({ terms: "2026-11-13" })).toEqual({});
+    expect(sanitizeVersions({ terms: "2026-11-19" })).toEqual({});
     expect(sanitizeVersions({ terms: "no", privacy: 5 }, undefined, required)).toEqual(required);
     expect(sanitizeVersions(null)).toEqual({});
     const documents = docs({}, { upcoming: { version: "2027-01-15", effectiveFrom: "2027-01-15" } });

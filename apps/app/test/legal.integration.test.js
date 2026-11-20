@@ -12,7 +12,9 @@ const ORIGIN = "https://app.homesuite.info";
 const CLIENT_ID = "test-client";
 const GATE_ON = { DB: env.DB, SESSION_SECRET: SECRET, GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: "test-secret", LEGAL_GATE: "on" };
 const GATE_OFF = { ...GATE_ON, LEGAL_GATE: undefined };
-const CURRENT = LEGAL_DOCUMENTS.terms.version;
+// Cada texto tiene su versión: pueden diferir (términos 2026-11-20, privacidad 2026-11-19).
+const TERMS = LEGAL_DOCUMENTS.terms.version;
+const PRIVACY = LEGAL_DOCUMENTS.privacy.version;
 const NEWER = "2027-06-01";
 const documentsAt = (version) => ({ terms: { ...LEGAL_DOCUMENTS.terms, version }, privacy: { ...LEGAL_DOCUMENTS.privacy, version } });
 
@@ -138,13 +140,13 @@ describe("puerta de nueva aceptación", () => {
     const accept = await app.request(`${ORIGIN}/aceptar`, {
       method: "POST",
       headers: { Cookie: cookie, Origin: ORIGIN, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ _csrf: token, terms: CURRENT, privacy: CURRENT, next: "/groups/new" }).toString(),
+      body: new URLSearchParams({ _csrf: token, terms: TERMS, privacy: PRIVACY, next: "/groups/new" }).toString(),
       redirect: "manual",
     }, GATE_ON);
     expect(accept.status).toBe(303);
     expect(accept.headers.get("location")).toBe("/groups/new");
     const rows = (await env.DB.prepare("SELECT document, version, method FROM legal_acceptances WHERE user_id = ? ORDER BY document").bind(user.id).all()).results;
-    expect(rows).toEqual([{ document: "privacy", version: CURRENT, method: "gate" }, { document: "terms", version: CURRENT, method: "gate" }]);
+    expect(rows).toEqual([{ document: "privacy", version: PRIVACY, method: "gate" }, { document: "terms", version: TERMS, method: "gate" }]);
     expect((await get("/groups/new", cookie)).status).toBe(200);
     // con todo aceptado, /aceptar ya no tiene nada que pedir
     expect((await get("/aceptar?next=%2Fgroups", cookie)).headers.get("location")).toBe("/groups");
@@ -155,7 +157,7 @@ describe("puerta de nueva aceptación", () => {
     const response = await app.request(`${ORIGIN}/aceptar`, {
       method: "POST",
       headers: { Cookie: cookie, Origin: ORIGIN, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ terms: CURRENT, privacy: CURRENT }).toString(),
+      body: new URLSearchParams({ terms: TERMS, privacy: PRIVACY }).toString(),
     }, GATE_ON);
     expect(response.status).toBe(403);
     expect((await pendingFor(env.DB, user.id)).pending).toEqual(["terms", "privacy"]);
@@ -171,8 +173,8 @@ describe("puerta de nueva aceptación", () => {
       body: new URLSearchParams({ _csrf: token, terms: "1999-01-01", privacy: "no-es-una-fecha", next: "//evil.example" }).toString(),
       redirect: "manual",
     }, GATE_ON);
-    const rows = (await env.DB.prepare("SELECT version FROM legal_acceptances WHERE user_id = ?").bind(user.id).all()).results;
-    expect(rows.map((row) => row.version)).toEqual([CURRENT, CURRENT]);
+    const rows = (await env.DB.prepare("SELECT version FROM legal_acceptances WHERE user_id = ? ORDER BY document").bind(user.id).all()).results;
+    expect(rows.map((row) => row.version)).toEqual([PRIVACY, TERMS]);
   });
 
   it("una mutación con versión pendiente recibe 403 y no cambia nada", async () => {
@@ -247,7 +249,7 @@ describe("puerta de nueva aceptación", () => {
 describe("versión próxima y franja de aviso", () => {
   it("antes de la fecha muestra la franja y no pide aceptar; desde la fecha pide aceptar", async () => {
     const { user, cookie } = await sessionFor("franja");
-    await recordAcceptances(env.DB, user.id, { terms: CURRENT, privacy: CURRENT }, "login");
+    await recordAcceptances(env.DB, user.id, { terms: TERMS, privacy: PRIVACY }, "login");
     const future = Date.now() + 10 * 24 * 3600 * 1000;
     const isoIn10Days = new Date(future).toISOString().slice(0, 10);
     useLegalDocuments({ terms: LEGAL_DOCUMENTS.terms, privacy: { ...LEGAL_DOCUMENTS.privacy, upcoming: { version: isoIn10Days, effectiveFrom: isoIn10Days } } });
@@ -261,7 +263,7 @@ describe("versión próxima y franja de aviso", () => {
 
     // el reloj del servidor pasa la fecha: se simula adelantando la fecha de entrada en vigor al pasado
     const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
-    useLegalDocuments({ terms: LEGAL_DOCUMENTS.terms, privacy: { ...LEGAL_DOCUMENTS.privacy, version: CURRENT, upcoming: { version: "2099-01-01", effectiveFrom: yesterday } } });
+    useLegalDocuments({ terms: LEGAL_DOCUMENTS.terms, privacy: { ...LEGAL_DOCUMENTS.privacy, version: PRIVACY, upcoming: { version: "2099-01-01", effectiveFrom: yesterday } } });
     const after = await get("/", cookie);
     expect(after.status).toBe(303);
     expect(after.headers.get("location")).toContain("/aceptar");
