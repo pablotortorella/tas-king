@@ -16,8 +16,8 @@ agregar la entrada al registro de abajo.
 
 | Unidad | Entorno | Versión | Publicada (UTC) | SHA de `main` | Verificación |
 |---|---|---|---|---|---|
-| HomeSuite App (`app.homesuite.info`) | Producción | `573bab86` | 2026-11-20 19:49 | `ae79647` | Términos `2026-11-20`, puerta encendida. Coherencia 30/30; `/healthz` 200. Las dos cuentas aceptaron la versión nueva (Pablo, 2026-11-20). |
-| HomeSuite App (`staging.homesuite.info`) | Staging | `d742fd65` | 2026-11-20 19:48 | `ae79647` | Coherencia 29/29. Sin ingreso real con Google. |
+| HomeSuite App (`app.homesuite.info`) | Producción | `b69c5e01` | 2026-11-20 21:09 | `0780a1d` | Migración `0015`. Coherencia 30/30; `/healthz` 200; tablas viejas de importación retiradas. |
+| HomeSuite App (`staging.homesuite.info`) | Staging | `bced99be` | 2026-11-20 21:08 | `0780a1d` | Migración `0015`. Coherencia 29/29; `/healthz` 200. |
 | Sitio (`homesuite.info`) | Producción | `c3ea68c0` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20 con Codex en la coautoría. Coherencia 30/30. |
 | Sitio | Staging | `7855bf2b` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20. Coherencia 29/29. |
 | Puente de TasKing (worker `tas-king`) | Producción | `06338b44` | 2026-11-10 23:28 | `74c614c` (inferido¹) | Sondas: 404 en URLs históricas, 200 con aviso, 302 a Google en tarjetas y adjuntos; coherencia 30/30. |
@@ -44,6 +44,23 @@ Lo más nuevo arriba. Cada entrada lleva: fecha, entorno, unidad, SHA de `main`,
 de versión, migraciones aplicadas, smoke y quién verificó qué. Una verificación
 posterior (por ejemplo, una prueba en un dispositivo real) se agrega como entrada
 propia, con su fecha.
+
+### 2026-11-20 — producción y staging: retiro de las tablas viejas de importación
+
+Por orden de Pablo («dale»): #166, change `importacion-como-movimientos`, tareas 7.1 y 7.2.
+Sólo se publicó la app; el sitio no cambió.
+
+- **Conteo previo (sólo lectura):** 0 filas en `splitwise_import_entries` y en
+  `splitwise_import_effects`, en los dos ambientes.
+- **Staging:** respaldo local `staging/20261120T210853Z`, migración
+  `0015_retire_legacy_import_tables` y app `bced99be` (`0780a1d`). Coherencia 29/29.
+- **Producción:** respaldo `production/20261120T210930Z` en R2, migración `0015` y
+  app `b69c5e01` (`0780a1d`), con la puerta legal encendida. Coherencia 30/30;
+  `/healthz` 200.
+- **Comprobado en los dos ambientes:** quedan sólo `splitwise_import_batches`,
+  `splitwise_import_previews` y `splitwise_import_rows`.
+- **Sin probar:** una importación real después del retiro; la cubren las pruebas
+  de integración.
 
 ### 2026-11-20 — producción y staging: Codex en la coautoría (términos `2026-11-20`)
 
