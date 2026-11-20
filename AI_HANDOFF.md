@@ -27,9 +27,9 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
   Ese mismo día se publicó todo con su orden: migración `0014`, sitio, app y
   puerta `LEGAL_GATE` encendida (#160). Versiones en [STATUS](docs/STATUS.md).
 - **Falta (Pablo):**
-  - entrar a `app.homesuite.info` con cada una de las dos cuentas, pasar por
-    `/aceptar` y confirmar que todo sigue funcionando (no verificado: nadie entró con
-    Google después de publicar; tarea 8.2, también en un teléfono);
+  - probar el acceso y la aceptación en un teléfono real, y anotar el modelo y el
+    navegador (tarea 8.2). El 2026-11-20 Pablo ya confirmó que entró y aceptó, sin
+    informar el dispositivo;
   - aceptar los DPA de Cloudflare y GitHub, anotar fecha y versión en
     [encargados](docs/HOMESUITE_ENCARGADOS.md) (tarea 6.2);
   - crear la planilla privada de [solicitudes](docs/HOMESUITE_SOLICITUDES_DATOS.md)
