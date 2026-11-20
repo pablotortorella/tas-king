@@ -16,7 +16,7 @@ agregar la entrada al registro de abajo.
 
 | Unidad | Entorno | Versión | Publicada (UTC) | SHA de `main` | Verificación |
 |---|---|---|---|---|---|
-| HomeSuite App (`app.homesuite.info`) | Producción | `573bab86` | 2026-11-20 19:49 | `ae79647` | Términos `2026-11-20`, puerta encendida. Coherencia 30/30; `/healthz` 200. Sin ingreso real con Google después de esta versión. |
+| HomeSuite App (`app.homesuite.info`) | Producción | `573bab86` | 2026-11-20 19:49 | `ae79647` | Términos `2026-11-20`, puerta encendida. Coherencia 30/30; `/healthz` 200. Las dos cuentas aceptaron la versión nueva (Pablo, 2026-11-20). |
 | HomeSuite App (`staging.homesuite.info`) | Staging | `d742fd65` | 2026-11-20 19:48 | `ae79647` | Coherencia 29/29. Sin ingreso real con Google. |
 | Sitio (`homesuite.info`) | Producción | `c3ea68c0` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20 con Codex en la coautoría. Coherencia 30/30. |
 | Sitio | Staging | `7855bf2b` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20. Coherencia 29/29. |
@@ -61,8 +61,13 @@ con Claude y Codex».
 - **Smoke con curl:** los términos de los dos ambientes muestran la fecha del
   2026-11-20 y a Codex, sin la frase del archivo histórico. El pie de Tareas se
   comprobó en local (`dev:e2e:tasking`).
-- **Esperado, sin verificar:** las dos cuentas de producción vuelven a pasar por
-  `/aceptar`, con «Cambió» en los términos.
+- **Verificado por Pablo y en la base (2026-11-20):** las dos cuentas aceptaron los
+  términos `2026-11-20`.
+  - La que tenía sesión abierta pasó por `/aceptar` (método `gate`, 20:38:09 UTC).
+  - La otra entró con «Continuar con Google» y la aceptó al ingresar (método
+    `login`, 20:38:18 UTC), sin ver «Cambió».
+  - Es el comportamiento del diseño (D3). Pablo decidió cambiarlo: queda en la
+    prioridad 1 del backlog.
 
 ### 2026-11-20 — producción: verificación de la aceptación legal
 

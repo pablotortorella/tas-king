@@ -13,6 +13,7 @@ Orden fijado por Pablo. Cada una abre su exploración (`/opsx:explore`) antes de
      - una franja de aviso previo dentro de la aplicación cuando se anuncia una versión nueva (15 días por defecto);
      - la puerta `LEGAL_GATE`, apagada.
    - **Qué falta:** la aceptación es por conducta inequívoca (oprimir «Continuar con Google»), **sin casilla**. Y el aviso de cambios sólo se ve dentro de la app: quien no entra no se entera.
+   - **Decidido por Pablo (2026-11-20):** quien vuelve a entrar con «Continuar con Google» después de un cambio de versión también ve la pantalla que avisa que los textos cambiaron («Cambió») y los acepta ahí. Hoy no pasa: el ingreso registra la aceptación de la versión nueva (método `login`, D3) sin mostrar el cambio. Lo comprobó Pablo con su cuenta de Kleer el 2026-11-20. Sólo quien ya tenía sesión pasa por `/aceptar` (método `gate`).
    - **A decidir al explorar:**
      - dónde va la casilla: antes de «Continuar con Google» (botón inactivo hasta marcarla) o en `/aceptar` la primera vez, después de volver de Google;
      - si `/aceptar` también lleva casilla cuando cambia una versión;
