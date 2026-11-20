@@ -150,7 +150,7 @@ export const TASKING_DOCUMENT = `<!DOCTYPE html>
   <a href="__LEGAL_PRIVACY__" target="_blank" rel="noopener">Privacidad</a>
   <a href="https://github.com/pablotortorella/tas-king" target="_blank" rel="noopener">GitHub</a>
   <span class="dot">·</span>
-  <span class="credit">Por Pablo Tortorella, en equipo con Claude · <a href="__LEGAL_TERMS__#licencia" target="_blank" rel="noopener">GNU GPL v3</a></span>
+  <span class="credit">Por Pablo Tortorella, en equipo con Claude y Codex · <a href="__LEGAL_TERMS__#licencia" target="_blank" rel="noopener">GNU GPL v3</a></span>
 </footer>
 
 <!-- Modal de tarjeta -->
