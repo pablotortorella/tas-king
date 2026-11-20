@@ -10,16 +10,16 @@ en el [historial](STATUS_HISTORIAL.md).
 
 ## Publicado hoy
 
-App y sitio comprobados el 2026-11-19, y el puente el 2026-11-17, con
+App y sitio comprobados el 2026-11-20, y el puente el 2026-11-17, con
 `npx wrangler deployments list` (con el `--config` y el `--env` de cada unidad) y git. Al publicar, actualizar la fila de la unidad y
 agregar la entrada al registro de abajo.
 
 | Unidad | Entorno | Versión | Publicada (UTC) | SHA de `main` | Verificación |
 |---|---|---|---|---|---|
-| HomeSuite App (`app.homesuite.info`) | Producción | `5752e5a5` | 2026-11-19 23:36 | `36c2768` | Puerta legal encendida. Coherencia 30/30; `/healthz` 200; aviso de acceso servido. Pablo entró con Google y aceptó el 2026-11-20. |
-| HomeSuite App (`staging.homesuite.info`) | Staging | `5bb8cbfa` | 2026-11-19 23:27 | `78e15d0` | Migración `0014`. Coherencia 29/29; aviso de acceso servido. Sin ingreso real con Google. |
-| Sitio (`homesuite.info`) | Producción | `c3a0322e` | 2026-11-19 23:28 | `78e15d0` | Textos legales del 2026-11-19 servidos, sin borradores. Coherencia 30/30. |
-| Sitio | Staging | `dd7d03da` | 2026-11-19 23:27 | `78e15d0` | Textos legales del 2026-11-19 servidos. Coherencia 29/29. |
+| HomeSuite App (`app.homesuite.info`) | Producción | `573bab86` | 2026-11-20 19:49 | `ae79647` | Términos `2026-11-20`, puerta encendida. Coherencia 30/30; `/healthz` 200. Las dos cuentas aceptaron la versión nueva (Pablo, 2026-11-20). |
+| HomeSuite App (`staging.homesuite.info`) | Staging | `d742fd65` | 2026-11-20 19:48 | `ae79647` | Coherencia 29/29. Sin ingreso real con Google. |
+| Sitio (`homesuite.info`) | Producción | `c3ea68c0` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20 con Codex en la coautoría. Coherencia 30/30. |
+| Sitio | Staging | `7855bf2b` | 2026-11-20 19:48 | `ae79647` | Términos del 2026-11-20. Coherencia 29/29. |
 | Puente de TasKing (worker `tas-king`) | Producción | `06338b44` | 2026-11-10 23:28 | `74c614c` (inferido¹) | Sondas: 404 en URLs históricas, 200 con aviso, 302 a Google en tarjetas y adjuntos; coherencia 30/30. |
 | Puente de TasKing | Staging | `5bd7074e` | 2026-11-10 23:28 | `74c614c` (inferido¹) | Coherencia 29/29. |
 
@@ -44,6 +44,30 @@ Lo más nuevo arriba. Cada entrada lleva: fecha, entorno, unidad, SHA de `main`,
 de versión, migraciones aplicadas, smoke y quién verificó qué. Una verificación
 posterior (por ejemplo, una prueba en un dispositivo real) se agrega como entrada
 propia, con su fecha.
+
+### 2026-11-20 — producción y staging: Codex en la coautoría (términos `2026-11-20`)
+
+Por orden de Pablo («Mergeá todo y publicá en ambos ambientes»): #162 (docs) y #163.
+Los términos pasan a la versión `2026-11-20`: suman a Codex (OpenAI) en la coautoría
+y dejan de decir que los términos de Fun TasKing se conservan como archivo histórico.
+La política de privacidad sigue en `2026-11-19`. El pie de Tareas dice «en equipo
+con Claude y Codex».
+
+- **Staging:** sitio `7855bf2b` y app `d742fd65` (`ae79647`), sin migraciones;
+  respaldo local `staging/20261120T194821Z`. Coherencia 29/29.
+- **Producción:** primero el sitio `c3ea68c0`, después la app `573bab86`
+  (`ae79647`) con la puerta encendida; respaldo `production/20261120T194856Z` en R2.
+  Coherencia 30/30; `/healthz` 200.
+- **Smoke con curl:** los términos de los dos ambientes muestran la fecha del
+  2026-11-20 y a Codex, sin la frase del archivo histórico. El pie de Tareas se
+  comprobó en local (`dev:e2e:tasking`).
+- **Verificado por Pablo y en la base (2026-11-20):** las dos cuentas aceptaron los
+  términos `2026-11-20`.
+  - La que tenía sesión abierta pasó por `/aceptar` (método `gate`, 20:38:09 UTC).
+  - La otra entró con «Continuar con Google» y la aceptó al ingresar (método
+    `login`, 20:38:18 UTC), sin ver «Cambió».
+  - Es el comportamiento del diseño (D3). Pablo decidió cambiarlo: queda en la
+    prioridad 1 del backlog.
 
 ### 2026-11-20 — producción: verificación de la aceptación legal
 
