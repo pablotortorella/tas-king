@@ -64,9 +64,6 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
   - `pwa-instalable`: pasar las tareas 6.6 y 9.4, que dependen de Remanso con sonidos
     naturales, a `remanso-sonidos-naturales`. Hacer las pruebas físicas (8.2 a 8.4 y
     8.6, ver «Pruebas físicas de la PWA») y archivar.
-  - `migrar-tasking-homesuite`: decidir si los límites declarados en
-    [verificación](docs/tasking/VERIFICACION.md) alcanzan para cerrar 7.2, 7.3 y 8.5,
-    y archivar.
   - `importacion-como-movimientos`: su código está en `main` desde el 2026-10-25 y,
     según el tablero, en producción (inferido, no verificado). Falta 7.1, contar los
     lotes viejos en staging y producción. La 7.2, retirar las tablas antiguas, va en
@@ -77,7 +74,9 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
     hechas y dejar abierto solo el checklist de vigilancia.
 - **Cuidado:** criterio propuesto, sin decidir: no abrir un change nuevo hasta cerrar
   uno de los abiertos.
-- **Fecha:** 2026-11-17.
+- **Hecho:** `migrar-tasking-homesuite` se archivó el 2026-11-20, con los límites de 7.2
+  y 7.3 aceptados por Pablo.
+- **Fecha:** 2026-11-20.
 
 ### Alertas mínimas: checklist de vigilancia
 - **Qué:** con #150 en `main`, desde el 2026-11-13 corren los workflows programados

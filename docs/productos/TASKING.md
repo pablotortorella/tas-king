@@ -116,7 +116,7 @@ ni controles activos. Se conservaron las bases y buckets históricos.
 
 [Runbook de traslado y recuperación](../tasking/MIGRACION-HOMESUITE.md),
 [evidencia y límites](../tasking/VERIFICACION.md),
-[change](../../openspec/changes/migrar-tasking-homesuite/proposal.md).
+[change](../../openspec/changes/archive/2026-11-20-migrar-tasking-homesuite/proposal.md).
 No generalizar la CSP heredada: el módulo usa estilos externos/CSSOM y no añade
 `unsafe-inline` a HomeSuite. Favicon de corona por página; un único manifiesto,
 SW e iconos de instalación HomeSuite. Historial de novedades y términos inertes

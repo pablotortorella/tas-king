@@ -47,7 +47,7 @@ ensayaron con pruebas unitarias y un `gh` simulado, hasta que se complete el che
   `74c614ca30697e397a11efa562fa26fb52f952ac`, con árbol idéntico al candidato
   `b5383a4` aprobado por Pablo. CI del candidato aprobado
   ([ejecución](https://github.com/pablotortorella/tas-king/actions/runs/42921399121)).
-  Change [migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
+  Change [migrar-tasking-homesuite](../openspec/changes/archive/2026-11-20-migrar-tasking-homesuite/proposal.md),
   sin archivar: quedan límites de aceptación declarados en [verificación](tasking/VERIFICACION.md).
 - Pablo confirmó dos cuentas Google en staging y autorizó explícitamente integrar
   y migrar producción el 2026-11-10. La primera prueba incluyó entrada desde el

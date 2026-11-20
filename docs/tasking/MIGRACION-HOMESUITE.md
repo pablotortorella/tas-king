@@ -1,6 +1,6 @@
 # Traslado de TasKing a HomeSuite
 
-Implementación: change [migrar-tasking-homesuite](../../openspec/changes/migrar-tasking-homesuite/proposal.md).
+Implementación: change [migrar-tasking-homesuite](../../openspec/changes/archive/2026-11-20-migrar-tasking-homesuite/proposal.md).
 Estado y evidencia: [verificación](VERIFICACION.md). Este runbook prepara el corte;
 no acredita publicación ni sustituye la aprobación de producción de [Operación](../homesuite/OPERACION.md).
 Responsable: Pablo. No requiere contactar, preparar ni aprobar a cada usuario.

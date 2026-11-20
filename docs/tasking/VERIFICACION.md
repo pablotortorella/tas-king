@@ -1,9 +1,9 @@
 # Evidencia de la migración de TasKing
 
-Actualización: 2026-11-10. [PR #145](https://github.com/pablotortorella/tas-king/pull/145)
+Actualización: 2026-11-20. [PR #145](https://github.com/pablotortorella/tas-king/pull/145)
 integrado en `main` y publicado en staging y producción, con el recorrido real de
-producción aceptado por Pablo. El change conserva escenarios manuales pendientes;
-**no está archivado**. Versiones, hashes,
+producción aceptado por Pablo. El change se **archivó el 2026-11-20**, con los límites
+de los escenarios manuales aceptados por Pablo (ver el final de este documento). Versiones, hashes,
 copias y CI: [STATUS](../STATUS_HISTORIAL.md#tasking-en-homesuite--publicado-en-producción--2026-11-10).
 [Runbook y recursos](MIGRACION-HOMESUITE.md).
 
@@ -202,4 +202,5 @@ Las tareas 7.2–7.3 conservan los escenarios manuales no declarados en las
 confirmaciones resumidas de staging, incluidos los de PWA física coordinados con
 Claude. La autorización de producción aplicó a la evidencia disponible, sin
 convertir esos límites en pruebas realizadas. El smoke real de producción está
-confirmado; el change conserva esas tareas abiertas y no se archiva.
+confirmado. **2026-11-20:** Pablo aceptó estos límites, se cerraron 7.2 y 7.3 y el
+change se archivó; las pruebas físicas de la PWA siguen en `pwa-instalable`.
