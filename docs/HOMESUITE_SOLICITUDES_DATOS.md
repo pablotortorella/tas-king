@@ -81,7 +81,7 @@ La política les dice que escriban al mismo correo. La verificación de identida
 
 ## Plantillas de respuesta
 
-Se envían desde `pablotortorella@gmail.com` y en el mismo hilo. Los textos entre corchetes se completan. Son propuestas para que Pablo las ajuste; no son asesoramiento legal.
+Se envían desde `pablotortorella+homesuite@gmail.com` y en el mismo hilo. Pablo la configuró en Gmail el 2026-11-20 como alias «Enviar como», con la opción de responder desde la misma dirección a la que llegó el mensaje. Los textos entre corchetes se completan. Son propuestas para que Pablo las ajuste; no son asesoramiento legal.
 
 ### Acuse con «reclamo en trámite»
 

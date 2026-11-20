@@ -45,9 +45,6 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 - **Cuidado:**
   - Si algo falla con la puerta, se apaga con `"LEGAL_GATE": "off"` en
     `apps/app/wrangler.jsonc` (producción) y publicando la app.
-  - `HOMESUITE_SOLICITUDES_DATOS.md`, línea 84: las respuestas siguen saliendo de
-    `pablotortorella@gmail.com`. Para responder desde la dirección +homesuite hace
-    falta configurarla como alias en Gmail.
   - En CI, los E2E de Tareas `checklists.spec.js` y `card-mutation-performance.spec.js`
     son inestables.
 - **Fecha:** 2026-11-19.
