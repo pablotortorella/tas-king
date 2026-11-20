@@ -16,7 +16,7 @@ agregar la entrada al registro de abajo.
 
 | Unidad | Entorno | Versión | Publicada (UTC) | SHA de `main` | Verificación |
 |---|---|---|---|---|---|
-| HomeSuite App (`app.homesuite.info`) | Producción | `5752e5a5` | 2026-11-19 23:36 | `36c2768` | Puerta legal encendida. Coherencia 30/30; `/healthz` 200; aviso de acceso servido. Falta el ingreso real con Google por `/aceptar`. |
+| HomeSuite App (`app.homesuite.info`) | Producción | `5752e5a5` | 2026-11-19 23:36 | `36c2768` | Puerta legal encendida. Coherencia 30/30; `/healthz` 200; aviso de acceso servido. Pablo entró con Google y aceptó el 2026-11-20. |
 | HomeSuite App (`staging.homesuite.info`) | Staging | `5bb8cbfa` | 2026-11-19 23:27 | `78e15d0` | Migración `0014`. Coherencia 29/29; aviso de acceso servido. Sin ingreso real con Google. |
 | Sitio (`homesuite.info`) | Producción | `c3a0322e` | 2026-11-19 23:28 | `78e15d0` | Textos legales del 2026-11-19 servidos, sin borradores. Coherencia 30/30. |
 | Sitio | Staging | `dd7d03da` | 2026-11-19 23:27 | `78e15d0` | Textos legales del 2026-11-19 servidos. Coherencia 29/29. |
@@ -44,6 +44,13 @@ Lo más nuevo arriba. Cada entrada lleva: fecha, entorno, unidad, SHA de `main`,
 de versión, migraciones aplicadas, smoke y quién verificó qué. Una verificación
 posterior (por ejemplo, una prueba en un dispositivo real) se agrega como entrada
 propia, con su fecha.
+
+### 2026-11-20 — producción: verificación de la aceptación legal
+
+Pablo confirmó que entró a producción con Google y que funcionaron la aceptación de
+los términos y condiciones y la declaración de mayoría de edad. No informó el
+navegador, el dispositivo ni si probó las dos cuentas. La prueba en un teléfono real
+(tarea 8.2 de `politica-y-aceptacion`) sigue pendiente.
 
 ### 2026-11-19 — producción y staging: textos legales y aceptación
 
