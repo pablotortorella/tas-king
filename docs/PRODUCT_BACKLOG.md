@@ -130,7 +130,7 @@ logo ni paleta por sí sola. Priorización y aprobación: Pablo.
 
 - **Migrar TasKing a la app de HomeSuite y retirar su autorización global**
   (decisiones de Pablo, 2026-11-09). Propuesta en
-  [OpenSpec: migrar-tasking-homesuite](../openspec/changes/migrar-tasking-homesuite/proposal.md),
+  [OpenSpec: migrar-tasking-homesuite](../openspec/changes/archive/2026-11-20-migrar-tasking-homesuite/proposal.md),
   integrada en `main` y activa en staging y producción desde 2026-11-10
   ([evidencia](tasking/VERIFICACION.md)). Corte completado: se conservaron funciones y permisos por
   tablero, independientes de los grupos de Cuentas Claras. Cualquier cuenta

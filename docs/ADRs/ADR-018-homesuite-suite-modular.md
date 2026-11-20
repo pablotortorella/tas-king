@@ -45,7 +45,7 @@ aplicación autenticada que funciona como monolito modular evolutivo:
   Claras usa grupos; TasKing conserva membresías e invitaciones por **tablero**.
   Una cuenta HomeSuite dispone de su personal y de los tableros a los que fue
   incorporada, independientemente de los grupos compartidos.
-  Aclaración de Pablo del 2026-11-09: [migrar-tasking-homesuite](../../openspec/changes/migrar-tasking-homesuite/proposal.md).
+  Aclaración de Pablo del 2026-11-09: [migrar-tasking-homesuite](../../openspec/changes/archive/2026-11-20-migrar-tasking-homesuite/proposal.md).
 - La cookie autenticada será exclusiva de `app.homesuite.info`, sin atributo
   `Domain`, idealmente `__Host-homesuite_session`.
 - El callback OAuth será canónico en `app.homesuite.info` y aceptará únicamente

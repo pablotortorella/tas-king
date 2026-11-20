@@ -65,8 +65,10 @@
 ## 7. Verificación integrada y aceptación
 
 - [x] 7.1 Ejecutar suites de TasKing y HomeSuite afectadas, integraciones D1/R2 y E2E del origen integrado con puertos/estado aislados; verificar CI de todas las unidades tocadas y registrar SHA, comandos, resultados y límites.
-- [ ] 7.2 Desplegar el SHA revisado a staging coordinado, usando sólo datos del ambiente; verificar con dos cuentas Google reales recuperación de tableros, invitación, revocación, aislamiento, adjuntos y login/logout, registrando evidencia conforme a operación.
-- [ ] 7.3 Preparar enlaces/catálogo de app/sitio y ampliar la comprobación de coherencia con ambos Workers; verificar en staging aviso firmado y botón desde entradas viejas, Google sin cuenta HomeSuite previa, sesión HomeSuite vigente, enlace de tarjeta, favicon, aliases/previews, pestaña antigua y PWA ya instalada, sin dos versiones operativas ni destinos de otro ambiente.
+- [x] 7.2 Desplegar el SHA revisado a staging coordinado, usando sólo datos del ambiente; verificar con dos cuentas Google reales recuperación de tableros, invitación, revocación, aislamiento, adjuntos y login/logout, registrando evidencia conforme a operación.
+  - **Cerrada con límites aceptados por Pablo (2026-11-20).** Evidencia: dos cuentas Google reales confirmadas en staging, smoke real de producción del 2026-11-10 y diez días de uso en producción. Invitación, revocación y aislamiento tienen cobertura automatizada (integración y E2E), sin ensayo manual. Las pruebas físicas de la PWA siguen en `pwa-instalable` (8.2 a 8.6).
+- [x] 7.3 Preparar enlaces/catálogo de app/sitio y ampliar la comprobación de coherencia con ambos Workers; verificar en staging aviso firmado y botón desde entradas viejas, Google sin cuenta HomeSuite previa, sesión HomeSuite vigente, enlace de tarjeta, favicon, aliases/previews, pestaña antigua y PWA ya instalada, sin dos versiones operativas ni destinos de otro ambiente.
+  - **Cerrada con límites aceptados por Pablo (2026-11-20).** La coherencia de app, sitio y puente pasó 29/29 en staging y 30/30 en producción (incluye aviso firmado, enlace desde entradas viejas y destinos sin staging). Pestaña antigua, caché caliente y cookies vencidas se comprobaron con Chromium aislado (6.10). No se ensayó a mano: Google sin cuenta HomeSuite previa, aliases/previews ni una PWA ya instalada en un dispositivo físico; lo último sigue en `pwa-instalable`.
 - [x] 7.4 Presentar artefacto y runbook revisables para la aprobación de publicación de Pablo; verificar que la aprobación corresponde al SHA, recursos y ventana concretos antes de tocar producción.
 
 ## 8. Traslado definitivo y retiro
@@ -75,9 +77,10 @@
 - [x] 8.2 Con origen cerrado y destino conciliado, activar puente al 100 % y HomeSuite como único escritor; verificar smoke real de entrada/salida, recuperación, edición, permisos, adjuntos, favicon y favoritos antiguos, además de `verify:coherence:production`. Si falla antes de nuevas escrituras, abortar de forma controlada; después, conservar los nuevos cambios y mantener el origen cerrado.
 - [x] 8.3 Tras aceptación del traslado, retirar lista global, solicitudes, controles, endpoints y configuración independiente que ya no se use; verificar que una cuenta HomeSuite sin autorización antigua usa su personal mientras roles por tablero y administrativos siguen protegidos. Mantener respaldos según el runbook, sin eliminar infraestructura o datos históricos implícitamente.
 - [x] 8.4 Actualizar ficha, operación, estado y backlog distinguiendo implementado/integrado/desplegado/aceptado y manteniendo el dock fuera de alcance; verificar enlaces y registrar límites de preferencias locales y cualquier incidencia de identidad.
-- [ ] 8.5 Validar el change con `openspec validate migrar-tasking-homesuite --strict` y archivarlo sólo después de satisfacer escenarios y aceptación; verificar que no quedan tareas necesarias pendientes ni evidencia de recuperación faltante.
+- [x] 8.5 Validar el change con `openspec validate migrar-tasking-homesuite --strict` y archivarlo sólo después de satisfacer escenarios y aceptación; verificar que no quedan tareas necesarias pendientes ni evidencia de recuperación faltante.
+  - Hecho 2026-11-20: `openspec validate migrar-tasking-homesuite --strict` y archivo con los specs sincronizados, por decisión de Pablo.
 
 Evidencia y brechas: [verificación local](../../../docs/tasking/VERIFICACION.md).
-La integración, publicación y smoke real de producción están confirmados. Quedan los escenarios manuales de 7.2–7.3 y los límites de PWA declarados en la evidencia; el change no se archiva.
+La integración, publicación y smoke real de producción están confirmados. El 2026-11-20 Pablo aceptó los límites de 7.2–7.3 y se archivó el change; las pruebas físicas de la PWA siguen en `pwa-instalable`.
 
 Retiro 8.3 acreditado: lista/solicitudes sin rutas activas y ambos puentes sin secretos ni datos. Pablo confirmó el smoke real de 8.2 el 2026-11-10: aviso, Google, tableros, edición, adjunto y salida/reingreso; no se atribuyen otros pasos manuales a su respuesta. Documentación 8.4 registra esos límites.
