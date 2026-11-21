@@ -2,8 +2,9 @@
 
 - [ ] 1.1 Agregar al workflow del respaldo diario un job `notify-failure` (`needs: backup`, `if: failure()`, permisos `issues: write` y `contents: read`) que abre o comenta un issue deduplicado con la etiqueta `alerta-operativa`, asignado a `pablotortorella`; verificar con `workflow_dispatch` y una entrada `simulate` que fuerza la falla (se abre, un segundo disparo comenta sin duplicar)
   - Avance 2026-11-03 (sin marcar: falta la verificación con `workflow_dispatch`, que solo puede hacerse con el workflow en `main`): job `notify-failure` y entrada `simulate` implementados; `actionlint` sin errores; los caminos «se abre» y «un segundo disparo comenta sin duplicar» pasan en `apps/app/test/alertas-operativas.test.js`.
-- [ ] 1.2 Crear la etiqueta `alerta-operativa` y verificar que existe antes del primer disparo
+- [x] 1.2 Crear la etiqueta `alerta-operativa` y verificar que existe antes del primer disparo
   - Avance: el script crea la etiqueta si falta (y abre el issue sin ella si GitHub la rechaza), pero la tarea pide verificar que exista antes del primer disparo, y eso queda para Pablo. Nota: un ensayo local del script contra el `gh` real creó por error la etiqueta (ver el reporte de la rama); verificar su color y descripción.
+  - Hecho (verificado el 2026-11-21): la etiqueta existe con color `#B60205` y la descripción «Aviso automático de operación de HomeSuite», antes de cualquier aviso real. Los issues #138 a #141 los abrió aquel ensayo local (corrida «999», que no existe), no un workflow.
 - [ ] 1.3 Revisar el texto del issue: sin logs, emails ni nombres de grupos (repositorio público); verificar leyendo el issue generado por la simulación
   - Avance: los textos están fijados en `scripts/alertas-operativas.mjs` y probados (sin registros, emails ni grupos); falta leer el issue que genere la simulación real.
 - [ ] 1.4 Verificar que la notificación del issue llega por correo y por la aplicación móvil de GitHub a la persona asignada, y anotar el resultado en el PR
@@ -17,13 +18,16 @@
   - Avance (sin marcar: falta `workflow_dispatch` en `main` y el caso de la variable en `false`): workflow implementado; umbral, `simulate` y el caso de la corrida omitida cubiertos por pruebas unitarias. La corrida «exitosa» se valida mirando que el trabajo `backup` terminó en éxito, porque una corrida con el trabajo omitido podría figurar como exitosa para la API.
 - [ ] 2.3 Registrar durante dos semanas la hora real de salida de cada workflow y ajustar el intervalo del chequeo y el umbral de antigüedad si hubo falsos avisos; anotar el ajuste en el documento de vigilancia
   - Espera dos semanas de datos reales (registro en `docs/HOMESUITE_VIGILANCIA.md`).
+  - Avance 2026-11-21: primera semana registrada (del 14 al 20), sin falsos avisos y umbral de 26 h sin cambios. Hallazgo: el chequeo de salud corrió 25 de 336 veces, con esperas de hasta 10 h entre chequeos; elegir otro mecanismo es una decisión de Pablo. La segunda semana termina el 2026-11-27.
 
 ## 3. Revisión semanal
 
-- [ ] 3.1 Crear `homesuite-weekly-ops-review.yml` (lunes 12:00 UTC) que abre el issue con la lista de comprobación y menciona al anterior si sigue abierto; verificar con `workflow_dispatch`
+- [x] 3.1 Crear `homesuite-weekly-ops-review.yml` (lunes 12:00 UTC) que abre el issue con la lista de comprobación y menciona al anterior si sigue abierto; verificar con `workflow_dispatch`
   - Avance (sin marcar: falta `workflow_dispatch` en `main`): workflow implementado y probado con el `gh` simulado, incluida la mención de la revisión anterior abierta y la no duplicación de la misma semana.
+  - Hecho (verificado el 2026-11-21) con una corrida programada en `main` en vez de `workflow_dispatch`, que prueba más: el lunes 2026-11-16 abrió #155 («Revisión semanal de operación 2026-S47»), asignado a Pablo y con la mención de la revisión anterior abierta (#141).
 - [ ] 3.2 Escribir la lista de comprobación (incluidos los puntos 8 y 9 de `design.md` cuando existan `politica-y-aceptacion` y `eliminacion-de-grupos`)
   - Avance: puntos 1 a 7 escritos en el script y en `docs/HOMESUITE_VIGILANCIA.md` (una prueba exige que coincidan). Los puntos 8 y 9 esperan a que existan `politica-y-aceptacion` y `eliminacion-de-grupos`; están listados en el documento como pendientes de agregar.
+  - Avance 2026-11-21: punto 8 (plazos de solicitudes de datos) agregado al script y al documento. Sin marcar: el punto 9 espera a `eliminacion-de-grupos`, que no empezó.
 - [ ] 3.2b Escribir las consultas exactas de Workers Logs para `slow_book_open`, `unhandled_error`, `rate_limited`, `csrf_rejected` y `maintenance_completed`, y verificarlas una vez contra producción en solo lectura
   - Avance: eventos y nivel de log documentados a partir del código; las consultas exactas NO se verificaron contra producción (sin acceso de lectura a Workers Logs desde este entorno). Espera a Pablo.
 
@@ -36,11 +40,13 @@
 
 ## 5. Documentación y verificación
 
-- [ ] 5.1 Revisar que `privacidad.html` y `terminos.html` no requieren cambios por esta vigilancia (el chequeo no lleva datos personales) y dejar constancia en el PR; cualquier texto que se decida agregar es **texto legal que revisa Pablo**
+- [x] 5.1 Revisar que `privacidad.html` y `terminos.html` no requieren cambios por esta vigilancia (el chequeo no lleva datos personales) y dejar constancia en el PR; cualquier texto que se decida agregar es **texto legal que revisa Pablo**
   - Avance: revisado el 2026-11-03: `privacidad.html` ya cubre los registros técnicos y la dirección IP («Para operar y proteger el servicio tratamos identificadores de sesión, dirección IP y datos técnicos de las solicitudes. Registramos errores y eventos de seguridad…»); el chequeo de salud consulta `/healthz`, que no lleva ni lee datos personales. Sin cambios en `privacidad.html` ni `terminos.html`. Falta dejar constancia en el PR (no hay PR todavía).
+  - Hecho: la constancia quedó en el PR que suma el punto 8 (2026-11-21). La versión publicada de `privacidad.html` (2026-11-19) mantiene ese párrafo.
 - [x] 5.2 Escribir `docs/HOMESUITE_VIGILANCIA.md` (señal, mecanismo, quién se entera, frecuencia, qué hacer; sección «Qué no se vigila»; RPO/RTO propuestos) y enlazarlo desde `docs/homesuite/OPERACION.md` y `docs/HOMESUITE_RECOVERY.md`; verificar los enlaces
 - [ ] 5.3 Actualizar la línea de «monitoreo, alertas y revisión de logs» de `docs/HOMESUITE_DATA_LIFECYCLE.md`, `docs/STATUS.md` y el backlog (cerrar el pendiente de «alerta por fallos» del respaldo) sin afirmar aceptación hasta tener la evidencia de 1.4
   - Avance: `HOMESUITE_DATA_LIFECYCLE.md`, `STATUS.md`, `PRODUCT_BACKLOG.md` y `HOMESUITE_RECOVERY.md` actualizados sin afirmar aceptación. Sin marcar: el pendiente de «alerta por fallos» sigue abierto en el backlog hasta tener la evidencia de 1.4.
 - [x] 5.4 Agregar la prueba estática que lee los workflows de vigilancia y falla ante secretos distintos de `GITHUB_TOKEN` o permisos fuera de lo declarado; verificar que falla con un workflow de ejemplo que los viola
-- [ ] 5.5 Validar con `openspec validate alertas-minimas-homesuite --strict`, correr la prueba del glosario y abrir el PR sin mergear
+- [x] 5.5 Validar con `openspec validate alertas-minimas-homesuite --strict`, correr la prueba del glosario y abrir el PR sin mergear
   - Avance: `openspec validate --strict` y la prueba del glosario pasan en la rama (ver el reporte de la rama). Falta abrir el PR (no se hace en esta etapa).
+  - Hecho: el PR #150 se abrió sin mergear, y Pablo lo integró el 2026-11-13.

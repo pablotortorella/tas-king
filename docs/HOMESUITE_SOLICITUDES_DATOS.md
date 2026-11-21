@@ -140,7 +140,7 @@ Usa `scripts/festivos-colombia.json` (festivos 2026 a 2028, calculados con la re
 
 ## Revisión semanal
 
-Cada semana, junto con la revisión de [alertas mínimas](../openspec/changes/alertas-minimas-homesuite/proposal.md) (cuando ese change exista), se corre la calculadora y se atiende lo que figure como **por vencer** (5 días hábiles o menos) o **vencida**. Mientras ese change no exista, esta revisión se hace a mano con el mismo comando. Sumarla a la lista del change de alertas es la tarea 5.4 de `politica-y-aceptacion`.
+Cada semana, dentro de la [revisión semanal de operación](HOMESUITE_VIGILANCIA.md#revisión-semanal) (punto 8 del issue de los lunes, desde el 2026-11-21), se corre la calculadora y se atiende lo que figure como **por vencer** (5 días hábiles o menos) o **vencida**. El issue solo lo recuerda: la planilla es privada y el comando se corre a mano.
 
 ## Registro de aprobación
 

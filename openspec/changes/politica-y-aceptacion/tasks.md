@@ -68,8 +68,9 @@ Cada tarea redacta el texto propuesto en un commit aparte del código; ninguno s
   - Hecho: `scripts/solicitudes-plazos.mjs`, `scripts/festivos-colombia.json` y `apps/app/test/solicitudes-plazos.test.js`. Fuente de los festivos: regla de la Ley 51 de 1983 y fecha de Pascua, **calculada y NO verificada** contra el calendario oficial (`verificado: false`; el script avisa en cada corrida). Lo no verificado queda para Pablo.
 - [ ] 5.3 Pablo crea la planilla privada con las columnas del documento y la prueba con una solicitud ficticia; registrar la fecha en STATUS sin incluir datos personales
   - **Espera a Pablo.**
-- [ ] 5.4 Si `alertas-minimas-homesuite` ya existe, agregar a su revisión semanal «solicitudes abiertas con 5 días hábiles o menos y vencidas»
+- [x] 5.4 Si `alertas-minimas-homesuite` ya existe, agregar a su revisión semanal «solicitudes abiertas con 5 días hábiles o menos y vencidas»
   - No se hizo para no tocar los archivos de `alertas-minimas-homesuite`, que otro trabajo modifica en paralelo. Mientras tanto, `docs/HOMESUITE_SOLICITUDES_DATOS.md` («Revisión semanal») indica correr `node scripts/solicitudes-plazos.mjs` a mano cada semana. Queda para cuando ese change se integre.
+  - Hecho el 2026-11-21: punto 8 de la revisión semanal (`COMPROBACIONES_SEMANALES` en `scripts/alertas-operativas.mjs` y `docs/HOMESUITE_VIGILANCIA.md`). El issue solo recuerda correr la calculadora: no muestra solicitudes.
 
 ## 6. Encargados y transmisión internacional
 
