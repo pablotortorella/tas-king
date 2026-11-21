@@ -41,6 +41,7 @@ export const COMPROBACIONES_SEMANALES = [
   "Correos de incidentes y mantenimientos de Cloudflare de la semana.",
   "Los workflows de vigilancia siguen activos (ninguno figura como desactivado por inactividad).",
   "Issues `alerta-operativa` abiertos: atendelos o cerralos.",
+  "Solicitudes de datos personales: corré `node scripts/solicitudes-plazos.mjs` con la planilla privada y atendé las que figuren por vencer (5 días hábiles o menos) o vencidas.",
 ];
 
 // ---------------------------------------------------------------- gh

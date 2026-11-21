@@ -1,24 +1,25 @@
 # Vigilancia de HomeSuite en producción
 
-Vigente desde 2026-11-03 (en la rama `feature/alertas-minimas`, sin integrar). Change:
+Escrito el 2026-11-03; integrado en `main` el 2026-11-13 (PR #150). Change:
 [`alertas-minimas-homesuite`](../openspec/changes/alertas-minimas-homesuite/proposal.md).
 Parte de la [operación común](homesuite/OPERACION.md#vigilancia-y-avisos) y de la
 [recuperación](HOMESUITE_RECOVERY.md). Decisión de Pablo (2026-11-02): alertas mínimas con
 **GitHub y Cloudflare**, sin servicios de terceros.
 
-**Estado: implementado en una rama, sin integrar ni desplegar, y sin aceptar.** Los workflows
-programados solo corren desde `main`. Ningún aviso se probó todavía de verdad: ver el
-[checklist de puesta en marcha](#checklist-de-puesta-en-marcha) y no dar este control por
-cumplido hasta completarlo.
+**Estado: integrado y corriendo, sin aceptar.** Los cuatro workflows corren programados desde
+`main` desde el 2026-11-13, todos en verde, sin ningún aviso real. Ningún aviso se ensayó todavía
+con `workflow_dispatch` en `main`, y el chequeo de salud corre mucho menos de lo programado (ver
+[horas reales](#registro-de-horas-de-salida-y-ajustes)). No dar este control por cumplido hasta
+completar el [checklist de puesta en marcha](#checklist-de-puesta-en-marcha).
 
 ## Qué se vigila
 
 | Señal | Mecanismo | Quién se entera | Cada cuánto | Qué hacer |
 |---|---|---|---|---|
 | Falla del respaldo diario | Job `notify-failure` de `homesuite-production-backup.yml`: abre o comenta un issue | Pablo, por la asignación del issue (correo y aplicación de GitHub) | Cada corrida del respaldo (diaria) | [Respaldo fallido](#respaldo-fallido) |
-| La aplicación no responde | `homesuite-production-health.yml`: `/healthz`, 3 intentos separados por 15 s, `--max-time 10`; abre o comenta un issue y lo cierra al recuperarse | Pablo, por la asignación del issue | Cada 30 minutos (GitHub puede retrasarlo) | [/healthz no responde](#healthz-no-responde) |
+| La aplicación no responde | `homesuite-production-health.yml`: `/healthz`, 3 intentos separados por 15 s, `--max-time 10`; abre o comenta un issue y lo cierra al recuperarse | Pablo, por la asignación del issue | Programado cada 30 minutos; en la práctica, 3 a 5 veces por día (ver [horas reales](#registro-de-horas-de-salida-y-ajustes)) | [/healthz no responde](#healthz-no-responde) |
 | No hay un respaldo reciente | `homesuite-backup-freshness.yml`: última corrida exitosa del respaldo con menos de 26 horas | Pablo, por la asignación del issue | Diario, 20:00 UTC | [Respaldo desactualizado](#respaldo-desactualizado) |
-| `slow_book_open`, 5xx, `unhandled_error`, `maintenance_completed`, respaldos, incidentes, workflows activos | `homesuite-weekly-ops-review.yml`: abre un issue con la lista | Pablo, por la asignación del issue | Lunes 12:00 UTC | [Revisión semanal](#revisión-semanal) |
+| `slow_book_open`, 5xx, `unhandled_error`, `maintenance_completed`, respaldos, incidentes, workflows activos, plazos de solicitudes de datos | `homesuite-weekly-ops-review.yml`: abre un issue con la lista | Pablo, por la asignación del issue | Lunes 12:00 UTC | [Revisión semanal](#revisión-semanal) |
 | Incidentes y mantenimientos de Cloudflare, ataque DDoS HTTP, certificado Universal SSL | Notificaciones del panel de Cloudflare | Pablo, por correo | Cuando ocurren | [Cloudflare](#notificaciones-de-cloudflare) (pendiente de configurar) |
 
 Los cuatro workflows usan solo `GITHUB_TOKEN`, con permisos declarados por trabajo
@@ -84,15 +85,18 @@ Es una cita, no una alerta. Los lunes a las 12:00 UTC se abre el issue
 5. Correos de incidentes y mantenimientos de Cloudflare de la semana.
 6. Los workflows de vigilancia siguen activos (ninguno figura como desactivado por inactividad).
 7. Issues `alerta-operativa` abiertos: atendelos o cerralos.
+8. Solicitudes de datos personales: corré `node scripts/solicitudes-plazos.mjs` con la planilla privada y atendé las que figuren por vencer (5 días hábiles o menos) o vencidas.
 
-Si la revisión anterior sigue abierta, la nueva la menciona. **Puntos que se agregan cuando
-existan** (hoy no figuran en el issue, porque las herramientas todavía no existen):
+El punto 8 viene de `politica-y-aceptacion` ([procedimiento](HOMESUITE_SOLICITUDES_DATOS.md#revisión-semanal));
+se sumó el 2026-11-21. La planilla es privada y no se sube al repositorio: el issue solo recuerda
+correr el comando, nunca muestra solicitudes.
 
-- Solicitudes de datos personales abiertas, con 5 días hábiles o menos y vencidas (planilla y
-  `scripts/solicitudes-plazos.mjs` del change `politica-y-aceptacion`).
+Si la revisión anterior sigue abierta, la nueva la menciona. **Punto que se agrega cuando exista**
+(hoy no figura en el issue, porque la herramienta todavía no existe):
+
 - Grupos eliminados hace más de 32 días que siguen sin purgar (change `eliminacion-de-grupos`).
 
-Al integrarse cada uno, se suma la línea a `COMPROBACIONES_SEMANALES` en
+Al integrarse, se suma la línea a `COMPROBACIONES_SEMANALES` en
 `scripts/alertas-operativas.mjs` y a esta lista.
 
 #### Consultas de Workers Logs
@@ -190,15 +194,18 @@ producción y las corridas reales.
 
 ## Checklist de puesta en marcha
 
-Hecho en la rama (código, pruebas y este documento) y **pendiente de Pablo** (nada de esto se hizo
-ni se verificó):
+Lo marcado se verificó el 2026-11-21 contra GitHub; el resto queda **pendiente**:
 
-- [ ] Integrar la rama en `main` (los programados solo corren desde la rama por defecto).
-- [ ] Crear la etiqueta `alerta-operativa` (rojo, «Aviso automático de operación de HomeSuite») o
-      confirmar que el primer aviso la creó; verificar antes del primer disparo.
-- [ ] Verificar que el `GITHUB_TOKEN` pueda abrir issues: Settings, Actions, General, Workflow
+- [x] Integrar la rama en `main` (los programados solo corren desde la rama por defecto). Hecho el
+      2026-11-13 con el PR #150.
+- [x] Crear la etiqueta `alerta-operativa` (rojo, «Aviso automático de operación de HomeSuite») o
+      confirmar que el primer aviso la creó; verificar antes del primer disparo. Existe con color
+      `#B60205` y esa descripción.
+- [x] Verificar que el `GITHUB_TOKEN` pueda abrir issues: Settings, Actions, General, Workflow
       permissions. Los workflows piden `issues: write` por trabajo, que funciona con permisos por
       defecto de solo lectura; si el repositorio o la organización restringen los permisos, ajustarlo.
+      Verificado en la práctica: la revisión semanal programada del 2026-11-16 abrió el issue #155,
+      asignado y con la mención de la revisión anterior abierta.
 - [ ] Confirmar que las notificaciones de GitHub de Pablo (correo y aplicación móvil) incluyen las
       asignaciones de issues y que el aviso se lee bien en pantalla chica.
 - [ ] Disparar a mano cada ensayo de la tabla anterior, comprobar que el issue se abre, no se
@@ -214,17 +221,34 @@ ni se verificó):
 
 ### Registro de horas de salida y ajustes
 
-| Fecha | Workflow | Hora programada (UTC) | Hora real (UTC) | Falso aviso | Ajuste |
-|---|---|---|---|---|---|
-| — | — | — | — | — | — |
+Primera semana completa, del 2026-11-14 al 2026-11-20 (corridas programadas leídas de GitHub el
+2026-11-21). Todas terminaron en éxito y ninguna abrió un aviso: **sin falsos avisos**.
+
+| Workflow | Hora programada (UTC) | Corridas reales | Hora real (UTC) | Lectura |
+|---|---|---|---|---|
+| `homesuite-production-backup.yml` | 05:17, diario | 7 de 7 | 12:09 a 14:24 (7 a 9 h tarde) | Entre dos respaldos pasaron de 23,6 a 24,9 h |
+| `homesuite-backup-freshness.yml` | 20:00, diario | 6 de 6 (la del 20 todavía no había corrido al consultar) | 23:41 a 02:47 del día siguiente (4 a 7 h tarde) | Cada control encontró un respaldo de 11 a 13 h, lejos del umbral de 26 h |
+| `homesuite-weekly-ops-review.yml` | lunes 12:00 | 1 de 1 | 2026-11-16 21:49 (casi 10 h tarde) | Abrió #155 |
+| `homesuite-production-health.yml` | cada 30 min (48 por día) | 25 de 336 (7 %) | 3 a 5 por día; entre corridas, de casi 4 a 10 h | Ver abajo |
+
+**El chequeo de salud no cumple su intervalo.** GitHub demora o descarta los disparos programados
+cuando tiene carga, y no garantiza que corran. La espera más larga entre dos chequeos
+fue de 10 h 16 min (2026-11-16, de 08:53 a 19:09). En la práctica, una caída de la aplicación
+puede pasar hasta medio día sin aviso. Bajar el intervalo programado no lo arreglaría. Si eso no
+alcanza, la salida es otro mecanismo; elegirlo es una decisión de Pablo, pendiente.
+
+Umbral de 26 h: sin ajuste. Aun con 9 h de retraso, el respaldo sale todos los días, y un día sin
+respaldo deja un hueco de más de 30 h, que el control detecta. La segunda semana de registro
+termina el 2026-11-27.
 
 Corridas programadas del respaldo observadas antes de este change: 2026-10-30 11:23, 2026-10-31
 10:54, 2026-11-01 11:49, 2026-11-02 13:28 y 2026-11-03 12:46 (hora programada: 05:17).
 
 ## Cuota de GitHub Actions
 
-El chequeo de salud corre 48 veces por día, unos 1.440 por mes, de menos de un minuto cada uno
-(GitHub redondea cada trabajo al minuto: ~1.440 minutos por mes). Los repositorios públicos no
+El chequeo de salud está programado 48 veces por día, unos 1.440 por mes, de menos de un minuto
+cada uno (GitHub redondea cada trabajo al minuto: hasta ~1.440 minutos por mes; en la primera
+semana corrió unas 100 veces por mes). Los repositorios públicos no
 consumen la cuota de minutos de los runners estándar de GitHub (según la documentación de
 facturación de Actions; no verificado en la cuenta de Pablo). Si el repositorio pasara a privado,
 descontaría del plan: 2.000 minutos mensuales en el gratuito.
