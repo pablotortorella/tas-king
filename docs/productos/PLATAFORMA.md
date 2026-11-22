@@ -71,7 +71,7 @@ cookies autenticadas al sitio. Cambios de DNS preservan registros ajenos al alca
 
 ## App instalable
 
-Cambio [pwa-instalable](../../openspec/changes/pwa-instalable/proposal.md); estado en [STATUS](../STATUS.md).
+Cambio [pwa-instalable](../../openspec/changes/archive/2026-11-22-pwa-instalable/proposal.md); estado en [STATUS](../STATUS.md).
 El service worker (alcance `/`) guarda en el dispositivo solo una lista cerrada de estáticos públicos
 (`/app.css`, scripts de la app, `/manifest.webmanifest`, archivos de Jardín Zen y Remanso sin audio) y las
 páginas sin conexión. **Nunca** guarda nada autenticado: ni `/api`, ni `/auth`, ni HTML con datos de cuenta o

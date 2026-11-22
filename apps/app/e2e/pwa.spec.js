@@ -5,7 +5,7 @@ import path from "node:path";
 import { chromium, expect, test } from "@playwright/test";
 import { openBook } from "./helpers.js";
 
-// HomeSuite App instalable (openspec/changes/pwa-instalable, grupo 6): service worker real sobre `wrangler dev`.
+// HomeSuite App instalable (openspec/changes/archive/2026-11-22-pwa-instalable, grupo 6): service worker real sobre `wrangler dev`.
 // El resto de las suites corren con los service workers bloqueados (playwright.config.mjs); aquí se permiten.
 test.use({ serviceWorkers: "allow" });
 

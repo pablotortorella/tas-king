@@ -1,4 +1,4 @@
-// HomeSuite App instalable (openspec/changes/pwa-instalable): manifiesto, service worker, script de registro y página «Sin conexión».
+// HomeSuite App instalable (openspec/changes/archive/2026-11-22-pwa-instalable): manifiesto, service worker, script de registro y página «Sin conexión».
 //
 // El service worker solo precarga una lista cerrada de recursos PÚBLICOS (RUTAS_PRECARGA) y nunca escribe en la caché después. Las
 // navegaciones van siempre a la red; solo si la red falla se sirve una página sin conexión sin datos de la persona. Las reglas
