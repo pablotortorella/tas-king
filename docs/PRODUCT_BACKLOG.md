@@ -34,6 +34,23 @@ Orden fijado por Pablo. Cada una abre su exploración (`/opsx:explore`) antes de
      - qué datos viajan sin revelar contenido de un grupo o un tablero;
      - límites de envío y cómo se prueba sin mandar avisos reales.
    - **Aceptación:** exploración con Pablo y change con spec y pruebas.
+   - **Aviso rápido de caída de la app** (Pablo, 2026-11-21; explorar junto con esta prioridad).
+     - **Problema:** el chequeo de `/healthz` en GitHub Actions corrió 25 de las 336 veces programadas del 14 al 20 de noviembre ([vigilancia](HOMESUITE_VIGILANCIA.md#registro-de-horas-de-salida-y-ajustes)). Una caída puede pasar hasta medio día sin aviso. Pablo lo aceptó por ahora; los términos ya dicen que no prometemos disponibilidad continua y no cambian.
+     - **Opción recomendada, un Worker vigía en Cloudflare:**
+       - un Worker propio con un disparador programado cada 5 minutos consulta `/healthz` y, si falla, manda un correo a Pablo con `send_email`;
+       - mandar correo a direcciones verificadas de la cuenta es gratis en todos los planes, no consume cuota y no depende del proveedor de la prioridad 3;
+       - requiere activar Email Routing en `homesuite.info`, que hoy no tiene registros MX;
+       - guarda si ya avisó, para no repetir el correo cada 5 minutos;
+       - mantiene la decisión del 2026-11-02 de usar sólo GitHub y Cloudflare;
+       - límite: si se cae Cloudflare entero, se cae también el vigía, y para eso están los avisos de incidentes del panel.
+     - **Alternativa sin código:** un monitor externo gratuito.
+       - UptimeRobot: 50 monitores cada 5 minutos; el uso comercial en el plan gratuito no está confirmado en su página.
+       - Better Stack: 10 monitores cada 3 minutos.
+       - Mira desde afuera de Cloudflare, pero suma una cuenta de terceros.
+     - **Descartado por ahora:** las notificaciones del panel de Cloudflare. En el plan gratuito sólo mandan correo y no vigilan la app; los webhooks y PagerDuty piden planes pagos.
+     - **No verificado:** si los Health Checks de Cloudflare exigen el plan Pro.
+     - **Fuentes consultadas el 2026-11-21:** [envío desde Workers](https://developers.cloudflare.com/email-routing/email-workers/send-email-workers), [límites de Email Routing](https://developers.cloudflare.com/email-routing/limits/), [notificaciones de Cloudflare](https://developers.cloudflare.com/notifications/), [precios de UptimeRobot](https://uptimerobot.com/pricing) y [frecuencia de Better Stack](https://betterstack.com/docs/uptime/check-frequency/).
+     - **Aceptación:** exploración con Pablo; change con spec, pruebas del aviso y su no duplicación, y ensayo de una caída simulada en staging.
 
 3. **Correo electrónico** (invitaciones, avisos de cambios legales y otras notificaciones).
    - **Qué hay hoy:** el pedido de Cuentas Claras en «Cuentas Claras: envío de correo electrónico» (más abajo).

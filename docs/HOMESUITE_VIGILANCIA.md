@@ -234,8 +234,10 @@ Primera semana completa, del 2026-11-14 al 2026-11-20 (corridas programadas leí
 **El chequeo de salud no cumple su intervalo.** GitHub demora o descarta los disparos programados
 cuando tiene carga, y no garantiza que corran. La espera más larga entre dos chequeos
 fue de 10 h 16 min (2026-11-16, de 08:53 a 19:09). En la práctica, una caída de la aplicación
-puede pasar hasta medio día sin aviso. Bajar el intervalo programado no lo arreglaría. Si eso no
-alcanza, la salida es otro mecanismo; elegirlo es una decisión de Pablo, pendiente.
+puede pasar hasta medio día sin aviso. Bajar el intervalo programado no lo arreglaría. Pablo lo
+aceptó por ahora (2026-11-21). La salida es otro mecanismo, por ejemplo un Worker vigía en
+Cloudflare con aviso por correo. Está anotado en el [backlog](PRODUCT_BACKLOG.md) («Aviso rápido
+de caída de la app», junto con la prioridad 2).
 
 Umbral de 26 h: sin ajuste. Aun con 9 h de retraso, el respaldo sale todos los días, y un día sin
 respaldo deja un hueco de más de 30 h, que el control detecta. La segunda semana de registro
