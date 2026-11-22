@@ -357,7 +357,7 @@ Lo que está en `main` sin publicar no se anota: se calcula con git ([qué va en
 
 ## 🧪 Verificaciones manuales pendientes de changes archivados
 
-Changes de OpenSpec archivados el 2026-11-03 (implementados y en producción) que conservan una tarea sin marcar porque solo la puede cerrar Pablo con un dispositivo real o de oído. Cada tarea lleva en su `tasks.md` la nota «pendiente de verificación manual, ver backlog».
+Changes de OpenSpec archivados desde el 2026-11-03, o a punto de archivarse (implementados y en producción), que conservan una tarea sin marcar porque solo la puede cerrar Pablo con un dispositivo real o de oído. Cada tarea lleva en su `tasks.md` la nota «pendiente de verificación manual, ver backlog».
 
 | Change archivado | Qué falta verificar | Cómo se cierra |
 |---|---|---|
@@ -365,6 +365,7 @@ Changes de OpenSpec archivados el 2026-11-03 (implementados y en producción) qu
 | `jardin-zen-beta` (2 tareas) | WebGL 2 con aceleración real y tacto en un celular; aceptación de la beta (Pablo probó en un celular real el 2026-11-02, sin modelo ni navegador) | Pablo informa dispositivo y navegador y acepta la beta |
 | `personas-del-grupo` (7.3) | Unir en staging las dos personas duplicadas del caso real y registrar el resultado | Prueba de Pablo en staging, sin tocar producción |
 | `forma-de-pago` (3.3) | Probar la forma de pago con Pablo en staging (ya está en producción desde 2026-10-31) | Confirmación de Pablo del recorrido |
+| `pwa-instalable` (8.3) | La PWA en iPhone + Safari: «Compartir → Agregar a inicio», nombre e ícono, modo app, entrar con Google dentro de la app (anotar si termina en Safari o en la app), también habiendo entrado antes en Safari; modo avión en Jardín Zen y Remanso abiertos **dentro** de la app; volver al inicio desde una página de error. Lista completa en el `design.md` del change, «Verificación manual pendiente de Pablo» | Pablo se la pide a Lucio (pasada al backlog el 2026-11-22). Si el acceso con Google falla, sumar «Acceso con Google en la app instalada de iOS» como ítem propio |
 
 ---
 
