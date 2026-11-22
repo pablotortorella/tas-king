@@ -75,6 +75,7 @@ el mismo commit y las pruebas se escriben antes que el código.
 - [ ] 8.3 STATUS y backlog: el ítem «Sonidos reales» pasa a implementado en rama con lo que sigue pendiente (flujo de la lluvia en iPhone, AAC, repetición de fuego y bosque); mantener el ítem «Remanso: sonido de mar (olas en la orilla)»; ADR-019: nota sobre los archivos de audio y el plan B.
 - [ ] 8.4 **Texto legal que revisa Pablo:** redactar la propuesta para `apps/site/public/privacidad.html` (sección Remanso y lista de preferencias locales), `terminos.html` (sección Remanso) y `remanso.html` (landing) según D13; entregarla a Pablo como diff y esperar su aprobación; no cambiar «Última actualización» sin ella. Ajustar las pruebas del sitio que citen esas frases.
 - [ ] 8.5 Revisión de todo texto nuevo: español rioplatense con voseo y lenguaje sin género; `glossary.test.js` en verde.
+- [ ] 8.6 (traída de `pwa-instalable`, tarea 9.4, el 2026-11-22) En `design.md` (D8) y en el non-goal del proposal, cambiar «Sin Service Worker…» por «El service worker de `pwa-instalable` no intercepta `/remanso/audio/*` ni pedidos con `Range`; sin conexión aplica el respaldo al sintetizado».
 
 ## 9. Verificación y publicación
 
@@ -85,3 +86,4 @@ el mismo commit y las pruebas se escriben antes que el código.
 - [ ] 9.5 Decidir con esa evidencia las preguntas abiertas que dependen de ella (flujo de la lluvia en iPhone y `FLUJO_EN_IOS`, AAC/M4A, espera de 3 s) y, si hace falta, abrir un change nuevo.
 - [ ] 9.6 Producción de la app solo con aprobación explícita de Pablo y con el sitio de los textos revisados ya desplegado (o junto con la app).
 - [ ] 9.7 PR con problema, resultado, validación y límites; archivar el change cuando esté verificado e integrado, no por tener los documentos.
+- [ ] 9.8 (traída de `pwa-instalable`, tarea 6.6, el 2026-11-22) Con el service worker activo, el pedido con `Range` de `/remanso/audio/lluvia.v1.opus` llega a la red (206) y no aparece en la caché; sin conexión y sin el archivo en caché HTTP, Remanso usa el sintetizado.
