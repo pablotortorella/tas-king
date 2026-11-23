@@ -77,8 +77,8 @@
   - que el ranking de Tareas lo ve solo el dueño.
 
   Entregarla a Pablo como diff y esperar su aprobación antes de cambiar «Última actualización», «entra en vigor» y la versión en `legal.js`. Ajustar las pruebas del sitio y de `legal.test.js` que citen las frases o la versión.
-- [ ] 9.2 Agregar al glosario (`docs/homesuite/GLOSARIO.md`) «dueño de la suite», «rol de herramienta», «entró», «hizo algo», «período cerrado» y «consola», y correr `apps/app/test/glossary.test.js`.
-- [ ] 9.3 Actualizar:
+- [x] 9.2 Agregar al glosario (`docs/homesuite/GLOSARIO.md`) «dueño de la suite», «rol de herramienta», «entró», «hizo algo», «período cerrado» y «consola», y correr `apps/app/test/glossary.test.js`.
+- [x] 9.3 Actualizar:
   - `docs/productos/PLATAFORMA.md`: consola, roles y medición;
   - `docs/productos/TASKING.md`: la administración pasa a la consola;
   - `docs/productos/REMANSO.md`: el resultado con cuenta;
@@ -86,7 +86,7 @@
   - el ítem del backlog.
 
   Verificar los enlaces.
-- [ ] 9.4 Revisar todo texto nuevo de la interfaz: español rioplatense con voseo, lenguaje sin género y `glossary.test.js` en verde.
+- [x] 9.4 Revisar todo texto nuevo de la interfaz: español rioplatense con voseo, lenguaje sin género y `glossary.test.js` en verde.
 
 ## 10. Verificación y publicación
 

@@ -92,6 +92,33 @@ Rutas nuevas: `/manifest.webmanifest`, `/sw.js`, `/pwa.js`, `/sin-conexion`, `/s
   favicon propio. Sin conexión muestra la página genérica `/sin-conexion`. La caché nunca guarda `/tareas`, `/api/tareas/*` ni
   `/tareas/adjuntos/*` (`e2e/tasking/migration-ui.spec.js`). No hay Tareas sin conexión.
 
+## Consola y estadística de uso
+
+Change [`consola-administracion-homesuite`](../../openspec/changes/consola-administracion-homesuite/proposal.md).
+
+- **Consola en `/consola`.** Tiene cuatro pestañas: Suite, Tareas, Cuentas Claras y Administradores. Se dibujan en el servidor
+  (`apps/app/src/console/`).
+  - **Acceso.** Lo da la condición de dueño de la suite: identificadores de `users` en el secreto `HOMESUITE_OWNER_USER_IDS`, nunca en la
+    base. También lo da un rol por herramienta (`platform_roles`: `tareas`, `cuentas-claras`), que sólo da un dueño desde
+    Administradores.
+  - **404 uniforme.** Para quien no puede entrar, toda ruta `/consola*` y `/api/consola/*` responde el mismo 404 que una ruta
+    inexistente. El intento queda sólo en el log (`console_denied`), sin la cuenta.
+  - **Auditoría.** Queda en `platform_audit_events`, sin correos: `platform_role_granted` y `platform_role_revoked`, `console_opened` (una
+    vez por persona y por día) y `console_accounts_viewed`.
+- **Medición.** Un middleware (`usage-middleware.js`) corre después de la puerta legal. Mide sólo respuestas exitosas con sesión de las
+  rutas de [`usage-catalog.js`](../../apps/app/src/usage-catalog.js), fuera del camino de la respuesta.
+  - **Por persona** se guarda sólo `users.last_active_on`, en fecha de Colombia.
+  - **En agregado** se guardan conteos diarios de acciones y personas distintas por período cerrado (día, semana ISO, mes, trimestre y
+    año). Las marcas HMAC (`USAGE_MARKER_SECRET`) se borran al cerrar cada período.
+  - **Remanso** informa sólo `{ resultado }` en `POST /api/uso/remanso`.
+  - **Una ruta nueva** que deba contar como «entró» o «hizo algo» se suma al catálogo. Una prueba falla si una ruta del catálogo deja de
+    existir.
+- **Mantenimiento diario.** Purga las marcas vencidas y guarda la foto de la suite (`usage_suite_snapshots`). Los contadores no se borran.
+- **Local.** `npm run dev:consola` (puerto 8795) siembra una cuenta dueña (`consola@example.test`), una con rol de Tareas
+  (`tareas-admin@example.test`), una sin rol (`sin-rol@example.test`) y estadística sintética. Se cambia de cuenta con
+  `/api/local/session?as=<correo>`.
+- **Secretos por ambiente.** Ver [operación](../homesuite/OPERACION.md#secretos-de-la-consola-y-de-la-estadística-de-uso).
+
 ## Límites
 
 La política de recuperación y ciclo de vida de datos debe demostrarse antes de

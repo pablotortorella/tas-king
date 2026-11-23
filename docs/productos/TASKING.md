@@ -39,6 +39,20 @@ Validar arrastre entre columnas y dentro de una columna, scroll/pan, modal con
 borrador, textos largos, tema y movimiento reducido cuando el cambio los afecte.
 No asumir cinco columnas fijas: son configurables.
 
+## Administración desde la consola
+
+La administración de Tareas vive en la consola de HomeSuite, en `/consola/tareas` (change `consola-administracion-homesuite`, D10):
+- **Quién administra.** El dueño de la suite o quien tiene el rol de plataforma `tareas`. La marca heredada `tasking_identities.is_admin`
+  ya no da permisos; se conserva para volver atrás y se retira en un change posterior. `/api/tareas/admin/*` ya no existe.
+- **El tablero general** muestra a quien administra sólo «Actividad del tablero» y el enlace «Administración». Los roles se dan en la
+  pestaña Administradores de la consola.
+- **La pestaña Tareas** muestra totales y la lista de cuentas con nombre y correo. El ranking por persona lo ve sólo el dueño.
+- **Uso medido** (`apps/app/src/usage-catalog.js`):
+  - «entró»: abrir un tablero, es decir, pedir sus tarjetas;
+  - «hizo algo»: crear, mover o editar una tarjeta, comentar o adjuntar.
+
+  Una acción nueva que deba contar se agrega ahí.
+
 ## Comandos y evidencia
 
 | Necesidad | Comando desde raíz |
