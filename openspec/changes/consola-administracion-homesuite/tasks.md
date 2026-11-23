@@ -90,7 +90,7 @@
 
 ## 10. Verificación y publicación
 
-- [ ] 10.1 Correr `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app`, `npm run test:e2e:remanso`, `npm run test:e2e:tasking`, `npm run test:homesuite-site` y `openspec validate consola-administracion-homesuite --strict`. Registrar comandos, SHA y resultados en el PR.
+- [x] 10.1 Correr `npm run test:homesuite-app`, `npm run test:homesuite-app:integration`, `npm run test:e2e:homesuite-app`, `npm run test:e2e:remanso`, `npm run test:e2e:tasking`, `npm run test:homesuite-site` y `openspec validate consola-administracion-homesuite --strict`. Registrar comandos, SHA y resultados en el PR.
 - [ ] 10.2 Levantar la versión local (`npm run dev`) con una cuenta dueña, otra con rol de Tareas y otra sin rol. Ofrecerle a Pablo la URL local con qué mirar (las cuatro pestañas, el 404 y la actividad de Tareas) y esperar su OK antes de proponer staging.
 - [ ] 10.3 Staging, con orden de Pablo: configurar los secretos, publicar migración, sitio y app (D12), y hacer el smoke con las tres cuentas. Verificar también un día de medición real: al día siguiente, la foto y los contadores existen y las marcas del día anterior se purgaron.
 - [ ] 10.4 Producción solo con orden explícita de Pablo, en el orden migración, sitio y app, y después `npm run verify:coherence:production`. Actualizar STATUS y el handoff en un PR de documentación aparte.
