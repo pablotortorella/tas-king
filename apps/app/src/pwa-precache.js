@@ -8,5 +8,5 @@ export const PRECACHE_PUBLIC = Object.freeze([
   { ruta: "/remanso/remanso-engine.js", sha256: "f00c37b50d166523377348c2be3410a6f4141cf0d7eff070ec774bc513047042" },
   { ruta: "/remanso/remanso-gongs.js", sha256: "0a66d57d45c3a011a1c6222f77c8cbd9636527f98a6acfb54f06d8308636d4dd" },
   { ruta: "/remanso/remanso.css", sha256: "1bf51e7a4cf0b499647ef97af6bfeed6aabdd962915eada215ef4b9c7859e695" },
-  { ruta: "/remanso/remanso.js", sha256: "97261b46d52aa384802dcf14f4b305cfdfba0425be8eab0c23d4bd836d87ce6f" },
+  { ruta: "/remanso/remanso.js", sha256: "d064cacb8cb35ccc6162c3c3f36cc3815e48c56dc6b6607a31c61ba6bcfe83ce" },
 ]);

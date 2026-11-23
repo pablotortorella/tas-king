@@ -217,6 +217,56 @@ test.describe("con cuenta", () => {
     await expect(page.locator("#rem-c-saludo")).toHaveText("Gracias por tu pausa, pablo.");
     await expectNoViolations(page);
   });
+
+  // Estadística de la suite (consola-administracion-homesuite, tarea 4.2): con sesión sale una sola petición con el resultado, sin
+  // duración, fondo, gong ni ánimo. El reloj del audio se acelera para no esperar el minuto real.
+  async function resultadosEnviados(page) {
+    const sent = [];
+    page.on("request", (request) => { if (request.method() !== "GET") sent.push({ url: new URL(request.url()).pathname, body: request.postData() }); });
+    await page.addInitScript(() => {
+      const Accelerated = window.AudioContext;
+      window.AudioContext = class extends Accelerated { get currentTime() { return super.currentTime * (window.__velocidad || 1); } };
+    });
+    await page.goto("/api/local/session?as=pablo%40example.test");
+    await page.goto("/remanso");
+    await expect(page.locator("#remanso")).toHaveAttribute("data-uso", /.+/u);
+    return sent;
+  }
+
+  test("al completar la sesión sale una sola petición «terminada», sin datos de la sesión", async ({ page }) => {
+    const sent = await resultadosEnviados(page);
+    await page.evaluate(() => { window.__velocidad = 120; });
+    await page.locator('[data-m="1"]').click();
+    await page.locator('[data-a="silencio"]').click();
+    await page.getByRole("button", { name: "Comenzar · 1 min" }).click();
+    await expect(page.locator("#rem-cierre")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Un minuto de calma");
+    await page.locator("[data-animo]").first().click();
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent).toEqual([{ url: "/api/uso/remanso", body: JSON.stringify({ resultado: "terminada" }) }]);
+    await page.goto("/");
+    expect(sent).toHaveLength(1);
+  });
+
+  test("al terminar antes de tiempo sale una sola «abandonada»", async ({ page }) => {
+    const sent = await resultadosEnviados(page);
+    await page.locator('[data-m="5"]').click();
+    await page.getByRole("button", { name: "Comenzar · 5 min" }).click();
+    await page.getByRole("button", { name: "Terminar sesión" }).click();
+    await expect(page.locator("#rem-cierre")).toBeVisible();
+    await page.goto("/");
+    expect(sent).toEqual([{ url: "/api/uso/remanso", body: JSON.stringify({ resultado: "abandonada" }) }]);
+  });
+
+  test("al salir de la página con una sesión en curso sale una sola «abandonada»", async ({ page }) => {
+    const sent = await resultadosEnviados(page);
+    await page.locator('[data-m="5"]').click();
+    await page.getByRole("button", { name: "Comenzar · 5 min" }).click();
+    await expect(page.locator("#rem-sesion")).toBeVisible();
+    await page.goto("/");
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent).toEqual([{ url: "/api/uso/remanso", body: JSON.stringify({ resultado: "abandonada" }) }]);
+  });
 });
 
 // Presupuesto de oscilación de volumen en dB. El «wa-wa» original del paquete mide ~21.

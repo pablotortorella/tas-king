@@ -29,6 +29,7 @@ import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, LE
 import { isGateExempt, legalDocuments, legalGateEnabled, pendingFor, recordAcceptances, requiredVersions, sanitizeVersions, stateVersions, upcomingNotices } from "./legal.js";
 import { renderAcceptPage, renderAcceptRequired, renderLegalBand, renderLegalFooter } from "./legal-ui.js";
 import { runMaintenance } from "./maintenance.js";
+import { measureUsage } from "./usage-middleware.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation, resolveGroup } from "./groups.js";
@@ -276,6 +277,9 @@ app.use("*", async (c, next) => {
   c.set("protectedUser", session);
   return next();
 });
+
+// Medición de uso (consola-administracion-homesuite, D1): después de la puerta legal y del control de escrituras.
+app.use("*", measureUsage);
 
 app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 

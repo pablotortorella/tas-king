@@ -31,7 +31,7 @@ Estado actual que condiciona el diseño:
 
 ### D1. Medición en un middleware con una tabla de rutas
 
-Un único middleware de `index.js`, después de la puerta legal y del control de mutaciones, corre `await next()` y después mira la respuesta. Si hay sesión, la respuesta es 2xx y el par método/ruta figura en una tabla declarativa (`usage-catalog.js`), traduce la petición en `{ herramienta, nivel, acción? }`. El trabajo pesado va a `c.executionCtx.waitUntil(...)`, así que la respuesta sale sin esperar a la medición. Los errores se registran en el log como `usage_write_failed`, sin datos de la persona.
+Un único middleware de `index.js`, después de la puerta legal y del control de mutaciones, corre `await next()` y después mira la respuesta. Si hay sesión, la respuesta es exitosa (2xx, o la redirección 3xx con la que responden los formularios que guardaron bien, como la carga de un movimiento) y el par método/ruta figura en una tabla declarativa (`usage-catalog.js`), traduce la petición en `{ herramienta, nivel, acción? }`. La ruta que respondió se identifica con `matchedRoutes` de Hono (la primera ruta con método propio), así que `/groups/new` no se confunde con `/groups/:groupId`. El trabajo pesado va a `c.executionCtx.waitUntil(...)`, así que la respuesta sale sin esperar a la medición. Los errores se registran en el log como `usage_write_failed`, sin datos de la persona.
 
 - **Alternativa descartada: llamar a la medición desde cada ruta.** Es más preciso, pero toca los archivos que Codex está modificando y dispersa el catálogo.
 - **La tabla vive en un solo archivo** (ruta, método, herramienta, nivel y acción) y tiene una prueba que la recorre contra las rutas reales de la app.
@@ -123,7 +123,7 @@ El cron de producción corre a las 23:23 de Colombia, así que la foto describe 
 
 ### D10. Tareas se integra a la consola
 
-- **Migración:** `INSERT OR IGNORE INTO platform_roles SELECT user_id, 'tareas', NULL, CURRENT_TIMESTAMP FROM tasking_identities WHERE is_admin = 1 AND user_id IS NOT NULL`. Las identidades con marca y sin cuenta HomeSuite no reciben rol: se cuentan antes de migrar y se registran (tarea 1.1).
+- **Migración:** `INSERT OR IGNORE INTO platform_roles SELECT user_id, 'tareas', NULL, CURRENT_TIMESTAMP FROM tasking_identities WHERE is_admin = 1 AND user_id IS NOT NULL`. Las identidades con marca y sin cuenta HomeSuite no reciben rol: se cuentan antes de migrar y se registran (tarea 1.1). **Conteo en producción (2026-11-23, solo lectura, sin correos):** 1 identidad con `is_admin = 1` y cuenta HomeSuite, 0 sin cuenta; la migración no deja a nadie sin rol.
 - **API:** `/api/tareas/me` calcula `isAdmin` como «dueño o rol `tareas`», sin leer `is_admin`. `/api/tareas/admin/users` y `/stats` pasan a la consola, con el ranking solo para el dueño. `/api/tareas/admin/set-admin` se retira, y los roles se dan en Administradores.
 - **Cliente:** el panel de administración del tablero general conserva solo «Actividad», con el título «Actividad del tablero», y suma el enlace «Administración» a `/consola/tareas`. Se retiran las pestañas Usuarios, Estadísticas y Solicitudes.
 

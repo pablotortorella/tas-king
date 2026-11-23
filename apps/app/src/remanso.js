@@ -2,6 +2,12 @@ import { AMBIENTS, DURATIONS } from "../public/remanso/remanso-engine.js";
 import { DEFAULT_GONG, GONG_IDS } from "../public/remanso/remanso-gongs.js";
 import { readOwnProfile } from "./profiles.js";
 import { renderSignInNotice, signInHref } from "./legal-ui.js";
+import { createCsrfToken, inspectCsrfRequest } from "./csrf.js";
+import { checkRateLimit } from "./rate-limit.js";
+import { requestId, sessionSecret } from "./route-kit.js";
+import { REMANSO_RESULTS } from "./usage-catalog.js";
+import { recordUsage, usageSecret } from "./usage.js";
+import { inBackground } from "./usage-middleware.js";
 
 // Volumen inicial del fondo (0–100; el motor lo eleva al cuadrado). Era 55, el del paquete; con él el fondo quedaba muy bajo
 // frente al gong, así que sube un 30 % sobre el control (2026-10-27).
@@ -44,7 +50,7 @@ const ICONS = Object.freeze({
 
 const MOODS = Object.freeze(["En calma", "Igual", "Con inquietud"]);
 
-export function renderRemanso({ html, nombre = null, loginDisponible = true, hostname = "app.homesuite.info" }) {
+export function renderRemanso({ html, nombre = null, loginDisponible = true, hostname = "app.homesuite.info", usoToken = null }) {
   const nivel = nombre ? "cuenta" : "libre";
   const { libre } = REMANSO_ACCESO;
   const inicial = REMANSO_ACCESO[nivel].inicial;
@@ -59,6 +65,8 @@ export function renderRemanso({ html, nombre = null, loginDisponible = true, hos
     `data-inicial-volumen="${inicial.volumen}"`,
     nombre ? `data-nombre="${html(nombre)}"` : "",
     loginDisponible ? `data-login="${LOGIN_URL}"` : "",
+    // Sólo con sesión real: el token CSRF para informar el resultado de la sesión de meditación (POST /api/uso/remanso).
+    usoToken ? `data-uso="${html(usoToken)}"` : "",
   ].filter(Boolean).join(" ");
 
   const avisoEnlace = loginDisponible
@@ -167,13 +175,38 @@ export function htmlRemansoSinConexion({ page, html }) {
 export function registerRemansoRoutes(app, { page, html, googleConfigured, ...deps }) {
   app.get("/remanso", async (c) => {
     const profile = await currentProfile(c, deps);
+    // Sin cookie de sesión `signedInUser` no consulta D1 (ya resuelta por currentProfile, queda en caché).
+    const session = profile ? await deps.signedInUser(c) : null;
+    const secret = sessionSecret(c.env);
     const content = renderRemanso({
       html,
       nombre: profile?.displayName ?? null,
       loginDisponible: googleConfigured(c.env),
       hostname: new URL(c.req.url).hostname,
+      usoToken: session && secret ? await createCsrfToken({ sessionId: session.id, secret }) : null,
     });
     return c.html(page("Remanso", content, REMANSO_ASSETS));
+  });
+
+  // Resultado de una sesión de meditación con cuenta (consola-administracion-homesuite, D8): sólo { resultado }, con sesión, CSRF y el
+  // límite de escrituras. Responde 204 aunque la medición falle: la experiencia no cambia.
+  app.post("/api/uso/remanso", async (c) => {
+    const session = await deps.signedInUser(c);
+    if (!session) return c.json({ error: "Una sesión es requerida." }, 401);
+    const limit = await checkRateLimit(c.env?.MUTATION_RATE_LIMITER, session.id);
+    if (!limit.configured && c.env?.REQUIRE_RATE_LIMITS === "true") return c.json({ error: "Protección temporalmente no disponible.", requestId: requestId(c) }, 503);
+    if (!limit.allowed) { c.header("Retry-After", "60"); return c.json({ error: "Demasiadas solicitudes. Intentá de nuevo más tarde." }, 429); }
+    const csrf = await inspectCsrfRequest(c.req.raw, { sessionId: session.id, secret: sessionSecret(c.env) });
+    if (!csrf.valid) return c.json({ error: "Solicitud no verificada.", code: "csrf_rejected" }, 403);
+    let body;
+    try { body = await c.req.json(); } catch { return c.json({ error: "Se esperaba { resultado }." }, 400); }
+    const valid = body && typeof body === "object" && !Array.isArray(body) && Object.keys(body).length === 1 && Object.hasOwn(REMANSO_RESULTS, body.resultado);
+    if (!valid) return c.json({ error: "Se esperaba { resultado: \"terminada\" | \"abandonada\" }." }, 400);
+    const { tool, level, action } = REMANSO_RESULTS[body.resultado];
+    const secret = usageSecret(c.env);
+    if (secret) await inBackground(c, () => recordUsage(c.env.DB, { userId: session.user_id, tool, level, action, secret }));
+    else console.error("[homesuite-app]", JSON.stringify({ event: "usage_secret_missing", requestId: requestId(c) }));
+    return c.body(null, 204);
   });
 
   app.get("/sin-conexion/remanso", (c) => c.html(htmlRemansoSinConexion({ page, html }), 200, { "Cache-Control": "no-cache" }));

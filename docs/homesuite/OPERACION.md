@@ -20,6 +20,26 @@ Revisar diff y archivos preparados; una comprobación por nombre no es un escán
 de secretos. Si se expone uno, revocarlo/rotarlo y tratar el incidente, además de
 retirarlo del código. No asumir que borrarlo del último commit elimina la exposición.
 
+### Secretos de la consola y de la estadística de uso
+
+La app de HomeSuite usa dos secretos propios de cada ambiente (staging y
+producción), que se cargan con `wrangler secret put <NOMBRE> --env <ambiente>
+--config apps/app/wrangler.jsonc` y nunca van a `wrangler.jsonc`:
+
+- `HOMESUITE_OWNER_USER_IDS`: identificadores internos de `users` (no correos),
+  separados por coma, de quienes son dueños de la suite y ven toda la consola.
+  Para compartir la administración completa se agrega otro identificador y se
+  vuelve a cargar. Sin el secreto nadie es dueño y la consola responde 404.
+- `USAGE_MARKER_SECRET`: clave HMAC (32 caracteres o más, aleatoria) de las
+  marcas que evitan contar dos veces a una persona en un período. Rotarla sólo
+  el 1 de enero: si cambia a mitad de un período, quien vuelva en ese período
+  cuenta doble una vez. Sin el secreto no se mide el uso por herramienta y el log
+  registra `usage_secret_missing`; la app sigue funcionando.
+
+En local y en E2E los scripts de `package.json` pasan valores ficticios con
+`--var`; `npm run dev:consola` levanta la consola con tres cuentas sembradas
+(`apps/app/seed/consola-local.sql`).
+
 ## Publicación reproducible
 
 1. Identificar unidad desplegable, rama, SHA y checks requeridos. Trabajar con árbol

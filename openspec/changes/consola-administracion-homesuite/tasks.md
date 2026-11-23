@@ -1,29 +1,29 @@
 ## 1. Preparación y migración
 
-- [ ] 1.1 Contar en producción, solo en lectura y sin correos, las identidades de Tareas con `is_admin = 1`, con cuenta HomeSuite (`user_id` no nulo) y sin ella. Registrar ambos números en el PR y en el design (D10); verificar que la consulta no devuelve columnas de correo.
-- [ ] 1.2 Mirar `main` y fijar el número de la migración nueva después de la última, incluida cualquier migración de Codex. Escribir la migración con `users.last_active_on`, las tablas `usage_daily_counts`, `usage_period_people`, `usage_period_markers`, `usage_suite_snapshots` y `platform_roles` (D3), y la copia de `is_admin` a `platform_roles` (D10). Verificar con una prueba `node:sqlite` que aplica todas las migraciones en orden, que la copia toma solo identidades con cuenta y que la migración es idempotente con `INSERT OR IGNORE`.
-- [ ] 1.3 Agregar los secretos `HOMESUITE_OWNER_USER_IDS` y `USAGE_MARKER_SECRET` a la configuración local de desarrollo y de E2E (no a `wrangler.jsonc`), y documentar su alta por ambiente en `docs/homesuite/OPERACION.md`. Verificar que `npm run dev:homesuite-app` arranca con y sin ellos.
+- [x] 1.1 Contar en producción, solo en lectura y sin correos, las identidades de Tareas con `is_admin = 1`, con cuenta HomeSuite (`user_id` no nulo) y sin ella. Registrar ambos números en el PR y en el design (D10); verificar que la consulta no devuelve columnas de correo.
+- [x] 1.2 Mirar `main` y fijar el número de la migración nueva después de la última, incluida cualquier migración de Codex. Escribir la migración con `users.last_active_on`, las tablas `usage_daily_counts`, `usage_period_people`, `usage_period_markers`, `usage_suite_snapshots` y `platform_roles` (D3), y la copia de `is_admin` a `platform_roles` (D10). Verificar con una prueba `node:sqlite` que aplica todas las migraciones en orden, que la copia toma solo identidades con cuenta y que la migración es idempotente con `INSERT OR IGNORE`.
+- [x] 1.3 Agregar los secretos `HOMESUITE_OWNER_USER_IDS` y `USAGE_MARKER_SECRET` a la configuración local de desarrollo y de E2E (no a `wrangler.jsonc`), y documentar su alta por ambiente en `docs/homesuite/OPERACION.md`. Verificar que `npm run dev:homesuite-app` arranca con y sin ellos.
 
 ## 2. Períodos y marcas
 
-- [ ] 2.1 Crear `usage-periods.js` (D6): claves de día, semana ISO, mes, trimestre y año en Colombia (UTC−5), fin de cada período, anterior y siguiente. Verificar con pruebas unitarias los bordes: medianoche de Colombia, fin de año, semana 53, el 1 de enero en la semana ISO del año anterior y años bisiestos.
-- [ ] 2.2 Crear el cálculo de marca HMAC (D4), con la clave de período dentro del mensaje. Verificar con pruebas que la misma cuenta da marcas distintas en períodos distintos, que la marca no contiene el id y que sin secreto no se mide (y se registra en el log).
-- [ ] 2.3 Implementar el conteo de D5 en un `db.batch`. Verificar con pruebas de integración que la misma persona en veinte días de un mes cuenta 1 en el mes y 20 en días, que «hizo algo» cuenta también «entró», y que dos peticiones simultáneas del mismo día no cuentan dos veces.
+- [x] 2.1 Crear `usage-periods.js` (D6): claves de día, semana ISO, mes, trimestre y año en Colombia (UTC−5), fin de cada período, anterior y siguiente. Verificar con pruebas unitarias los bordes: medianoche de Colombia, fin de año, semana 53, el 1 de enero en la semana ISO del año anterior y años bisiestos.
+- [x] 2.2 Crear el cálculo de marca HMAC (D4), con la clave de período dentro del mensaje. Verificar con pruebas que la misma cuenta da marcas distintas en períodos distintos, que la marca no contiene el id y que sin secreto no se mide (y se registra en el log).
+- [x] 2.3 Implementar el conteo de D5 en un `db.batch`. Verificar con pruebas de integración que la misma persona en veinte días de un mes cuenta 1 en el mes y 20 en días, que «hizo algo» cuenta también «entró», y que dos peticiones simultáneas del mismo día no cuentan dos veces.
 
 ## 3. Medición en el Worker
 
-- [ ] 3.1 Crear `usage-catalog.js` con la tabla de rutas de Cuentas Claras y Tareas, con método, patrón, herramienta, nivel y acción, según el spec `estadisticas-de-uso-homesuite`. Verificar con una prueba que cada ruta del catálogo existe en la app y que ninguna ruta de Jardín Zen ni de páginas sin sesión figura en él.
-- [ ] 3.2 Agregar el middleware de D1 después de la puerta legal y del control de mutaciones, con `waitUntil`, que mide solo respuestas 2xx con sesión y saltea las rutas exentas de la puerta. Verificar con pruebas de integración:
+- [x] 3.1 Crear `usage-catalog.js` con la tabla de rutas de Cuentas Claras y Tareas, con método, patrón, herramienta, nivel y acción, según el spec `estadisticas-de-uso-homesuite`. Verificar con una prueba que cada ruta del catálogo existe en la app y que ninguna ruta de Jardín Zen ni de páginas sin sesión figura en él.
+- [x] 3.2 Agregar el middleware de D1 después de la puerta legal y del control de mutaciones, con `waitUntil`, que mide solo respuestas exitosas (2xx o la redirección de un formulario guardado) con sesión y saltea las rutas exentas de la puerta. Verificar con pruebas de integración:
   - un movimiento cargado suma la acción y los dos niveles;
   - una carga rechazada (validación, permiso o CSRF) no suma nada;
   - una visita sin sesión no lee ni escribe la base;
   - un fallo de escritura de la medición no cambia la respuesta y deja `usage_write_failed` en el log.
-- [ ] 3.3 Sumar `last_active_on` a la lectura de `currentSession` y escribirlo como mucho una vez por día (D2). Verificar con pruebas que tres peticiones del mismo día escriben una vez, que el cambio de día en Colombia la actualiza y que `/aceptar` no la escribe.
+- [x] 3.3 Sumar `last_active_on` a la lectura de `currentSession` y escribirlo como mucho una vez por día (D2). Verificar con pruebas que tres peticiones del mismo día escriben una vez, que el cambio de día en Colombia la actualiza y que `/aceptar` no la escribe.
 
 ## 4. Remanso
 
-- [ ] 4.1 Crear `POST /api/uso/remanso` (D8), con sesión, CSRF y límite de mutaciones, que acepta solo `{ resultado }`. Verificar con pruebas que «terminada» cuenta «hizo algo» y la acción, que «abandonada» cuenta «entró» y su acción, y que un campo extra o un valor desconocido responde 400 sin escribir nada.
-- [ ] 4.2 Cambiar `public/remanso/remanso.js` para enviar el resultado una sola vez por sesión, y solo si la página se sirvió con sesión y token CSRF, con «abandonada» también en `pagehide`. Verificar con E2E de Remanso:
+- [x] 4.1 Crear `POST /api/uso/remanso` (D8), con sesión, CSRF y límite de mutaciones, que acepta solo `{ resultado }`. Verificar con pruebas que «terminada» cuenta «hizo algo» y la acción, que «abandonada» cuenta «entró» y su acción, y que un campo extra o un valor desconocido responde 400 sin escribir nada.
+- [x] 4.2 Cambiar `public/remanso/remanso.js` para enviar el resultado una sola vez por sesión, y solo si la página se sirvió con sesión y token CSRF, con «abandonada» también en `pagehide`. Verificar con E2E de Remanso:
   - sin cuenta no sale ninguna petición que no sea GET (se mantiene la prueba existente);
   - con cuenta, al completar sale una sola petición «terminada»;
   - al terminar antes de tiempo sale una sola «abandonada»;
