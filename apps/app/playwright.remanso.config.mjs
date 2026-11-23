@@ -15,6 +15,7 @@ const vars = [
   "GOOGLE_CLIENT_ID:e2e-client",
   "GOOGLE_CLIENT_SECRET:e2e-secret",
   "SESSION_SECRET:e2e-session-secret-0123456789abcdef",
+  "USAGE_MARKER_SECRET:e2e-usage-marker-secret-0123456789abcdef",
 ].map((pair) => `--var ${pair}`).join(" ");
 
 // E2E_CHROMIUM_PATH: navegador ya instalado cuando el que busca el Playwright del lockfile no está (solo para Chromium).

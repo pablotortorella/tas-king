@@ -19,7 +19,7 @@ export async function currentSession(db, request, secret, now = new Date()) {
   const raw = getCookie(request.headers.get("Cookie"), SESSION_COOKIE);
   const token = raw ? await unseal(decodeCookieValue(raw), secret) : null;
   if (!token?.id || !token.expiresAt || token.expiresAt <= now.toISOString()) return null;
-  return db.prepare("SELECT s.id, u.id AS user_id, u.email, u.display_name FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.expires_at > ? AND s.revoked_at IS NULL").bind(token.id, now.toISOString()).first();
+  return db.prepare("SELECT s.id, u.id AS user_id, u.email, u.display_name, u.last_active_on FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.expires_at > ? AND s.revoked_at IS NULL").bind(token.id, now.toISOString()).first();
 }
 
 export function sessionCookie(token, secure) {

@@ -29,6 +29,9 @@ import { ACCOUNT_MARKER, avatar, escapeHtml, GROUP_MARKER, GROUP_MENU_MARKER, LE
 import { isGateExempt, legalDocuments, legalGateEnabled, pendingFor, recordAcceptances, requiredVersions, sanitizeVersions, stateVersions, upcomingNotices } from "./legal.js";
 import { renderAcceptPage, renderAcceptRequired, renderLegalBand, renderLegalFooter } from "./legal-ui.js";
 import { runMaintenance } from "./maintenance.js";
+import { measureUsage } from "./usage-middleware.js";
+import { registerConsoleRoutes } from "./console/routes.js";
+import { consoleAccess } from "./console/access.js";
 import { checkRateLimit, RATE_LIMIT_RETRY_SECONDS } from "./rate-limit.js";
 import { createSession, currentSession, expiredSessionCookie, revokeSession, sessionCookie } from "./sessions.js";
 import { cancelInvitation, createGroupForUser, ensureLocalUser, inviteToGroup, resolveInvitation, resolveGroup } from "./groups.js";
@@ -173,7 +176,9 @@ app.use("*", async (c, next) => {
   const csrfField = session && secret ? `<input type="hidden" name="_csrf" value="${html(await createCsrfToken({ sessionId: session.id, secret }))}">` : "";
   // Pie con los enlaces a términos y privacidad (siempre) y franja de versión próxima (sólo con sesión), según el ambiente.
   const hostname = new URL(c.req.url).hostname;
-  const filled = fillAccount(body, profile, csrfField)
+  // El enlace «Consola» sólo para quien puede entrar (consola-administracion-homesuite, D9): una lectura de roles por clave.
+  const consoleLink = session ? (await consoleAccess(c)).tabs.length > 0 : false;
+  const filled = fillAccount(body, profile, csrfField, { consoleLink })
     .replace(LEGAL_BAND_MARKER, session ? renderLegalBand(upcomingNotices(), hostname) : "")
     .replace(LEGAL_FOOTER_MARKER, IMMERSIVE_BODY.test(body) ? "" : renderLegalFooter(hostname));
   c.res = new Response(filled, c.res);
@@ -276,6 +281,9 @@ app.use("*", async (c, next) => {
   c.set("protectedUser", session);
   return next();
 });
+
+// Medición de uso (consola-administracion-homesuite, D1): después de la puerta legal y del control de escrituras.
+app.use("*", measureUsage);
 
 app.get("/healthz", (c) => c.json({ status: "ok", service: "homesuite-app" }));
 
@@ -684,6 +692,8 @@ app.get("/cuentas-claras", async (c) => {
 registerAssetRoutes(app);
 
 registerShellRoutes(app, { authConfig, localUser });
+
+registerConsoleRoutes(app);
 
 app.get("/demo/crear-grupo", (c) => {
   const { owner, member, index } = demoPair(c);

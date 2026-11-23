@@ -200,6 +200,19 @@ function init() {
 
   function hideNotice() { $("rem-aviso").hidden = true; }
 
+  // ---------- resultado para la estadística de la suite ----------
+  // Con sesión de HomeSuite (la página trae el token en data-uso), al terminar o abandonar una sesión de meditación se envía una sola
+  // petición con el resultado y nada más: ni duración, ni fondo, ni gong, ni ánimo. Sin token no sale nada. Si falla, no cambia nada.
+  const usoToken = root.dataset.uso || null;
+  let resultadoEnviado = true;
+  function informarResultado(resultado) {
+    if (!usoToken || resultadoEnviado) return;
+    resultadoEnviado = true;
+    try {
+      fetch("/api/uso/remanso", { method: "POST", keepalive: true, credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": usoToken }, body: JSON.stringify({ resultado }) }).catch(() => {});
+    } catch { /* sin efecto en la experiencia */ }
+  }
+
   // ---------- sesión ----------
   function startSession() {
     if (engine.isRunning) return; // doble toque
@@ -211,6 +224,7 @@ function init() {
       showNotice("Este navegador no permite reproducir el audio de Remanso.");
       return;
     }
+    resultadoEnviado = false;
     state.muted = false;
     const total = state.minutes * 60;
     $("rem-s-titulo").textContent = `Sesión de ${state.minutes} min`;
@@ -324,10 +338,10 @@ function init() {
 
   engine.on("tick", renderTick);
   engine.on("pause", ({ paused }) => { renderPause(paused); announce(paused ? "Sesión en pausa" : "Sesión reanudada"); });
-  engine.on("end", renderDone);
+  engine.on("end", (event) => { informarResultado(event.early ? "abandonada" : "terminada"); renderDone(event); });
 
   // El audio no sobrevive a la página: al irse (o al entrar al caché de navegación) se libera.
-  window.addEventListener("pagehide", () => engine.dispose());
+  window.addEventListener("pagehide", () => { if (engine.isRunning) informarResultado("abandonada"); engine.dispose(); });
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) { updateHome(); show("inicio"); }
   });

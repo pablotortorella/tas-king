@@ -19,6 +19,13 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
 | Identidad de TasKing, pendiente o vinculada | cuenta habitual | `identity` | resuelta desde sesión HomeSuite | `tasking_identities`, `user_id`, `verified_sub` |
 | Tarjeta | tarjeta | `card` | `/api/tareas/cards/:id` | `tasking_cards` |
 | Aceptación de los textos legales | aceptar los «Términos y condiciones» y la «Política de privacidad» | `legal` (`LEGAL_DOCUMENTS`, documentos `terms` y `privacy`) | `/aceptar`, `/auth/google?…&acepta=1` | `legal_acceptances` |
+| Dueño de la suite | «acceso total» (la interfaz evita el sustantivo con género) | `owner` (`isOwner`, `ownerIds`) | `/consola`, todas las pestañas | ninguna: secreto `HOMESUITE_OWNER_USER_IDS` del Worker |
+| Rol de herramienta | rol de Tareas, rol de Cuentas Claras | `scope` (`ROLE_SCOPES`: `tareas`, `cuentas-claras`) | `/consola/administradores/roles` | `platform_roles` |
+| Consola | consola | `console` (`apps/app/src/console/`) | `/consola`, `/consola/:tab`, `/api/consola/:tab` | `platform_audit_events` (`console_opened`, `console_accounts_viewed`, `platform_role_*`) |
+| Última actividad | — (no se muestra por persona) | `last_active_on`, `touchLastActive` | — | `users.last_active_on` |
+| Entró | entraron | `level: "entro"` | — | `usage_period_people.level = 'entro'` |
+| Hizo algo | hicieron algo | `level: "hizo"` | — | `usage_period_people.level = 'hizo'` |
+| Período cerrado | semana, mes, trimestre, año | `PERIOD_TYPES`, `periodKey` (`usage-periods.js`) | `?periodo=semana\|mes\|trimestre\|anio&clave=…` | `usage_period_people`, `usage_period_markers` |
 
 ## Reglas
 
@@ -40,6 +47,18 @@ agrega aquí en el mismo cambio que lo introduce, con sus cuatro nombres.
   Términos o de la Política de privacidad (la versión es la fecha de «Última
   actualización» de la página). Se registra al iniciar sesión desde una pantalla
   con el aviso (`login`) o en la pantalla de nueva aceptación (`gate`).
+
+- **Consola** es la administración de HomeSuite (change
+  `consola-administracion-homesuite`). La ve el **dueño de la suite**, definido
+  por un secreto del Worker y nunca por la base, y quien tiene un **rol de
+  herramienta**, que ve sólo la pestaña de esa herramienta. No confundir con
+  **titular**, que es el rol de una persona dentro de un grupo.
+- **Entró** y **hizo algo** son los dos niveles de uso de una herramienta:
+  abrir un libro, un tablero o Remanso es «entró»; cargar, mover, comentar o
+  terminar una sesión es «hizo algo», y cuenta también como «entró».
+- Un **período cerrado** es un día, una semana ISO, un mes, un trimestre o un año
+  de calendario de Colombia. Las personas distintas se cuentan sólo por período
+  cerrado; las marcas que lo permiten se borran cuando el período termina.
 
 ## Pendiente de unificar
 

@@ -53,19 +53,18 @@ test("importa CSV agregando tarjetas", async ({ page }) => {
   await expect(page.locator(".card")).toHaveCount(existingCount + 1);
 });
 
-test("conserva administración de roles sin lista global de acceso", async ({ page }) => {
+test("quien administra Tareas ve la actividad del tablero y el enlace a la consola, sin controles de rol", async ({ page }) => {
   await page.locator('#adminBtn').click();
   await expect(page.locator('#adminOverlay')).toHaveClass(/open/);
-  await page.locator('#adminTabUsuarios').click();
-  await expect(page.locator('#adminUserList')).toContainText('E2E Admin');
-  await expect(page.locator('#adminNewEmail')).not.toBeVisible();
-  await expect(page.locator('#adminTabSolicitudes')).not.toBeVisible();
+  await expect(page.locator('#adminOverlay h2')).toHaveText('Actividad del tablero');
+  await expect(page.locator('#adminActivityList')).toBeVisible();
+  await expect(page.locator('#adminConsoleLink')).toHaveAttribute('href', '/consola/tareas');
+  await expect(page.locator('#adminConsoleLink')).toHaveText('Administración');
+  for (const retired of ['#adminTabUsuarios', '#adminTabStats', '#adminTabSolicitudes', '#adminUserList', '#adminNewEmail']) await expect(page.locator(retired)).toHaveCount(0);
+  await expect(page.locator('#adminOverlay input[type=checkbox]')).toHaveCount(0);
+  for (const path of ['/api/tareas/admin/users', '/api/tareas/admin/stats']) expect((await page.request.get(path)).status()).toBe(404);
+  expect((await page.request.post('/api/tareas/admin/set-admin',{data:{identityId:'x',isAdmin:true}})).status()).toBe(404);
   expect((await page.request.post('/api/tareas/admin/allowed',{data:{email:'no-importa@example.test'}})).status()).toBe(404);
-  const uploaded=await page.request.post('/api/tareas/cards/card-seed/attachments',{multipart:{files:{name:'stats.txt',mimeType:'text/plain',buffer:Buffer.from('estadísticas')}}});
-  expect(uploaded.ok()).toBe(true);
-  await page.locator('#adminTabStats').click();await expect(page.locator('#statFileCount')).toHaveText('1');
-  const statistics=await(await page.request.get('/api/tareas/admin/stats')).json();expect(statistics.files.count).toBe(1);
-
 });
 
 test("deep-link abre la tarjeta correcta y limpia la URL al cerrar", async ({ page }) => {

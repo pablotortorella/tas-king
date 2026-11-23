@@ -23,6 +23,13 @@ Ruta `/remanso` en HomeSuite App, con tres pantallas (inicio, sesión, cierre).
 | Valores iniciales | 5 min · agua · Gong brillante · volumen 58 | 10 min · lluvia · Gong brillante · volumen 58 |
 | Cierre | duración, sin nombre ni mención a la cuenta | duración y saludo por el nombre del perfil |
 
+**Estadística de la suite** (change `consola-administracion-homesuite`, D8):
+- **Con sesión,** al completar una sesión de meditación, al terminarla antes o al salir de la página con una sesión en curso, el navegador
+  envía una sola vez `POST /api/uso/remanso` con `{ "resultado": "terminada" | "abandonada" }`. No envía duración, fondo, gong ni ánimo.
+- **La página** trae el token CSRF en `data-uso` sólo si se sirvió con sesión real. Sin token no sale ninguna petición.
+- **Sin cuenta** no se envía nada.
+- **Qué cuenta:** abrir Remanso con sesión cuenta «entró»; «terminada» cuenta «hizo algo».
+
 «Crear cuenta» es entrar con Google: la primera vez se crea la cuenta. Las opciones
 con cuenta se ven marcadas; elegirlas sin sesión explica y ofrece entrar, sin
 cambiar la selección ni sonar. La única definición de los niveles es
