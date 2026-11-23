@@ -132,7 +132,7 @@ ensayaron con pruebas unitarias y un `gh` simulado, hasta que se complete el che
   [backlog](PRODUCT_BACKLOG.md) (opción 2).
 - **Apagado ensayado en staging (2026-11-09, orden de Pablo):** con `--var PWA_SW:off` (versión `4e8321b6`) el service worker de la instalación de escritorio se desregistró y no quedó caché; sin conexión apareció la pantalla genérica del navegador. Luego se publicó la versión normal `1a2f3bfc` (SHA `9e4c4a4`, con el aviso nuevo de Remanso; service worker `9b254b72cf17`; smoke de siete rutas en 200). Sin probar el apagado en Android.
 - **Prueba en iPhone: sin hacer.** Lucio no la hizo. Pablo decidió el 2026-11-10 publicar igual, junto con Tareas. Es la pregunta abierta 1 de
-  [`design.md`](../openspec/changes/pwa-instalable/design.md). Si iOS falla, se apaga con `--var PWA_SW:off`. El protocolo sigue valiendo, ahora
+  [`design.md`](../openspec/changes/archive/2026-11-22-pwa-instalable/design.md). Si iOS falla, se apaga con `--var PWA_SW:off`. El protocolo sigue valiendo, ahora
   sobre `app.homesuite.info`.
   - *Pasos (Safari, no otro navegador):* 1) abrir `staging.homesuite.info`; 2) **entrar con Google en Safari antes de instalar** (iOS copia las
     cookies de Safari una sola vez, al agregar la app); 3) Compartir → Agregar a inicio y anotar nombre e ícono; 4) abrir desde el ícono, en modo

@@ -61,20 +61,22 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
   faltan verificaciones manuales y el archivo, no código. Hay otros ocho propuestos
   sin ninguna tarea hecha.
 - **Falta (decidir con Pablo, de a uno):**
-  - `pwa-instalable`: pasar las tareas 6.6 y 9.4, que dependen de Remanso con sonidos
-    naturales, a `remanso-sonidos-naturales`. Hacer las pruebas físicas (8.2 a 8.4 y
-    8.6, ver «Pruebas físicas de la PWA») y archivar.
   - `perfil-compartido-homesuite` (7/20, sin cambios desde el 2026-10-26): decidir si
     se retoma o si se cierra el primer corte y lo que falta pasa a un change nuevo.
-  - `alertas-minimas-homesuite`: en `main` con 2 de 17 tareas marcadas. Marcar las
-    hechas y dejar abierto solo el checklist de vigilancia.
+  - `alertas-minimas-homesuite`: tareas revisadas el 2026-11-21 (#168). Queda abierto
+    solo lo que depende de Pablo, la segunda semana de registro y el punto 9 de la
+    revisión semanal (espera a `eliminacion-de-grupos`).
 - **Cuidado:** criterio propuesto, sin decidir: no abrir un change nuevo hasta cerrar
   uno de los abiertos.
 - **Hecho el 2026-11-20:**
   - `migrar-tasking-homesuite`, archivado con los límites de 7.2 y 7.3 aceptados por Pablo;
   - `importacion-como-movimientos`, archivado: no quedaban lotes viejos y la migración
     `0015` retiró las tablas del modelo anterior en staging y producción.
-- **Fecha:** 2026-11-20.
+- **Hecho el 2026-11-22:** `pwa-instalable`, archivado. Pablo dio por buenas las pruebas
+  en Android y escritorio y los íconos. Las tareas 6.6 y 9.4 pasaron a
+  `remanso-sonidos-naturales`, y la prueba en iPhone, al backlog. Nuevo spec principal:
+  `pwa-homesuite-app`.
+- **Fecha:** 2026-11-22.
 
 ### Alertas mínimas: checklist de vigilancia
 - **Qué:** con #150 en `main`, desde el 2026-11-13 corren los workflows programados
@@ -95,13 +97,13 @@ Recorridos: `/tareas`, API `/api/tareas/*`, subida `POST /api/tareas/cards/:id/a
 - **Fecha:** 2026-11-13.
 
 ### Pruebas físicas de la PWA
-- **Qué:** la PWA está en producción sin probar en iPhone; el apagado en Android
-  tampoco se probó.
-- **Falta:** que alguien con iPhone siga el protocolo del bloque PWA del
-  2026-11-09 en el [historial de STATUS](docs/STATUS_HISTORIAL.md) y anotar el resultado en la tarea 8.3 de
-  [`pwa-instalable`](openspec/changes/pwa-instalable/tasks.md).
+- **Qué:** la PWA está en producción. Android y escritorio los probó Pablo (2026-11-22);
+  falta iPhone.
+- **Falta:** que Lucio, u otra persona con iPhone, siga la lista de la fila
+  `pwa-instalable` (8.3) en «Verificaciones manuales pendientes» del
+  [backlog](docs/PRODUCT_BACKLOG.md) y anotar ahí el resultado.
 - **Cuidado:** si iOS falla, se apaga publicando con `--var PWA_SW:off`.
-- **Fecha:** 2026-11-10 (decisión de Pablo).
+- **Fecha:** 2026-11-22 (decisión de Pablo).
 
 ### Confirmar con Pablo (sin verificar)
 - **Qué:** pendientes de sesiones anteriores cuyo estado no consta en el repositorio.
