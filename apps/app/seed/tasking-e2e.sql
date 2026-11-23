@@ -14,6 +14,8 @@ DELETE FROM tasking_board_members;
 DELETE FROM tasking_boards;
 DELETE FROM tasking_identities;
 INSERT OR IGNORE INTO users(id,google_sub,email,display_name) VALUES('usr_tasking_e2e','local:e2e-admin@test.local','e2e-admin@test.local','E2E Admin');
+-- Administra Tareas con el rol de plataforma (consola-administracion-homesuite, D10); la marca heredada is_admin ya no da permisos.
+INSERT OR IGNORE INTO platform_roles(user_id,scope) VALUES('usr_tasking_e2e','tareas');
 INSERT INTO tasking_identities(identity_id,legacy_user_id,legacy_email,user_id,name,is_admin,created_at) VALUES('ti_b5baa0040efaaf7d290db4e108a88658caa1a33c5f7dbf4d7ffb88dd32875493','user-e2e','e2e-admin@test.local','usr_tasking_e2e','E2E Admin',1,1000000000000);
 INSERT INTO tasking_boards(id,name,owner_identity_id,is_personal,created_at,due_soon_days,theme,theme_prompt_seen,sync_version) VALUES('board-e2e','Tablero E2E','ti_b5baa0040efaaf7d290db4e108a88658caa1a33c5f7dbf4d7ffb88dd32875493',1,1000000000000,3,NULL,1,1000000000000);
 INSERT INTO tasking_board_members(board_id,identity_id,role,created_at) VALUES('board-e2e','ti_b5baa0040efaaf7d290db4e108a88658caa1a33c5f7dbf4d7ffb88dd32875493','owner',1000000000000);

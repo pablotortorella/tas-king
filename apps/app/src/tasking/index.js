@@ -16,7 +16,6 @@ import { setupGoalRoutes } from './routes/goals.js';
 import { setupLabelRoutes } from './routes/labels.js';
 import { setupMetricsRoutes } from './routes/metrics.js';
 import { setupUserRoutes } from './routes/users.js';
-import { setupAdminRoutes } from './routes/admin.js';
 import { setupUploadRoutes } from './routes/uploads.js';
 
 export const TASKING_JSON_LIMIT=2*1024*1024+16*1024;
@@ -100,6 +99,6 @@ export function registerTaskingRoutes(app){
     if(!content)return c.notFound();
     return c.html(page('Archivo de Fun TasKing','<p>Archivo histórico de Fun TasKing. <a href="https://homesuite.info/terminos">Ver los términos vigentes de HomeSuite</a>.</p>'+content,{favicon:'/tareas/favicon.v1.svg'}));
   });
-  setupUserRoutes(router);setupBoardRoutes(router);setupCardRoutes(router);setupColumnRoutes(router);setupChecklistRoutes(router);setupGoalRoutes(router);setupLabelRoutes(router);setupMetricsRoutes(router);setupUploadRoutes(router);setupAdminRoutes(router);
+  setupUserRoutes(router);setupBoardRoutes(router);setupCardRoutes(router);setupColumnRoutes(router);setupChecklistRoutes(router);setupGoalRoutes(router);setupLabelRoutes(router);setupMetricsRoutes(router);setupUploadRoutes(router);
   app.route('/',router);
 }

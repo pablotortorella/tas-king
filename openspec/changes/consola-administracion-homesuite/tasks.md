@@ -31,7 +31,7 @@
 
 ## 5. Mantenimiento
 
-- [ ] 5.1 Sumar a `runMaintenance` la purga de marcas de los períodos cerrados y la foto diaria (D7), y agregar `purgedUsageMarkers` y `usageSnapshotDay` a `maintenance_completed`. Verificar con pruebas de integración:
+- [x] 5.1 Sumar a `runMaintenance` la purga de marcas de los períodos cerrados y la foto diaria (D7), y agregar `purgedUsageMarkers` y `usageSnapshotDay` a `maintenance_completed`. Verificar con pruebas de integración:
   - al pasar fin de mes se borran las marcas del mes, de sus días y de sus semanas cerradas, y quedan las del trimestre y del año;
   - el contador del mes queda;
   - dos corridas el mismo día dejan una sola foto;
@@ -39,17 +39,17 @@
 
 ## 6. Acceso a la consola
 
-- [ ] 6.1 Implementar `consoleAccess` (D9) con el secreto de dueños y `platform_roles`, y una respuesta 404 idéntica a la de una ruta inexistente para `/consola*` y `/api/consola/*`. Verificar con pruebas de integración:
+- [x] 6.1 Implementar `consoleAccess` (D9) con el secreto de dueños y `platform_roles`, y una respuesta 404 idéntica a la de una ruta inexistente para `/consola*` y `/api/consola/*`. Verificar con pruebas de integración:
   - el dueño ve las cuatro pestañas;
   - con rol `tareas` se ve solo Tareas, y Suite o Administradores responden 404;
   - sin rol, sin sesión o sin secreto responde 404 y deja `console_denied` en el log sin la cuenta;
   - el cuerpo del 404 es igual al de una ruta inexistente.
-- [ ] 6.2 Implementar dar y quitar roles, solo para dueños, con CSRF y límite de mutaciones. Verificar con pruebas que un administrador de herramienta recibe 404, que sin CSRF se rechaza y que cada cambio deja `platform_role_granted` o `platform_role_revoked`.
-- [ ] 6.3 Mostrar el enlace «Consola» en el menú de la cuenta solo a quien tiene acceso. Verificar con pruebas de la interfaz que aparece para el dueño y para un rol, y no para una cuenta sin rol.
+- [x] 6.2 Implementar dar y quitar roles, solo para dueños, con CSRF y límite de mutaciones. Verificar con pruebas que un administrador de herramienta recibe 404, que sin CSRF se rechaza y que cada cambio deja `platform_role_granted` o `platform_role_revoked`.
+- [x] 6.3 Mostrar el enlace «Consola» en el menú de la cuenta solo a quien tiene acceso. Verificar con pruebas de la interfaz que aparece para el dueño y para un rol, y no para una cuenta sin rol.
 
 ## 7. Pestañas
 
-- [ ] 7.1 Pestaña Suite (spec `consola-administracion-homesuite`), dibujada en el servidor:
+- [x] 7.1 Pestaña Suite (spec `consola-administracion-homesuite`), dibujada en el servidor:
   - selector de período por enlace;
   - cuentas y activas de 1, 7 y 30 días, con serie SVG y tabla equivalente;
   - la tabla por herramienta con entró, hizo algo, proporción y diferencia absoluta;
@@ -58,15 +58,15 @@
   - el mensaje «sin datos» para períodos anteriores a la publicación.
 
   Verificar con pruebas de la interfaz sobre datos sembrados que los números y las diferencias coinciden y que no hay porcentajes de variación. Verificar con E2E en teléfono y escritorio, con teclado y lector de pantalla (texto alternativo de los SVG).
-- [ ] 7.2 Pestaña Tareas: totales y lista de cuentas con nombre y correo para dueño y rol `tareas`, y el ranking solo para el dueño. Verificar con pruebas que el rol no recibe el ranking (ni en el HTML ni en la API), que cada vista de la lista deja `console_accounts_viewed` y que la pestaña no muestra contenido de tableros.
-- [ ] 7.3 Pestaña Cuentas Claras: queda prevista con un texto que dice que no hay herramientas todavía, visible para el dueño y para el rol `cuentas-claras`. Verificar con una prueba de acceso.
-- [ ] 7.4 Pestaña Administradores: roles vigentes, dar y quitar, dueños del secreto marcados como tales y sin poder quitarse, historial de roles y últimas entradas a la consola. Verificar con E2E que se da y se quita un rol de Tareas y que el historial lo muestra.
-- [ ] 7.5 Auditoría de entrada (D11): `console_opened`, una por persona y por día, con la pestaña. Verificar con pruebas que dos entradas el mismo día dejan una sola fila y que ningún metadato de auditoría de la consola contiene un correo.
+- [x] 7.2 Pestaña Tareas: totales y lista de cuentas con nombre y correo para dueño y rol `tareas`, y el ranking solo para el dueño. Verificar con pruebas que el rol no recibe el ranking (ni en el HTML ni en la API), que cada vista de la lista deja `console_accounts_viewed` y que la pestaña no muestra contenido de tableros.
+- [x] 7.3 Pestaña Cuentas Claras: queda prevista con un texto que dice que no hay herramientas todavía, visible para el dueño y para el rol `cuentas-claras`. Verificar con una prueba de acceso.
+- [x] 7.4 Pestaña Administradores: roles vigentes, dar y quitar, dueños del secreto marcados como tales y sin poder quitarse, historial de roles y últimas entradas a la consola. Verificar con E2E que se da y se quita un rol de Tareas y que el historial lo muestra.
+- [x] 7.5 Auditoría de entrada (D11): `console_opened`, una por persona y por día, con la pestaña. Verificar con pruebas que dos entradas el mismo día dejan una sola fila y que ningún metadato de auditoría de la consola contiene un correo.
 
 ## 8. Tareas integrada
 
-- [ ] 8.1 Cambiar `/api/tareas/me` para calcular `isAdmin` como «dueño o rol `tareas`», sin leer `is_admin`. Retirar `/api/tareas/admin/set-admin` y mover `users` y `stats` a la consola (D10). Verificar con pruebas de integración que una identidad con `is_admin = 1` y sin rol ya no administra, y que el rol migrado sí.
-- [ ] 8.2 Reducir el panel de `public/tareas/js/admin.js` y de `document.js` a «Actividad del tablero» y sumar el enlace «Administración» a `/consola/tareas`. Verificar con la E2E `critical-flows` adaptada: el administrador ve la actividad y el enlace, y no ve controles de rol.
+- [x] 8.1 Cambiar `/api/tareas/me` para calcular `isAdmin` como «dueño o rol `tareas`», sin leer `is_admin`. Retirar `/api/tareas/admin/set-admin` y mover `users` y `stats` a la consola (D10). Verificar con pruebas de integración que una identidad con `is_admin = 1` y sin rol ya no administra, y que el rol migrado sí.
+- [x] 8.2 Reducir el panel de `public/tareas/js/admin.js` y de `document.js` a «Actividad del tablero» y sumar el enlace «Administración» a `/consola/tareas`. Verificar con la E2E `critical-flows` adaptada: el administrador ve la actividad y el enlace, y no ve controles de rol.
 
 ## 9. Textos legales y documentación
 

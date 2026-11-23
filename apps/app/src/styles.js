@@ -248,8 +248,33 @@ ${AVATAR_CSS}
 @media(max-width:480px){.account-link span:last-child{display:none}}
 `;
 
+// Consola de administración (consola-administracion-homesuite): pestañas, cifras, tablas y gráficos SVG. Cada serie se distingue por color
+// y por trazo (continuo, discontinuo, de puntos).
+const CONSOLE_CSS = `
+.console-tabs{flex-wrap:wrap}.console-tabs a{flex:1 1 auto}
+.console-period{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:16px}.console-period h2{margin:0}
+.console-arrows{display:flex;gap:8px}.console-arrows .button{margin-top:0}
+.console-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0 0}
+.console-stats div{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.console-stats dt{font-size:.85rem;color:var(--ink-3);font-weight:700}.console-stats dd{margin:4px 0 0;font-size:1.6rem;font-weight:800;color:var(--ink)}.console-stats p{margin:4px 0 0}
+.console-table td{font-variant-numeric:tabular-nums}.console-table th[scope=row]{font-weight:600}
+.console-table a[aria-current]{font-weight:800}
+.console-list{padding-left:20px}.console-list li{margin:6px 0}
+.console-form select,.console-form input{width:100%}
+.console-chart{margin:12px 0 0}.console-chart svg{width:100%;height:220px;display:block}
+.chart-axis{stroke:var(--line-mid);stroke-width:1}.chart-tick{fill:var(--ink-3);font-size:11px}
+.chart-line{fill:none;stroke-width:2.5;vector-effect:non-scaling-stroke}.chart-dot{stroke:none}
+.chart-s1{stroke:var(--accent-text);fill:var(--accent-text)}.chart-line.chart-s1{fill:none}
+.chart-s2{stroke:var(--coral-text);fill:var(--coral-text)}.chart-line.chart-s2{fill:none;stroke-dasharray:8 5}
+.chart-s3{stroke:var(--ink-2);fill:var(--ink-2)}.chart-line.chart-s3{fill:none;stroke-dasharray:2 4}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;list-style:none;padding:0;margin:8px 0 0;font-size:.9rem;color:var(--ink-2)}
+.chart-legend li{display:flex;align-items:center;gap:6px}.chart-key{display:inline-block;width:22px;height:0;border-top:3px solid currentColor}
+.chart-key.chart-s1{color:var(--accent-text)}.chart-key.chart-s2{color:var(--coral-text);border-top-style:dashed}.chart-key.chart-s3{color:var(--ink-2);border-top-style:dotted}
+.chart-table summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--accent-text)}
+`;
+
 export function appCss() {
   const widths = Array.from({ length: 51 }, (_, i) => `.w${i}{width:${i}%}`).join("");
-  return `${themeCss()}${BASE}${BOOK}${FORMS}${SHELL}${LEGAL_CSS}${widths}`;
+  return `${themeCss()}${BASE}${BOOK}${FORMS}${SHELL}${LEGAL_CSS}${CONSOLE_CSS}${widths}`;
 }
 

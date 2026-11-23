@@ -353,24 +353,10 @@ export const TASKING_DOCUMENT = `<!DOCTYPE html>
 
 <div class="overlay" id="adminOverlay">
   <div class="modal" data-tasking-style="tasking-static-26">
-    <h2>⚙ Administración</h2>
-    <div class="admin-tabs">
-      <button class="tab-btn active" id="adminTabActividad">Actividad del tablero</button>
-      <button class="tab-btn" id="adminTabStats">📊 Estadísticas</button>
-      <button class="tab-btn" id="adminTabUsuarios">Usuarios</button>
-      <button class="tab-btn" id="adminTabSolicitudes">🔔 Solicitudes</button>
-    </div>
+    <h2>Actividad del tablero</h2>
+    <!-- La administración de Tareas vive en la consola de HomeSuite (consola-administracion-homesuite, D10). -->
+    <p><a id="adminConsoleLink" href="/consola/tareas">Administración</a></p>
 
-    <!-- Tab: Usuarios -->
-    <div id="adminPanelUsuarios" data-tasking-style="tasking-static-27" data-tasking-display="none">
-      <div data-tasking-style="tasking-static-28">
-        <input type="email" id="adminNewEmail" placeholder="nuevo@email.com" data-tasking-style="tasking-static-29">
-        <button class="btn btn-primary" id="adminAddBtn">Agregar</button>
-      </div>
-      <div id="adminUserList" data-tasking-style="tasking-static-30"></div>
-    </div>
-
-    <!-- Tab: Actividad -->
     <div id="adminPanelActividad">
       <div class="activity-filters">
         <select id="activityUserFilter" title="Filtrar por usuario"></select>
@@ -380,77 +366,6 @@ export const TASKING_DOCUMENT = `<!DOCTYPE html>
         <button class="btn btn-ghost btn-small" id="activityResetBtn">Limpiar</button>
       </div>
       <div class="activity-list" id="adminActivityList"></div>
-    </div>
-
-    <!-- Tab: Estadísticas -->
-    <div id="adminPanelStats" data-tasking-style="tasking-static-31" data-tasking-display="none">
-      <div data-tasking-style="tasking-static-32">
-        <div data-tasking-style="tasking-static-33">
-          <div data-tasking-style="tasking-static-34" id="statUsers">-</div>
-          <div data-tasking-style="tasking-static-35">Usuarios totales</div>
-        </div>
-        <div data-tasking-style="tasking-static-36">
-          <div data-tasking-style="tasking-static-37" id="statActiveUsers">-</div>
-          <div data-tasking-style="tasking-static-38">Activos</div>
-        </div>
-        <div data-tasking-style="tasking-static-39">
-          <div data-tasking-style="tasking-static-40" id="statInactiveUsers">-</div>
-          <div data-tasking-style="tasking-static-41">Inactivos</div>
-        </div>
-      </div>
-      <div data-tasking-style="tasking-static-42">
-        <div data-tasking-style="tasking-static-43">
-          <div data-tasking-style="tasking-static-44" id="statBoards">-</div>
-          <div data-tasking-style="tasking-static-45">Tableros</div>
-        </div>
-        <div data-tasking-style="tasking-static-46">
-          <div data-tasking-style="tasking-static-47" id="statCards">-</div>
-          <div data-tasking-style="tasking-static-48">Tarjetas activas</div>
-        </div>
-      </div>
-
-      <!-- Archivos -->
-      <div data-tasking-style="tasking-static-49">
-        <div data-tasking-style="tasking-static-50">
-          <div data-tasking-style="tasking-static-51" id="statFileCount">-</div>
-          <div data-tasking-style="tasking-static-52">Archivos</div>
-        </div>
-        <div data-tasking-style="tasking-static-53">
-          <div data-tasking-style="tasking-static-54" id="statFileSize">-</div>
-          <div data-tasking-style="tasking-static-55">Tamaño total</div>
-        </div>
-      </div>
-
-      <!-- Gráfico de uso de cuentas -->
-      <div data-tasking-style="tasking-static-56">
-        <div data-tasking-style="tasking-static-57">Actividad de cuentas</div>
-        <div data-tasking-style="tasking-static-58">
-          <div id="userActivityBar" data-tasking-style="tasking-static-59"></div>
-        </div>
-        <div data-tasking-style="tasking-static-60">
-          <span><span data-tasking-style="tasking-static-61"></span>Activos</span>
-          <span><span data-tasking-style="tasking-static-62"></span>Inactivos</span>
-        </div>
-      </div>
-
-      <!-- Top 10 usuarios activos -->
-      <div data-tasking-style="tasking-static-63">
-        <div data-tasking-style="tasking-static-64">🔥 Top 10 más activos (tableros + tarjetas + comentarios)</div>
-        <div id="topUsersList" data-tasking-style="tasking-static-65"></div>
-      </div>
-
-      <div id="inactiveUsersSection" data-tasking-style="tasking-static-66" data-tasking-display="none">
-        <div data-tasking-style="tasking-static-67">⚠️ Usuarios inactivos (sin acceso):</div>
-        <div id="inactiveUsersList" data-tasking-style="tasking-static-68"></div>
-      </div>
-
-      <div data-tasking-style="tasking-static-69" id="statsTimestamp"></div>
-    </div>
-
-    <!-- Tab: Solicitudes de acceso -->
-    <div id="adminPanelSolicitudes" data-tasking-style="tasking-static-70" data-tasking-display="none">
-      <p data-tasking-style="tasking-static-71">Usuarios que intentaron entrar pero no tienen acceso. Podés aprobarlos o rechazarlos.</p>
-      <div id="adminPendingList" data-tasking-style="tasking-static-72"></div>
     </div>
 
     <div class="modal-footer" data-tasking-style="tasking-static-73">
