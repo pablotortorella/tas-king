@@ -97,7 +97,7 @@ actualizada al 2026-10-25. No es una auditoría del servicio remoto.
 | Tests generales y de HomeSuite en CI | `.github/workflows/test.yml`: Vitest general, HomeSuite App unitaria e integración D1, sitio y Playwright | El login real con Google y recorridos entre dos cuentas requieren pruebas dirigidas en staging |
 | Migración antes de Worker en TasKing | `package.json` y `test/deploy-scripts.test.js` | Sólo cubre migraciones compatibles; no demuestra restauración completa |
 | Verificación antes de staging HomeSuite App | Script migra y despliega | No encadena tests; ejecutarlos y registrar resultados antes del comando |
-| SHA revisado en staging, revisión y aprobación | Protocolo común | No hay un bloqueo automático que impida desplegar otro SHA |
+| SHA revisado en staging, revisión y aprobación | Protocolo común; desde 2026-11-28, `scripts/deploy-guard.mjs` (en `wrangler-deploy.mjs`) no publica en producción un commit fuera de `origin/main` ni con cambios sin commitear (`test/deploy-guard.test.js`) | No comprueba que el mismo SHA haya pasado por staging ni que exista la aprobación; staging no se restringe |
 | Detección de secretos | Revisión del diff; comprobaciones limitadas de `verify-ready` | El script no es un escáner fiable de secretos |
 | Recuperación de datos | Runbook y regresión de triggers de TasKing | Sin simulacro completo acreditado; reset local de restore demasiado amplio; HomeSuite tiene preparación pendiente |
 | Enlaces de documentación | Comprobación local durante este cambio | Sin control de enlaces dedicado en CI |
