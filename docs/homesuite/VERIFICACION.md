@@ -37,6 +37,17 @@ Para un refactor, caracterizar resultados y contratos, incluyendo errores y
 secuencias `await`; conservar comportamiento salvo cambio explícito. Cambios de
 seguridad incluyen intentos de suplantación, bypass y acceso a recursos ajenos.
 
+## Validaciones sobre datos existentes
+
+Antes de imponer una regla nueva sobre datos que ya existen (una validación que
+bloquea una acción, una restricción de esquema), medirla contra esos datos:
+cuántos registros la cumplen y por qué fallan los demás. Usar consultas de sólo
+lectura y agregadas (conteos y diferencias, sin copiar datos privados fuera del
+ambiente). Una regla que falla en registros sanos está mal formulada. En
+Repártelo, la regla «la distribución coincide con la utilidad» bloqueaba todos
+los balances con clearings; la correcta (utilidad + clearings) salió de
+verificarla en 297 balances reales antes de publicarla.
+
 ## Entornos y estabilidad
 
 Datos sintéticos, migraciones reales y almacenamiento de test aislado. No borrar

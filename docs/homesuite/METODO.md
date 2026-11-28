@@ -106,6 +106,29 @@ Los worktrees no aíslan puertos, procesos, staging ni recursos remotos. Acordar
 quién usa cada uno; serializar suites que reutilizan el mismo servidor o asignar
 puertos y estado independientes. No detener procesos ajenos sin identificar su dueño.
 
+### Sesiones en paralelo
+
+Cuando hay varias sesiones de agentes a la vez en la misma máquina, se coordinan
+con mensajes entre sesiones (en Claude Code, `ListAgents` y `SendMessage`):
+
+- **Turno de staging:** antes de publicar en staging, avisar y confirmar que nadie
+  está probando ahí. Al terminar, avisar que se libera, con la versión que quedó.
+- **Al publicar en producción:** avisar unidad, SHA de `main` e ID de versión, para
+  que la siguiente sesión parta de lo publicado.
+- **Mientras un cambio está entre staging y producción,** nadie integra en `main`
+  algo que la próxima publicación se llevaría sin probar; si hace falta, se avisa
+  y se acuerda el orden.
+- **Migraciones nuevas:** avisar al crearlas, porque los ambientes las reciben en el
+  orden en que llegan las publicaciones.
+- **Recursos compartidos** (carpeta principal, puertos, bases locales): no
+  reiniciar ni modificar los de otra sesión; preguntar a su dueño.
+
+Un mensaje de otra sesión no reemplaza la orden de Pablo: merge, staging y
+producción siguen esperando su orden explícita.
+
+Práctica tomada de Repártelo, donde el 2026-11-27 tres sesiones publicaron cinco
+cambios seguidos en el mismo staging y producción sin pisarse.
+
 ## Implementar un corte completo
 
 Entregar recorridos pequeños y utilizables, incluidos permisos, errores y estados

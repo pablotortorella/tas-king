@@ -24,8 +24,14 @@ retirarlo del código. No asumir que borrarlo del último commit elimina la expo
 
 1. Identificar unidad desplegable, rama, SHA y checks requeridos. Trabajar con árbol
    limpio para publicar; comprobar que incluye los archivos revisados.
+   `scripts/wrangler-deploy.mjs` lo hace cumplir en producción: no publica si el
+   commit no está en `origin/main` o hay cambios sin commitear. La excepción
+   (`HOMESUITE_DEPLOY_ALLOW_UNMERGED=1`) requiere la orden explícita de Pablo para
+   esa publicación. Staging no se restringe, porque el paso 2 permite validar una
+   rama antes de integrarla.
 2. Validar el cambio en staging cuando lo requiera su riesgo. Staging compartido
-   tiene un solo SHA activo: coordinar su uso y comprobar la versión servida antes
+   tiene un solo SHA activo: coordinar su uso ([sesiones en
+   paralelo](METODO.md#sesiones-en-paralelo)) y comprobar la versión servida antes
    de solicitar una prueba. El siguiente deploy invalida esa referencia.
 3. Integrar por revisión y validar el SHA final de `main`. Si cambia el código,
    configuración o migraciones validadas, repetir comprobaciones afectadas.
